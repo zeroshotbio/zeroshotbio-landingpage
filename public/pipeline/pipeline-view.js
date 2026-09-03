@@ -2828,20 +2828,49 @@ feature("edit visual", function(){
     const n=current&&byId[current];
     return n?{id:n.id,key:n.key,name:n.name,shape:n.shape}:null;
   };
-  function open(){
-    const t=targetOf();
-    what.textContent = t ? `New drawing for ${t.key} · ${t.name}  (shape "${t.shape}")`
-                         : "New drawing — nothing selected, so say which step you mean";
+
+  /* ---- ONE DIALOGUE, TWO JOBS ----
+     "Edit visual" redraws a station that exists. "Add a module" asks for one
+     that does not, in a named gap. They are the same act from the writer's
+     side — describe a drawing, send it, wait — and splitting them into two
+     windows would mean two of everything downstream: two waits, two queue
+     rows, two ways to be told it landed. So the window is shared and this
+     holds which job it is currently doing. Null is the redraw. */
+  let asking=null;
+  function open(spec){
+    asking = spec || null;
+    if(asking){
+      what.textContent = asking.title;
+      inp.placeholder = "Describe the new module — what it is, and what the drawing should show.\n\n"+
+        "e.g. a magnetic rack: a block with six tubes standing in it, the beads\n"+
+        "pulled to the wall of each tube while the liquid is drawn off";
+    }else{
+      const t=targetOf();
+      what.textContent = t ? `New drawing for ${t.key} · ${t.name}  (shape "${t.shape}")`
+                           : "New drawing — nothing selected, so say which step you mean";
+      inp.placeholder = ASK_PLACEHOLDER;
+    }
     /* say the cost before the request, not after: this is minutes of work on
        the instance, and knowing that is what makes queueing several of them the
        obvious move rather than a surprise */
-    if(hint) hint.textContent =
-      `Drawn on the instance in ${mins(etaMin)}, live ${mins(DEPLOY_MIN)} after that · `+
-      `send as many as you like — they queue up and stack in the corner`;
+    if(hint) hint.textContent = asking
+      ? `A new station between two that exist · the row grows to make room for it · `+
+        `drawn on the instance in ${mins(etaMin)}, live ${mins(DEPLOY_MIN)} after that`
+      : `Drawn on the instance in ${mins(etaMin)}, live ${mins(DEPLOY_MIN)} after that · `+
+        `send as many as you like — they queue up and stack in the corner`;
     box.classList.add("on"); inp.focus();
   }
-  function close(){ box.classList.remove("on"); }
-  btn.onclick=open;
+  const ASK_PLACEHOLDER = inp.getAttribute("placeholder")||"";
+  /* the one way in from outside this block — "Add a module" owns the slots and
+     nothing else, and hands the gap it was told about to the window that
+     already knows how to queue a request and wait for it */
+  window.pipelineAskInsert = spec => open(spec);
+  function close(){ box.classList.remove("on"); asking=null; }
+  /* NOT `btn.onclick=open`. open() now takes the insertion it is opening for,
+     and a click handler is called with the event — so the bare reference handed
+     open() a MouseEvent, which is truthy, and Edit visual quietly rendered
+     itself as an insertion with an undefined title. */
+  btn.onclick=()=>open();
   document.getElementById("askX").onclick=close;
   document.getElementById("askHide").onclick=close;
   box.addEventListener("pointerdown",ev=>{ if(ev.target===box) close(); });
@@ -2854,11 +2883,12 @@ feature("edit visual", function(){
     const text=inp.value.trim();
     if(!text){ inp.focus(); return; }
     if(typeof fetch!=="function"){ toast("No connection — nothing was sent.",true,5000); return; }
-    const t=targetOf();
+    const ins=asking, t = ins ? ins.target : targetOf();
     go.disabled=true; go.textContent="Sending…";
     fetch(PROMPT_API,{method:"POST",
         headers:{"content-type":"application/json"},
-        body:JSON.stringify({text,target:t})})
+        body:JSON.stringify(ins ? {text,target:t,kind:"insert",insert:ins.at}
+                                : {text,target:t})})
       .then(r=>r.json())
       .then(j=>{
         go.disabled=false; go.textContent="Send";
@@ -2867,9 +2897,13 @@ feature("edit visual", function(){
         /* out of the way immediately: the dialogue is for writing requests, and
            the next one can be written the moment this one is on the queue */
         close();
-        begin(j.prompt.id, t?t.key+" · "+t.name:"");
-        toast(`Queued. Drawing takes ${mins(etaMin)}, plus ${mins(DEPLOY_MIN)} to go live — `+
-              `send more if you want, they stack in the corner.`,false,8000);
+        if(ins && window.pipelineEndInsert) window.pipelineEndInsert();
+        begin(j.prompt.id, ins ? ins.label : (t?t.key+" · "+t.name:""));
+        toast(ins
+          ? `Queued — a new module ${ins.where}. It takes ${mins(etaMin)} to draw and `+
+            `${mins(DEPLOY_MIN)} more to go live; the row will have made room for it when it lands.`
+          : `Queued. Drawing takes ${mins(etaMin)}, plus ${mins(DEPLOY_MIN)} to go live — `+
+            `send more if you want, they stack in the corner.`,false,9000);
       })
       .catch(()=>{ go.disabled=false; go.textContent="Send";
                    toast("Could not reach the queue — nothing was sent.",true,6000); });
@@ -2991,10 +3025,16 @@ feature("prompt history", function(){
       const row=document.createElement("div");
       row.className="hrow";
       const st=STATUS[p.status]||p.status||"";
-      /* the target is what was selected when the request went out, and it is the
-         thing people scan by — so it leads the line, and a request sent with
-         nothing selected says that rather than showing a gap */
-      const tgt = p.target
+      /* WHAT THE REQUEST WAS AGAINST, which is not the same question for the two
+         kinds. A redraw was aimed at a station, and that station is what people
+         scan by. An insertion was aimed at a GAP, and showing it as the station
+         it happened to follow would read as a redraw of that station — the one
+         reading of this list that would be actively wrong. */
+      const ins = p.kind==="insert" && p.insert;
+      const tgt = ins
+          ? `<b>new module</b> · ${esc(p.insert.afterLabel||"")}`+
+            (p.insert.beforeLabel ? ` → ${esc(p.insert.beforeLabel)}` : " → end of the row")
+          : p.target
           ? `<b>${esc(p.target.key||"")}${p.target.name?" · "+esc(p.target.name):""}</b>`
           : `<b>no step selected</b>`;
       row.innerHTML =
@@ -3063,4 +3103,128 @@ feature("prompt history", function(){
     else if(ev.key.slice(0,5)==="Arrow"||ev.key==="Home"||ev.key==="m"||ev.key==="M")
       ev.stopPropagation();
   }, true);
+});
+
+/* ============================================================
+   ADD A MODULE
+   Every other edit on this page acts on something you can point at. A new
+   station is the one that does not exist yet, so there is nothing to select
+   and no obvious place to put a control — which is why this was the last of
+   the tools to arrive.
+
+   THE GAP IS THE THING YOU POINT AT. The index down the left is already the
+   row written out in order, so in this mode it grows a slot between every pair
+   of stations and one at the end; clicking a slot names the gap, and the same
+   window that handles "Edit visual" takes it from there. No new wait, no
+   second queue, no second way of being told it landed.
+
+   WHAT LANDS IS NOT JUST A DRAWING, and that is the part worth understanding
+   from here. A redraw changes the shape file. An insertion changes the DATA
+   file as well: a node record, two edges where there was one, and the lane and
+   its mat grown to make room. The row does not squeeze up to fit the new
+   station — layoutRows() spaces a lane to fill its own span, so the way to add
+   one without re-laying-out the other fourteen is to grow the span by exactly
+   what the new one costs. That is the worker's job and the rules for it are in
+   the daemon's task; scripts/pipeline_lane.mjs does the arithmetic.
+
+   Shared with /pipeline, like everything in this file, and stands down where
+   the button is absent.
+   ============================================================ */
+feature("add a module", function(){
+  const btn=document.getElementById("btnAdd");
+  if(!btn || !aside || typeof window.pipelineAskInsert!=="function") return;
+
+  let on=false;
+
+  /* The say-so goes at the top of the index rather than in a toast: a toast is
+     gone in eight seconds and this mode has no time limit, so somebody who
+     came back to the tab would find the panel changed and nothing explaining
+     it. It scrolls away with the list, which is right — it is only needed
+     before the first click. */
+  const say=document.createElement("div");
+  say.className="insertsay";
+  say.innerHTML='<b>Choose a gap.</b> Every slot below is a place a new module '+
+                'can go — click one and describe what it should be. The row will '+
+                'grow to make room; nothing else moves closer together.';
+
+  /* One slot AFTER each station, which is the same thing as one between every
+     pair plus one at the end. There is deliberately none before the Thaw: the
+     row opens on its anchor, and a station in front of it would be a different
+     row rather than a longer one. */
+  function slots(){
+    const rows=[...aside.querySelectorAll(".row")];
+    rows.forEach((row,i)=>{
+      const next=rows[i+1]||null;
+      const afterName=row.querySelector(".nm"), afterKey=row.querySelector(".key");
+      const b=document.createElement("button");
+      b.className="slot";
+      b.dataset.after=row.dataset.id;
+      if(next) b.dataset.before=next.dataset.id;
+      const beforeName=next&&next.querySelector(".nm"), beforeKey=next&&next.querySelector(".key");
+      const aLab=(afterKey?afterKey.textContent+" · ":"")+(afterName?afterName.textContent:"");
+      const bLab=next?((beforeKey?beforeKey.textContent+" · ":"")+(beforeName?beforeName.textContent:"")):null;
+      b.dataset.afterLabel=aLab;
+      if(bLab) b.dataset.beforeLabel=bLab;
+      const where = bLab ? `between ${aLab} and ${bLab}` : `at the end, after ${aLab}`;
+      b.dataset.where=where;
+      b.setAttribute("aria-label","Add a module "+where);
+      b.innerHTML='<span class="plus">+</span><span class="sl">'+
+                  (bLab?"new module here":"new module at the end")+'</span>';
+      b.addEventListener("click",()=>ask(b));
+      row.insertAdjacentElement("afterend",b);
+    });
+  }
+
+  function ask(b){
+    const aLab=b.dataset.afterLabel, bLab=b.dataset.beforeLabel||null;
+    window.pipelineAskInsert({
+      title: bLab ? `A new module between ${aLab} and ${bLab}`
+                  : `A new module at the end of the row, after ${aLab}`,
+      where: b.dataset.where,
+      label: "new module · "+(bLab?`${aLab} → ${bLab}`:`after ${aLab}`),
+      /* the worker is told what to draw the same way every other request tells
+         it — a target — and an insertion's target is the station it follows,
+         which is the one thing about the new node that is already true */
+      target: (()=>{ const n=byId[b.dataset.after];
+                     return n?{id:n.id,key:n.key,name:n.name,shape:n.shape}:null; })(),
+      at: { afterId:b.dataset.after, beforeId:b.dataset.before||null,
+            afterLabel:aLab, beforeLabel:bLab },
+    });
+  }
+
+  function start(){
+    if(on) return;
+    on=true;
+    document.body.classList.add("inserting");
+    btn.setAttribute("aria-pressed","true");
+    aside.insertAdjacentElement("afterbegin",say);
+    slots();
+    if(!aside.classList.contains("open") && window.innerWidth<=900)
+      aside.classList.add("open");
+    aside.scrollTop=0;
+  }
+  function stop(){
+    if(!on) return;
+    on=false;
+    document.body.classList.remove("inserting");
+    btn.setAttribute("aria-pressed","false");
+    aside.querySelectorAll(".slot").forEach(s=>s.remove());
+    if(say.parentNode) say.parentNode.removeChild(say);
+  }
+  /* the dialogue closes the mode once a request is away — the gap has been
+     chosen, and leaving the slots up invites a second one nobody meant */
+  window.pipelineEndInsert=stop;
+
+  btn.onclick=()=>on?stop():start();
+
+  /* Escape leaves the mode before it reaches the map's own handler, where it
+     would clear the reader instead and leave the slots sitting there. Only
+     while the mode is on, and only when the request window is not the thing
+     on top — that has its own Escape and owns it. */
+  window.addEventListener("keydown",ev=>{
+    if(!on || ev.key!=="Escape") return;
+    const ask=document.getElementById("ask");
+    if(ask && ask.classList.contains("on")) return;
+    ev.preventDefault(); ev.stopPropagation(); stop();
+  },true);
 });

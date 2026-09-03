@@ -80,10 +80,36 @@ const RECENT = 40; // what an unqualified GET answers with; ?all=1 for the recor
 const MAX_PROMPT = 4000;
 
 export type PromptStatus = "queued" | "working" | "done" | "dropped";
+
+/* WHAT KIND OF REQUEST THIS IS, and it is not cosmetic. "visual" is a new
+   drawing for a station that already exists — the shape file changes and
+   nothing else. "insert" adds a station to the row, which means the DATA file
+   changes too: a node, two edges where there was one, and the lane and its mat
+   growing to make room. The worker is told a different job for each, so the
+   kind travels with the request rather than being guessed from the wording.
+
+   Absent on every row written before insertions existed, and read as "visual"
+   — which is what those all were. */
+export type PromptKind = "visual" | "insert";
+
+/* Where a new station goes, named by the two it goes between. Stored as ids
+   AND as the labels that were on screen when the person clicked: the ids are
+   what the worker acts on, and the labels are what the history panel shows
+   long after those ids may have moved. `beforeId` is null for the end of the
+   row, which is the one slot with nothing after it. */
+export interface InsertAt {
+  afterId: string | null;
+  beforeId: string | null;
+  afterLabel: string;
+  beforeLabel: string | null;
+}
+
 export interface PromptRow {
   id: string;
   text: string;
   target: { id: string; key: string; name: string; shape: string } | null;
+  kind?: PromptKind;
+  insert?: InsertAt | null;
   status: PromptStatus;
   at: number;
   updated: number;
@@ -394,10 +420,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "read_failed" }, { status: 500 });
   }
 
+  /* An insertion is only an insertion if it says where. A row claiming the kind
+     with no usable slot would reach the worker as "add a station somewhere",
+     which is the one thing this flow exists to stop being — so it falls back to
+     a plain visual request rather than being rejected, and the text still says
+     what the person wanted. */
+  const at = body.insert as InsertAt | undefined;
+  const isInsert =
+    body.kind === "insert" && !!at && typeof at.afterId === "string" && !!at.afterId;
+
   const row: PromptRow = {
     id: "p" + now.toString(36) + Math.random().toString(36).slice(2, 7),
     text: text.slice(0, MAX_PROMPT),
     target: (body.target as PromptRow["target"]) ?? null,
+    kind: isInsert ? "insert" : "visual",
+    insert: isInsert
+      ? {
+          afterId: String(at!.afterId).slice(0, 64),
+          beforeId: at!.beforeId ? String(at!.beforeId).slice(0, 64) : null,
+          afterLabel: String(at!.afterLabel || "").slice(0, 200),
+          beforeLabel: at!.beforeLabel ? String(at!.beforeLabel).slice(0, 200) : null,
+        }
+      : null,
     status: "queued",
     at: now,
     updated: now,

@@ -62,8 +62,14 @@ await p.waitForTimeout(700);
 // ---- the button is in the top bar, next to Edit visual ----
 const bar = await p.$$eval('header .controls .ctl', b => b.map(x => x.textContent.trim()));
 ok(bar.includes('View prompt history'), 'the button is in the top bar');
-ok(bar.indexOf('View prompt history') === bar.indexOf('Edit visual') + 1,
-   'and it sits next to Edit visual  [' + bar.join(' | ') + ']');
+/* it sits AFTER the tools that write, not at a fixed index: "Add a module"
+   landed between the two later, and pinning the index made a correct toolbar
+   fail. What has to stay true is the grouping — everything that changes the map,
+   then the record of what was asked. */
+ok(bar.indexOf('View prompt history') > bar.indexOf('Edit visual'),
+   'and it sits after the tools that change the map  [' + bar.join(' | ') + ']');
+ok(bar.indexOf('View prompt history') < bar.indexOf('Save all changes'),
+   'and before the edit-mode controls');
 ok(await p.isVisible('#btnHistory'), 'it is visible without entering edit mode');
 ok(!await p.isVisible('#hist'), 'the panel starts closed');
 

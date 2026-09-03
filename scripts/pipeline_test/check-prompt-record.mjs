@@ -162,6 +162,32 @@ ok((await GET("?open=1")).prompts.some((r) => r.id === reopened.id),
    "and ?open=1 still finds it — the worker can see it");
 ok(biggest() < 400 * 1024, `no item burst holding it (${Math.round(biggest() / 1024)}KB)`);
 
+// ---- an insertion carries where it goes, and a redraw stays a redraw ----
+console.log("\ntwo kinds of request");
+const ins = await POST({
+  text: "a magnetic rack with six tubes",
+  target: { id: "B1", key: "B3", name: "Pool and split", shape: "poolsplit" },
+  kind: "insert",
+  insert: { afterId: "B1", beforeId: "R2p", afterLabel: "B3 · Pool and split",
+            beforeLabel: "B4 · Round 2 — ligation" },
+});
+ok(ins.ok && ins.prompt.kind === "insert", "an insertion is stored as one");
+ok(ins.prompt.insert.afterId === "B1" && ins.prompt.insert.beforeId === "R2p",
+   "with the gap it names");
+const end = await POST({ text: "one more at the end", target: null, kind: "insert",
+  insert: { afterId: "HND", beforeId: null, afterLabel: "C5 · Hand off the reads", beforeLabel: null } });
+ok(end.prompt.insert.beforeId === null, "the end of the row is a slot with nothing after it");
+const plain = await POST({ text: "thicker lines", target: { id: "THW", key: "B1", name: "Thaw", shape: "thawplate" } });
+ok(plain.prompt.kind === "visual" && plain.prompt.insert === null,
+   "a request that says nothing is a redraw, as every existing row was");
+/* an insertion with nowhere to go is the one shape the worker cannot act on */
+const nowhere = await POST({ text: "add something", kind: "insert", insert: { afterId: "", beforeId: null } });
+ok(nowhere.ok && nowhere.prompt.kind === "visual",
+   "an insertion with no slot falls back to a redraw rather than reaching the worker unusable");
+const readBack = (await GET("?all=1")).prompts.find((r) => r.id === ins.prompt.id);
+ok(readBack.kind === "insert" && readBack.insert.afterLabel === "B3 · Pool and split",
+   "and all of it survives a round trip through the store");
+
 // ---- and the worst case: every prompt at the 4000-char maximum ----
 console.log("\nthe largest prompt anyone can send, four hundred times");
 const HUGE = "H".repeat(6000);

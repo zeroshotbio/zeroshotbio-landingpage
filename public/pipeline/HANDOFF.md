@@ -536,6 +536,59 @@ No coordinates needed. `layoutRows()` computes x positions from the row's conten
 the `x` values in `NODES` are seed order only. Side structures use `follow:{a,b}` to
 sit at a node's x or midway between two.
 
+**But the lane's span is not free, and getting it wrong is invisible.** A lane is
+spaced to fill its own `x0..x1` exactly, by scaling every gap with one factor `k`.
+So you do not shuffle the stations after a new one along — you grow the lane, and
+the engine re-places all of them. Grow it by the wrong amount and nothing *looks*
+broken, because the row still fills the span; what happens instead is that `k`
+moves and all the existing gaps quietly resize. That is a re-layout of the whole
+row to add one thing, and a diff will not show it.
+
+The amount that leaves every existing gap exactly where it is:
+
+```
+k     = (x1 - x0 - Σw) / Σgaps            before the change
+Δgaps = gap(A,N) + gap(N,B) - gap(A,B)    one gap becomes two
+x1'   = x1 + w(N) + k · Δgaps             and the band under the row grows the same
+```
+
+Do not do that by hand — `scripts/pipeline_lane.mjs` does it, for any map and any
+lane, and proves the result:
+
+```bash
+node scripts/pipeline_lane.mjs --map molecular_pipe                    # the row as laid out
+node scripts/pipeline_lane.mjs --map molecular_pipe --after B3 --w 0.6 # what an insertion costs
+```
+
+It prints the new `LANES` and `BANDS` values, then lays the row out both ways and
+says whether `k` moved. **If its "k stays" line does not say every existing gap is
+unchanged, the width or the gap is wrong — not the tool.** It reproduces the figure
+`mol-data.js` records for C5 (1.46) from the file itself.
+
+It copies `layoutRows()`' gap rule rather than importing it, so if that rule changes
+in `pipeline-iso.js` it has to change here in the same commit. A tool that disagrees
+with the engine is worse than no tool.
+
+### The button that does all of it
+
+`/molecular_pipe` has an **"Add a module"** button. It turns the left index into a
+list of *gaps* — a slot between every pair of stations and one at the end — and a
+click sends a request tagged `kind:"insert"` with the gap's two node ids. The daemon
+gives that a different brief from a redraw (`insertTask()` in
+`scripts/pipeline_daemon.mjs`): the node, the two edges replacing one, the lane and
+mat growth above, and only then the drawing. `check-insert.mjs` asserts the slots
+describe real gaps and that the request carries them.
+
+Two rules in that brief are there for this file's sake rather than the layout's:
+
+- **Keys are suffixed, never renumbered.** A station between B3 and B4 is `B3a`.
+  Thirteen of `mol-data.js`'s records are lifted verbatim from `pipeline-data.js`
+  so the two stay diffable, and the keys are part of what is lifted.
+- **A new station goes into `UNVERIFIED`.** Its `does`/`built` come from what the
+  request said, not from what a neighbour's text could be adjusted into — that
+  invents a manual section number, and every claim on this map is supposed to be
+  traceable to an artefact.
+
 ## The copy payload
 
 The Echo node (`P3`) carries a **Copy the shape source** button in its reader

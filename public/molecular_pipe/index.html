@@ -264,6 +264,38 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   @media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
 
+  /* ---- adding a module: the index becomes the place you point at ----
+     A new station is not a thing you can select, because it is not there yet.
+     What you can point at is the GAP it goes in, and the index is already the
+     row written out in order — so in insert mode it grows a slot between every
+     pair of stations and one at the end, and clicking a slot is how you say
+     where. Nothing else on the page changes: the map keeps drawing, the reader
+     keeps its station, and leaving insert mode leaves no trace.
+
+     The slots are drawn in --signal, the token this page already means "look
+     here" with. They are the only thing on screen in that colour while the
+     mode is on, which is what makes the mode legible without a modal. */
+  .slot{display:none}
+  body.inserting .slot{display:flex;align-items:center;gap:8px;width:100%;
+        text-align:left;padding:5px 10px;margin:2px 0;
+        border:1px dashed var(--signal);background:transparent;
+        color:var(--signal);cursor:pointer}
+  body.inserting .slot:hover,body.inserting .slot:focus-visible{
+        background:var(--signal);color:var(--bg)}
+  .slot .plus{width:22px;height:17px;flex:none;display:grid;place-items:center;
+        border:1px solid currentColor;font-size:12px;line-height:1}
+  .slot .sl{flex:1;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase}
+  /* the stations themselves stop being clickable while a slot is what you are
+     choosing — a click on a row in this mode means "not that, the gap" often
+     enough that letting it select instead is a small trap */
+  body.inserting .row{opacity:.55;pointer-events:none}
+  .insertsay{display:none}
+  body.inserting .insertsay{display:block;padding:10px;margin-bottom:2px;
+        border-bottom:1px solid var(--rule);
+        font-size:9px;line-height:1.55;letter-spacing:.06em;color:var(--fg2)}
+  body.inserting .insertsay b{color:var(--signal);font-weight:400}
+  #btnAdd[aria-pressed="true"]{background:var(--signal);color:var(--bg);border-color:var(--signal)}
+
   /* ---- the prompt history ----
      Every request ever made against this map, newest first, read back from the
      same queue the corner rows are read from. It is a record rather than a
@@ -596,6 +628,7 @@
       <button class="ctl edonly" id="btnMulti" aria-pressed="false">Select many</button>
       <button class="ctl" id="btnText">Edit text</button>
       <button class="ctl" id="btnVisual">Edit visual</button>
+      <button class="ctl" id="btnAdd" aria-pressed="false">Add a module</button>
       <button class="ctl" id="btnHistory">View prompt history</button>
       <button class="ctl edonly" id="btnSave">Save all changes</button>
       <button class="ctl edonly" id="btnDiscard">Discard</button>

@@ -148,7 +148,109 @@ function sharers(shape) {
   return out;
 }
 
+/* ============================================================
+   TWO JOBS, NOT ONE
+   "Edit visual" asks for a new drawing of a station that exists: the shape file
+   changes and nothing else. "Add a module" asks for a station that does not
+   exist, in a named gap — and that is a change to the DATA file as well, which
+   is a different job with different ways to go wrong. It gets its own brief.
+   ============================================================ */
+function insertTask(p, map) {
+  const at = p.insert || {};
+  const where = at.beforeLabel
+    ? `between ${at.afterLabel} and ${at.beforeLabel}`
+    : `at the end of the row, after ${at.afterLabel}`;
+  const dataFile = map.data.split("/").pop();
+  return `A request has come in from the ${"/" + map.id} map's own "Add a module" button.
+Somebody wants a NEW STATION on the row, ${where}. Carry it out.
+
+WHAT THEY ASKED FOR
+${p.text}
+
+WHERE IT GOES
+  after   ${at.afterLabel}   (node id ${at.afterId})
+  ${at.beforeId ? `before  ${at.beforeLabel}   (node id ${at.beforeId})`
+                 : `before  nothing — this is the new end of the row`}
+
+THIS IS NOT A REDRAW. A new station is four changes and the drawing is only one
+of them. Do all four or the map ends up with a shape nothing wears, or a node
+standing on top of its neighbour.
+
+1. THE NODE, in ${map.data}
+   Add a record to NODES, positioned in the array where it belongs in reading
+   order. It needs: a unique id, a key, a group, a shape, a name, x, y, w, d, h,
+   and a sub. Copy the field order and the voice from the records either side.
+   - y is the row constant the others on this lane use.
+   - x IS SEED ORDER ONLY. layoutRows() throws it away and recomputes it. Give
+     it a value between its two neighbours' x so it SORTS into the right place,
+     and do not try to make it the real position — it is not.
+   - THE KEY IS A SUFFIX, NOT A RENUMBER. If it lands between B3 and B4 it is
+     "B3a". Do NOT renumber B4 onward: thirteen of these stations are lifted
+     verbatim from pipeline-data.js so the two maps stay diffable, the keys are
+     part of what is lifted, and the prose cross-references them by key.
+     Renumbering to make room is a re-write of the whole row to add one thing.
+   - group: take the group of the station it follows, unless the request plainly
+     puts it in the next one.
+
+2. THE PROSE — and this is the one that matters most
+   does / built / cond are claims about a real laboratory protocol on a real
+   instrument. YOU DO NOT KNOW THEM. Write does/built from what the request
+   actually says and nothing more; if the request does not say, write the short
+   true thing rather than a plausible long one. Never copy a neighbour's built:
+   text and adjust it — that invents a manual section number, and this file's
+   whole discipline is that every claim is traceable.
+   Add the new key to the UNVERIFIED set in ${dataFile}. It is a station somebody
+   asked for, not one read off an artefact, and the map says so out loud.
+
+3. THE TRACKS, in ${map.data}
+   ${at.beforeId
+     ? `EDGES currently has {a:"${at.afterId}", b:"${at.beforeId}", kind:...}.
+   REPLACE that one edge with two:
+     {a:"${at.afterId}", b:"<new id>", kind:<the same kind>}
+     {a:"<new id>", b:"${at.beforeId}", kind:<the same kind>}
+   Keep the kind it had unless the request is explicitly about a change of
+   material — the kind is what the dots on the track are carrying.`
+     : `Add one edge {a:"${at.afterId}", b:"<new id>", kind:<the kind the last
+   edge on the row uses>}. Nothing follows it.`}
+   The row must stay a single unbroken chain. check-rows.mjs asserts no edge
+   spans two rows and every lane reads one way; it does not assert the chain is
+   whole, so read EDGES and confirm it yourself.
+
+4. THE ROOM IT NEEDS — do NOT do this arithmetic by hand
+   layoutRows() re-spaces a lane to fill its own x0..x1 span, scaling every gap
+   by one factor. So you do not move the stations after the new one along: you
+   GROW THE LANE, and the engine re-places everything. Grow it by the wrong
+   amount and nothing looks broken — the row still fills the span — but all the
+   existing gaps quietly resize, which is a re-layout of the whole row, and it
+   is invisible in a diff.
+
+   Run this and it will tell you the exact numbers, and prove they leave every
+   existing gap where it is:
+
+     node scripts/pipeline_lane.mjs --map ${map.id} --after ${at.afterId} --w <the width you chose>
+
+   Apply the LANES x1 and BANDS x1 it prints. Its "k stays" line must say every
+   existing gap is unchanged; if it does not, the width or the gap is wrong, not
+   the tool. Update the comment above LANES to name the new station and what it
+   cost, the way the existing note accounts for C5 — that note is how the next
+   person knows the span was grown rather than guessed.
+
+5. THE DRAWING, in public/pipeline/pipeline-shapes.js
+   A new station gets a NEW shape function — never point it at a shape another
+   node already wears. Add drawX(g, n) and register DRAW.x = drawX. Everything
+   in the shape rules below applies to it, in particular reading every dimension
+   off n.w / n.d / n.h.
+
+THE INDEX AND THE STRIP UPDATE THEMSELVES. Both are built from NODES at load, so
+there is nothing to add there, and adding something is how they end up listing a
+station twice.
+
+`;
+}
+
 function task(p, map) {
+  if (p.kind === "insert" && p.insert && p.insert.afterId)
+    return insertTask(p, map) + tail(p, map);
   const t = p.target;
   /* qualified by map, because the same id exists on both — /pipeline's R1p and
      the bench's R1p are two different nodes wearing one shape, and an agent told
@@ -179,7 +281,17 @@ in place or replace it with a new registered shape — whichever is cleaner.`}`
 Nothing was selected, so work out from the request which step is meant. If it is
 genuinely ambiguous, do not guess — stop and explain, and do not commit.`}
 
-WHERE THINGS ARE — you may touch ${map.dirs.join(" and ")} and nothing else
+${tail(p, map)}`;
+}
+
+/* THE HALF BOTH JOBS SHARE. Where the files are, the rules that hold for any
+   change to them, how to verify, and how to ship. A redraw and an insertion
+   differ entirely in what they ask for and not at all in what they are allowed
+   to touch or what has to pass before it lands — and when this text lived only
+   inside the redraw brief, the obvious way to add a second job was to copy it,
+   which is how one of the two ends up quietly missing a rule. */
+function tail(p, map) {
+  return `WHERE THINGS ARE — you may touch ${map.dirs.join(" and ")} and nothing else
   pipeline-iso.js     the isometric projection and shared primitives. Do not change.
   pipeline-shapes.js  every drawing. This is almost certainly the file to edit.
   ${map.data.split("/").pop()}${" ".repeat(Math.max(1,18-map.data.split("/").pop().length))}this map's nodes, edges, lanes, prose, OFFSETS and TEXT.
