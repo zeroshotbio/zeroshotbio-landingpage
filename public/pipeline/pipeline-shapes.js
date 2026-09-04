@@ -2818,15 +2818,20 @@ DRAW.thawplate = drawThawPlate;
 
 /* ------------------------------------------------------------------
    ROUND ONE · REVERSE TRANSCRIPTION
-   A plate on the bench, and one well of it opened up.
+   A plate on the bench, and three of its wells opened up at once.
 
-   THE PLATE IS THE ROUND ONE PLATE, and it is drawn as the plastic actually
-   is: a green semi-skirted 96-well plate, so the lip and the skirt carry the
-   green and the deck inside it does not. Every well holds its own colour and
-   no two wells share one — 96 values, not twelve repeated eight times. That is
-   not decoration. Sample identity is written into the cDNA here and nowhere
-   else on the map, in a barcode that belongs to a well, so a plate whose
-   colours repeated would be a plate whose barcodes repeated.
+   THE PLATE IS THE OBJECT ON THE GRID and it is drawn at the size of one: a
+   green semi-skirted 96-well plate, so the lip and the skirt carry the green
+   and the deck inside it does not. It was smaller than its own magnification
+   once, and a magnification wider than the thing it magnifies stops reading as
+   a magnification and starts reading as the subject. The insets are small
+   above it now, and the plate is what the eye lands on.
+
+   Every well holds its own colour and no two wells share one — 96 values, not
+   twelve repeated eight times. That is not decoration. Sample identity is
+   written into the cDNA here and nowhere else on the map, in a barcode that
+   belongs to a well, so a plate whose colours repeated would be a plate whose
+   barcodes repeated.
 
    The hues are points on the twelve-stop ramp rather than stops on it, and the
    walk across them strides by a step coprime with 96: consecutive wells land
@@ -2835,24 +2840,33 @@ DRAW.thawplate = drawThawPlate;
    a gradient reads as an axis — round one's wells are a set of labels, and
    they are in no order at all.
 
-   THE TWELVE-CHANNEL HEAD IS THE SETUP, NOT THE SUBJECT. It comes down on a
-   row, dwells, lifts and steps to the next, and the row it has been to holds
-   its colour at full strength while the rows ahead of it sit back. Fast, thin,
-   and over in a few seconds, because what it is doing — filling wells — is the
-   part of the step a reader already understands.
+   THE WELLS CARRY THE BENCH-SCALE MOTION, now that no pipette does. Each sits
+   dull and desaturated until its own barcode has been written, and then comes
+   up to full strength: the three tethered wells first, each in time with the
+   chip landing in its own inset, and the rest of the plate after them in a
+   scattered wave. A head filling wells was the part of the step a reader
+   already understood; a well holding colour only once its barcode exists is
+   the part this drawing is actually claiming.
 
-   THE STEP ITSELF HAPPENS ABOVE, in a solid ellipse tethered to one well. It
-   is a magnification, so it is drawn in screen space and not on the grid: flat
-   marks, no isometry, nothing standing on anything. Inside is one fixed cell,
-   its membrane pocked with the holes permeabilisation left — the boundary is
-   intact and things cross it, which is the whole argument for doing this
-   in situ rather than in a tube.
+   THE STEP ITSELF HAPPENS ABOVE, in three solid ellipses tethered to three
+   different wells. One inset can only say that a barcode is added; the fact of
+   round one is that a DIFFERENT barcode is added in every well, so it takes
+   three of them, running slightly out of step, with three chips in the three
+   wells' exact colours. The difference between them is the content of the step.
 
-   Three transcripts lie in it, pale and wavy, each ending in a short AAA. A
-   reverse transcriptase lands on one of those tails and walks the template,
-   and a bright cDNA is drawn growing behind it — the copy is written while you
-   watch, because the writing IS the step. That beat is the longest thing in
-   the loop by a wide margin; everything else is staging for it.
+   Each is a magnification, so it is drawn in screen space and not on the grid:
+   flat marks, no isometry, nothing standing on anything. Inside is one fixed
+   cell, its membrane pocked with the holes permeabilisation left — the
+   boundary is intact and things cross it, which is the whole argument for
+   doing this in situ rather than in a tube.
+
+   Several transcripts lie in it, wavy and each ending in a short AAA, but only
+   one is brought forward — a cell holds thousands and a frame that gives them
+   all the same weight has no subject, so the rest stay small and faint behind
+   it. A reverse transcriptase lands on the forward one's tail and walks the
+   template, and a bright cDNA is drawn growing behind it — the copy is written
+   while you watch, because the writing IS the step. That beat is the longest
+   thing in the loop by a wide margin; everything else is staging for it.
 
    Then the barcode lands: a hard-cornered rectangle, snapping onto the free
    end of the new cDNA with a small overshoot, in the exact colour of the well
@@ -2868,15 +2882,19 @@ DRAW.thawplate = drawThawPlate;
 function drawReverseTranscription(g,n){
   const r=rng(823);
   const SC=n.w;                       // composed at w 1.0, d 0.8, h 0.3
+  const clamp=x=>x<0?0:x>1?1:x;
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
 
   /* ---- THE PLATE ---------------------------------------------------
      Thrown forward of the node's own centre: behind is where the view hangs
      the name label, and a 96-well deck is wide enough to reach it. Every
      dimension is a fraction of the node, so a drag on a corner rescales the
-     whole bench rather than pulling the wells out of the plastic. */
+     whole bench rather than pulling the wells out of the plastic. It runs
+     nearly twice the node's own width, which is as far as it can go before it
+     reaches the pool-and-split next door. */
   const COLS=n.cols||12, ROWS=n.rows||8, NW=COLS*ROWS;
-  const plate={x:n.x, y:n.y+n.d*0.28, w:n.w*1.52, d:n.d*1.26};
-  const pth=n.h*0.42, LIP=n.w*0.07;
+  const plate={x:n.x, y:n.y+n.d*0.30, w:n.w*1.90, d:n.d*1.62};
+  const pth=n.h*0.56, LIP=n.w*0.075;
   /* the deck is the plate less its lip, and the wells are laid on the DECK —
      grid the plate itself and the outer column sits on the rim */
   const deck={x:plate.x, y:plate.y, w:plate.w-LIP*2, d:plate.d-LIP*2};
@@ -2915,109 +2933,63 @@ function drawReverseTranscription(g,n){
             P(plate.x-plate.w/2,plate.y-plate.d/2+NOTCH,pth)];
   g.appendChild(el("polygon",{points:pts(nk),fill:"var(--stroke)","fill-opacity":".55"}));
 
-  /* ---- THE WELLS ---------------------------------------------------- */
-  const DIM=".55", LIT="1";
+  /* ---- THE WELLS ----------------------------------------------------
+     TWO DISCS PER WELL, not one. Dull-to-full is animated as a single
+     opacity over a grey that never changes: fading the colour alone would
+     leave a hole in the plastic, and fading it towards grey properly would
+     mean rewriting 96 colour strings a frame for a change the reader only
+     ever sees as brightness. */
+  const DIM=.14;
   const wells=plateGrid(deck,pth,COLS,ROWS);
-  const dots=[];
+  const dots=[], shown=[];
   wells.forEach((w,k)=>{
     drawWell(g,w,false);
-    const e=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.88).toFixed(2),
-      ry:(w.e.ry*0.88).toFixed(2),fill:HUE(k),"fill-opacity":DIM});
-    g.appendChild(e); dots.push(e);
+    const rx=(w.e.rx*0.88).toFixed(2), ry=(w.e.ry*0.88).toFixed(2);
+    g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx,ry,
+      fill:"var(--fg3)","fill-opacity":".3"}));
+    const e=el("ellipse",{cx:w.e.x,cy:w.e.y,rx,ry,fill:HUE(k),"fill-opacity":DIM});
+    g.appendChild(e); dots.push(e); shown.push("");
   });
 
-  /* the well the inset belongs to: second row, well out to the right, so the
-     tether runs up clear of the plate rather than across it */
-  const SRC=Math.min(NW-1, COLS+9);
-  const src=wells[SRC].e, srcCol=HUE(SRC);
-  g.appendChild(el("ellipse",{cx:src.x,cy:src.y,rx:(src.rx*1.9).toFixed(2),
-    ry:(src.ry*1.9).toFixed(2),fill:"none",stroke:"var(--fg)",
-    "stroke-width":".9","stroke-opacity":".85"}));
+  /* THE THREE OPENED WELLS. Three different rows and three different columns,
+     because two wells from one row would let a reader read the pair as a row
+     effect; and taken in screen order left to right, so the tethers fan out to
+     their own insets instead of crossing on the way up.
 
-  /* ---- THE TWELVE-CHANNEL HEAD --------------------------------------
-     Twelve tips built on row A's own wells and moved as one group: a channel
-     is a column, a pass is a row, and the head steps down the plate. Built at
-     rest ON row A rather than in the air, so every tip is born with real
-     coordinates and the ticker only translates the group. */
-  const SY=deck.d/ROWS;
-  const RSTEP=[-SY*S*C30, SY*S*0.5];        // one row, in screen units
-  const HIGH=24*SC;
-  const head=el("g",{transform:`translate(0,${(-HIGH).toFixed(2)})`});
-  for(let i=0;i<COLS;i++){
-    const w=wells[i].e;
-    head.appendChild(el("path",{d:
-      `M ${(w.x-1.6*SC).toFixed(2)} ${(w.y-16*SC).toFixed(2)} `+
-      `L ${(w.x+1.6*SC).toFixed(2)} ${(w.y-16*SC).toFixed(2)} `+
-      `L ${(w.x+0.6*SC).toFixed(2)} ${(w.y-1.2*SC).toFixed(2)} `+
-      `L ${(w.x-0.6*SC).toFixed(2)} ${(w.y-1.2*SC).toFixed(2)} Z`,
-      fill:"var(--t-top)","fill-opacity":".9",stroke:"var(--stroke)",
-      "stroke-width":".5","stroke-opacity":".65"}));
-  }
-  const hA=wells[0].e, hB=wells[COLS-1].e;
-  head.appendChild(el("polygon",{points:pts([[hA.x-3.4*SC,hA.y-28*SC],[hB.x+3.4*SC,hB.y-28*SC],
-    [hB.x+3.4*SC,hB.y-15.5*SC],[hA.x-3.4*SC,hA.y-15.5*SC]]),
-    fill:"var(--a-top)","fill-opacity":".92",stroke:"var(--stroke)",
-    "stroke-width":".7","stroke-opacity":".8"}));
-  const hM=[(hA.x+hB.x)/2,(hA.y+hB.y)/2];
-  head.appendChild(el("polygon",{points:pts([[hM[0]-2.6*SC,hM[1]-44*SC],[hM[0]+2.6*SC,hM[1]-44*SC],
-    [hM[0]+2.6*SC,hM[1]-27*SC],[hM[0]-2.6*SC,hM[1]-27*SC]]),
-    fill:"var(--a-left)","fill-opacity":".9",stroke:"var(--stroke)",
-    "stroke-width":".6","stroke-opacity":".7"}));
-  g.appendChild(head);
+     THEY ARE ALSO A THIRD OF THE RAMP APART EACH, which is the furthest three
+     of these 96 can be. The point being made is that the barcode differs by
+     well, and it is made ENTIRELY by the three chips being three colours. Wells
+     picked for where they sit and not for what colour they are came out half a
+     stop apart on the first try — two chips of nearly the same orange, side by
+     side, quietly unmaking the only claim the drawing has. */
+  const SRC=[{i:2,j:7},{i:6,j:4},{i:10,j:1}]
+    .map(p=>Math.min(NW-1, p.j*COLS+p.i))
+    .sort((a,b)=>wells[a].e.x-wells[b].e.x);
+  SRC.forEach(k=>{
+    const s=wells[k].e;
+    g.appendChild(el("ellipse",{cx:s.x,cy:s.y,rx:(s.rx*2.1).toFixed(2),
+      ry:(s.ry*2.1).toFixed(2),fill:"none",stroke:"var(--fg)",
+      "stroke-width":".9","stroke-opacity":".8"}));
+  });
 
-  /* ---- THE TETHER ---------------------------------------------------
-     One line, in the well's own colour, stopping ON the ellipse rather than
-     running under it: the inset is opaque and would hide the overrun, but a
-     line that ends where it is supposed to end survives somebody making the
-     inset translucent later. */
+  /* ---- THE CLOCK ----------------------------------------------------
+     Declared before anything is built because the wells need it too: what a
+     well waits for is the chip landing in its own inset, and that time is a
+     sum of these. COPY is more than half a pass because the thing this drawing
+     is for is watching the copy get written. */
+  const ARRIVE=0.55, COPY=3.4, LOCK=0.5, HOLD=1.5, CLEAR=0.7;
+  const SEQ=ARRIVE+COPY+LOCK+HOLD+CLEAR, STAGGER=0.85;
+  const RISE=0.45, PFADE=0.8, CYC=SEQ+2*STAGGER+1.1;
+
+  /* ---- THREE INSETS, SIDE BY SIDE -----------------------------------
+     Small against the plate on purpose, and spaced by their own width so the
+     three read as a row of three rather than as one wide panel. Each is solid,
+     because it is a magnification and not a window: the grid behind it is at a
+     different scale and showing through would make the two read as one space. */
   const c0=P(n.x,n.y,n.h);
-  const ix=c0[0]+14*SC, iy=c0[1]-152*SC, IRX=68*SC, IRY=55*SC;
-  const tdx=ix-src.x, tdy=iy-src.y;
-  const tk=1/Math.hypot(tdx/IRX, tdy/IRY);
-  g.appendChild(el("line",{x1:src.x.toFixed(2),y1:src.y.toFixed(2),
-    x2:(ix-tdx*tk).toFixed(2),y2:(iy-tdy*tk).toFixed(2),
-    stroke:srcCol,"stroke-width":"1","stroke-opacity":".75"}));
-
-  /* ---- THE INSET ----------------------------------------------------
-     Solid, because it is a magnification and not a window: the grid behind it
-     is at a different scale and showing through would make the two read as one
-     space. */
-  g.appendChild(el("ellipse",{cx:ix.toFixed(2),cy:iy.toFixed(2),
-    rx:IRX.toFixed(2),ry:IRY.toFixed(2),fill:"var(--bg)","fill-opacity":"1",
-    stroke:"var(--stroke)","stroke-width":"1.6","stroke-opacity":".9"}));
-  g.appendChild(el("ellipse",{cx:ix.toFixed(2),cy:iy.toFixed(2),
-    rx:(IRX-3.5).toFixed(2),ry:(IRY-3.5).toFixed(2),fill:"var(--fg)",
-    "fill-opacity":".04",stroke:"var(--stroke)","stroke-width":".6",
-    "stroke-opacity":".3"}));
-
-  /* THE CELL, AND THE HOLES IN IT. A dashed boundary would say the wall is not
-     there; a solid wall with holes punched through it says the wall is there
-     and things get across it, which is what permeabilisation is and the reason
-     a barcoded primer can reach an mRNA that never left the cell. */
-  const cy0=iy+3*SC, crx=IRX*0.78, cry=IRY*0.76;
-  g.appendChild(el("ellipse",{cx:ix.toFixed(2),cy:cy0.toFixed(2),
-    rx:crx.toFixed(2),ry:cry.toFixed(2),fill:"var(--g-top)","fill-opacity":".55",
-    stroke:"var(--stroke)","stroke-width":"2.4","stroke-opacity":".75"}));
-  const PORES=15;
-  for(let i=0;i<PORES;i++){
-    const a=(i+0.35)*2*Math.PI/PORES;
-    g.appendChild(el("circle",{cx:(ix+Math.cos(a)*crx).toFixed(2),
-      cy:(cy0+Math.sin(a)*cry).toFixed(2),r:((1.5+r()*0.5)*SC).toFixed(2),
-      fill:"var(--bg)",stroke:"var(--stroke)","stroke-width":".5",
-      "stroke-opacity":".55"}));
-  }
-
-  /* ---- THE TRANSCRIPTS ----------------------------------------------
-     Three, laid in lanes rather than scattered: at this size three wandering
-     strands placed at random cross each other more often than not, and a
-     crossing reads as one strand. The middle one is the one that gets copied,
-     and it is shorter than its lane allows so the barcode has somewhere inside
-     the cell to land. */
-  const LANES3=[{vy:-24,x0:-36,x1:20},{vy:1,x0:-42,x1:18},{vy:26,x0:-30,x1:26}];
-  const OFFCD=4.2*SC;                   // the cDNA rail, below the template
-  const strands=LANES3.map(L=>({
-    ax:ix+L.x0*SC, bx:ix+L.x1*SC, y0:cy0+L.vy*SC,
-    amp:(2.6+r()*1.4)*SC, k:1.5+r()*0.8, ph:r()*6.283}));
+  const IRX=23*SC, IRY=20*SC, IDX=50*SC, IY=c0[1]-90*SC;
+  const OFFCD=2.4*SC;                   // the cDNA rail, below the template
+  const BHW=6.3*SC;                     // half the chip, which the stub stops at
   /* s runs 0 at the far end to 1 at the AAA tail; off steps onto the cDNA rail */
   const at=(st,s,off)=>[st.ax+(st.bx-st.ax)*s,
                         st.y0+Math.sin(s*st.k*6.283+st.ph)*st.amp+(off||0)];
@@ -3031,124 +3003,181 @@ function drawReverseTranscription(g,n){
     }
     return d;
   };
-  strands.forEach(st=>{
-    g.appendChild(el("path",{d:pathOf(st,0,1,0,26),fill:"none",stroke:"var(--fg)",
-      "stroke-width":"1.3","stroke-opacity":".42","stroke-linecap":"round"}));
-    /* the poly-A is spelled out rather than drawn: three bumps on a wavy line
-       are three bumps, and the whole reason this end matters is that the
-       barcoded primer is an oligo dT that finds it */
+  const strand=(ax,bx,y0,amp,k)=>({ax,bx,y0,amp,k,ph:r()*6.283});
+  /* the poly-A is spelled out rather than drawn: three bumps on a wavy line
+     are three bumps, and the whole reason this end matters is that the
+     barcoded primer is an oligo dT that finds it */
+  const tail=(st,size,fill,op)=>{
     const t=at(st,1,0);
-    const a=el("text",{x:(t[0]+2).toFixed(2),y:(t[1]-6*SC).toFixed(2),
-      "font-size":(6.4*SC).toFixed(1),"letter-spacing":".4",fill:"var(--fg2)"});
+    const a=el("text",{x:(t[0]+0.8*SC).toFixed(2),y:(t[1]-size*0.55).toFixed(2),
+      "font-size":size.toFixed(1),"letter-spacing":".3",fill,"fill-opacity":op});
     a.textContent="AAA"; g.appendChild(a);
+  };
+
+  const insets=SRC.map((sk,idx)=>{
+    const src=wells[sk].e, col=HUE(sk);
+    const ix=c0[0]+(idx-1)*IDX-2*SC;    // the row sits over its own three wells
+
+    /* THE TETHER. One line, in the well's own colour, stopping ON the ellipse
+       rather than running under it: the inset is opaque and would hide the
+       overrun, but a line that ends where it is supposed to end survives
+       somebody making the inset translucent later. */
+    const tdx=ix-src.x, tdy=IY-src.y;
+    const tk=1/Math.hypot(tdx/IRX, tdy/IRY);
+    g.appendChild(el("line",{x1:src.x.toFixed(2),y1:src.y.toFixed(2),
+      x2:(ix-tdx*tk).toFixed(2),y2:(IY-tdy*tk).toFixed(2),
+      stroke:col,"stroke-width":".9","stroke-opacity":".7"}));
+
+    g.appendChild(el("ellipse",{cx:ix.toFixed(2),cy:IY.toFixed(2),
+      rx:IRX.toFixed(2),ry:IRY.toFixed(2),fill:"var(--bg)","fill-opacity":"1",
+      stroke:"var(--stroke)","stroke-width":"1.3","stroke-opacity":".9"}));
+    g.appendChild(el("ellipse",{cx:ix.toFixed(2),cy:IY.toFixed(2),
+      rx:(IRX-2*SC).toFixed(2),ry:(IRY-2*SC).toFixed(2),fill:"var(--fg)",
+      "fill-opacity":".04",stroke:"var(--stroke)","stroke-width":".5",
+      "stroke-opacity":".3"}));
+
+    /* THE CELL, AND THE HOLES IN IT. A dashed boundary would say the wall is
+       not there; a solid wall with holes punched through it says the wall is
+       there and things get across it, which is what permeabilisation is and
+       the reason a barcoded primer can reach an mRNA that never left the
+       cell. */
+    const cy0=IY+1.2*SC, crx=IRX*0.80, cry=IRY*0.78;
+    g.appendChild(el("ellipse",{cx:ix.toFixed(2),cy:cy0.toFixed(2),
+      rx:crx.toFixed(2),ry:cry.toFixed(2),fill:"var(--g-top)","fill-opacity":".55",
+      stroke:"var(--stroke)","stroke-width":"1.8","stroke-opacity":".75"}));
+    const PORES=9;
+    for(let i=0;i<PORES;i++){
+      const a=(i+0.35+idx*0.3)*2*Math.PI/PORES;
+      g.appendChild(el("circle",{cx:(ix+Math.cos(a)*crx).toFixed(2),
+        cy:(cy0+Math.sin(a)*cry).toFixed(2),r:((0.9+r()*0.35)*SC).toFixed(2),
+        fill:"var(--bg)",stroke:"var(--stroke)","stroke-width":".5",
+        "stroke-opacity":".55"}));
+    }
+
+    /* THE TRANSCRIPTS THAT ARE NOT THE SUBJECT. Laid in lanes rather than
+       scattered — at this size wandering strands placed at random cross each
+       other more often than not, and a crossing reads as one strand — and kept
+       thin and pale, because they are here to say the cell is full of RNA and
+       not to be followed. */
+    [[-11,-12.5,-3],[-6.5,-8,3],[7,-11.5,-1],[11,-6,3]].forEach(([vy,x0,x1])=>{
+      const st=strand(ix+x0*SC, ix+x1*SC, cy0+vy*SC, 0.9*SC, 2.1);
+      g.appendChild(el("path",{d:pathOf(st,0,1,0,16),fill:"none",stroke:"var(--fg)",
+        "stroke-width":".8","stroke-opacity":".26","stroke-linecap":"round"}));
+      tail(st,3.2*SC,"var(--fg3)",".7");
+    });
+
+    /* THE ONE THAT GETS COPIED comes forward: longer, darker, drawn over the
+       rest. It still stops short of the membrane, because the chip has to have
+       somewhere inside the cell to land. */
+    const W=strand(ix-15.5*SC, ix+0.5*SC, cy0-1.5*SC, 1.9*SC, 1.5);
+    g.appendChild(el("path",{d:pathOf(W,0,1,0,22),fill:"none",stroke:"var(--fg)",
+      "stroke-width":"1.5","stroke-opacity":".5","stroke-linecap":"round"}));
+    tail(W,4.6*SC,"var(--fg2)","1");
+
+    /* THE COPY, AND WHAT WRITES IT. Born at the tail with nothing copied yet,
+       so every element has a real position before the ticker touches it. */
+    const cdna=el("path",{d:pathOf(W,1,1,OFFCD,2),fill:"none",stroke:"var(--signal)",
+      "stroke-width":"1.8","stroke-opacity":".95","stroke-linecap":"round"});
+    g.appendChild(cdna);
+    const e0=at(W,1,OFFCD*0.5);
+    const enz=el("g",{transform:`translate(${e0[0].toFixed(2)},${e0[1].toFixed(2)})`,
+      opacity:"0"});
+    enz.appendChild(el("ellipse",{cx:"0",cy:"0",rx:(3*SC).toFixed(2),
+      ry:(2.3*SC).toFixed(2),fill:"var(--a-top)","fill-opacity":".95",
+      stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".85"}));
+    enz.appendChild(el("ellipse",{cx:(-0.9*SC).toFixed(2),cy:(-0.9*SC).toFixed(2),
+      rx:(1.5*SC).toFixed(2),ry:(1.1*SC).toFixed(2),fill:"var(--a-left)",
+      "fill-opacity":".9"}));
+    g.appendChild(enz);
+
+    /* THE BARCODE. Hard corners against the wandering line, and the well's
+       exact colour against everything else in the frame — the chip is the one
+       thing here that is not this cell's own, and both of those say so. Three
+       insets means three of these, and no two of them are the same colour. */
+    const bcEnd=at(W,1,OFFCD);
+    const BX=bcEnd[0]+10.5*SC, BY=bcEnd[1]+0.3*SC;
+    const bc=el("g",{transform:`translate(${BX.toFixed(2)},${BY.toFixed(2)})`,
+      opacity:"0"});
+    bc.appendChild(el("rect",{x:(-BHW).toFixed(2),y:(-3.4*SC).toFixed(2),
+      width:(BHW*2).toFixed(2),height:(6.8*SC).toFixed(2),fill:col,
+      stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".9"}));
+    const bt=el("text",{x:"0",y:(1.4*SC).toFixed(2),"text-anchor":"middle",
+      "font-size":(4.2*SC).toFixed(1),"letter-spacing":".3",fill:"var(--bg)"});
+    bt.textContent="BC1"; bc.appendChild(bt);
+    g.appendChild(bc);
+    /* the short stub joining chip to copy, so the two are one molecule */
+    const link=el("line",{x1:bcEnd[0].toFixed(2),y1:bcEnd[1].toFixed(2),
+      x2:(BX-BHW).toFixed(2),y2:BY.toFixed(2),stroke:col,
+      "stroke-width":"1.8","stroke-opacity":"0","stroke-linecap":"round"});
+    g.appendChild(link);
+
+    return {W,cdna,enz,bc,link,BX,BY,delay:idx*STAGGER};
   });
 
-  /* THE COPY, AND WHAT WRITES IT. Born at the tail with nothing copied yet, so
-     every element has a real position before the ticker touches it. */
-  const W=strands[1];
-  const cdna=el("path",{d:pathOf(W,1,1,OFFCD,2),fill:"none",stroke:"var(--signal)",
-    "stroke-width":"2.1","stroke-opacity":".95","stroke-linecap":"round"});
-  g.appendChild(cdna);
-  const e0=at(W,1,OFFCD*0.5);
-  const enz=el("g",{transform:`translate(${e0[0].toFixed(2)},${e0[1].toFixed(2)})`,
-    opacity:"0"});
-  enz.appendChild(el("ellipse",{cx:"0",cy:"0",rx:(4.4*SC).toFixed(2),
-    ry:(3.4*SC).toFixed(2),fill:"var(--a-top)","fill-opacity":".95",
-    stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".85"}));
-  enz.appendChild(el("ellipse",{cx:(-1.4*SC).toFixed(2),cy:(-1.4*SC).toFixed(2),
-    rx:(2.2*SC).toFixed(2),ry:(1.7*SC).toFixed(2),fill:"var(--a-left)",
-    "fill-opacity":".9"}));
-  g.appendChild(enz);
-
-  /* THE BARCODE. Hard corners against the wandering line, and the well's exact
-     colour against everything else in the frame — the chip is the one thing
-     here that is not this cell's own, and both of those say so. */
-  const bcEnd=at(W,1,OFFCD);
-  const BX=bcEnd[0]+15*SC, BY=bcEnd[1]+0.5*SC;
-  const bc=el("g",{transform:`translate(${BX.toFixed(2)},${BY.toFixed(2)})`,
-    opacity:"0"});
-  bc.appendChild(el("rect",{x:(-11*SC).toFixed(2),y:(-5.2*SC).toFixed(2),
-    width:(22*SC).toFixed(2),height:(10.4*SC).toFixed(2),fill:srcCol,
-    stroke:"var(--stroke)","stroke-width":".9","stroke-opacity":".9"}));
-  const bt=el("text",{x:"0",y:(2*SC).toFixed(2),"text-anchor":"middle",
-    "font-size":(6.4*SC).toFixed(1),"letter-spacing":".5",fill:"var(--bg)"});
-  bt.textContent="BC1"; bc.appendChild(bt);
-  g.appendChild(bc);
-  /* the short stub joining chip to copy, so the two are one molecule */
-  const link=el("line",{x1:bcEnd[0].toFixed(2),y1:bcEnd[1].toFixed(2),
-    x2:(BX-11*SC).toFixed(2),y2:BY.toFixed(2),stroke:srcCol,
-    "stroke-width":"2.1","stroke-opacity":"0","stroke-linecap":"round"});
-  g.appendChild(link);
+  /* ---- WHEN EACH WELL COMES UP --------------------------------------
+     The three tethered ones are pinned to the instant their own chip lands, so
+     the inset and the well are one event seen at two scales. The other 93 come
+     after all three, on a diagonal sweep with enough jitter on it to break the
+     front: barcoding is not dealt across a plate in an order, and a tidy line
+     crossing the wells would claim it is. */
+  const onAt=wells.map(w=>ARRIVE+COPY+STAGGER*2 +
+    (w.i/COLS + w.j/ROWS)/2*1.4 + r()*0.8);
+  SRC.forEach((k,i)=>{ onAt[k]=i*STAGGER+ARRIVE+COPY; });
 
   /* ---- THE LOOP -----------------------------------------------------
-     One clock for the head, one for the copy, and they are deliberately not
-     the same length: the head is a background rhythm and the copy is the
-     sentence. COPY is more than half the cycle because the thing this drawing
-     is for is watching the copy get written. */
-  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
-  const ARRIVE=0.6, COPY=4.4, LOCK=0.55, HOLD=1.7, CLEAR=0.8;
-  const CYC=ARRIVE+COPY+LOCK+HOLD+CLEAR;
-  const DOWN=0.17, DWELL=0.12, UP=0.17, GAP=0.05, PASS=DOWN+DWELL+UP+GAP;
-  const RETURN=0.8, HCYC=ROWS*PASS+RETURN;
-  let t=r()*CYC, ht=0, lit=-1;
+     One clock, three insets reading it at their own offsets. They are out of
+     step by less than a phase each, which is enough for a reader to catch that
+     the three are separate events and not enough for any of them to be over
+     before the eye gets there. */
+  let T=r()*CYC;
 
   const run=(dt)=>{
-    /* the head: down onto a row, a moment in it, up, along. The row it has
-       just been in comes up to full colour and stays there until the head
-       goes back to the top and the pass starts again. */
-    ht=(ht+dt)%HCYC;
-    let j, lift, filled;
-    if(ht<ROWS*PASS){
-      j=Math.floor(ht/PASS); const p=ht-j*PASS;
-      lift = p<DOWN                ? HIGH*(1-ease(p/DOWN))
-           : p<DOWN+DWELL          ? 0
-           : p<DOWN+DWELL+UP       ? HIGH*ease((p-DOWN-DWELL)/UP)
-           :                         HIGH;
-      filled = p<DOWN ? j-1 : j;
-    }else{
-      const v=ease((ht-ROWS*PASS)/RETURN);
-      j=(ROWS-1)*(1-v); lift=HIGH; filled=v<0.5?ROWS-1:-1;
-    }
-    head.setAttribute("transform",
-      `translate(${(j*RSTEP[0]).toFixed(2)},${(j*RSTEP[1]-lift).toFixed(2)})`);
-    if(filled!==lit){
-      lit=filled;
-      dots.forEach((e,k)=>e.setAttribute("fill-opacity",
-        Math.floor(k/COLS)<=lit?LIT:DIM));
-    }
+    T=(T+dt)%CYC;
 
-    /* the copy */
-    t=(t+dt)%CYC;
-    let u=1, op=0, bo=0, bu=0;
-    if(t<ARRIVE)                    op=t/ARRIVE;
-    else if(t<ARRIVE+COPY){ u=1-(t-ARRIVE)/COPY; op=1; }
-    else if(t<ARRIVE+COPY+LOCK){
-      u=0; op=1; bo=Math.min(1,(t-ARRIVE-COPY)/(LOCK*0.25));
-      /* a short overshoot and settle: it arrives past its seat and comes
-         back, which is what "locks on" looks like at this size */
-      const v=(t-ARRIVE-COPY)/LOCK;
-      bu = v<0.68 ? ease(v/0.68)*1.14 : 1.14-0.14*ease((v-0.68)/0.32);
-    }
-    else if(t<ARRIVE+COPY+LOCK+HOLD){ u=0; op=1; bo=1; bu=1; }
-    else{
-      const v=(t-ARRIVE-COPY-LOCK-HOLD)/CLEAR;
-      u=0; op=1-v; bo=1-v; bu=1;
-    }
+    /* THE PLATE. What has been written stays written until the end of the
+       cycle and then goes out together: a well dimming on its own would read
+       as its barcode coming back off. */
+    const fade = T>CYC-PFADE ? 1-(T-(CYC-PFADE))/PFADE : 1;
+    dots.forEach((e,k)=>{
+      const o=(DIM+(1-DIM)*clamp((T-onAt[k])/RISE)*fade).toFixed(2);
+      if(o!==shown[k]){ shown[k]=o; e.setAttribute("fill-opacity",o); }
+    });
 
-    cdna.setAttribute("d",pathOf(W,1,u,OFFCD,22));
-    cdna.setAttribute("stroke-opacity",(0.95*op).toFixed(2));
-    const p=at(W,u,OFFCD*0.5);
-    enz.setAttribute("transform",
-      `translate(${p[0].toFixed(2)},${p[1].toFixed(2)})`);
-    enz.setAttribute("opacity",op.toFixed(2));
-    /* it comes in from up and to the right of its seat, so the landing reads
-       as an arrival rather than as a fade-in */
-    const bx=BX+(1-bu)*16*SC, by=BY-(1-bu)*14*SC;
-    bc.setAttribute("transform",`translate(${bx.toFixed(2)},${by.toFixed(2)})`);
-    bc.setAttribute("opacity",bo.toFixed(2));
-    link.setAttribute("x2",(bx-11*SC).toFixed(2));
-    link.setAttribute("y2",by.toFixed(2));
-    link.setAttribute("stroke-opacity",(bo*Math.min(1,Math.max(0,bu-0.6)/0.4)).toFixed(2));
+    insets.forEach(ins=>{
+      const t=T-ins.delay;
+      let u=1, op=0, bo=0, bu=0;
+      if(t<0||t>SEQ)                  { u=1; op=0; }
+      else if(t<ARRIVE)                 op=t/ARRIVE;
+      else if(t<ARRIVE+COPY){ u=1-(t-ARRIVE)/COPY; op=1; }
+      else if(t<ARRIVE+COPY+LOCK){
+        u=0; op=1; bo=Math.min(1,(t-ARRIVE-COPY)/(LOCK*0.25));
+        /* a short overshoot and settle: it arrives past its seat and comes
+           back, which is what "locks on" looks like at this size */
+        const v=(t-ARRIVE-COPY)/LOCK;
+        bu = v<0.68 ? ease(v/0.68)*1.14 : 1.14-0.14*ease((v-0.68)/0.32);
+      }
+      else if(t<ARRIVE+COPY+LOCK+HOLD){ u=0; op=1; bo=1; bu=1; }
+      else{
+        const v=(t-ARRIVE-COPY-LOCK-HOLD)/CLEAR;
+        u=0; op=1-v; bo=1-v; bu=1;
+      }
+
+      ins.cdna.setAttribute("d",pathOf(ins.W,1,u,OFFCD,20));
+      ins.cdna.setAttribute("stroke-opacity",(0.95*op).toFixed(2));
+      const p=at(ins.W,u,OFFCD*0.5);
+      ins.enz.setAttribute("transform",
+        `translate(${p[0].toFixed(2)},${p[1].toFixed(2)})`);
+      ins.enz.setAttribute("opacity",op.toFixed(2));
+      /* it comes in from up and to the right of its seat, so the landing reads
+         as an arrival rather than as a fade-in */
+      const bx=ins.BX+(1-bu)*9*SC, by=ins.BY-(1-bu)*8*SC;
+      ins.bc.setAttribute("transform",`translate(${bx.toFixed(2)},${by.toFixed(2)})`);
+      ins.bc.setAttribute("opacity",bo.toFixed(2));
+      ins.link.setAttribute("x2",(bx-BHW).toFixed(2));
+      ins.link.setAttribute("y2",by.toFixed(2));
+      ins.link.setAttribute("stroke-opacity",
+        (bo*Math.min(1,Math.max(0,bu-0.6)/0.4)).toFixed(2));
+    });
   };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
