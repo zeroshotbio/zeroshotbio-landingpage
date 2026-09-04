@@ -2898,13 +2898,20 @@ function drawReverseTranscription(g,n){
      IT IS THE SETTING, NOT THE SUBJECT, and it was drawn at one and a half
      node widths, which made it the loudest thing on the row. All the plate has
      to say is "96 wells, and each one a different colour"; the step itself is
-     in the lenses. So it comes in at about seven tenths of the size it was —
+     in the lenses. So it comes in at about six tenths of the size it was —
      the well pitch and the well radius are both cut from the deck, so the grid
      packs exactly as it did and simply reads smaller. The lip and the notch
      are cut from the PLATE and not from the node, or they stay at their old
-     size on a plate that no longer has room for them. */
+     size on a plate that no longer has room for them.
+
+     THE WIDTH IS B1'S PLATE WIDTH, to about a part in three hundred: B1 draws
+     n.w*0.56 on a 2.52-wide tile, which is 1.41 world units, and 0.97 of this
+     tile's 1.45 is the same. It is literally the same piece of plastic — the
+     round-one plate thaws alongside the sample in that step — so anything but
+     the same size across the two tiles is a second plate. The plastic's depth
+     already matched B1's to within a percent and stays where it is. */
   const COLS=n.cols||12, ROWS=n.rows||8, NW=COLS*ROWS;
-  const plate={x:n.x, y:n.y+n.d*0.30, w:n.w*1.10, d:n.d*0.94};
+  const plate={x:n.x, y:n.y+n.d*0.30, w:n.w*0.97, d:n.d*0.83};
   const pth=n.h*0.46, LIP=plate.w*0.039;
   /* the deck is the plate less its lip, and the wells are laid on the DECK —
      grid the plate itself and the outer column sits on the rim */
@@ -2996,8 +3003,10 @@ function drawReverseTranscription(g,n){
   const RISE=0.45, PFADE=0.8, CYC=SEQ+2*STAGGER+1.1;
 
   /* ---- THREE INSETS, SIDE BY SIDE -----------------------------------
-     Small against the plate on purpose, and spaced by their own width so the
-     three read as a row of three rather than as one wide panel. Each is solid,
+     Small against the plate on purpose, and spaced by rather more than their
+     own width so the three read as a row of three rather than as one wide
+     panel — they were nearly touching, and three lenses with a hairline
+     between them is one strip that happens to be scalloped. Each is solid,
      because it is a magnification and not a window: the grid behind it is at a
      different scale and showing through would make the two read as one space.
 
@@ -3014,7 +3023,7 @@ function drawReverseTranscription(g,n){
      when the plate did. */
   const IN=n.w*0.54;
   const c0=P(n.x,n.y,n.h);
-  const IRX=23*IN, IRY=20*IN, IDX=50*IN, IY=c0[1]-60*IN;
+  const IRX=23*IN, IRY=20*IN, IDX=58*IN, IY=c0[1]-60*IN;
   const OFFCD=2.4*IN;                   // the cDNA rail, below the template
   const BHW=6.3*IN;                     // half the chip, which the stub stops at
   /* s runs 0 at the far end to 1 at the AAA tail; off steps onto the cDNA rail */
