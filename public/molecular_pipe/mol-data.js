@@ -70,8 +70,17 @@ const NODES = [
    green semi-skirted 96-well plate and the drawing is of that plate; what the
    WT protocol fills is 48 of its wells, which is the `sub` line's business and
    stays there. They were 12 x 4 while the shape drew the loading instead, and
-   a drawing of a 48-well plate is a drawing of a plate that does not exist. */
-{id:"R1p", key:"B2", group:"In situ barcoding", shape:"reversetranscription", name:"Round 1 — reverse transcription", x:2.6, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:8,
+   a drawing of a 48-well plate is a drawing of a plate that does not exist.
+
+   IT IS THE BIGGEST TILE ON THE ROW AFTER THE THAW AND THE SEQUENCER, and that
+   is the point: the drawing is a plate with three magnified wells hanging over
+   it, and at w 1.0 the magnification outgrew the object it was magnifying. The
+   plate is cut from this tile, so the fix is here and not a bigger multiplier
+   inside the shape — the shape's plate already runs as wide as the gap to the
+   pool-and-split allows. The 0.45 the tile gained was added to the lane's x1
+   as well, which is how this file has always paid for width: k stays where it
+   is and the fourteen gaps that were already priced stay where they are. */
+{id:"R1p", key:"B2", group:"In situ barcoding", shape:"reversetranscription", name:"Round 1 — reverse transcription", x:2.6, y:R2, lane:"r2", w:1.45, d:1.16, h:0.42, cols:12, rows:8,
  sub:"48 wells · 96 barcodes · sample identity",
  does:"Each well gets its own barcoded primer and RNA is reverse transcribed inside the intact cell. This round carries sample identity — everything the dataset knows about which drug a cell saw is written here, in the first chemical step.",
  built:"Section 1.2. In situ reverse transcription on a 48-well round-one layout (rows A to D, columns 1 to 12), barcode set n141_R1_v3_8. Two barcodes per well, 96 in total: the manual says each well is primed both with oligo dT and with random hexamers, and the run definition records only the counts. 14 microlitres of diluted sample per well, a fresh tip for every well. sample_bc_rounds = 1: round one and only round one carries sample identity.",
@@ -302,9 +311,16 @@ const EDGES = [
    C6, the pyramid, cost another 1.464 on the same terms: 0.95 of station and
    0.6 of minor gap at k 0.8568, x1 25.71 -> 27.174, priced by
    scripts/pipeline_lane.mjs, which reports k unmoved and every one of the
-   fourteen existing gaps landing where it already was. */
+   fourteen existing gaps landing where it already was.
+
+   A STATION THAT GROWS PAYS THE SAME WAY. B2 went from w 1.0 to 1.45 so its
+   plate could be the object rather than a card under three lenses, and the
+   0.45 went on the end: 27.174 -> 27.624. k is (span - sum of widths) over the
+   gap weights, so adding the same 0.45 to both sides of that subtraction
+   leaves it untouched — every gap on the row keeps its length and the fourteen
+   stations downstream of it simply slide 0.45 along. */
 const LANES = [
-  {id:"r2", y:R2, x0:0.7, x1:27.174, dir:+1},
+  {id:"r2", y:R2, x0:0.7, x1:27.624, dir:+1},
 ];
 
 const ROWS = [R2], MIRROR = 22.7;
@@ -313,7 +329,7 @@ const ROWS = [R2], MIRROR = 22.7;
    out at the far end with the lane — a band is as long as its row, so a mat
    left at 24 would have the last station standing off the edge of its floor. */
 const BANDS = [
-  {name:"Molecular biology", x0:-2, x1:29.174, y0:R2-3.8, y1:R2+3.8},
+  {name:"Molecular biology", x0:-2, x1:29.624, y0:R2-3.8, y1:R2+3.8},
 ];
 
 /* No carries: this page is one row and it runs out at the handoff, which is

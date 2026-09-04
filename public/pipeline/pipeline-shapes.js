@@ -2881,7 +2881,7 @@ DRAW.thawplate = drawThawPlate;
    ------------------------------------------------------------------ */
 function drawReverseTranscription(g,n){
   const r=rng(823);
-  const SC=n.w;                       // composed at w 1.0, d 0.8, h 0.3
+  const SC=n.w;                       // composed at w 1.45, d 1.16, h 0.42
   const clamp=x=>x<0?0:x>1?1:x;
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
 
@@ -2889,12 +2889,14 @@ function drawReverseTranscription(g,n){
      Thrown forward of the node's own centre: behind is where the view hangs
      the name label, and a 96-well deck is wide enough to reach it. Every
      dimension is a fraction of the node, so a drag on a corner rescales the
-     whole bench rather than pulling the wells out of the plastic. It runs
-     nearly twice the node's own width, which is as far as it can go before it
-     reaches the pool-and-split next door. */
+     whole bench rather than pulling the wells out of the plastic. It runs a
+     little over one and a half node widths, which is as far as it can go
+     before it reaches the pool-and-split next door — the node itself is what
+     grew when the plate was asked for bigger, because a plate that outruns
+     its own tile is a plate that lands on its neighbour at the next resize. */
   const COLS=n.cols||12, ROWS=n.rows||8, NW=COLS*ROWS;
-  const plate={x:n.x, y:n.y+n.d*0.30, w:n.w*1.90, d:n.d*1.62};
-  const pth=n.h*0.56, LIP=n.w*0.075;
+  const plate={x:n.x, y:n.y+n.d*0.30, w:n.w*1.58, d:n.d*1.34};
+  const pth=n.h*0.46, LIP=n.w*0.062;
   /* the deck is the plate less its lip, and the wells are laid on the DECK —
      grid the plate itself and the outer column sits on the rim */
   const deck={x:plate.x, y:plate.y, w:plate.w-LIP*2, d:plate.d-LIP*2};
@@ -2985,11 +2987,20 @@ function drawReverseTranscription(g,n){
      Small against the plate on purpose, and spaced by their own width so the
      three read as a row of three rather than as one wide panel. Each is solid,
      because it is a magnification and not a window: the grid behind it is at a
-     different scale and showing through would make the two read as one space. */
+     different scale and showing through would make the two read as one space.
+
+     THE WHOLE LENS IS DRAWN AGAINST IN, NOT AGAINST SC. Everything inside one
+     — cell, pores, strands, enzyme, chip, the letters on it — is authored in
+     proportion to the lens and has to shrink with it, so the row shrinks by
+     shrinking its unit rather than by twenty-odd numbers being retuned one at
+     a time. It is still cut from n.w, so it grows on a resize like the rest.
+     The three of them together now come in narrower than the plate: they are
+     an annotation on the object, and they were reported as dwarfing it. */
+  const IN=n.w*0.54;
   const c0=P(n.x,n.y,n.h);
-  const IRX=23*SC, IRY=20*SC, IDX=50*SC, IY=c0[1]-90*SC;
-  const OFFCD=2.4*SC;                   // the cDNA rail, below the template
-  const BHW=6.3*SC;                     // half the chip, which the stub stops at
+  const IRX=23*IN, IRY=20*IN, IDX=50*IN, IY=c0[1]-90*IN;
+  const OFFCD=2.4*IN;                   // the cDNA rail, below the template
+  const BHW=6.3*IN;                     // half the chip, which the stub stops at
   /* s runs 0 at the far end to 1 at the AAA tail; off steps onto the cDNA rail */
   const at=(st,s,off)=>[st.ax+(st.bx-st.ax)*s,
                         st.y0+Math.sin(s*st.k*6.283+st.ph)*st.amp+(off||0)];
@@ -3009,14 +3020,17 @@ function drawReverseTranscription(g,n){
      barcoded primer is an oligo dT that finds it */
   const tail=(st,size,fill,op)=>{
     const t=at(st,1,0);
-    const a=el("text",{x:(t[0]+0.8*SC).toFixed(2),y:(t[1]-size*0.55).toFixed(2),
+    const a=el("text",{x:(t[0]+0.8*IN).toFixed(2),y:(t[1]-size*0.55).toFixed(2),
       "font-size":size.toFixed(1),"letter-spacing":".3",fill,"fill-opacity":op});
     a.textContent="AAA"; g.appendChild(a);
   };
 
   const insets=SRC.map((sk,idx)=>{
     const src=wells[sk].e, col=HUE(sk);
-    const ix=c0[0]+(idx-1)*IDX-2*SC;    // the row sits over its own three wells
+    /* centred on the PLATE's own screen centre, not the node's. The plate is
+       thrown forward of the tile, which in this projection moves it left; a row
+       hung off the tile centre leans off the far end of the deck it magnifies */
+    const ix=P(plate.x,plate.y,pth)[0]+(idx-1)*IDX;
 
     /* THE TETHER. One line, in the well's own colour, stopping ON the ellipse
        rather than running under it: the inset is opaque and would hide the
@@ -3032,7 +3046,7 @@ function drawReverseTranscription(g,n){
       rx:IRX.toFixed(2),ry:IRY.toFixed(2),fill:"var(--bg)","fill-opacity":"1",
       stroke:"var(--stroke)","stroke-width":"1.3","stroke-opacity":".9"}));
     g.appendChild(el("ellipse",{cx:ix.toFixed(2),cy:IY.toFixed(2),
-      rx:(IRX-2*SC).toFixed(2),ry:(IRY-2*SC).toFixed(2),fill:"var(--fg)",
+      rx:(IRX-2*IN).toFixed(2),ry:(IRY-2*IN).toFixed(2),fill:"var(--fg)",
       "fill-opacity":".04",stroke:"var(--stroke)","stroke-width":".5",
       "stroke-opacity":".3"}));
 
@@ -3041,7 +3055,7 @@ function drawReverseTranscription(g,n){
        there and things get across it, which is what permeabilisation is and
        the reason a barcoded primer can reach an mRNA that never left the
        cell. */
-    const cy0=IY+1.2*SC, crx=IRX*0.80, cry=IRY*0.78;
+    const cy0=IY+1.2*IN, crx=IRX*0.80, cry=IRY*0.78;
     g.appendChild(el("ellipse",{cx:ix.toFixed(2),cy:cy0.toFixed(2),
       rx:crx.toFixed(2),ry:cry.toFixed(2),fill:"var(--g-top)","fill-opacity":".55",
       stroke:"var(--stroke)","stroke-width":"1.8","stroke-opacity":".75"}));
@@ -3049,7 +3063,7 @@ function drawReverseTranscription(g,n){
     for(let i=0;i<PORES;i++){
       const a=(i+0.35+idx*0.3)*2*Math.PI/PORES;
       g.appendChild(el("circle",{cx:(ix+Math.cos(a)*crx).toFixed(2),
-        cy:(cy0+Math.sin(a)*cry).toFixed(2),r:((0.9+r()*0.35)*SC).toFixed(2),
+        cy:(cy0+Math.sin(a)*cry).toFixed(2),r:((0.9+r()*0.35)*IN).toFixed(2),
         fill:"var(--bg)",stroke:"var(--stroke)","stroke-width":".5",
         "stroke-opacity":".55"}));
     }
@@ -3060,19 +3074,19 @@ function drawReverseTranscription(g,n){
        thin and pale, because they are here to say the cell is full of RNA and
        not to be followed. */
     [[-11,-12.5,-3],[-6.5,-8,3],[7,-11.5,-1],[11,-6,3]].forEach(([vy,x0,x1])=>{
-      const st=strand(ix+x0*SC, ix+x1*SC, cy0+vy*SC, 0.9*SC, 2.1);
+      const st=strand(ix+x0*IN, ix+x1*IN, cy0+vy*IN, 0.9*IN, 2.1);
       g.appendChild(el("path",{d:pathOf(st,0,1,0,16),fill:"none",stroke:"var(--fg)",
         "stroke-width":".8","stroke-opacity":".26","stroke-linecap":"round"}));
-      tail(st,3.2*SC,"var(--fg3)",".7");
+      tail(st,3.2*IN,"var(--fg3)",".7");
     });
 
     /* THE ONE THAT GETS COPIED comes forward: longer, darker, drawn over the
        rest. It still stops short of the membrane, because the chip has to have
        somewhere inside the cell to land. */
-    const W=strand(ix-15.5*SC, ix+0.5*SC, cy0-1.5*SC, 1.9*SC, 1.5);
+    const W=strand(ix-15.5*IN, ix+0.5*IN, cy0-1.5*IN, 1.9*IN, 1.5);
     g.appendChild(el("path",{d:pathOf(W,0,1,0,22),fill:"none",stroke:"var(--fg)",
       "stroke-width":"1.5","stroke-opacity":".5","stroke-linecap":"round"}));
-    tail(W,4.6*SC,"var(--fg2)","1");
+    tail(W,4.6*IN,"var(--fg2)","1");
 
     /* THE COPY, AND WHAT WRITES IT. Born at the tail with nothing copied yet,
        so every element has a real position before the ticker touches it. */
@@ -3082,11 +3096,11 @@ function drawReverseTranscription(g,n){
     const e0=at(W,1,OFFCD*0.5);
     const enz=el("g",{transform:`translate(${e0[0].toFixed(2)},${e0[1].toFixed(2)})`,
       opacity:"0"});
-    enz.appendChild(el("ellipse",{cx:"0",cy:"0",rx:(3*SC).toFixed(2),
-      ry:(2.3*SC).toFixed(2),fill:"var(--a-top)","fill-opacity":".95",
+    enz.appendChild(el("ellipse",{cx:"0",cy:"0",rx:(3*IN).toFixed(2),
+      ry:(2.3*IN).toFixed(2),fill:"var(--a-top)","fill-opacity":".95",
       stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".85"}));
-    enz.appendChild(el("ellipse",{cx:(-0.9*SC).toFixed(2),cy:(-0.9*SC).toFixed(2),
-      rx:(1.5*SC).toFixed(2),ry:(1.1*SC).toFixed(2),fill:"var(--a-left)",
+    enz.appendChild(el("ellipse",{cx:(-0.9*IN).toFixed(2),cy:(-0.9*IN).toFixed(2),
+      rx:(1.5*IN).toFixed(2),ry:(1.1*IN).toFixed(2),fill:"var(--a-left)",
       "fill-opacity":".9"}));
     g.appendChild(enz);
 
@@ -3095,14 +3109,14 @@ function drawReverseTranscription(g,n){
        thing here that is not this cell's own, and both of those say so. Three
        insets means three of these, and no two of them are the same colour. */
     const bcEnd=at(W,1,OFFCD);
-    const BX=bcEnd[0]+10.5*SC, BY=bcEnd[1]+0.3*SC;
+    const BX=bcEnd[0]+10.5*IN, BY=bcEnd[1]+0.3*IN;
     const bc=el("g",{transform:`translate(${BX.toFixed(2)},${BY.toFixed(2)})`,
       opacity:"0"});
-    bc.appendChild(el("rect",{x:(-BHW).toFixed(2),y:(-3.4*SC).toFixed(2),
-      width:(BHW*2).toFixed(2),height:(6.8*SC).toFixed(2),fill:col,
+    bc.appendChild(el("rect",{x:(-BHW).toFixed(2),y:(-3.4*IN).toFixed(2),
+      width:(BHW*2).toFixed(2),height:(6.8*IN).toFixed(2),fill:col,
       stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".9"}));
-    const bt=el("text",{x:"0",y:(1.4*SC).toFixed(2),"text-anchor":"middle",
-      "font-size":(4.2*SC).toFixed(1),"letter-spacing":".3",fill:"var(--bg)"});
+    const bt=el("text",{x:"0",y:(1.4*IN).toFixed(2),"text-anchor":"middle",
+      "font-size":(4.2*IN).toFixed(1),"letter-spacing":".3",fill:"var(--bg)"});
     bt.textContent="BC1"; bc.appendChild(bt);
     g.appendChild(bc);
     /* the short stub joining chip to copy, so the two are one molecule */
@@ -3170,7 +3184,7 @@ function drawReverseTranscription(g,n){
       ins.enz.setAttribute("opacity",op.toFixed(2));
       /* it comes in from up and to the right of its seat, so the landing reads
          as an arrival rather than as a fade-in */
-      const bx=ins.BX+(1-bu)*9*SC, by=ins.BY-(1-bu)*8*SC;
+      const bx=ins.BX+(1-bu)*9*IN, by=ins.BY-(1-bu)*8*IN;
       ins.bc.setAttribute("transform",`translate(${bx.toFixed(2)},${by.toFixed(2)})`);
       ins.bc.setAttribute("opacity",bo.toFixed(2));
       ins.link.setAttribute("x2",(bx-BHW).toFixed(2));
