@@ -46,13 +46,20 @@ const R2 = 0;
 
 const NODES = [
 
-/* shape is this page's own, not the lifted record's. The station used to draw a
-   96-well plate coming out of a freezer under a slab of ice, which put the
-   emphasis on cold storage and on a melt; what section 1.1 actually says is a
-   vial in a 37 C water bath. `thaw:true` went with it — that flag is read by
-   the `vials` shape on the big map and never did anything here. */
+/* shape is this page's own, not the lifted record's, and it has now been both
+   things. It drew a plate coming out of a freezer under a slab of ice; that
+   went, because what section 1.1 describes doing is a vial in a 37 C water
+   bath; and the freezer was then asked for again from this map's own Edit
+   visual button, in detail. So it is back, and the ice is not: `thawplate`
+   opens the -80, slides one plate out and lets the frost FADE off it — no
+   melt, no drips — because the does line's own first clause is "fixed material
+   comes back out of the freezer" and that is the half of the step this drawing
+   is for. cols/rows are stated for the same reason B3 and B5 state theirs: 96
+   wells is the plate's fact, not the drawing's default. `thaw:true` is gone
+   with the old shape — it was read by the `vials` shape on the big map and
+   never did anything here. */
 {id:"THW", key:"B1", group:"In situ barcoding", groupMark:true, anchor:true,
- shape:"thawvial", lane:"r2",
+ shape:"thawplate", lane:"r2", cols:12, rows:8,
  name:"Thaw", x:0.7, y:R2, w:2.52, d:1.82, h:0.665,
  sub:"37°C thaw · haemocytometer · loading table", stat:"the biology restarts",
  does:"Fixed material comes back out of the freezer, is thawed until the last ice crystal goes, counted, and diluted to the concentration the loading table demands. The count taken here decides how many cells enter each round-one well, and therefore how crowded the whole run will be.",
