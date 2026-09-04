@@ -2947,21 +2947,32 @@ function drawReverseTranscription(g,n){
      IT IS THE SETTING, NOT THE SUBJECT, and it was drawn at one and a half
      node widths, which made it the loudest thing on the row. All the plate has
      to say is "96 wells, and each one a different colour"; the step itself is
-     in the lenses. So it comes in at about six tenths of the size it was —
-     the well pitch and the well radius are both cut from the deck, so the grid
-     packs exactly as it did and simply reads smaller. The lip and the notch
-     are cut from the PLATE and not from the node, or they stay at their old
-     size on a plate that no longer has room for them.
+     in the lenses. So it comes in well under half the size it was — the well
+     pitch and the well radius are both cut from the deck, so the grid packs
+     exactly as it did and simply reads smaller. The lip and the notch are cut
+     from the PLATE and not from the node, or they stay at their old size on a
+     plate that no longer has room for them.
 
-     THE WIDTH IS B1'S PLATE WIDTH, to about a part in three hundred: B1 draws
-     n.w*0.56 on a 2.52-wide tile, which is 1.41 world units, and 0.97 of this
-     tile's 1.45 is the same. It is literally the same piece of plastic — the
-     round-one plate thaws alongside the sample in that step — so anything but
-     the same size across the two tiles is a second plate. The plastic's depth
-     already matched B1's to within a percent and stays where it is. */
+     IT IS B1'S PLATE, AND THE NUMBERS SAY SO RATHER THAN NEARLY SAY SO. B1
+     draws n.w*1.72 on a 0.6-wide tile and takes its depth from the grid, and
+     0.712 of this tile's 1.45 with the same depth rule lands on the same
+     1.032 x 0.688 and the same 62.6 x 45.7 px. It is literally the same piece
+     of plastic — the round-one plate is what B1 is handed — so anything but
+     the same size across the two tiles is a second plate.
+
+     THE DEPTH IS COMPUTED FROM THE GRID, not authored, for the reason B1
+     computes its own: square well pitch is the whole requirement, and it is
+     just depth = width x rows / cols. Authored depth was what let the two
+     drift to different aspects while both still looked like plates.
+
+     THE THICKNESS IS B1'S TOO — 0.714 of this tile's h is its 0.3 — which
+     reads chunkier against a plate this narrow than the old 0.46 did against
+     a wide one. That is the profile B1 has, and the two being the same object
+     matters more here than this one staying as thin as it was. */
   const COLS=n.cols||12, ROWS=n.rows||8, NW=COLS*ROWS;
-  const plate={x:n.x, y:n.y+n.d*0.30, w:n.w*0.97, d:n.d*0.83};
-  const pth=n.h*0.46;
+  const PW=n.w*0.712;
+  const plate={x:n.x, y:n.y+n.d*0.30, w:PW, d:PW*ROWS/COLS};
+  const pth=n.h*0.714;
 
   /* A WELL'S COLOUR is rampHue's, above — hoisted the moment B3 had to draw
      this same plate, because two copies of the walk would be two plates. */
@@ -2978,13 +2989,18 @@ function drawReverseTranscription(g,n){
      opacity over a grey that never changes: fading the colour alone would
      leave a hole in the plastic, and fading it towards grey properly would
      mean rewriting 96 colour strings a frame for a change the reader only
-     ever sees as brightness. */
+     ever sees as brightness.
+
+     THE LIQUID SITS AT 0.86 OF THE WELL, which is B1's inset and drawWell's
+     own. The ring of plastic left showing IS the well wall, so a well drawn at
+     0.88 here and 0.86 there is two different plates seen a tile apart — the
+     one difference in the plastic that survives once the outline matches. */
   const DIM=.14;
   const wells=plateGrid(deck,pth,COLS,ROWS);
   const dots=[], shown=[];
   wells.forEach((w,k)=>{
     drawWell(g,w,false);
-    const rx=(w.e.rx*0.88).toFixed(2), ry=(w.e.ry*0.88).toFixed(2);
+    const rx=(w.e.rx*0.86).toFixed(2), ry=(w.e.ry*0.86).toFixed(2);
     g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx,ry,
       fill:"var(--fg3)","fill-opacity":".3"}));
     const e=el("ellipse",{cx:w.e.x,cy:w.e.y,rx,ry,fill:HUE(k),"fill-opacity":DIM});
