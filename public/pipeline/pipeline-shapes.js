@@ -1220,6 +1220,36 @@ function plateSlab(g,n,th,skin,sw){
             P(n.x-n.w/2,n.y-n.d/2+0.18,th)];
   g.appendChild(el("polygon",{points:pts(nk),fill:"var(--stroke)","fill-opacity":".55"}));
 }
+/* THE SAME SLAB WITH A COLOURED LIP, which is how a semi-skirted plate is told
+   apart from every other piece of plastic on the bench: the rim and the skirt
+   carry the colour and the deck inside does not. The hue goes on as a TINT over
+   the ordinary lit skin rather than as its own three faces — the map's solids
+   are lit top-brightest, and a flat hue on all three turns the plate into a
+   coloured card lying on the grid. Lip, notch and deck are all cut from the
+   plate's own w and d. Returns the DECK, because the wells belong on it: grid
+   the plate itself and the outer column sits up on the rim. */
+function skirtSlab(g,n,th,hue){
+  const f=faces(n.x,n.y,n.w,n.d,th);
+  ["left","right"].forEach(k=>{
+    g.appendChild(el("polygon",{points:f[k],fill:SKIN.tile[k],
+      stroke:"var(--stroke)","stroke-width":"1","stroke-opacity":".7"}));
+    g.appendChild(el("polygon",{points:f[k],fill:hue,
+      "fill-opacity":k==="right"?".38":".5"}));
+  });
+  g.appendChild(el("polygon",{points:f.top,fill:hue,"fill-opacity":".6",
+    stroke:"var(--stroke)","stroke-width":"1","stroke-opacity":".8"}));
+  const LIP=n.w*0.039;
+  const deck={x:n.x, y:n.y, w:n.w-LIP*2, d:n.d-LIP*2};
+  g.appendChild(el("polygon",{points:faces(deck.x,deck.y,deck.w,deck.d,th).top,
+    fill:"var(--bg)","fill-opacity":".9",stroke:"var(--stroke)",
+    "stroke-width":".7","stroke-opacity":".45"}));
+  /* the A1 notch, same corner every plate on this map cuts it */
+  const NOTCH=n.w*0.10;
+  g.appendChild(el("polygon",{points:pts([P(n.x-n.w/2,n.y-n.d/2,th),
+    P(n.x-n.w/2+NOTCH,n.y-n.d/2,th),P(n.x-n.w/2,n.y-n.d/2+NOTCH,th)]),
+    fill:"var(--stroke)","fill-opacity":".55"}));
+  return deck;
+}
 function drawWell(g,w,dosed){
   g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx,ry:w.e.ry,
     fill:"var(--bg)","fill-opacity":".6",stroke:"var(--stroke)",
@@ -2816,6 +2846,25 @@ function drawThawPlate(g,n){
 DRAW.thawplate = drawThawPlate;
 
 
+/* THE ROUND ONE PLATE'S COLOUR WALK — one well, one colour, ninety-six of them
+   mixed out of the twelve declared stops of the --ch ramp. It is hoisted out of
+   the shape that first drew it because the pool and split next door has to draw
+   the SAME plate: that station receives this plastic, and a second copy of the
+   walk is a second plate that only looks like it.
+
+   The stride has to stay coprime with the well count or the set stops closing
+   and wells start sharing a colour — 37 and 96 share no factor. Stepping in
+   order would lay a smooth gradient across the plate, and a gradient reads as
+   an axis; these wells are a set of labels and are in no order at all.
+
+   Spends --ch1..12, which are declared on /molecular_pipe and nowhere else. */
+const RAMP_STRIDE=37;
+const rampHue=(k,nw)=>{
+  const u=((k*RAMP_STRIDE)%nw)*12/nw, a=Math.floor(u)%12, f=u-Math.floor(u);
+  return f<0.005 ? `var(--ch${a+1})`
+    : `color-mix(in oklab, var(--ch${(a+1)%12+1}) ${(f*100).toFixed(0)}%, var(--ch${a+1}))`;
+};
+
 /* ------------------------------------------------------------------
    ROUND ONE · REVERSE TRANSCRIPTION
    A plate on the bench, and three of its wells opened up at once.
@@ -2912,44 +2961,17 @@ function drawReverseTranscription(g,n){
      already matched B1's to within a percent and stays where it is. */
   const COLS=n.cols||12, ROWS=n.rows||8, NW=COLS*ROWS;
   const plate={x:n.x, y:n.y+n.d*0.30, w:n.w*0.97, d:n.d*0.83};
-  const pth=n.h*0.46, LIP=plate.w*0.039;
-  /* the deck is the plate less its lip, and the wells are laid on the DECK —
-     grid the plate itself and the outer column sits on the rim */
-  const deck={x:plate.x, y:plate.y, w:plate.w-LIP*2, d:plate.d-LIP*2};
+  const pth=n.h*0.46;
 
-  /* A WELL'S COLOUR. Mixed between two stops of the twelve-stop ramp so the
-     plate carries 96 distinct values out of twelve declared ones; the stride
-     has to stay coprime with the well count or the set stops closing and
-     wells start sharing. 37 and 96 share no factor. */
-  const STRIDE=37;
-  const HUE=k=>{
-    const u=((k*STRIDE)%NW)*12/NW, a=Math.floor(u)%12, f=u-Math.floor(u);
-    return f<0.005 ? `var(--ch${a+1})`
-      : `color-mix(in oklab, var(--ch${(a+1)%12+1}) ${(f*100).toFixed(0)}%, var(--ch${a+1}))`;
-  };
+  /* A WELL'S COLOUR is rampHue's, above — hoisted the moment B3 had to draw
+     this same plate, because two copies of the walk would be two plates. */
+  const HUE=k=>rampHue(k,NW);
 
-  /* GREEN IS THE LIP AND THE SKIRT, NOT THE DECK. Painted as a tint over the
-     ordinary plastic skin rather than as its own three-face colour set: the
-     map's solids are lit top-brightest and a flat hue on all three faces would
-     turn the plate into a green card lying on the grid. */
-  const sf=faces(plate.x,plate.y,plate.w,plate.d,pth);
-  ["left","right"].forEach(k=>{
-    g.appendChild(el("polygon",{points:sf[k],fill:SKIN.tile[k],
-      stroke:"var(--stroke)","stroke-width":"1","stroke-opacity":".7"}));
-    g.appendChild(el("polygon",{points:sf[k],fill:"var(--ch5)",
-      "fill-opacity":k==="right"?".38":".5"}));
-  });
-  g.appendChild(el("polygon",{points:sf.top,fill:"var(--ch5)","fill-opacity":".6",
-    stroke:"var(--stroke)","stroke-width":"1","stroke-opacity":".8"}));
-  const dk=faces(deck.x,deck.y,deck.w,deck.d,pth);
-  g.appendChild(el("polygon",{points:dk.top,fill:"var(--bg)","fill-opacity":".9",
-    stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".45"}));
-  /* the A1 notch, same corner every plate on this map cuts it */
-  const NOTCH=plate.w*0.10;
-  const nk=[P(plate.x-plate.w/2,plate.y-plate.d/2,pth),
-            P(plate.x-plate.w/2+NOTCH,plate.y-plate.d/2,pth),
-            P(plate.x-plate.w/2,plate.y-plate.d/2+NOTCH,pth)];
-  g.appendChild(el("polygon",{points:pts(nk),fill:"var(--stroke)","fill-opacity":".55"}));
+  /* GREEN IS THE LIP AND THE SKIRT, NOT THE DECK, and that is skirtSlab's job
+     now: B3 receives this plate and has to draw the same green plastic, so the
+     lip, the deck and the notch are one function rather than two copies that
+     would drift. It hands back the deck, which is what the wells are laid on. */
+  const deck=skirtSlab(g,plate,pth,"var(--ch5)");
 
   /* ---- THE WELLS ----------------------------------------------------
      TWO DISCS PER WELL, not one. Dull-to-full is animated as a single
@@ -3683,6 +3705,7 @@ function conicalTube(g, tx, ty, w, h){
   const ZMAX=ZT-h*0.85;                     // it fills to the last graduation, not the collar
   const T={tube, rim, base, ZT, surfY:base.y};
   let surf0=null;                           // where the meniscus sits before any slosh
+  let liqOp=".24";                          // the column's opacity, which setTint may replace
   T.setLevel=(f,band,fresh)=>{
     const z=Math.max(0.0005,Math.min(1,f)*ZMAX);
     const rAt=z>=ZC ? IR : BR*0.85+(IR-BR*0.85)*(z/ZC);
@@ -3694,7 +3717,7 @@ function conicalTube(g, tx, ty, w, h){
     liquid.setAttribute("points",pts(z<=ZC
       ? [...top,...bot]
       : [...top,[shIn.x-shIn.rx,shIn.y],...bot,[shIn.x+shIn.rx,shIn.y]]));
-    liquid.setAttribute("fill-opacity",f>0.004?".24":"0");
+    liquid.setAttribute("fill-opacity",f>0.004?liqOp:"0");
     men.setAttribute("cx",surf.x.toFixed(1)); men.setAttribute("cy",surf.y.toFixed(1));
     men.setAttribute("rx",surf.rx.toFixed(2)); men.setAttribute("ry",surf.ry.toFixed(2));
     /* the surface carries the colour of whatever went in last, and loses it
@@ -3703,6 +3726,14 @@ function conicalTube(g, tx, ty, w, h){
     men.setAttribute("fill-opacity",(band?0.1+0.45*fresh:0).toFixed(2));
     T.surfY=surf.y; surf0=surf;
   };
+  /* WHAT IS IN THE TUBE IS THE CALLER'S BUSINESS, not the glassware's. The same
+     conical stands at three stations here and what it holds is not the same
+     thing each time: a grey suspension at one, ninety-six barcoded populations
+     at another. The default is what every caller drew before this existed, so
+     one that never asks is unchanged. */
+  T.setTint=(fill,op)=>{ liqOp=op.toFixed(2); liquid.setAttribute("fill",fill);
+    if(liquid.getAttribute("fill-opacity")!=="0")
+      liquid.setAttribute("fill-opacity",liqOp); };
   T.setLevel(0,null,0);
 
   /* GRADUATIONS, up the near side. A column of liquid rising inside a plain
@@ -3913,26 +3944,29 @@ function setFanLine(L,dim,f){
    the edge or the comb is pitched to something that is not a well. This
    way the tool and the plate agree, and one dip is one row.
 
-   THE FOUR BAND COLOURS ARE THE WHOLE POINT. The first plate's wells
-   wear PLATE_BANDS, so what goes into the tube is visibly four different
-   treatments, what stands in the tube afterwards is one grey suspension,
-   and every well of the second plate gets that same grey. That is the
+   THE COLOURS ARE THE WHOLE POINT, and they are the DONOR PLATE'S OWN.
+   What arrives here is the plate round one handed over: green lip,
+   ninety-six wells and ninety-six different colours in them, one per
+   barcode, drawn by the same rampHue walk that drew them next door. It
+   wore four treatment bands once, and four bands said the material was
+   four things when it is ninety-six. Twelve tips lift twelve different
+   colours a trip, the tube ends up holding every one of them, and every
+   well of the second plate gets that identical mixture. That is the
    claim the node makes — after this, well position carries no
-   information — drawn rather than asserted. Only the barcode written in
-   the round before still knows which well a cell came from, which is
-   also why the head DEALS the second plate in a shuffled order instead
-   of sweeping it front to back: a tool working A, B, C, D down a fresh
-   plate would draw the opposite of a randomisation.
+   information — drawn rather than asserted.
 
-   THE BANDS RUN BY ROW HERE, not by column, and that is the head's
-   doing. A twelve-channel lifts a whole row at once, so a row has to be
-   one treatment: a dip that took all four together would have no colour
-   to pour, and the column rising in the glass through four colours
-   before it goes grey is the thing this shape exists to show. A band is
-   therefore a QUARTER OF THE PLATE rather than a row — the same rule
-   plateGrid uses across its columns — so eight rows are two trips a
-   treatment and four rows are one, and the tube still fills through
-   four colours in order however deep the plastic is.
+   THE MIXTURE IS RAINBOW AND HOMOGENEOUS AT THE SAME TIME, which is the
+   only honest way to draw it: one shared gradient through the whole ramp
+   painted into the tube and into all ninety-six wells, so what is in
+   each well is unmistakably a blend of everything and unmistakably the
+   SAME blend. A flat grey said the barcodes were lost in the pooling;
+   they are not lost, they are unplaced, and only the barcode written in
+   the round before still knows which well a cell came from.
+
+   THE SECOND PLATE TAKES A ROYAL BLUE LIP. Two plates of the same
+   plastic at two moments of one operation are hard to tell apart at a
+   glance, and which one the head is standing over is the difference
+   between pooling and dealing.
 
    A TRIP IS A ROW AND THE PLATE HAS A BUDGET. A single tip needed a
    whole scheme here — bench speed for the first row, then a geometric
@@ -3946,8 +3980,8 @@ function setFanLine(L,dim,f){
    seconds.
 
    BETWEEN THE HALVES THE TUBE IS SWIRLED. Ninety-six wells go in as
-   four colours and come out as one grey, and mixing is the step that
-   makes that true; a tube that just stands there full asserts the pooling
+   ninety-six colours and come out as one mixture, and mixing is the step
+   that makes that true; a tube that just stands there full asserts the pooling
    rather than shows it. It leans about its own foot the way a hand rocks
    a conical, and the surface rides the wall a beat behind the lean.
 
@@ -3961,10 +3995,12 @@ function setFanLine(L,dim,f){
    clearance around the tube and the diagonal read of the pair survive a
    change of grid.
 
-   Reuses PLATE_BANDS / plateGrid / plateSlab / drawWell from the plate
-   set, ellipseAt / arcPts from the clutch block, and conicalTube /
-   multiGlyph from the bench kit above, so the plastic and the round
-   glassware match everything else on the map.
+   Reuses plateGrid / skirtSlab / drawWell from the plate set, rampHue
+   from round one, ellipseAt / arcPts from the clutch block, and
+   conicalTube / multiGlyph from the bench kit above, so the plastic and
+   the round glassware match everything else on the map. It spends
+   --ch1..12 through rampHue, which are declared on /molecular_pipe and
+   nowhere else; this shape is worn by that page alone.
    ------------------------------------------------------------------ */
 function drawPoolSplit(g,n){
   const th=n.h;
@@ -3975,8 +4011,22 @@ function drawPoolSplit(g,n){
      be authored and come apart the moment anybody drags a corner — the plate
      grows and the tube beside it stays exactly where it was. Every ratio below
      is against the size this was composed at: w 0.6, d 0.6, h 0.3. */
-  /* the pooled suspension: one colour, and not one of the four */
-  const GREY={fill:"var(--fg)", op:0.34};
+  /* THE POOLED SUSPENSION IS ONE THING AND IT IS NOT GREY. Grey said the
+     pooling threw the barcodes away; what it actually throws away is POSITION,
+     and every one of the ninety-six identities that went in is still in the
+     tube. So the mixture is painted with a single gradient through the whole
+     --ch ramp — rings of every colour that went in — and the tube and all
+     ninety-six wells it is dealt into share that one paint. Same object in
+     every well is what homogeneous means; that it is rainbow rather than flat
+     is what says the well is a blend and not a colour.
+     Declared here rather than in installDefs because a gradient is legal
+     wherever it sits, and the id is uniqued the way the tank clips are — the
+     shape is drawn more than once whenever a checker sizes it twice. */
+  const gid=`tiedye${++UID}`, grad=el("radialGradient",{id:gid});
+  for(let i=0;i<=12;i++) grad.appendChild(el("stop",{
+    offset:`${(i*100/12).toFixed(1)}%`,"stop-color":`var(--ch${i%12+1})`}));
+  g.appendChild(grad);
+  const MIX={fill:`url(#${gid})`, op:0.7};
   /* THE GRID IS THE ROUND'S OWN FACT and it is read off the node, the way B5
      reads its own: twelve columns by eight rows is the 96-well plastic these
      rounds are run on, and not plateWells' 8 x 6, which belongs to the compound
@@ -4001,25 +4051,25 @@ function drawPoolSplit(g,n){
   const src={x:n.x-n.w*0.4167, y:n.y-n.d*0.6167-PD/2, w:PW, d:PD};
   const dst={x:n.x+n.w*0.25,   y:n.y+n.d*0.95  +PD/2, w:PW, d:PD};
 
-  plateSlab(g,src,th,SKIN.tile,1);
-  /* plateGrid runs row-major, so a slice of this list is a row of the plate and
-     one trip of the head. The band comes off the ROW rather than out of
-     plateGrid's column bands — see the header — because a twelve-channel takes
-     a whole row at once. Each well keeps a handle on its own liquid, because
-     that is the thing the head takes away. */
-  const from=plateGrid(src,th,COLS,ROWS).map(w=>{
+  /* THE DONOR IS THE PLATE THE STEP BEFORE HANDS OVER, drawn as that plate and
+     not as anonymous plastic: round one's green semi-skirted 96, with round
+     one's ninety-six one-per-well colours still in it. Four treatment bands
+     said what arrives here is four things; what arrives is ninety-six
+     barcoded populations, and losing their POSITION while keeping their
+     identity is the only claim this station makes.
+     plateGrid runs row-major, so a slice of the list is a row of the plate and
+     one trip of the head, and the map index is the same k round one walked the
+     ramp with — same well, same colour. Each well keeps a handle on its own
+     liquid, because that is the thing the head takes away. */
+  const deckSrc=skirtSlab(g,src,th,"var(--ch5)");
+  const WOP=0.85;              // full-strength: a tip's worth of it has to show
+  const from=plateGrid(deckSrc,th,COLS,ROWS).map((w,k)=>{
     drawWell(g,w,false);
-    /* a treatment is a QUARTER of the plate, not a row: four bands stay four
-       however many rows there are, so eight rows are two trips a treatment and
-       the tube still rises through the four in order. Taking j modulo four
-       instead would deal the colours A B C D A B C D and say the plate was
-       loaded in stripes it never was. */
-    const band=PLATE_BANDS[Math.min(PLATE_BANDS.length-1,
-                 Math.floor(w.j*PLATE_BANDS.length/ROWS))];
+    const hue=rampHue(k,COLS*ROWS);
     const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
-      ry:(w.e.ry*0.86).toFixed(2),fill:band.fill,"fill-opacity":band.op});
+      ry:(w.e.ry*0.86).toFixed(2),fill:hue,"fill-opacity":WOP});
     g.appendChild(fill);
-    return {e:w.e, band, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
+    return {e:w.e, hue, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
   });
 
   /* THE TUBE, on the floor between the two plates. It is conicalTube's, and it
@@ -4028,16 +4078,22 @@ function drawPoolSplit(g,n){
      height is also what the rising column needs, because ninety-six wells going
      into a short tube is a level that barely moves per trip. */
   const T=conicalTube(g, n.x-n.w*0.40, n.y+n.d*0.50, n.w, n.h);
+  /* the column carries the mixture's own paint rather than the glassware's
+     default grey — what is standing in the tube is every colour that went in */
+  T.setTint(MIX.fill, 0.5);
 
   /* THE SECOND PLATE, forward of the tube so the split runs towards the
-     viewer. Its wells are born at full size and invisible: the ticker only has
-     to open them, and an element with no coordinates would drag the selection
-     halo across the map. */
-  plateSlab(g,dst,th,SKIN.tile,1);
-  const into=plateGrid(dst,th,COLS,ROWS).map(w=>{
+     viewer. It is fresh plastic and it is a DIFFERENT plate, so it takes a
+     royal blue lip against the donor's green: the two are the same object at
+     two moments otherwise, and a reader has to be able to tell at a glance
+     which one the head is standing over. Its wells are born at full size and
+     invisible: the ticker only has to open them, and an element with no
+     coordinates would drag the selection halo across the map. */
+  const deckDst=skirtSlab(g,dst,th,"var(--ch9)");
+  const into=plateGrid(deckDst,th,COLS,ROWS).map(w=>{
     drawWell(g,w,false);
     const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
-      ry:(w.e.ry*0.86).toFixed(2),fill:GREY.fill,"fill-opacity":"0"});
+      ry:(w.e.ry*0.86).toFixed(2),fill:MIX.fill,"fill-opacity":"0"});
     g.appendChild(fill);
     return {e:w.e, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
   });
@@ -4090,13 +4146,13 @@ function drawPoolSplit(g,n){
   const GO=0.28, SIT=0.52, RET=0.80;
   const SUP=0.20, SGO=0.48, SDIS=0.72;
 
-  /* the deal order: shuffled, because that is the claim. It is the rows that
-     are shuffled — a head has no order inside its own row, it lets go of twelve
-     wells at once — and a plate filled D, B, A, C still says the fresh plate is
-     not being written in the order the old one was read. */
-  const order=(()=>{ const a=[...Array(ROWS).keys()], r=rng(23);
-    for(let i=ROWS-1;i>0;i--){ const j=Math.floor(r()*(i+1)); const s=a[i]; a[i]=a[j]; a[j]=s; }
-    return a; })();
+  /* THE DEAL RUNS IN ROW ORDER, A then B then C, and it used to be shuffled.
+     The shuffle was carrying the claim in the wrong place: the randomisation
+     happens in the TUBE, not in the hand. What leaves it is one homogeneous
+     suspension — the same mixture in every tip — so where any given cell lands
+     is already random however tidily the plate is filled, and a hand skipping
+     about said the trick was in the dealing while making the sweep hard to
+     read. Filling front to back is also what somebody at the bench does. */
 
   const rowOf=(plate,j)=>plate.slice(j*COLS,(j+1)*COLS);
   /* the head is aimed by the middle of the row it is working, and that is all
@@ -4117,17 +4173,23 @@ function drawPoolSplit(g,n){
     place(a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f-Math.sin(f*Math.PI)*LIFT); };
   const tipAt=i=>{ const o=i-(COLS-1)/2;
     return [hx+o*STEP[0], hy+o*STEP[1]]; };
-  /* `to` is per channel, because the two halves let go at different targets:
-     twelve streams into one mouth, or twelve into twelve wells */
+  /* A COLOUR MAY BE PER CHANNEL. Pooling, twelve tips hold twelve different
+     wells and one colour across the comb would say the row was one thing;
+     dealing, all twelve hold the same mixture. So both the load and the drop
+     take either a string or a function of the channel index. */
+  const hueAt=(c,i)=>typeof c==="function"?c(i):c;
+  /* `to` is per channel too, because the two halves let go at different
+     targets: twelve streams into one mouth, or twelve into twelve wells */
   const fall=(colour,to,f,vis)=>drops.forEach((d,i)=>{
     const a=tipAt(i), b=to(i);
-    d.setAttribute("fill",colour);
+    d.setAttribute("fill",hueAt(colour,i));
     d.setAttribute("cx",(a[0]+(b[0]-a[0])*f).toFixed(1));
     d.setAttribute("cy",(a[1]+(b[1]-a[1])*f).toFixed(1));
     d.setAttribute("fill-opacity",(vis*(1-f*0.6)).toFixed(2));
   });
   const dry=()=>drops.forEach(d=>d.setAttribute("fill-opacity","0"));
-  const carry=(colour,op)=>loads.forEach(l=>{ l.setAttribute("fill",colour);
+  const carry=(colour,op)=>loads.forEach((l,i)=>{
+    l.setAttribute("fill",hueAt(colour,i));
     l.setAttribute("fill-opacity",op.toFixed(2)); });
   const setLevel=T.setLevel, swirl=T.swirl;
 
@@ -4139,12 +4201,12 @@ function drawPoolSplit(g,n){
   let t=0, poured=0, dealt=0;
   const emptyTo=k=>{ while(poured<k) rowOf(from,poured++)
     .forEach(w=>w.fill.setAttribute("fill-opacity","0")); };
-  const fillTo=k=>{ while(dealt<k) rowOf(into,order[dealt++])
-    .forEach(w=>wet(w,GREY.op,1)); };
-  const park=()=>{ dry(); carry(GREY.fill,0); place(mouth[0],mouth[1]); };
+  const fillTo=k=>{ while(dealt<k) rowOf(into,dealt++)
+    .forEach(w=>wet(w,MIX.op,1)); };
+  const park=()=>{ dry(); carry(MIX.fill,0); place(mouth[0],mouth[1]); };
   const reset=()=>{
     t=0; poured=0; dealt=0;
-    from.forEach(w=>wet(w,w.band.op,1));
+    from.forEach(w=>wet(w,WOP,1));
     into.forEach(w=>w.fill.setAttribute("fill-opacity","0"));
     setLevel(0,null,0); park(); swirl(0,0);
   };
@@ -4154,16 +4216,19 @@ function drawPoolSplit(g,n){
     if(t>=T4){ reset(); return; }
     if(t<T1||t>=T2) swirl(0,0);         // upright everywhere except between the halves
 
-    if(t<T1){                                       // POOL: four rows into one
-      const [k,u]=tripAt(t,TRIP), row=rowOf(from,k), band=row[0].band;
+    if(t<T1){                                       // POOL: row by row into one
+      const [k,u]=tripAt(t,TRIP), row=rowOf(from,k);
       emptyTo(k);
       const e=u<GO?0:Math.min(1,(u-GO)/(SIT-GO));   // the row empties as the comb sits in it
-      row.forEach(w=>wet(w,band.op*(1-e),1-0.3*e));
+      row.forEach(w=>wet(w,WOP*(1-e),1-0.3*e));
 
       const dis=u>RET ? (u-RET)/(1-RET) : 0;         // the tube takes it, one row at a time
       const fresh=dis>0 ? 1 : Math.max(0,1-u*2);
-      setLevel((k+dis)/ROWS,
-        (k||dis)?from[(dis>0?k:Math.max(0,k-1))*COLS].band:null, fresh);
+      /* the surface flashes the colour of what just went in, and a row is
+         twelve colours against one meniscus — so it takes the middle well's,
+         which is the one the eye was following the head across */
+      const last=(dis>0?k:Math.max(0,k-1))*COLS+(COLS>>1);
+      setLevel((k+dis)/ROWS, (k||dis)?{fill:from[last].hue}:null, fresh);
 
       const m=midOf(row), wp=[m[0], m[1]-1*SC];
       if(u<GO)       hop(mouth,wp,u/GO);
@@ -4171,40 +4236,39 @@ function drawPoolSplit(g,n){
       else if(u<RET) hop(wp,mouth,(u-SIT)/(RET-SIT));
       else           place(mouth[0],mouth[1]);
 
-      /* what the channels are carrying, and what they let go of. Held at a
-         floor of 0.45: the vehicle band is drawn at 0.16 in a well the size of
-         this text, and a column of it inside a plastic tip two pixels across
-         at that opacity is not there. */
-      const vis=Math.max(0.45,band.op);
-      carry(band.fill,
+      /* what the channels are carrying, and what they let go of — EACH ITS OWN
+         WELL'S COLOUR. Held at a floor of 0.45: a column inside a plastic tip
+         two pixels across is not there at much less than that. */
+      const vis=Math.max(0.45,WOP);
+      carry(i=>row[i].hue,
         u<GO ? 0 : u<SIT ? vis*e : dis>0 ? vis*(1-dis) : vis);
       /* twelve channels empty into one mouth, so the streams converge rather
          than run parallel — which is the one moment this shape says out loud
          that the head is what does the pooling */
-      if(dis>0) fall(band.fill, ()=>[T.rim.x,T.surfY], dis, vis);
+      if(dis>0) fall(i=>row[i].hue, ()=>[T.rim.x,T.surfY], dis, vis);
       else dry();
       return;
     }
 
-    if(t<T2){                                       // pooled: one grey tube, swirled
+    if(t<T2){                                       // pooled: one tube, swirled
       const m=(t-T1)/MID, env=Math.sin(Math.PI*m);
-      emptyTo(ROWS); setLevel(1,GREY,0);            // a surface to slosh, tinted with the mixture
+      emptyTo(ROWS); setLevel(1,MIX,0);             // a surface to slosh, tinted with the mixture
       swirl(env, m*SW_TURNS*2*Math.PI);
       /* the head stands off while the tube is being mixed, because a pipette
          hanging in the mouth of a tube somebody is swirling is a broken one */
-      dry(); carry(GREY.fill,0);
+      dry(); carry(MIX.fill,0);
       place(mouth[0]+env*13*SC, mouth[1]-env*3*SC);
       return;
     }
 
-    if(t<T3){                                       // SPLIT: one back out into four rows
-      const [k,u]=tripAt(t-T2,DEAL), row=rowOf(into,order[k]);
+    if(t<T3){                                       // SPLIT: one back out, row by row
+      const [k,u]=tripAt(t-T2,DEAL), row=rowOf(into,k);
       emptyTo(ROWS); fillTo(k);
       const up=Math.min(1,u/SUP);
       setLevel(1-(k+up)/ROWS,null,0);
 
       const dis=u<SGO ? 0 : u<SDIS ? (u-SGO)/(SDIS-SGO) : 1;
-      row.forEach(w=>wet(w,GREY.op*dis,0.55+0.45*dis));
+      row.forEach(w=>wet(w,MIX.op*dis,0.55+0.45*dis));
 
       const m=midOf(row), wp=[m[0], m[1]-6*SC];     // it hovers to deal, it does not dip
       if(u<SUP)       place(mouth[0],mouth[1]);
@@ -4212,9 +4276,11 @@ function drawPoolSplit(g,n){
       else if(u<SDIS) place(wp[0],wp[1]);
       else            hop(wp,mouth,(u-SDIS)/(1-SDIS));
 
-      carry(GREY.fill,
-        u<SUP ? 0.55*up : u<SGO ? 0.55 : u<SDIS ? 0.55*(1-dis) : 0);
-      if(u>=SGO && u<SDIS) fall(GREY.fill, i=>[row[i].e.x,row[i].e.y], dis, 0.5);
+      /* every tip holds the same thing on the way out — that is what makes the
+         deal a randomisation rather than twelve separate transfers */
+      carry(MIX.fill,
+        u<SUP ? 0.8*up : u<SGO ? 0.8 : u<SDIS ? 0.8*(1-dis) : 0);
+      if(u>=SGO && u<SDIS) fall(MIX.fill, i=>[row[i].e.x,row[i].e.y], dis, 0.75);
       else dry();
       return;
     }
