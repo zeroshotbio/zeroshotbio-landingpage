@@ -46,8 +46,13 @@ const R2 = 0;
 
 const NODES = [
 
+/* shape is this page's own, not the lifted record's. The station used to draw a
+   96-well plate coming out of a freezer under a slab of ice, which put the
+   emphasis on cold storage and on a melt; what section 1.1 actually says is a
+   vial in a 37 C water bath. `thaw:true` went with it — that flag is read by
+   the `vials` shape on the big map and never did anything here. */
 {id:"THW", key:"B1", group:"In situ barcoding", groupMark:true, anchor:true,
- shape:"thawplate", thaw:true, lane:"r2",
+ shape:"thawvial", lane:"r2",
  name:"Thaw", x:0.7, y:R2, w:2.52, d:1.82, h:0.665,
  sub:"37°C thaw · haemocytometer · loading table", stat:"the biology restarts",
  does:"Fixed material comes back out of the freezer, is thawed until the last ice crystal goes, counted, and diluted to the concentration the loading table demands. The count taken here decides how many cells enter each round-one well, and therefore how crowded the whole run will be.",

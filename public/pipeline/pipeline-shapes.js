@@ -2120,330 +2120,174 @@ DRAW.fixation = drawFixation;
 
 
 /* ------------------------------------------------------------------
-   B1 · THE THAW — the ice is the thing that leaves.
+   B1 · THE THAW — a vial, a bath, and nothing moving.
 
-   The freezer drawing said "cold storage" first and "thaw" second: the plate
-   spent most of the loop shut inside a box, and the one part that read as
-   warming was a scatter of crystals small enough to miss. So this is the same
-   step with the object and the obstruction swapped round. The plate is there
-   from the first frame; what changes is that the slab of ice over it goes.
+   THIS STEP HAS NO ENERGY AND MUST NOT BE DRAWN AS IF IT HAD ANY. The material
+   in the tube was formaldehyde-fixed and permeabilised in a prior protocol: it
+   is cross-linked, chemically locked and inert, and warming it does not restart
+   it. Every station after this one has something happening inside the vessel —
+   a strand extending, a barcode landing, a pool being split — so the only way
+   this one can read as the quiet before that is to hold absolutely still. There
+   is no ticker in this shape and there must not be one. A swirl, a rising
+   meniscus or a glow would each say the same false thing.
 
-   THE ICE IS A SOLID, NOT A TINT. It is a box on the node's own footprint,
-   floor to n.h, opaque enough that the plastic under it cannot be read — the
-   whole thing covered in blue, with a snowflake lying on its top face — and it
-   both SINKS and fades as it melts, because opacity alone at this size reads
-   as a colour change rather than as something going away. When it reaches the
-   plate's top it is gone and the 96 wells are simply there, samples and all.
+   WHAT CARRIES THE STEP INSTEAD IS THE HEAT, AND IT IS OUTSIDE THE TUBE. Three
+   hairline arcs stand on the ground around the bath at falling opacity — the
+   expansion is in the radii, not in a clock. They are transfer across a wall:
+   the bath is what is at 37 °C, not the sample. So they never touch the vial
+   and they never enter it, and that distinction is the whole content of the
+   drawing — warmth arrives from outside, and the biology does not answer it
+   yet.
 
-   The material does not move. It is fixed, cross-linked and cryopreserved:
-   the honest reading of this step is preserved matter coming back to a working
-   temperature, so the specks in the wells are drawn once and never touched.
-   The one place the warming is shown happening is the outset, and there it is
-   a coat of ice on a single cell fading off it. It goes on the same clock as
-   the slab: both are the same ice at the same temperature, and letting the
-   coat lag behind read as two separate thaws rather than one plate warming.
+   The frame is deliberately close to empty. The manual also has a haemocytometer
+   count here and the record says so, but a second object and a second number
+   would fill a frame whose emptiness is the reading.
 
-   AND IT COMES OUT OF A FREEZER FIRST. The melt was the whole picture, and the
-   step starts one move before it: this material is stored cold and somebody
-   has to fetch it. So a small freezer stands off the back-left corner, clear
-   of the landmark's plinth, and the loop now opens with the door sliding back
-   and the plate travelling out onto the bench under its full slab of ice.
-   Nothing about the melt changed — it simply no longer starts the loop. The
-   door slides shut behind the plate while it still stands frozen, and that is
-   the last thing the freezer does: THE PLATE IS NEVER PUT BACK. A thawed plate
-   goes straight to round one — the manual gives no stopping point here — so
-   returning it to cold storage was drawing a step that does not happen. The
-   sequence ends with the plate standing clear on the bench.
-
-   THE PLATE AND ITS ICE ARE ONE GROUP, and they have to be: the travel is a
-   transform on the whole object. It shrinks into the doorway rather than
-   sliding through it at full size — the same trick the fixation freezer uses,
-   and it is why the plate is reparented BEHIND the freezer shell the moment it
-   starts moving: the wall is what hides the part that is still inside.
-
-   Requires ellipseAt() from the A2 clutch block and PLATE_BANDS / plateGrid /
-   plateSlab / drawWell from the plate set, so this is the same plastic the
-   compound plate and the barcoding rounds are drawn on.
+   Requires ellipseAt() and arcPts() from the A2 clutch block: the vial is built
+   the same way the pool-and-split conical is, out of stacked ground-plane
+   circles and the two arcs that join them, so the glassware on this row is all
+   drawn by one construction.
    ------------------------------------------------------------------ */
-function drawThawPlate(g,n){
-  const r=rng(59), SC=n.w/2.52;             // composed at w 2.52, d 1.82, h 0.665
-  const ICE="var(--water, var(--signal))";
-  const COLS=12, ROWS=8;                    // 96 wells, and they are countable
-  /* the plate is deep-well plastic rather than a wafer: the name hangs at
-     topOf(n) = n.h, and a slab a tenth of that leaves it floating in air */
-  const th=n.h*0.55;
-  const plate={x:n.x, y:n.y, w:n.w*0.9, d:n.d*0.9};
-  /* WHERE THE FREEZER FITS, and it is a tight two units of floor. PAD is the
-     view's own plinth pad for an anchor — a world constant there rather than a
-     fraction of the node, so it is written the same way here — and the box has
-     to stand off that apron on one side and stay inside the band's dashed edge
-     on the other. Hence a narrow cabinet: the door is on the +x face, so what
-     the doorway is worth is set by its depth, not by its width. */
-  const PAD=0.55, FW=n.w*0.33, FD=n.d*0.62;
-  const frz={x:n.x-n.w/2-PAD-n.w*0.02-FW/2, y:n.y-n.d*0.12,
-             w:FW, d:FD, h:n.h*1.5};
-  const doorX=frz.x+frz.w/2, D=(yv,zv)=>P(doorX,yv,zv);
-  const ay0=frz.y-frz.d*0.44, ay1=frz.y+frz.d*0.44;
-  const az0=frz.h*0.10, az1=frz.h*0.88;
+function drawThawVial(g,n){
+  const r=rng(59);
+  /* composed at w 2.52, d 1.82, h 0.665. Anything authored in screen pixels —
+     a frost tick, a dash length, a type size — cannot grow by reading w, so it
+     grows by being multiplied by this. */
+  const SC=n.w/2.52;
 
-  /* the doorway is drawn before anything else, because what shows through an
-     open door is the dark inside of the box — the plate goes between the two */
-  g.appendChild(el("polygon",{points:pts([D(ay0,az1),D(ay1,az1),D(ay1,az0),D(ay0,az0)]),
-    fill:"var(--bg)","fill-opacity":".95"}));
+  /* WHERE THE TWO OBJECTS STAND, and the order is the row's own. B2 is at
+     greater x, so downstream is +x and the bath sits on that side: the vial
+     reads as coming off the bench, into the water, and on toward round one.
+     It stands BESIDE the bath rather than in it — the step is the whole
+     immersion, and a vial drawn already submerged has no before. */
+  const bath={x:n.x+n.w*0.24, y:n.y-n.d*0.06, w:n.w*0.46, d:n.d*0.52, h:n.h*0.32};
+  const VR=n.w*0.052, vx=n.x-n.w*0.32, vy=n.y+n.d*0.10;
 
-  /* the plate, its samples and its ice: one group, because they travel */
-  const cart=el("g",{transform:"translate(0,0)"});
-  g.appendChild(cart);
+  /* ---- THE GROUND MARKS, first, so everything else stands on them ---------
+     A dashed rectangle under each cluster, set the same distance beyond both
+     silhouettes. The offset is a fraction of n.w rather than a pixel count, so
+     it opens out with the object it rings instead of tightening onto it. */
+  const FP=n.w*0.09;
+  const foot=(cx,cy,hw,hd)=>g.appendChild(el("polygon",{
+    points:pts([[cx-hw,cy-hd],[cx+hw,cy-hd],[cx+hw,cy+hd],[cx-hw,cy+hd]]
+      .map(p=>P(p[0],p[1],0))),
+    fill:"none",stroke:"var(--fg)","stroke-opacity":".26",
+    "stroke-width":(1*SC).toFixed(2),
+    "stroke-dasharray":`${(2*SC).toFixed(1)} ${(6*SC).toFixed(1)}`}));
+  foot(bath.x,bath.y,bath.w/2+FP,bath.d/2+FP);
+  foot(vx,vy,VR+FP,VR+FP);
 
-  plateSlab(cart,plate,th,SKIN.anchor,1.6);
-  const wells=plateGrid(plate,th,COLS,ROWS);
-  wells.forEach(w=>drawWell(cart,w,true));
-  /* the sample in each well. Three specks, not a full field: a well here is
-     four pixels across, and anything denser turns the plate grey. */
-  wells.forEach(w=>{
-    for(let k=0;k<3;k++){
-      const a=r()*6.283, rad=Math.sqrt(r())*w.e.rx*0.44;
-      cart.appendChild(el("circle",{cx:(w.e.x+Math.cos(a)*rad).toFixed(2),
-        cy:(w.e.y+Math.sin(a)*rad*0.6).toFixed(2),r:(0.8*SC).toFixed(2),
-        fill:"var(--fg)","fill-opacity":".55"}));
-    }
+  /* the arcs. Near half only: carried all the way round they would close into a
+     ring, and a ring drawn on the floor under a tank reads as the tank's own
+     base rather than as something leaving it. */
+  [[0.31,.30],[0.38,.19],[0.45,.11]].forEach(([f,op])=>{
+    g.appendChild(el("polyline",{
+      points:pts(arcPts(ellipseAt(bath.x,bath.y,0,n.w*f),0,Math.PI,26)),
+      fill:"none",stroke:"var(--fg2)","stroke-width":(1*SC).toFixed(2),
+      "stroke-opacity":op.toFixed(2),"stroke-linecap":"round"}));
   });
 
-  /* the well the outset is a magnification of, ringed on the plate so the two
-     can be matched by eye. Near-left, which is the corner the outset hangs off */
-  const src=wells[(ROWS-2)*COLS+1];
-  cart.appendChild(el("ellipse",{cx:src.e.x.toFixed(2),cy:src.e.y.toFixed(2),
-    rx:(src.e.rx*1.6).toFixed(2),ry:(src.e.ry*1.6).toFixed(2),fill:"none",
-    stroke:"var(--fg)","stroke-width":(0.9*SC).toFixed(2),"stroke-opacity":".85"}));
+  /* ---- THE BATH ----------------------------------------------------------
+     Apparatus, so charcoal on every face like the rest of the bench. The water
+     in it is deliberately colourless: the only blue in this frame belongs to
+     what is inside the vial, and tinting the bath would hand the sample's
+     colour to the heat source. Two insets are what turn a block into a vessel
+     under this projection — the mouth, dark, and the surface sitting just
+     below the rim. */
+  paint(g,bath.x,bath.y,bath.w,bath.d,bath.h,SKIN.tile);
+  const IW=bath.w*0.82, ID=bath.d*0.74;
+  g.appendChild(el("polygon",{points:faces(bath.x,bath.y,IW,ID,bath.h).top,
+    fill:"var(--bg)"}));
+  /* the water sits on the SAME footprint as the mouth and lower down, never on
+     a smaller one: an inset that shrinks as it drops is a funnel, and the gap
+     between the two outlines is the only thing here that reads as wall */
+  g.appendChild(el("polygon",{points:faces(bath.x,bath.y,IW,ID,bath.h*0.58).top,
+    fill:"var(--fg)","fill-opacity":".10",stroke:"var(--stroke)",
+    "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".35"}));
 
-  /* ---- THE ICE ----------------------------------------------------------
-     Three faces of a box, rebuilt each frame at the height the ice has left.
-     Everything lying ON the top face — the snowflake and the rime around it —
-     is in one group that is translated down by the same amount, so the surface
-     stays welded to the slab instead of hanging over it. */
-  const iceG=el("g",{}); cart.appendChild(iceG);
-  const KEYS=["left","right","top"], OP=[".78",".84",".82"];
-  const f0=faces(n.x,n.y,n.w,n.d,n.h);
-  const iceF=KEYS.map((k,i)=>{
-    const e=el("polygon",{points:f0[k],fill:ICE,"fill-opacity":OP[i],
-      stroke:"var(--stroke)","stroke-width":(1.2*SC).toFixed(2),"stroke-opacity":".55"});
-    iceG.appendChild(e); return e;
-  });
+  /* ---- THE VIAL ----------------------------------------------------------
+     A skirted cryovial: straight wall, a small foot it can stand on, and a
+     screw cap, which is the one feature that tells it apart from every other
+     tube on this row. Every radius is a multiple of n.w and every height a
+     multiple of n.h, so the whole thing grows with the node. */
+  const ZS=n.h*0.16, ZB=n.h*1.55, ZT=n.h*1.82;
+  const BR=VR*0.66, IR=VR*0.86, CR=VR*1.18;
+  const rim  = ellipseAt(vx,vy,ZT,CR),
+        col  = ellipseAt(vx,vy,ZB,CR),
+        sho  = ellipseAt(vx,vy,ZB,VR),
+        shl  = ellipseAt(vx,vy,ZS,VR),
+        shIn = ellipseAt(vx,vy,ZS,IR),
+        base = ellipseAt(vx,vy,0,BR),
+        basIn= ellipseAt(vx,vy,0,BR*0.86);
+  const silh=pts([[sho.x+sho.rx,sho.y],[shl.x+shl.rx,shl.y],
+    ...arcPts(base,0,Math.PI,10),[shl.x-shl.rx,shl.y],[sho.x-sho.rx,sho.y],
+    ...arcPts(sho,Math.PI,2*Math.PI,18)]);
+  g.appendChild(el("polygon",{points:silh,fill:"var(--t-right)","fill-opacity":".9"}));
 
-  const surf=el("g",{transform:"translate(0,0)"}); iceG.appendChild(surf);
-  /* the snowflake is built in world x/y and projected onto the top face, so it
-     lies on the ice and foreshortens with it rather than being a screen-space
-     star pasted over the plate */
-  const FR=Math.min(n.w,n.d)*0.30;
-  const at2=(cx,cy,a,rad)=>P(cx+Math.cos(a)*rad, cy+Math.sin(a)*rad, n.h);
-  const arm=(p,q,wid,op)=>surf.appendChild(el("line",{x1:p[0].toFixed(1),y1:p[1].toFixed(1),
-    x2:q[0].toFixed(1),y2:q[1].toFixed(1),stroke:"var(--fg)","stroke-width":wid,
-    "stroke-opacity":op,"stroke-linecap":"round"}));
-  for(let i=0;i<6;i++){
-    const a=i*Math.PI/3;
-    arm(P(n.x,n.y,n.h), at2(n.x,n.y,a,FR), (2.1*SC).toFixed(2), ".85");
-    [[0.44,0.30],[0.72,0.21]].forEach(([f,len])=>{
-      const bx=n.x+Math.cos(a)*FR*f, by=n.y+Math.sin(a)*FR*f;
-      [0.62,-0.62].forEach(sw=>arm(P(bx,by,n.h), at2(bx,by,a+sw,FR*len),
-        (1.4*SC).toFixed(2), ".72"));
-    });
-  }
-  const hex=[];
-  for(let i=0;i<6;i++) hex.push(at2(n.x,n.y,i*Math.PI/3,FR*0.15));
-  surf.appendChild(el("polygon",{points:pts(hex),fill:"var(--fg)","fill-opacity":".7"}));
+  /* THE CONTENTS ARE THE ONLY COLOUR IN THE FRAME, and they are frozen: one
+     solid body against the wall and one flat disc on top of it, drawn once.
+     The blue is the coldest on the map and appears nowhere else on this row —
+     every later station's sample is warmer than this one. */
+  const surf=ellipseAt(vx,vy,ZS+(ZB-ZS)*0.50,IR);
+  g.appendChild(el("polygon",{points:pts([...arcPts(surf,2*Math.PI,Math.PI,14),
+    [shIn.x-shIn.rx,shIn.y],...arcPts(basIn,Math.PI,0,10),[shIn.x+shIn.rx,shIn.y]]),
+    fill:"var(--c-left)","fill-opacity":".92"}));
+  g.appendChild(el("ellipse",{cx:surf.x.toFixed(1),cy:surf.y.toFixed(1),
+    rx:surf.rx.toFixed(2),ry:surf.ry.toFixed(2),fill:"var(--c-top)",
+    "fill-opacity":".95"}));
 
-  /* rime around the flake, kept clear of it so the two never overlap. It goes
-     outermost first: an edge warms before the middle of a slab does. */
-  const rime=[];
-  for(let i=0;i<12;i++){
-    let u=0, v=0, tries=0;
-    do{ u=(r()*1.76-0.88)*n.w/2; v=(r()*1.76-0.88)*n.d/2; }
-    while(Math.hypot(u,v)<FR*1.2 && ++tries<8);
-    const R=Math.min(n.w,n.d)*(0.035+r()*0.03);
-    let d="";
-    for(let a=0;a<3;a++){
-      const ang=a*Math.PI/3+r()*0.4;
-      const p0=P(n.x+u-Math.cos(ang)*R, n.y+v-Math.sin(ang)*R, n.h);
-      const p1=P(n.x+u+Math.cos(ang)*R, n.y+v+Math.sin(ang)*R, n.h);
-      d+=`M ${p0[0].toFixed(1)} ${p0[1].toFixed(1)} L ${p1[0].toFixed(1)} ${p1[1].toFixed(1)} `;
-    }
-    const node=el("path",{d,fill:"none",stroke:"var(--fg)","stroke-width":(1.1*SC).toFixed(2),
-      "stroke-opacity":".55","stroke-linecap":"round"});
-    surf.appendChild(node);
-    rime.push({node, far:Math.hypot(u/(n.w/2), v/(n.d/2))});
-  }
-  rime.sort((a,b)=>b.far-a.far);
+  g.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
+    "stroke-width":(1*SC).toFixed(2),"stroke-opacity":".8"}));
 
-  /* ---- THE FREEZER ------------------------------------------------------
-     Two faces, and the third is a doorway with a frame round it. It is drawn
-     AFTER the plate so that the wall occludes whatever is inside: the plate
-     spends its whole journey behind this group and is only brought forward
-     once it is parked on the bench. */
-  const shellG=el("g",{}); g.appendChild(shellG);
-  const ff=faces(frz.x,frz.y,frz.w,frz.d,frz.h);
-  ["left","top"].forEach(k=>shellG.appendChild(el("polygon",{points:ff[k],
-    fill:SKIN.cold[k],stroke:"var(--stroke)","stroke-width":(1.3*SC).toFixed(2)})));
-  const F=(a,b,c,d)=>shellG.appendChild(el("polygon",
-    {points:pts([D(a,d),D(b,d),D(b,c),D(a,c)]),fill:SKIN.cold.right,
-     stroke:"var(--stroke)","stroke-width":(1*SC).toFixed(2),"stroke-opacity":".8"}));
-  F(frz.y-frz.d/2, frz.y+frz.d/2, 0,   az0);
-  F(frz.y-frz.d/2, frz.y+frz.d/2, az1, frz.h);
-  F(frz.y-frz.d/2, ay0,           az0, az1);
-  F(ay1,           frz.y+frz.d/2, az0, az1);
-  /* a flake on the lid rather than on the door, so the box still reads cold
-     over the two thirds of the loop where the door is standing open */
-  const LR=Math.min(frz.w,frz.d)*0.30, ctr=P(frz.x,frz.y,frz.h);
-  for(let i=0;i<6;i++){
-    const a=i*Math.PI/3, tip=P(frz.x+Math.cos(a)*LR, frz.y+Math.sin(a)*LR, frz.h);
-    shellG.appendChild(el("line",{x1:ctr[0].toFixed(1),y1:ctr[1].toFixed(1),
-      x2:tip[0].toFixed(1),y2:tip[1].toFixed(1),stroke:"var(--fg)",
-      "stroke-width":(1.3*SC).toFixed(2),"stroke-opacity":".5","stroke-linecap":"round"}));
+  /* FROST, AND IT IS ON THE OUTSIDE OF THE WALL — so it goes on after the
+     outline rather than under it. Densest at the foot and thinning upward,
+     which is the gradient a tube out of a -80 actually carries, and it is the
+     only mark in the frame that says the material arrived cold. The bias is in
+     where the ticks are, not in how dark they are: a fading scatter would read
+     as the frost going, and nothing here is going yet. */
+  for(let i=0;i<20;i++){
+    /* never below ZS: under the shoulder the wall is already tapering in to the
+       foot, and a tick at full radius down there hangs off the silhouette as a
+       leg rather than sitting on the glass */
+    const z=ZS+(ZB-ZS)*Math.pow(r(),2.6);
+    const a=0.10*Math.PI+r()*0.80*Math.PI;
+    const e=ellipseAt(vx,vy,z,VR*0.94), L=VR*S*0.18;
+    const px=e.x+e.rx*Math.cos(a), py=e.y+e.ry*Math.sin(a);
+    g.appendChild(el("line",{x1:px.toFixed(1),y1:(py-L).toFixed(1),
+      x2:px.toFixed(1),y2:(py+L).toFixed(1),stroke:"var(--fg)",
+      "stroke-width":(1*SC).toFixed(2),"stroke-opacity":".5","stroke-linecap":"round"}));
   }
 
-  /* the door slides back into the frame rather than swinging: a swing wants a
-     hinge and a thickness, and at this size both read as a smear */
-  const doorG=el("g",{}); g.appendChild(doorG);
-  const door=el("polygon",{points:pts([D(ay0,az1),D(ay1,az1),D(ay1,az0),D(ay0,az0)]),
-    fill:SKIN.cold.right,stroke:"var(--stroke)","stroke-width":(1.2*SC).toFixed(2),
-    "stroke-opacity":".9"});
-  doorG.appendChild(door);
-  const hy=ay1-frz.d*0.07;
-  const h0=D(hy,frz.h*0.34), h1=D(hy,frz.h*0.62);
-  const handle=el("line",{x1:h0[0].toFixed(1),y1:h0[1].toFixed(1),
-    x2:h1[0].toFixed(1),y2:h1[1].toFixed(1),stroke:"var(--stroke)",
-    "stroke-width":(2.4*SC).toFixed(2),"stroke-opacity":"0","stroke-linecap":"round"});
-  doorG.appendChild(handle);
+  /* the cap, drawn last because it is the near top of the object */
+  g.appendChild(el("polygon",{points:pts([...arcPts(rim,2*Math.PI,Math.PI,14),
+    ...arcPts(col,Math.PI,0,12)]),fill:"var(--t-right)",stroke:"var(--stroke)",
+    "stroke-width":(1*SC).toFixed(2),"stroke-opacity":".8"}));
+  g.appendChild(el("ellipse",{cx:rim.x.toFixed(1),cy:rim.y.toFixed(1),
+    rx:rim.rx.toFixed(2),ry:rim.ry.toFixed(2),fill:"var(--t-top)",
+    stroke:"var(--stroke)","stroke-width":(1*SC).toFixed(2),"stroke-opacity":".85"}));
+  /* two ridges, which is all the knurling that survives at this size */
+  [0.34,0.66].forEach(f=>g.appendChild(el("polyline",{
+    points:pts(arcPts(ellipseAt(vx,vy,ZB+(ZT-ZB)*f,CR),0,Math.PI,12)),fill:"none",
+    stroke:"var(--stroke)","stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".45"})));
 
-  /* ---- THE OUTSET, and it is drawn over the ice ------------------------
-     One well, magnified, hanging off the near-left ground where nothing else
-     on this row goes — the idiom the rest of the map uses for a thing drawn
-     larger than life, two dashed leaders and no track. It sits on top of the
-     ice rather than under it because it is not on the plate: it is a view of
-     what is happening inside one well while the slab above is still there. */
-  /* far enough out that the circle clears the landmark's own plinth, which
-     runs 0.55 past the footprint on every side */
-  /* AND IT IS A VIEW OF THE PLATE ON THE BENCH. Its leaders point at a well
-     that is only at those coordinates while the plate is parked there, so the
-     circle and both leaders live in one group that is faded out for as long as
-     the plate is in the freezer or on its way. */
-  const outG=el("g",{opacity:"0"}); g.appendChild(outG);
-  const KR=n.w*S*0.30, [KX,KY]=P(n.x-n.w*0.62, n.y+n.d*1.45, n.h*0.75);
-  [[KR*0.78,-KR*0.62],[KR*0.78,KR*0.62]].forEach(p=>outG.appendChild(el("line",{
-    x1:(KX+p[0]).toFixed(1),y1:(KY+p[1]).toFixed(1),
-    x2:src.e.x.toFixed(1),y2:src.e.y.toFixed(1),stroke:"var(--fg2)",
-    /* the dashes carry the whole "this circle is that well" claim, and at the
-       old hairline width they dropped out of the plate's own grid of strokes */
-    "stroke-width":(1.3*SC).toFixed(2),"stroke-opacity":".22","stroke-dasharray":"3 3"})));
-
-  const out=el("g",{transform:`translate(${KX.toFixed(1)},${KY.toFixed(1)})`});
-  outG.appendChild(out);
-  out.appendChild(el("circle",{cx:"0",cy:"0",r:KR.toFixed(1),fill:"var(--bg)",
-    "fill-opacity":".8",stroke:"var(--stroke)","stroke-width":(1.1*SC).toFixed(2),
-    "stroke-opacity":".6"}));
-  /* the medium wears the source well's own band, so the outset cannot drift
-     into being a picture of some other well */
-  out.appendChild(el("circle",{cx:"0",cy:"0",r:(KR*0.93).toFixed(1),
-    fill:src.band.fill,"fill-opacity":src.band.op}));
-  out.appendChild(el("circle",{cx:"0",cy:"0",r:(KR*0.46).toFixed(1),fill:"var(--fg)",
-    "fill-opacity":".12",stroke:"var(--fg)","stroke-width":(1.5*SC).toFixed(2),
-    "stroke-opacity":".8"}));
-  out.appendChild(el("circle",{cx:(-KR*0.11).toFixed(1),cy:(KR*0.07).toFixed(1),
-    r:(KR*0.17).toFixed(1),fill:"var(--fg)","fill-opacity":".3"}));
-  for(let i=0;i<7;i++){
-    const a=r()*6.283, rad=Math.sqrt(r())*KR*0.34;
-    out.appendChild(el("circle",{cx:(Math.cos(a)*rad).toFixed(1),cy:(Math.sin(a)*rad).toFixed(1),
-      r:(KR*0.035).toFixed(1),fill:"var(--fg)","fill-opacity":".45"}));
-  }
-  const coat=el("circle",{cx:"0",cy:"0",r:(KR*0.59).toFixed(1),fill:ICE,
-    "fill-opacity":".95",stroke:"var(--fg)","stroke-width":(0.8*SC).toFixed(2),
-    "stroke-opacity":".35"});
-  out.appendChild(coat);
-
-  /* ---- THE SCHEDULE ----------------------------------------------------
-     Shut, out of the freezer, the door shuts behind it, the slab goes, the
-     plate stands clear — and that is the end of it. Nothing travels back. The
-     coat on the magnified cell rides the same melt value as the slab, so the
-     two blues empty together: the outset is a magnification of this plate, not
-     a second object with a thaw of its own.
-
-     The ice is at full height for everything before the melt. A plate that
-     came out of a freezer already half thawed would be saying the thaw
-     happened in the box, and it does not — it happens on the bench.
-
-     CLEAR is the dwell on the finished plate, and it ends in a short fade
-     because the loop still has to get back to a plate that is inside a shut
-     freezer. Fading is the only way over that seam that does not either snap
-     the plate across the bench in one frame or re-stage the return trip; the
-     door is already shut by then, so the freezer never moves at the join. */
-  const SHUT=0.9, OPEN=0.6, OUT=1.6, DOOR=0.7, MELT=2.8, CLEAR=2.6, FADE=0.7;
-  const T_OPEN=SHUT, T_OUT=T_OPEN+OPEN, T_BENCH=T_OUT+OUT, T_MELT=T_BENCH+DOOR,
-        T_CLR=T_MELT+MELT, CYCLE=T_CLR+CLEAR, T_FADE=CYCLE-FADE;
-  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
-  const c01=x=>Math.max(0,Math.min(1,x));
-  /* the plate is small enough at the far end to sit in the doorway; the wall
-     takes whatever overhangs it, which is what a wall is for here */
-  const pc=P(plate.x,plate.y,th*0.5), inside=P(frz.x,frz.y,frz.h*0.45);
-  const SC_END=(ay1-ay0)*0.5/n.d;
-  let t=0, stowed=true;                 // built inside the box, behind the shell
-  const run=(dt)=>{
-    t=(t+dt)%CYCLE;
-    /* each part reads the clock for itself: the door, the travel, the ice and
-       the outset overlap at the edges, and one if-chain hid that */
-    const span=(a,b)=>c01((t-a)/(b-a));
-    let ice=1, cv=1, stow=1, dq=1;      // stow: 0 on the bench, 1 in the freezer
-    if(t<T_OPEN){ /* shut, and the plate is in there */ }
-    else if(t<T_OUT)   { dq=1-ease(span(T_OPEN,T_OUT)); }
-    else if(t<T_BENCH) { dq=0; stow=1-ease(span(T_OUT,T_BENCH)); }
-    /* the door closes on an empty freezer while the plate is still frozen, so
-       by the melt the box is shut and nothing is waiting to be given back */
-    else { stow=0; dq=t<T_MELT ? ease(span(T_BENCH,T_MELT)) : 1; }
-
-    if(t>=T_MELT && t<T_CLR){
-      const u=(t-T_MELT)/MELT;
-      ice=1-ease(c01(u/0.72));
-      cv =ice;                          // one thaw, so one number drives both
-    }else if(t>=T_CLR){ ice=0; cv=0; }
-
-    const z=th+(n.h-th)*ice, f=faces(n.x,n.y,n.w,n.d,z);
-    iceF.forEach((e,i)=>e.setAttribute("points",f[KEYS[i]]));
-    surf.setAttribute("transform",`translate(0,${((n.h-z)*S*CZ).toFixed(2)})`);
-    iceG.setAttribute("opacity",c01(ice*1.3).toFixed(2));
-    /* the flake is on the surface, so it clears with the surface rather than
-       after it — the last frame of the melt has no white left in it */
-    surf.setAttribute("opacity",c01(ice*1.5).toFixed(2));
-    const gone=(1-ice)*rime.length;
-    rime.forEach((c,i)=>c.node.setAttribute("stroke-opacity",(0.55*c01(1-(gone-i))).toFixed(2)));
-
-    coat.setAttribute("r",(KR*(0.50+0.09*cv)).toFixed(1));
-    coat.setAttribute("fill-opacity",(0.95*cv).toFixed(2));
-    coat.setAttribute("stroke-opacity",(0.35*cv).toFixed(2));
-
-    /* the travel. pc maps to the doorway and the whole cart scales about the
-       origin with it, so the ice, the plastic and the samples stay one object */
-    const sc=1-(1-SC_END)*stow, vis=1-span(T_FADE,CYCLE);
-    cart.setAttribute("opacity",vis.toFixed(2));
-    cart.setAttribute("transform",
-      `translate(${(pc[0]+(inside[0]-pc[0])*stow-pc[0]*sc).toFixed(2)},`+
-      `${(pc[1]+(inside[1]-pc[1])*stow-pc[1]*sc).toFixed(2)}) scale(${sc.toFixed(3)})`);
-    /* behind the shell for the whole journey and in front of it only when
-       parked: reparenting is the only depth sort this renderer has */
-    const away=stow>0.001;
-    if(away!==stowed){ stowed=away; g.insertBefore(cart, away?shellG:outG); }
-
-    const edge=ay0+(ay1-ay0)*dq;
-    door.setAttribute("points",pts([D(ay0,az1),D(edge,az1),D(edge,az0),D(ay0,az0)]));
-    door.setAttribute("fill-opacity",(0.95*Math.min(1,dq*4)).toFixed(2));
-    door.setAttribute("stroke-opacity",(0.9*Math.min(1,dq*4)).toFixed(2));
-    handle.setAttribute("stroke-opacity",(dq>0.85?0.9:0).toFixed(2));
-    /* the outset arrives with the plate and goes out with it: its leaders point
-       at a well that is only there while the plate is parked on the bench */
-    outG.setAttribute("opacity",
-      c01(Math.min(span(T_OUT+OUT*0.55,T_BENCH), vis)).toFixed(2));
-  };
-  run(0);
-  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+  /* ---- THE ONE NUMBER ----------------------------------------------------
+     Laid on the ground plane along the flow axis: +x on this row projects to
+     30 degrees, so the type runs down the lane rather than across it. It sits
+     in the gap between the two objects, which is the only part of the
+     footprint with nothing standing on it and nothing radiating through it. */
+  /* the stack is B6's, repeated rather than hoisted: every map's scripts share
+     one global scope, and a top-level MONO here collides with the one
+     culls-draw.js already declares. */
+  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
+  const FS=n.w*4.2;                          // ~10.6px at the authored width
+  const [tx,ty]=P(n.x-n.w*0.12, n.y+n.d*0.48, 0);
+  const t=el("text",{x:tx.toFixed(1),y:ty.toFixed(1),
+    transform:`rotate(30,${tx.toFixed(1)},${ty.toFixed(1)})`,
+    "font-family":MONO,"font-size":FS.toFixed(2),
+    "letter-spacing":(FS*0.08).toFixed(2),fill:"var(--fg2)","font-weight":"500"});
+  t.textContent="37 °C"; g.appendChild(t);
 }
-DRAW.thawplate = drawThawPlate;
+DRAW.thawvial = drawThawVial;
 
 
 /* ------------------------------------------------------------------
