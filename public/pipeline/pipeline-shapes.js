@@ -2399,65 +2399,6 @@ DRAW.thawvial = drawThawVial;
 
 
 /* ------------------------------------------------------------------
-   A QUARTER TURN ABOUT THE MAP'S X AXIS, WORN BY THE PROJECTION.
-
-   Hand it a pivot in world units and it gives back the three primitives a
-   shape draws through — P, faces and plateGrid — reading the map's own
-   projection in a frame tipped a quarter turn about x, top toward the viewer.
-   A shape that takes its primitives from here is authored exactly as it would
-   be standing up, and comes out lying down: not one coordinate in it changes,
-   because what moved is the frame and not the drawing.
-
-   IT CANNOT BE AN SVG TRANSFORM, AND THAT IS THE WHOLE REASON THIS EXISTS. A
-   rotate() on a wrapper turns the picture about the axis pointing out of the
-   page — the image spins, every face keeps facing the way it faced, and a box
-   that was standing up is still standing up, just tilted. Turning the object
-   about a world axis makes the depth of a box into its height, and the page
-   has no depth left to work that out from once a point is projected. So the
-   turn has to happen before the projection, which means the projection is
-   where it goes.
-
-   The three are copies of the originals rather than the originals given a
-   parameter, because those close over the map's projection in pipeline-iso.js
-   and that file is not this request's to change. Keep them in step by hand if
-   iso's ever move.
-   ------------------------------------------------------------------ */
-function turnX(py,pz){
-  /* depth becomes height and height becomes depth, about (py,pz) on the x axis
-     through it. Feed it world units exactly as P takes them. */
-  const T=(x,y,z)=>P(x, py+((z||0)-pz), pz-(y-py));
-  const F=(x,y,w,d,h)=>{
-    const hw=w/2,hd=d/2;
-    const c=[[x-hw,y-hd],[x+hw,y-hd],[x+hw,y+hd],[x-hw,y+hd]];
-    return {
-      top:pts(c.map(p=>T(p[0],p[1],h))),
-      right:pts([T(c[1][0],c[1][1],h),T(c[2][0],c[2][1],h),T(c[2][0],c[2][1],0),T(c[1][0],c[1][1],0)]),
-      left:pts([T(c[3][0],c[3][1],h),T(c[2][0],c[2][1],h),T(c[2][0],c[2][1],0),T(c[3][0],c[3][1],0)])
-    };
-  };
-  /* A WELL IS A CIRCLE LYING ON THE PLATE, AND A TURNED PLATE DRAWS IT AS A
-     DIFFERENT ELLIPSE. ellipseAt() knows the one the untouched projection
-     makes and states it as two constants; take the same two from the images of
-     the plate's own in-plane directions instead and the ellipse follows the
-     frame wherever it is put — and comes out at ellipseAt()'s own numbers when
-     the frame has not been turned at all. */
-  const eAt=(cx,cy,z,R)=>{
-    const [x,y]=T(cx,cy,z), u=T(cx+1,cy,z), v=T(cx,cy+1,z);
-    return {x,y,rx:R*Math.hypot(u[0]-x,v[0]-x),ry:R*Math.hypot(u[1]-y,v[1]-y)};
-  };
-  const grid=(n,th,cols,rows)=>{
-    const hw=n.w/2, hd=n.d/2, sx=n.w/cols, sy=n.d/rows;
-    const R=Math.min(sx,sy)*0.38, out=[];
-    for(let j=0;j<rows;j++)for(let i=0;i<cols;i++)
-      out.push({i,j,band:PLATE_BANDS[Math.floor(i*PLATE_BANDS.length/cols)],
-                e:eAt(n.x-hw+(i+0.5)*sx, n.y-hd+(j+0.5)*sy, th, R)});
-    return out;
-  };
-  return {P:T, faces:F, plateGrid:grid};
-}
-
-
-/* ------------------------------------------------------------------
    B1 · THE THAW, AS THE -80 GIVING SOMETHING BACK.
    Asked for from this map's own "Edit visual" button, and it replaces the vial
    in the water bath on B1 rather than standing beside it — one station wears
@@ -2504,9 +2445,16 @@ function turnX(py,pz){
    re-forming on material that has been thawed would be a claim about the
    sample; a cut is the map saying "this is what happens here".
 
-   THE WHOLE FRAME IS TIPPED A QUARTER TURN ABOUT THE MAP'S X AXIS — see the
-   three primitives taken at the top of the body. Nothing below it knows about
-   that, and nothing below it has to.
+   THE FREEZER STANDS UP, AND IT HAS BEEN ASKED FOR BOTH WAYS. It was spun by
+   a wrapper rotate() once and tipped a quarter turn about the map's x axis
+   once, and the page has now asked for the box back on its feet: snowflakes on
+   the top and right faces, the door on the left face, and that door going
+   straight up the page. A turned frame cannot give the last of those — tip the
+   box and the door's travel is the image of a world-height axis, which points
+   into the picture rather than up it, so a shutter reads as sliding away
+   instead of rising. So the drawing is back on the map's own projection, with
+   nothing between it and P: every dimension below is the one it was always
+   authored with, because the two turns only ever moved the frame.
 
    Requires plateGrid() from the plate set for the well positions, so the wells
    on this plate are placed by the same code as every other plate on the site.
@@ -2522,25 +2470,6 @@ function drawThawPlate(g,n){
   const COLS=n.cols||12, ROWS=n.rows||8;
   const clamp=x=>x<0?0:x>1?1:x;
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
-
-  /* THE BOX TURNS; THE PICTURE DOES NOT SPIN. Asked for from the page, twice.
-     The first answer put a rotate() on a wrapper, which turns the image about
-     the axis coming out of the page and leaves every face of every box facing
-     the way it faced — the station stayed standing and went over at an angle.
-     What was wanted is a quarter turn about the map's own x axis: the freezer's
-     depth becomes its height and it lies down, top toward the viewer. That has
-     to happen before a point is projected, so it is worn by the projection —
-     these three are the map's own primitives read in the turned frame, and
-     shadowing the names is deliberate. Every P, faces and plateGrid below is
-     the call it always was, at the coordinates it was always authored with, and
-     no call site can be missed by accident.
-
-     THE AXIS RUNS ALONG THE FRONT EDGE OF THE FOOTPRINT, at floor level, so
-     the frame comes down onto the plinth instead of hanging over it: a box
-     tipped about a point in mid-air lands in mid-air. Half the node's own depth
-     in front of its centre, so the axis is still that edge if the node is
-     resized. */
-  const {P,faces,plateGrid}=turnX(n.y, n.d*0.5);
 
   /* WHERE THE TWO OBJECTS STAND. The freezer sits back and downstream, the
      plate forward and upstream of it, so the travel runs out of the door and
