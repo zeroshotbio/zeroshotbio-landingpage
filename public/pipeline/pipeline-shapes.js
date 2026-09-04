@@ -2120,24 +2120,34 @@ DRAW.fixation = drawFixation;
 
 
 /* ------------------------------------------------------------------
-   B1 · THE THAW — a vial, a bath, and nothing moving.
+   B1 · THE THAW — a vial, a bath, and the coldest corner of the map.
 
-   THIS STEP HAS NO ENERGY AND MUST NOT BE DRAWN AS IF IT HAD ANY. The material
-   in the tube was formaldehyde-fixed and permeabilised in a prior protocol: it
-   is cross-linked, chemically locked and inert, and warming it does not restart
-   it. Every station after this one has something happening inside the vessel —
-   a strand extending, a barcode landing, a pool being split — so the only way
-   this one can read as the quiet before that is to hold absolutely still. There
-   is no ticker in this shape and there must not be one. A swirl, a rising
-   meniscus or a glow would each say the same false thing.
+   THIS STEP STILL HAS NO ENERGY OF ITS OWN AND MUST NOT BE DRAWN AS IF IT HAD
+   ANY. The material in the tube was formaldehyde-fixed and permeabilised in a
+   prior protocol: it is cross-linked, chemically locked and inert, and warming
+   it does not restart it. Every station after this one has something happening
+   inside the vessel — a strand extending, a barcode landing, a pool being
+   split — and this one is the quiet before that.
 
-   WHAT CARRIES THE STEP INSTEAD IS THE HEAT, AND IT IS OUTSIDE THE TUBE. Three
-   hairline arcs stand on the ground around the bath at falling opacity — the
-   expansion is in the radii, not in a clock. They are transfer across a wall:
-   the bath is what is at 37 °C, not the sample. So they never touch the vial
-   and they never enter it, and that distinction is the whole content of the
-   drawing — warmth arrives from outside, and the biology does not answer it
-   yet.
+   WHAT MOVES HERE IS THEREFORE THE COLD LEAVING, NOT THE BIOLOGY WAKING. The
+   frost on the outside of the glass dissolves upward one tick at a time, and
+   that is the only decisive gesture in the frame: it is a state the tube
+   brought with it from the -80 being spent, and spending it takes nothing from
+   the sample. Meanwhile the blue inside does almost nothing — a luminance
+   drift of a few percent over the whole loop, no swirl, no rising meniscus, no
+   flow. Stirring, not moving. If a later edit gives the contents a direction,
+   a current or a glow, it has turned the quietest station on the row into
+   another reaction and the reading is gone.
+
+   THE HEAT IS STILL OUTSIDE THE TUBE. Three hairline arcs swell out of the
+   bath and fade as they grow — transfer across a wall, where the bath is what
+   is at 37 °C and the sample is not. So they never touch the vial and they
+   never enter it, and that distinction is the whole content of the drawing.
+
+   The loop closes by re-frosting, which is not a claim that the sample refreezes
+   — it is how a station on a map that runs forever says "this is what happens
+   here" rather than "this happened once". Every period below divides the 9.4 s
+   cycle exactly so the seam is invisible.
 
    The frame is deliberately close to empty. The manual also has a haemocytometer
    count here and the record says so, but a second object and a second number
@@ -2179,13 +2189,20 @@ function drawThawVial(g,n){
 
   /* the arcs. Near half only: carried all the way round they would close into a
      ring, and a ring drawn on the floor under a tank reads as the tank's own
-     base rather than as something leaving it. */
-  [[0.31,.30],[0.38,.19],[0.45,.11]].forEach(([f,op])=>{
-    g.appendChild(el("polyline",{
-      points:pts(arcPts(ellipseAt(bath.x,bath.y,0,n.w*f),0,Math.PI,26)),
+     base rather than as something leaving it.
+
+     They travel now rather than standing at three fixed radii. The outer radius
+     is the same one the static set stopped at, because that clearance is what
+     keeps warmth from ever reaching the vial — an arc allowed to grow past it
+     would cross the gap and say the sample is being heated directly. Each is
+     born at its own point in the sweep, so the three read as a train leaving a
+     source rather than as one line blinking. */
+  const A_IN=n.w*0.20, A_OUT=n.w*0.46, ARCS=3;
+  const arcs=[0,1,2].map(i=>({phase:i/ARCS,
+    node:g.appendChild(el("polyline",{
+      points:pts(arcPts(ellipseAt(bath.x,bath.y,0,A_IN+(A_OUT-A_IN)*(i/ARCS)),0,Math.PI,26)),
       fill:"none",stroke:"var(--fg2)","stroke-width":(1*SC).toFixed(2),
-      "stroke-opacity":op.toFixed(2),"stroke-linecap":"round"}));
-  });
+      "stroke-opacity":"0","stroke-linecap":"round"}))}));
 
   /* ---- THE BATH ----------------------------------------------------------
      Apparatus, so charcoal on every face like the rest of the bench. The water
@@ -2224,17 +2241,26 @@ function drawThawVial(g,n){
     ...arcPts(sho,Math.PI,2*Math.PI,18)]);
   g.appendChild(el("polygon",{points:silh,fill:"var(--t-right)","fill-opacity":".9"}));
 
-  /* THE CONTENTS ARE THE ONLY COLOUR IN THE FRAME, and they are frozen: one
-     solid body against the wall and one flat disc on top of it, drawn once.
-     The blue is the coldest on the map and appears nowhere else on this row —
-     every later station's sample is warmer than this one. */
+  /* THE CONTENTS ARE THE ONLY COLOUR IN THE FRAME, and this has to be the most
+     desaturated blue in the piece — every later station's sample is warmer than
+     this one, and if the coldest reads as the most saturated the row's whole
+     temperature gradient runs backwards. There is no washed-out blue custom
+     property to reach for and a hex is not allowed in a shape, so the blue is
+     desaturated the way a real thin sample is: the same --c-* as everywhere
+     else, carried at low fill-opacity over the charcoal glass already painted
+     underneath, which pulls it toward neutral without inventing a colour.
+
+     The body and the disc are drawn once and then only breathed on — the
+     ticker moves nothing here but opacity, so the level, the meniscus and the
+     silhouette are all as fixed as they were when this step held perfectly
+     still. */
   const surf=ellipseAt(vx,vy,ZS+(ZB-ZS)*0.50,IR);
-  g.appendChild(el("polygon",{points:pts([...arcPts(surf,2*Math.PI,Math.PI,14),
+  const bodyFill=g.appendChild(el("polygon",{points:pts([...arcPts(surf,2*Math.PI,Math.PI,14),
     [shIn.x-shIn.rx,shIn.y],...arcPts(basIn,Math.PI,0,10),[shIn.x+shIn.rx,shIn.y]]),
-    fill:"var(--c-left)","fill-opacity":".92"}));
-  g.appendChild(el("ellipse",{cx:surf.x.toFixed(1),cy:surf.y.toFixed(1),
+    fill:"var(--c-left)","fill-opacity":".60"}));
+  const surfFill=g.appendChild(el("ellipse",{cx:surf.x.toFixed(1),cy:surf.y.toFixed(1),
     rx:surf.rx.toFixed(2),ry:surf.ry.toFixed(2),fill:"var(--c-top)",
-    "fill-opacity":".95"}));
+    "fill-opacity":".66"}));
 
   g.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
     "stroke-width":(1*SC).toFixed(2),"stroke-opacity":".8"}));
@@ -2242,21 +2268,36 @@ function drawThawVial(g,n){
   /* FROST, AND IT IS ON THE OUTSIDE OF THE WALL — so it goes on after the
      outline rather than under it. Densest at the foot and thinning upward,
      which is the gradient a tube out of a -80 actually carries, and it is the
-     only mark in the frame that says the material arrived cold. The bias is in
-     where the ticks are, not in how dark they are: a fading scatter would read
-     as the frost going, and nothing here is going yet. */
-  for(let i=0;i<20;i++){
+     only mark in the frame that says the material arrived cold.
+
+     Every tick is drawn at full opacity here and at its final place. The melt
+     is a fade in the ticker, never a move: frost sublimes off the glass where
+     it sits, and a tick that slid would read as a droplet running.
+
+     Sorted by height so the melt front can walk up the wall in order. The base
+     is where the ticks are dense, so most of them go in the first part of the
+     sweep and the front slows as it thins out near the shoulder — which is the
+     right way round, and comes free from spacing the departures evenly rather
+     than spacing the heights evenly.
+
+     Colour is var(--fg) rather than anything literally white, because frost is
+     a mark like every other mark on the map and has to invert with the theme;
+     on the dark theme this reads as the near-white the request asks for. */
+  const frost=[];
+  for(let i=0;i<34;i++){
     /* never below ZS: under the shoulder the wall is already tapering in to the
        foot, and a tick at full radius down there hangs off the silhouette as a
        leg rather than sitting on the glass */
-    const z=ZS+(ZB-ZS)*Math.pow(r(),2.6);
-    const a=0.10*Math.PI+r()*0.80*Math.PI;
-    const e=ellipseAt(vx,vy,z,VR*0.94), L=VR*S*0.18;
-    const px=e.x+e.rx*Math.cos(a), py=e.y+e.ry*Math.sin(a);
-    g.appendChild(el("line",{x1:px.toFixed(1),y1:(py-L).toFixed(1),
+    frost.push({z:ZS+(ZB-ZS)*Math.pow(r(),2.6), a:0.10*Math.PI+r()*0.80*Math.PI});
+  }
+  frost.sort((p,q)=>p.z-q.z);
+  frost.forEach(f=>{
+    const e=ellipseAt(vx,vy,f.z,VR*0.94), L=VR*S*0.18;
+    const px=e.x+e.rx*Math.cos(f.a), py=e.y+e.ry*Math.sin(f.a);
+    f.node=g.appendChild(el("line",{x1:px.toFixed(1),y1:(py-L).toFixed(1),
       x2:px.toFixed(1),y2:(py+L).toFixed(1),stroke:"var(--fg)",
       "stroke-width":(1*SC).toFixed(2),"stroke-opacity":".5","stroke-linecap":"round"}));
-  }
+  });
 
   /* the cap, drawn last because it is the near top of the object */
   g.appendChild(el("polygon",{points:pts([...arcPts(rim,2*Math.PI,Math.PI,14),
@@ -2286,6 +2327,66 @@ function drawThawVial(g,n){
     "font-family":MONO,"font-size":FS.toFixed(2),
     "letter-spacing":(FS*0.08).toFixed(2),fill:"var(--fg2)","font-weight":"500"});
   t.textContent="37 °C"; g.appendChild(t);
+
+  /* ---- THE CLOCK ---------------------------------------------------------
+     9.4 s end to end, and every span below is either measured in that or
+     divides it, so the loop closes on itself with no seam to notice.
+
+     STEP is the request's own 40 ms: the ticks leave one at a time, and the
+     interval is what makes it read as an exhalation rather than as a dissolve
+     filter over the whole scatter. FADE overlaps them slightly so the wall is
+     never a row of hard on/off switches.
+
+     The bare stretch is what is left after the other three, not a number of its
+     own — it is the part of the loop where nothing happens except the drift and
+     the arcs, and it has to be the longest span here or the station stops being
+     the quiet one. The re-frost is a plain fade with no order to it, deliberately
+     unlike the melt: the melt is the gesture, and a mirror-image return would
+     make the loop a two-part animation instead of one event and a reset. */
+  const CYCLE=9.4, STEP=0.04, FADE=0.28;
+  const HOLD=1.7, MELT=(frost.length-1)*STEP+FADE, BACK=1.5;
+  const BARE=CYCLE-HOLD-MELT-BACK;
+  const ARCP=CYCLE/4;                        // four passes per loop
+  const DRIFTP=CYCLE/2;                      // two slow breaths per loop
+  const clamp=x=>x<0?0:x>1?1:x;
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  let clk=0;
+
+  const run=dt=>{
+    clk=(clk+dt)%CYCLE;
+
+    /* the melt front, then the return */
+    frost.forEach((f,i)=>{
+      let op;
+      if(clk<HOLD) op=1;
+      else if(clk<HOLD+MELT) op=1-clamp((clk-HOLD-i*STEP)/FADE);
+      else if(clk<HOLD+MELT+BARE) op=0;
+      else op=ease(clamp((clk-HOLD-MELT-BARE)/BACK));
+      f.node.setAttribute("stroke-opacity",(0.5*op).toFixed(3));
+    });
+
+    /* each arc swells and thins together — the fade is tied to the radius, not
+       to a separate clock, so an arc is faint because it has travelled */
+    arcs.forEach(A=>{
+      const u=((clk/ARCP)+A.phase)%1;
+      A.node.setAttribute("points",
+        pts(arcPts(ellipseAt(bath.x,bath.y,0,A_IN+(A_OUT-A_IN)*ease(u)),0,Math.PI,26)));
+      /* the short rise stops it appearing at full strength on top of the tank
+         wall; after that it is only ever losing */
+      A.node.setAttribute("stroke-opacity",
+        (0.32*Math.min(1,u/0.12)*Math.pow(1-u,1.3)).toFixed(3));
+    });
+
+    /* THE BIOLOGY STIRRING RATHER THAN MOVING. A few percent of luminance, and
+       it must stay a few percent: this is the one thing in the frame that is
+       the sample itself, and anything large enough to be watched directly would
+       claim the fixed material had woken up. */
+    const d=Math.sin(2*Math.PI*clk/DRIFTP);
+    bodyFill.setAttribute("fill-opacity",(0.60+0.035*d).toFixed(3));
+    surfFill.setAttribute("fill-opacity",(0.66+0.025*d).toFixed(3));
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.thawvial = drawThawVial;
 
