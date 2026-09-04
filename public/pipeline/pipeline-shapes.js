@@ -2445,10 +2445,13 @@ DRAW.thawvial = drawThawVial;
    re-forming on material that has been thawed would be a claim about the
    sample; a cut is the map saying "this is what happens here".
 
+   THE WHOLE FRAME IS TURNED A QUARTER TURN ANTICLOCKWISE — see the wrapper at
+   the top of the body. Nothing below it knows about that.
+
    Requires plateGrid() from the plate set for the well positions, so the wells
    on this plate are placed by the same code as every other plate on the site.
    ------------------------------------------------------------------ */
-function drawThawPlate(g,n){
+function drawThawPlate(host,n){
   const r=rng(1607);
   /* composed at w 2.52, d 1.82, h 0.665. A snowflake arm, a dash, a stroke
      width and the whole of the inset are authored in screen pixels and cannot
@@ -2459,6 +2462,24 @@ function drawThawPlate(g,n){
   const COLS=n.cols||12, ROWS=n.rows||8;
   const clamp=x=>x<0?0:x>1?1:x;
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+
+  /* A QUARTER TURN LEFT, AND IT IS ONE TRANSFORM RATHER THAN A REWRITE. Asked
+     for from the page: keep everything as it is and rotate the image 90 degrees
+     left. So every dimension below is still authored in world units against the
+     map's own projection, and the turn is worn by a wrapper the whole shape
+     draws into — including the ticker's restacking, which reorders inside this
+     group and so keeps working untouched. Re-deriving the drawing against a
+     projection rotated out from under it would change every number here to say
+     the same thing, and the next edit would have to fight it.
+
+     THE PIVOT IS THE CENTRE OF WHAT IS DRAWN, NOT THE NODE'S GROUND POINT. The
+     tall half of this frame is the freezer and the inset floating above it, so
+     the ink sits about two node-heights up; turning about the floor would swing
+     the whole station sideways off its own label. Two h, so it still finds the
+     middle if the node is resized. */
+  const [pvx,pvy]=P(n.x,n.y,n.h*2);
+  const g=host.appendChild(el("g",{
+    transform:`rotate(-90,${pvx.toFixed(1)},${pvy.toFixed(1)})`}));
 
   /* WHERE THE TWO OBJECTS STAND. The freezer sits back and downstream, the
      plate forward and upstream of it, so the travel runs out of the door and
