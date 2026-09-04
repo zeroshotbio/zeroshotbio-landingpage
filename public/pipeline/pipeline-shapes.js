@@ -2863,16 +2863,21 @@ DRAW.thawplate = drawThawPlate;
    Several transcripts lie in it, wavy and each ending in a short AAA, but only
    one is brought forward — a cell holds thousands and a frame that gives them
    all the same weight has no subject, so the rest stay small and faint behind
-   it. A reverse transcriptase lands on the forward one's tail and walks the
-   template, and a bright cDNA is drawn growing behind it — the copy is written
-   while you watch, because the writing IS the step. That beat is the longest
-   thing in the loop by a wide margin; everything else is staging for it.
+   it.
 
-   Then the barcode lands: a hard-cornered rectangle, snapping onto the free
-   end of the new cDNA with a small overshoot, in the exact colour of the well
-   the inset is tethered to. WAVY MEANS NATIVE, HARD CORNERS MEAN ADDED. The
-   RNA wanders and the chip does not, and every synthetic sequence added
-   downstream inherits those corners.
+   THE BARCODE COMES FIRST. A hard-cornered rectangle in the exact colour of
+   the well the inset is tethered to arrives at the AAA end with a small
+   overshoot, and only then does the enzyme land and the copy start running out
+   of it. That is the order the chemistry happens in — the barcode is carried
+   ON the primer, so it is what the poly-A tail is found BY, not something
+   stuck on afterwards — and it was drawn the other way round. WAVY MEANS
+   NATIVE, HARD CORNERS MEAN ADDED: the RNA wanders and the chip does not, and
+   every synthetic sequence added downstream inherits those corners.
+
+   Then a reverse transcriptase walks the template and a bright cDNA is drawn
+   growing behind it, back from the chip — the copy is written while you watch,
+   because the writing IS the step. That beat is the longest thing in the loop
+   by a wide margin; everything else is staging for it.
 
    Requires plateGrid / drawWell from the plate set, which in turn want
    ellipseAt() from the A2 clutch block. It spends --ch1..12, which are
@@ -2881,7 +2886,6 @@ DRAW.thawplate = drawThawPlate;
    ------------------------------------------------------------------ */
 function drawReverseTranscription(g,n){
   const r=rng(823);
-  const SC=n.w;                       // composed at w 1.45, d 1.16, h 0.42
   const clamp=x=>x<0?0:x>1?1:x;
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
 
@@ -2889,14 +2893,19 @@ function drawReverseTranscription(g,n){
      Thrown forward of the node's own centre: behind is where the view hangs
      the name label, and a 96-well deck is wide enough to reach it. Every
      dimension is a fraction of the node, so a drag on a corner rescales the
-     whole bench rather than pulling the wells out of the plastic. It runs a
-     little over one and a half node widths, which is as far as it can go
-     before it reaches the pool-and-split next door — the node itself is what
-     grew when the plate was asked for bigger, because a plate that outruns
-     its own tile is a plate that lands on its neighbour at the next resize. */
+     whole bench rather than pulling the wells out of the plastic.
+
+     IT IS THE SETTING, NOT THE SUBJECT, and it was drawn at one and a half
+     node widths, which made it the loudest thing on the row. All the plate has
+     to say is "96 wells, and each one a different colour"; the step itself is
+     in the lenses. So it comes in at about seven tenths of the size it was —
+     the well pitch and the well radius are both cut from the deck, so the grid
+     packs exactly as it did and simply reads smaller. The lip and the notch
+     are cut from the PLATE and not from the node, or they stay at their old
+     size on a plate that no longer has room for them. */
   const COLS=n.cols||12, ROWS=n.rows||8, NW=COLS*ROWS;
-  const plate={x:n.x, y:n.y+n.d*0.30, w:n.w*1.58, d:n.d*1.34};
-  const pth=n.h*0.46, LIP=n.w*0.062;
+  const plate={x:n.x, y:n.y+n.d*0.30, w:n.w*1.10, d:n.d*0.94};
+  const pth=n.h*0.46, LIP=plate.w*0.039;
   /* the deck is the plate less its lip, and the wells are laid on the DECK —
      grid the plate itself and the outer column sits on the rim */
   const deck={x:plate.x, y:plate.y, w:plate.w-LIP*2, d:plate.d-LIP*2};
@@ -2929,7 +2938,7 @@ function drawReverseTranscription(g,n){
   g.appendChild(el("polygon",{points:dk.top,fill:"var(--bg)","fill-opacity":".9",
     stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".45"}));
   /* the A1 notch, same corner every plate on this map cuts it */
-  const NOTCH=0.16*SC;
+  const NOTCH=plate.w*0.10;
   const nk=[P(plate.x-plate.w/2,plate.y-plate.d/2,pth),
             P(plate.x-plate.w/2+NOTCH,plate.y-plate.d/2,pth),
             P(plate.x-plate.w/2,plate.y-plate.d/2+NOTCH,pth)];
@@ -2977,10 +2986,13 @@ function drawReverseTranscription(g,n){
   /* ---- THE CLOCK ----------------------------------------------------
      Declared before anything is built because the wells need it too: what a
      well waits for is the chip landing in its own inset, and that time is a
-     sum of these. COPY is more than half a pass because the thing this drawing
-     is for is watching the copy get written. */
-  const ARRIVE=0.55, COPY=3.4, LOCK=0.5, HOLD=1.5, CLEAR=0.7;
-  const SEQ=ARRIVE+COPY+LOCK+HOLD+CLEAR, STAGGER=0.85;
+     sum of these. LAND is first now, so the plate finishes dealing its
+     barcodes about when the last copy finishes running — the two halves of the
+     frame end together instead of the plate waiting on the lenses. COPY is
+     still more than half a pass because the thing this drawing is for is
+     watching the copy get written. */
+  const LAND=0.5, ARRIVE=0.55, COPY=3.4, HOLD=1.5, CLEAR=0.7;
+  const SEQ=LAND+ARRIVE+COPY+HOLD+CLEAR, STAGGER=0.85;
   const RISE=0.45, PFADE=0.8, CYC=SEQ+2*STAGGER+1.1;
 
   /* ---- THREE INSETS, SIDE BY SIDE -----------------------------------
@@ -2994,11 +3006,15 @@ function drawReverseTranscription(g,n){
      proportion to the lens and has to shrink with it, so the row shrinks by
      shrinking its unit rather than by twenty-odd numbers being retuned one at
      a time. It is still cut from n.w, so it grows on a resize like the rest.
-     The three of them together now come in narrower than the plate: they are
-     an annotation on the object, and they were reported as dwarfing it. */
+
+     THE ROW SITS LOWER THAN IT DID for the same reason the plate is smaller:
+     the lenses are the subject, and they were hanging forty pixels clear of a
+     deck that had shrunk out from under them. The height is the one number
+     here tuned against the plate rather than against the lens, so it moved
+     when the plate did. */
   const IN=n.w*0.54;
   const c0=P(n.x,n.y,n.h);
-  const IRX=23*IN, IRY=20*IN, IDX=50*IN, IY=c0[1]-90*IN;
+  const IRX=23*IN, IRY=20*IN, IDX=50*IN, IY=c0[1]-60*IN;
   const OFFCD=2.4*IN;                   // the cDNA rail, below the template
   const BHW=6.3*IN;                     // half the chip, which the stub stops at
   /* s runs 0 at the far end to 1 at the AAA tail; off steps onto the cDNA rail */
@@ -3107,7 +3123,9 @@ function drawReverseTranscription(g,n){
     /* THE BARCODE. Hard corners against the wandering line, and the well's
        exact colour against everything else in the frame — the chip is the one
        thing here that is not this cell's own, and both of those say so. Three
-       insets means three of these, and no two of them are the same colour. */
+       insets means three of these, and no two of them are the same colour.
+       It seats at the AAA end, which is where the loop now opens: the copy is
+       written out of it rather than onto it. */
     const bcEnd=at(W,1,OFFCD);
     const BX=bcEnd[0]+10.5*IN, BY=bcEnd[1]+0.3*IN;
     const bc=el("g",{transform:`translate(${BX.toFixed(2)},${BY.toFixed(2)})`,
@@ -3134,9 +3152,9 @@ function drawReverseTranscription(g,n){
      after all three, on a diagonal sweep with enough jitter on it to break the
      front: barcoding is not dealt across a plate in an order, and a tidy line
      crossing the wells would claim it is. */
-  const onAt=wells.map(w=>ARRIVE+COPY+STAGGER*2 +
+  const onAt=wells.map(w=>LAND+STAGGER*2 +
     (w.i/COLS + w.j/ROWS)/2*1.4 + r()*0.8);
-  SRC.forEach((k,i)=>{ onAt[k]=i*STAGGER+ARRIVE+COPY; });
+  SRC.forEach((k,i)=>{ onAt[k]=i*STAGGER+LAND; });
 
   /* ---- THE LOOP -----------------------------------------------------
      One clock, three insets reading it at their own offsets. They are out of
@@ -3161,18 +3179,23 @@ function drawReverseTranscription(g,n){
       const t=T-ins.delay;
       let u=1, op=0, bo=0, bu=0;
       if(t<0||t>SEQ)                  { u=1; op=0; }
-      else if(t<ARRIVE)                 op=t/ARRIVE;
-      else if(t<ARRIVE+COPY){ u=1-(t-ARRIVE)/COPY; op=1; }
-      else if(t<ARRIVE+COPY+LOCK){
-        u=0; op=1; bo=Math.min(1,(t-ARRIVE-COPY)/(LOCK*0.25));
+      else if(t<LAND){
+        bo=Math.min(1,t/(LAND*0.25));
         /* a short overshoot and settle: it arrives past its seat and comes
            back, which is what "locks on" looks like at this size */
-        const v=(t-ARRIVE-COPY)/LOCK;
+        const v=t/LAND;
         bu = v<0.68 ? ease(v/0.68)*1.14 : 1.14-0.14*ease((v-0.68)/0.32);
       }
-      else if(t<ARRIVE+COPY+LOCK+HOLD){ u=0; op=1; bo=1; bu=1; }
+      /* the enzyme comes to a chip that is already seated, and the copy runs
+         out from under it — u stays at 1 through ARRIVE, so the cDNA is a
+         point at the primer until there is something to write */
+      else if(t<LAND+ARRIVE){ bo=1; bu=1; op=(t-LAND)/ARRIVE; }
+      else if(t<LAND+ARRIVE+COPY){
+        bo=1; bu=1; op=1; u=1-(t-LAND-ARRIVE)/COPY;
+      }
+      else if(t<LAND+ARRIVE+COPY+HOLD){ u=0; op=1; bo=1; bu=1; }
       else{
-        const v=(t-ARRIVE-COPY-LOCK-HOLD)/CLEAR;
+        const v=(t-LAND-ARRIVE-COPY-HOLD)/CLEAR;
         u=0; op=1-v; bo=1-v; bu=1;
       }
 

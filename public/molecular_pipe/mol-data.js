@@ -72,14 +72,15 @@ const NODES = [
    stays there. They were 12 x 4 while the shape drew the loading instead, and
    a drawing of a 48-well plate is a drawing of a plate that does not exist.
 
-   IT IS THE BIGGEST TILE ON THE ROW AFTER THE THAW AND THE SEQUENCER, and that
-   is the point: the drawing is a plate with three magnified wells hanging over
-   it, and at w 1.0 the magnification outgrew the object it was magnifying. The
-   plate is cut from this tile, so the fix is here and not a bigger multiplier
-   inside the shape — the shape's plate already runs as wide as the gap to the
-   pool-and-split allows. The 0.45 the tile gained was added to the lane's x1
-   as well, which is how this file has always paid for width: k stays where it
-   is and the fourteen gaps that were already priced stay where they are. */
+   IT IS THE BIGGEST TILE ON THE ROW AFTER THE THAW AND THE SEQUENCER, and what
+   it is buying room for is the THREE LENSES, not the plate. Every length in
+   this shape is cut from w, the lenses included, so w is what sets how big a
+   cell you get to look at; the plate was pulled back to well under a tile width
+   once it was clear the reader was being shown the plastic when the subject is
+   the chemistry. Leave w where it is and the lenses stay legible. The 0.45 the
+   tile gained was added to the lane's x1 as well, which is how this file has
+   always paid for width: k stays where it is and the fourteen gaps that were
+   already priced stay where they are. */
 {id:"R1p", key:"B2", group:"In situ barcoding", shape:"reversetranscription", name:"Round 1 — reverse transcription", x:2.6, y:R2, lane:"r2", w:1.45, d:1.16, h:0.42, cols:12, rows:8,
  sub:"48 wells · 96 barcodes · sample identity",
  does:"Each well gets its own barcoded primer and RNA is reverse transcribed inside the intact cell. This round carries sample identity — everything the dataset knows about which drug a cell saw is written here, in the first chemical step.",
