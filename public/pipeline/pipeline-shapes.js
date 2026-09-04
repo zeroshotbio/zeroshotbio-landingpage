@@ -2424,14 +2424,21 @@ DRAW.thawvial = drawThawVial;
    opaque shell, and the shell over the plastic. They clear in that order, so
    the mark that says "cold" is gone before the thing that hides the plate is,
    and the plate is revealed by an absence rather than by a fill changing
-   colour. Under it the wells come up in row-waves, which is the eight rows of a
-   96-well plate saying what they are as they appear.
+   colour. The shell goes OUTSIDE-IN — a rim warms before a middle does, and
+   the last frost anywhere is the middle of the slab — and it goes quickly,
+   because a plate that arrives after six seconds of fade arrives into a beat
+   the eye has already left. Under it the wells come up in row-waves, which is
+   the eight rows of a 96-well plate saying what they are as they appear.
 
    THE INSET IS WHAT THE WELLS ARE TOO SMALL TO SAY. Ninety-six wells on an
    object this size are two pixels each; the one claim that matters about their
    contents — a cell whose membrane is holed, cross-linked and still standing —
    cannot survive at that scale. So it is magnified out to one well, and it
-   arrives last, once there is a plate to point at.
+   arrives last, once there is a plate to point at. Its frame is a thin
+   UNBROKEN ellipse and the membrane inside it is broken, and that split is
+   load-bearing across this whole map: a solid ring means "magnified view", a
+   broken ring means "porous membrane", and no drawing here may use one to mean
+   the other.
 
    THE LOOP CUTS. Every phase is a pure function of t, so the wrap re-freezes
    everything in one frame rather than running the thaw backwards. Frost
@@ -2556,13 +2563,31 @@ function drawThawPlate(g,n){
 
   /* the shell: the same cold blue as the freezer on a box the shape of the
      plate, opaque and a shade proud of it on every axis, so no edge of plastic
-     shows through the frost it is supposed to be under */
+     shows through the frost it is supposed to be under.
+
+     IT IS BUILT AS NESTED SLABS BECAUSE FROST LEAVES FROM THE EDGES. A rim
+     warms before a middle does, so the shell clears outside-in rather than all
+     at once, and the way to draw that without a mask is concentric opaque tops
+     stacked largest first: when the outermost fades it uncovers the plate's
+     rim, and the one under it is still holding the centre. The overlap never
+     shows, because the slab beneath a fading slab is at full strength and the
+     same colour. Only the outermost carries the box's sides and its outline —
+     the inner ones are the frost that is left, not boxes of their own. */
   const shellH=th*1.35, over=plate.w*0.012;
-  const sf=faces(plate.x,plate.y,plate.w+over*2,plate.d+over*2,shellH);
-  const shell=el("g",{});
-  ["left","right","top"].forEach(k=>shell.appendChild(el("polygon",{points:sf[k],
-    fill:SKIN.cold[k],stroke:"var(--stroke)","stroke-width":(1.3*SC).toFixed(2)})));
-  cart.appendChild(shell);
+  const BANDS=5, bands=[];
+  for(let i=0;i<BANDS;i++){
+    const f=1-i/BANDS;
+    const bf=faces(plate.x,plate.y,(plate.w+over*2)*f,(plate.d+over*2)*f,shellH);
+    const bg=el("g",{});
+    const at={points:bf.top,fill:SKIN.cold.top};
+    if(i===0){
+      ["left","right"].forEach(k=>bg.appendChild(el("polygon",{points:bf[k],
+        fill:SKIN.cold[k],stroke:"var(--stroke)","stroke-width":(1.3*SC).toFixed(2)})));
+      at.stroke="var(--stroke)"; at["stroke-width"]=(1.3*SC).toFixed(2);
+    }
+    bg.appendChild(el("polygon",at));
+    cart.appendChild(bg); bands.push(bg);
+  }
   const shellFlake=el("g",{}); cart.appendChild(shellFlake);
   snowflake(shellFlake,(u,v)=>P(plate.x+u,plate.y+v,shellH),
             Math.min(plate.w,plate.d)*0.30,.85);
@@ -2586,20 +2611,44 @@ function drawThawPlate(g,n){
   F(frz.x-hwF, dx0,       dz0, dz1);
   F(dx1,       frz.x+hwF, dz0, dz1);
 
-  /* the door, hinged on the downstream edge and swung out toward the viewer:
-     the plate leaves on the other side, so an open door never has to be got
-     out of the way of the thing it let out. It never shuts — the loop cuts. */
+  /* THE DOOR IS A SHUTTER, NOT A LEAF. It rises in the plane of the doorway and
+     rolls up into the head above it, the way the roll-up front of a cold store
+     does, so an open door is not an object standing in the path the plate has
+     to take. A hinged leaf has to be swung to the side the plate does not use;
+     a shutter has no side. It never shuts again — the loop cuts.
+
+     IT IS ITS OWN CLIP. The top edge stays pinned to the head and only the
+     bottom edge climbs, so the part that has gone up is simply not drawn: no
+     clip path to keep in register with a moving panel, and the leaf is exactly
+     as tall as the hole it still has left to cover. The ribs are fixed to the
+     leaf, so they climb with it and go out one at a time under the head, which
+     is what makes the motion read as rolling away rather than shrinking. */
   const doorG=el("g",{}); g.appendChild(doorG);
-  const LEAF=(dx1-dx0)*0.52, SWX=0.30, SWY=0.95;
-  const bx=dx1+LEAF*SWX, by=doorY+LEAF*SWY;
-  doorG.appendChild(el("polygon",{
-    points:pts([P(dx1,doorY,dz1),P(bx,by,dz1),P(bx,by,dz0),P(dx1,doorY,dz0)]),
-    fill:SKIN.cold.right,stroke:"var(--stroke)","stroke-width":(1.2*SC).toFixed(2)}));
-  const hx=dx1+LEAF*SWX*0.85, hy=doorY+LEAF*SWY*0.85;
-  const h1=P(hx,hy,frz.h*0.34), h2=P(hx,hy,frz.h*0.60);
-  doorG.appendChild(el("line",{x1:h1[0].toFixed(1),y1:h1[1].toFixed(1),
-    x2:h2[0].toFixed(1),y2:h2[1].toFixed(1),stroke:"var(--stroke)",
-    "stroke-width":(2.2*SC).toFixed(2),"stroke-opacity":".9","stroke-linecap":"round"}));
+  const DH=dz1-dz0, INSET_X=(dx1-dx0)*0.06;
+  const doorLeaf=el("polygon",{points:pts([D(dx0,dz1),D(dx1,dz1),D(dx1,dz0),D(dx0,dz0)]),
+    fill:SKIN.cold.left,stroke:"var(--stroke)","stroke-width":(1.2*SC).toFixed(2)});
+  doorG.appendChild(doorLeaf);
+  const bar=(a,b,zv,w,o)=>{
+    const p=D(a,zv), q=D(b,zv);
+    return doorG.appendChild(el("line",{x1:p[0].toFixed(1),y1:p[1].toFixed(1),
+      x2:q[0].toFixed(1),y2:q[1].toFixed(1),stroke:"var(--stroke)",
+      "stroke-width":(w*SC).toFixed(2),"stroke-opacity":o,"stroke-linecap":"round"}));
+  };
+  const ribs=[1,2,3].map(k=>bar(dx0+INSET_X,dx1-INSET_X,dz0+DH*k/4,1,".55"));
+  const handle=bar(frz.x-(dx1-dx0)*0.14,frz.x+(dx1-dx0)*0.14,dz0+DH*0.12,2.2,".9");
+  /* everything on the leaf is placed off the bottom edge, so one number moves
+     the whole door and nothing can drift out of register with the panel */
+  const setDoor=zb=>{
+    doorLeaf.setAttribute("points",pts([D(dx0,dz1),D(dx1,dz1),D(dx1,zb),D(dx0,zb)]));
+    const put=(node,a,b,zv)=>{
+      const p=D(a,zv), q=D(b,zv);
+      node.setAttribute("x1",p[0].toFixed(1)); node.setAttribute("y1",p[1].toFixed(1));
+      node.setAttribute("x2",q[0].toFixed(1)); node.setAttribute("y2",q[1].toFixed(1));
+      node.setAttribute("opacity",zv<dz1?"1":"0");
+    };
+    ribs.forEach((rb,k)=>put(rb,dx0+INSET_X,dx1-INSET_X,zb+DH*(k+1)/4));
+    put(handle,frz.x-(dx1-dx0)*0.14,frz.x+(dx1-dx0)*0.14,zb+DH*0.12);
+  };
 
   /* ---- THE INSET ---------------------------------------------------------
      A magnification, not a third object on the bench: it is drawn flat, in
@@ -2621,9 +2670,15 @@ function drawThawPlate(g,n){
   });
   const lens=el("g",{transform:`translate(${ix.toFixed(1)},${iy.toFixed(1)}) scale(${SC.toFixed(4)})`});
   insetG.appendChild(lens);
+  /* THE LENS RING IS SOLID AND THIN, AND THAT IS A RULE NOW. It used to be
+     dashed, which put two broken rings inside each other meaning two unrelated
+     things — the outer one "this is magnified", the inner one "this wall has
+     holes in it". A reader has no way to tell those apart. So the frame is one
+     unbroken line: a solid ring is a magnified view, a broken ring is a porous
+     membrane, and the only dashed circle left in the inset is the cell. */
   lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:IR,ry:(IR*0.88).toFixed(1),
-    fill:"var(--bg)","fill-opacity":".92",stroke:"var(--fg2)","stroke-width":"2.2",
-    "stroke-opacity":".8","stroke-dasharray":"5.5 4"}));
+    fill:"var(--bg)","fill-opacity":".92",stroke:"var(--fg2)","stroke-width":"1.4",
+    "stroke-opacity":".8"}));
   /* the same pale blue the wells hold, so the magnification is plainly of one
      of them rather than a second sample */
   lens.appendChild(el("circle",{cx:"0",cy:"0",r:MR,fill:"var(--c-top)","fill-opacity":".10"}));
@@ -2677,22 +2732,46 @@ function drawThawPlate(g,n){
       "stroke-width":"1.2","stroke-opacity":".55","stroke-linecap":"round"}));
   }
 
-  /* ---- THE CLOCK ---------------------------------------------------------
-     Sixteen seconds, and slow everywhere: the slide takes nearly four of them
-     and the frost another six, because a thaw that snaps is a thaw that looks
-     like something being switched on. The last three and a half are the hold —
-     a plate at working temperature with nothing left to do, which is the state
-     the next station inherits.
+  /* A PADLOCK, BESIDE THE CELL AND NOT ON IT. The holes in the wall and the
+     mesh inside it show the cell is permeable and still standing; neither says
+     that its contents are chemically fixed in place and cannot move or react.
+     That is the whole reason warming this plate restarts nothing, and it is the
+     one claim the drawing has no way to make by drawing the sample. So it is
+     made by a mark instead — set outside the membrane, clear of it, so it reads
+     as a note about the cell rather than as an organelle in it. */
+  const LKX=IR*0.79;
+  lens.appendChild(el("path",{
+    d:`M ${(LKX-2.6).toFixed(1)} -0.5 L ${(LKX-2.6).toFixed(1)} -2.2`
+      +` A 2.6 2.6 0 0 1 ${(LKX+2.6).toFixed(1)} -2.2 L ${(LKX+2.6).toFixed(1)} -0.5`,
+    fill:"none",stroke:"var(--fg)","stroke-width":"1.2","stroke-opacity":".75"}));
+  lens.appendChild(el("rect",{x:(LKX-4.2).toFixed(1),y:"-0.5",width:"8.4",height:"7.5",
+    rx:"1.4",fill:"var(--fg2)","fill-opacity":".18",stroke:"var(--fg)",
+    "stroke-width":"1.2","stroke-opacity":".75"}));
+  lens.appendChild(el("circle",{cx:LKX.toFixed(1),cy:"3.2",r:"0.9",
+    fill:"var(--fg)","fill-opacity":".7"}));
 
-     Every phase reads t directly, so the wrap is a cut: the frost is back and
-     the plate is back inside on one frame, and nothing is ever seen to
-     re-freeze. */
-  const CYCLE=16.0;
+  /* ---- THE CLOCK ---------------------------------------------------------
+     Thirteen seconds. The door and the slide keep their pace, because that is
+     the freezer giving something up and it should take an effort; the frost
+     does not, because it used to take six seconds to leave and the plate was
+     arriving into a beat that had already gone slack. It now clears in half
+     that, outside-in, and the plate is there while the eye is still on it. The
+     last three are the hold — a plate at working temperature with nothing left
+     to do, which is the state the next station inherits.
+
+     Every phase reads t directly, so the wrap is a cut: the door is shut, the
+     frost is back and the plate is back inside on one frame, and nothing is
+     ever seen to re-freeze or to close. */
+  const CYCLE=13.0;
+  const T_DOOR=0.15, DOOR=1.25;
   const T_SLIDE=1.5, SLIDE=3.7;
-  const T_FLAKE=5.9, FLAKE=1.9;
-  const T_SHELL=7.6, SHELL=3.7;
-  const T_ROW=7.9, ROW_STEP=SHELL*0.62/ROWS, ROW_FADE=SHELL*0.34;
-  const T_INSET=10.8, INSET=1.7;
+  const T_FLAKE=5.4, FLAKE=1.1;
+  const T_SHELL=6.3, SHELL=1.9;
+  /* the bands go outermost first, spread over SHELL, each taking a little over
+     half of it: they have to overlap or the frost retreats in visible steps */
+  const BAND_FADE=SHELL*0.56, BAND_STEP=(SHELL-BAND_FADE)/(BANDS-1);
+  const T_ROW=6.6, ROW_STEP=SHELL*0.62/ROWS, ROW_FADE=SHELL*0.34;
+  const T_INSET=8.3, INSET=1.4;
 
   const [rx0,ry0]=P(plate.x,plate.y,0), [rx1,ry1]=P(frz.x,frz.y,shelf);
   const dxIn=rx1-rx0, dyIn=ry1-ry0;
@@ -2704,6 +2783,7 @@ function drawThawPlate(g,n){
   let t=0, ahead=null;
   const run=dt=>{
     t=(t+dt)%CYCLE;
+    setDoor(dz0+(dz1-dz0)*ease(clamp((t-T_DOOR)/DOOR)));
     const e = t<T_SLIDE ? 1 : 1-ease(clamp((t-T_SLIDE)/SLIDE));
     cart.setAttribute("transform",
       `translate(${(dxIn*e).toFixed(2)},${(dyIn*e).toFixed(2)})`);
@@ -2713,7 +2793,8 @@ function drawThawPlate(g,n){
       g.insertBefore(cart, front?insetG:shellG);
     }
     shellFlake.setAttribute("opacity",(1-clamp((t-T_FLAKE)/FLAKE)).toFixed(3));
-    shell.setAttribute("opacity",(1-clamp((t-T_SHELL)/SHELL)).toFixed(3));
+    bands.forEach((bg,i)=>bg.setAttribute("opacity",
+      (1-clamp((t-T_SHELL-i*BAND_STEP)/BAND_FADE)).toFixed(3)));
     rowsG.forEach((rg,j)=>
       rg.setAttribute("opacity",clamp((t-T_ROW-j*ROW_STEP)/ROW_FADE).toFixed(3)));
     insetG.setAttribute("opacity",clamp((t-T_INSET)/INSET).toFixed(3));
