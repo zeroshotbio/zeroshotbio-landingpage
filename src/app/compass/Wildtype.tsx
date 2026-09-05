@@ -15,17 +15,20 @@ import raw from "./data/wildtype.json";
 type WT = { stages: number[]; n_embryos: Record<string, number>; tissues: { name: string; germ_layer: string; fraction: Record<string, number> }[] };
 const D = raw as unknown as WT;
 const L = 120, W = 45, X18 = 24, TMAX = 96, INK = "#c7d0da", MUTED = "#6e7a88";
-const iso = (x: number, y: number, z = 0) => [(x - y) * 0.866, (x + y) * 0.5 - z] as const;
+const PHI = 25 * Math.PI / 180, CP = Math.cos(PHI), SP = Math.sin(PHI);
+// world rotated by PHI about z before the isometric map, so the river runs steeply and fills a tall panel
+const iso = (u: number, v: number, z = 0) => { const x = u * CP - v * SP, y = u * SP + v * CP; return [(x - y) * 0.866, (x + y) * 0.5 - z] as const; };
 const LAYER = (g: string) => (g.includes("endoderm") ? "endoderm" : g.includes("mesoderm") ? "mesoderm" : "ectoderm");
 const LAYER_ORDER = ["ectoderm", "mesoderm", "endoderm"];
 const LAYER_COLOR: Record<string, [string, string]> = { ectoderm: ["#1d3a5c", "#244a74"], mesoderm: ["#4a2f3f", "#5d3a4f"], endoderm: ["#1f4a44", "#276056"] };
 const LAYER_INK: Record<string, string> = { ectoderm: "#7fb3ff", mesoderm: "#ff9db1", endoderm: "#6fdcc6" };
 const xOf = (t: number) => X18 + ((t - 18) / (TMAX - 18)) * (L - X18);
 const MIN_SHOW = 0.01, MAJOR = [18, 24, 36, 48, 72, 96];
+const GEO = MAJOR;   // ribbon geometry uses the six best-replicated stages (>=65 embryos each); 2-h stages are noisy
 
 type Channel = { name: string; layer: string; top: number[]; bot: number[]; emerge: number; final: number; frac: Record<string, number> };
 function buildChannels(): { channels: Channel[]; layerSums: Record<string, number[]> } {
-  const S = D.stages;
+  const S = GEO;
   const shown = D.tissues.filter((t) => Math.max(...Object.values(t.fraction)) >= MIN_SHOW);
   const rows = shown.map((t) => ({ name: t.name, layer: LAYER(t.germ_layer), frac: t.fraction }));
   for (const layer of LAYER_ORDER) {                   // pool the small tissues of each layer into "other"
@@ -83,21 +86,21 @@ function Boat({ x, y, z, size, color }: { x: number; y: number; z: number; size:
 
 export default function Wildtype() {
   const { channels, layerSums } = useMemo(buildChannels, []);
-  const xs = useMemo(() => D.stages.map(xOf), []);
+  const xs = useMemo(() => GEO.map(xOf), []);
   const [hover, setHover] = useState<string | null>(null);
   const [t, setT] = useState(0);
   useEffect(() => { let id = 0; const t0 = performance.now(); const loop = (n: number) => { setT((n - t0) / 1000); id = requestAnimationFrame(loop); }; id = requestAnimationFrame(loop); return () => cancelAnimationFrame(id); }, []);
   const PERIOD = 16;
   const corners = [iso(0, 0), iso(L, 0), iso(0, W), iso(L, W)];
-  const minX = Math.min(...corners.map((c) => c[0])) - 12, maxX = Math.max(...corners.map((c) => c[0])) + 34;
-  const minY = Math.min(...corners.map((c) => c[1])) - 16, maxY = Math.max(...corners.map((c) => c[1])) + 8;
+  const minX = Math.min(...corners.map((c) => c[0])) - 8, maxX = Math.max(...corners.map((c) => c[0])) + 30;
+  const minY = Math.min(...corners.map((c) => c[1])) - 9, maxY = Math.max(...corners.map((c) => c[1])) + 6;
   // schematic 0–18 hpf: one channel from the dock fanning into the three germ layers
   const pre = LAYER_ORDER.map((l, li) => {
     const y0 = LAYER_ORDER.slice(0, li).reduce((a, k) => a + layerSums[k][0], 0), y1 = y0 + layerSums[l][0];
     const root0 = W / 2 - 3.5 + (li * 7) / 3, root1 = root0 + 7 / 3;
     return { l, d: ribbon([0, 9, X18], [root0, (root0 + y0) / 2, y0], [root1, (root1 + y1) / 2, y1]) };
   });
-  const phase = (t % PERIOD) / PERIOD, bx = phase * (L + 6) - 3;
+  const phase = (t % PERIOD) / PERIOD;
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
       <div style={{ position: "absolute", left: 22, top: 16, zIndex: 2 }}>
@@ -121,16 +124,17 @@ export default function Wildtype() {
         {/* dock */}
         <polygon points={[iso(0, -1.5, 1.1), iso(4, -1.5, 1.1), iso(4, W + 1.5, 1.1), iso(0, W + 1.5, 1.1)].map(([a, b]) => `${a},${b}`).join(" ")} fill="#2b3442" />
         {/* channel labels downstream */}
-        {channels.filter((c) => c.final > 1.1).map((c) => { const y = (c.top[xs.length - 1] + c.bot[xs.length - 1]) / 2; const p = iso(L + 3, y);
+        {channels.filter((c) => c.final > 1.8).map((c) => { const y = (c.top[xs.length - 1] + c.bot[xs.length - 1]) / 2; const p = iso(L + 3, y);
           return <text key={c.name} x={p[0]} y={p[1] + 0.9} fontSize={2.5} fill={hover === c.name ? LAYER_INK[c.layer] : INK} opacity={0.9}>{c.name}</text>; })}
         {/* the normal flotilla: one boat per channel, appearing at its branch point */}
-        {bx < X18 && <Boat x={Math.max(1, bx)} y={W / 2} z={0.15 * Math.sin(t * 2)} size={1.1} color="#e8eef4" />}
-        {channels.map((c, i) => {
-          if (bx < X18 || bx < xOf(c.emerge)) return null;
-          const [cy, w] = centerAt(c, xs, Math.min(bx, L - 1)) as [number, number];
+        {[0, 0.5].map((off) => { const px = (((phase + off) % 1) * (L + 6)) - 3; return px < X18 && px > 0 ? <Boat key={off} x={px} y={W / 2} z={0.15 * Math.sin(t * 2 + off)} size={1.05} color="#e8eef4" /> : null; })}
+        {channels.filter((c) => c.final >= 0.9).flatMap((c, i) => [0, 0.5].map((off) => {
+          const px = (((phase + off + i * 0.137) % 1) * (L + 6)) - 3;
+          if (px < X18 || px < xOf(c.emerge) || px > L - 1) return null;
+          const [cy, w] = centerAt(c, xs, px) as [number, number];
           if (w < 0.5) return null;
-          return <Boat key={c.name} x={Math.min(bx, L - 1)} y={cy} z={0.15 * Math.sin(t * 2 + i)} size={Math.max(0.35, Math.min(1, Math.sqrt(w / W) * 1.6))} color={LAYER_INK[c.layer]} />;
-        })}
+          return <Boat key={`${c.name}-${off}`} x={px} y={cy} z={0.15 * Math.sin(t * 2 + i)} size={Math.max(0.35, Math.min(1, Math.sqrt(w / W) * 1.6))} color={LAYER_INK[c.layer]} />;
+        }))}
         {hover && (() => { const c = channels.find((q) => q.name === hover)!; const p = iso(L + 3, (c.top[xs.length - 1] + c.bot[xs.length - 1]) / 2, 9);
           const f = (s: number) => `${(c.frac[String(s)] * 100).toFixed(1)}%`;
           const lines = [c.name, `${c.layer} · appears by ${isFinite(c.emerge) ? c.emerge : "—"} hpf`, `share 24 hpf ${f(24)} · 48 hpf ${f(48)} · 72 hpf ${f(72)}`];

@@ -25,7 +25,9 @@ const D = raw as unknown as Data;
 
 /* ---------------- isometric world ---------------- */
 const L = 120, LANE = 9, NL = D.program_order.length, W = LANE * NL, DOCK = 8;
-const iso = (x: number, y: number, z = 0) => [(x - y) * 0.866, (x + y) * 0.5 - z] as const;
+const PHI = 25 * Math.PI / 180, CP = Math.cos(PHI), SP = Math.sin(PHI);
+// world rotated by PHI about z before the isometric map, so the river runs steeply and fills a tall panel
+const iso = (u: number, v: number, z = 0) => { const x = u * CP - v * SP, y = u * SP + v * CP; return [(x - y) * 0.866, (x + y) * 0.5 - z] as const; };
 const P = (pts: (readonly [number, number])[]) => pts.map(([a, b]) => `${a.toFixed(2)},${b.toFixed(2)}`).join(" ");
 const poly = (xy: [number, number, number?][]) => P(xy.map(([x, y, z]) => iso(x, y, z ?? 0)));
 const laneY = (i: number) => (i + 0.5) * LANE;
@@ -107,8 +109,8 @@ export default function Flotilla() {
   const lead = boats.find((b) => b.member) ?? boats[0];
   // viewBox from the river's isometric bounding box (+ margins for labels)
   const corners = [iso(0, 0), iso(L, 0), iso(0, W), iso(L, W)];
-  const minX = Math.min(...corners.map((c) => c[0])) - 14, maxX = Math.max(...corners.map((c) => c[0])) + 30;
-  const minY = Math.min(...corners.map((c) => c[1])) - 18, maxY = Math.max(...corners.map((c) => c[1])) + 10;
+  const minX = Math.min(...corners.map((c) => c[0])) - 8, maxX = Math.max(...corners.map((c) => c[0])) + 28;
+  const minY = Math.min(...corners.map((c) => c[1])) - 9, maxY = Math.max(...corners.map((c) => c[1])) + 6;
   const drugMeta = D.drugs.find((d) => d.id === drug)!;
 
   return (
