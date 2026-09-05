@@ -3760,21 +3760,36 @@ DRAW.ligation = drawLigation;
 /* ------------------------------------------------------------------
    ROUND THREE · LIGATION — the plate, and three of its wells opened up.
 
-   B2'S COMPOSITION AND B2'S DIMENSIONS, ONE ROUND LATER. Round one draws a
-   96-well plate on the grid with a row of three lenses above it, and this is
-   the same plastic doing the same thing to the same cells, so it is drawn to
-   the same numbers: the same 1.032 x 0.688 plate, the same lens radii, the
-   same spacing, the same height above the deck. The lens unit is cut from
-   the PLATE and not from the node — B2's IN is 0.758 of its own plate's
-   width — because the two tiles are different widths and the plate is the
-   only thing that is the same size across them.
+   IT IS B4'S DRAWING WITH A THIRD CHIP ON IT. Rounds two and three are one
+   operation run twice, and a reader who has just watched B4 should not be
+   able to find a difference that is not a difference in the chemistry. So
+   everything that is not round three's own business is B4's number and not
+   a near miss: the same lens radii, spacing and height over the deck, the
+   same cell at the same fraction of its lens, the same ten pores, the same
+   four background transcripts, the same RNA wandering at the same rate and
+   going level at the first chip, the same pair of overhangs, the same
+   ligase, the same seam at 4.2 either side of the join. What is left over
+   is what round three actually adds, and that is all this shape gets to
+   spend on being itself.
 
-   THREE LENSES, BECAUSE THREE IS THE CLAIM. One lens can say that a barcode
-   is added; it cannot say that the barcode DIFFERS, and by round three the
-   difference is the whole of the point. Three cells that were pooled and
-   split apart carry the same first two chips and leave with three different
-   third ones. 48 x 96 x 96 is a number written on the deck; this is what
-   that number looks like from inside a cell.
+   THE PLASTIC IS YELLOW, and that is the one thing here deliberately not
+   matched. Round one is green, round two is blue, round three is yellow —
+   the same 1.032 x 0.688 semi-skirted plate and the same 96 wells all three
+   times, because it is the same piece of plastic in a third colour. The
+   colour lives on the lip and the skirt because that is where a plate
+   carries it, so skirtSlab takes --ch3 and the deck inside stays plastic;
+   B5 deals into "round three's yellow one" and says so in its own code. The
+   yellow is a TINT over lit plastic and never a flat fill: the one
+   saturated warm thing in this frame is the biotin.
+
+   THREE LENSES ON THREE WELLS, WHERE B4 PUTS THREE ON TWO. B4's three cells
+   are an argument about what a well IS — thousands of cells, one barcode,
+   so two lenses share a ring. Round three's argument is the other half of
+   the same fact: the barcode DIFFERS by well, and three cells that pooled
+   together and split apart carry the same first two chips and leave with
+   three different third ones. 48 x 96 x 96 is a number written on the deck;
+   this is what that number looks like from inside a cell, and it is not a
+   claim one example or one well can make.
 
    SO BC1 AND BC2 ARE THE SAME IN ALL THREE, AND MUTED. They are history — a
    barcode stops being the news the moment the next lands on it — and a
@@ -3782,28 +3797,16 @@ DRAW.ligation = drawLigation;
    the last block changes. Their hues belong to no plate on screen, because
    those plates are two and four stations back.
 
-   THE PLASTIC IS NOT B2'S, and that is the one thing here deliberately not
-   matched. Round one is a green semi-skirted plate; round three is a yellow
-   one, and the lip and the skirt are where a plate carries its colour — so
-   skirtSlab gets --ch3 and the deck inside stays plastic. Painted green too,
-   the only two nodes on this row that draw a plate would draw the same one.
-   The yellow is a TINT over lit plastic and never a flat fill: the one
-   saturated warm thing in this frame is the biotin.
-
-   B4 IS ON THIS COMPOSITION NOW: rounds two and three are one operation
-   done twice, and they share the level line, the chip block, the seam at
-   the join and the well-pinned plate. B4 opens one well and this opens
-   three, and that is not the two drifting apart again — round two's claim
-   is about a single bond, and round three's is that the bond lands
-   DIFFERENTLY in every well, which is not a claim one example can make.
-
    WHAT ARRIVES IS ONE PIECE CARRYING THREE THINGS, which is the reason this
-   step is worth its own drawing. The adapter brings the third barcode, the
-   Illumina Read 2 sequence behind it, and a biotin at the very end — one
-   bond, three consequences, two of them spent stations later. So they drift
-   in inside ONE group under ONE transform and never move relative to each
-   other; the Read 2 bar then draws itself OUTWARD from the join instead of
-   appearing, so it reads as having arrived on that same bond.
+   step is worth its own drawing rather than a second run of B4's. The
+   adapter brings the third barcode, the Illumina Read 2 sequence behind it,
+   and a biotin at the very end — one bond, three consequences, two of them
+   spent stations later. So they drift in inside ONE group under ONE
+   transform and never move relative to each other; the Read 2 bar and the
+   tag then draw themselves OUTWARD from the sealed join, after the ligase
+   has lifted, because there is no room to bring them in through the
+   membrane at full length and because what they are is what the bond just
+   bought.
 
    THE BIOTIN IS THE ONLY WARM COLOUR INSIDE A CELL, on purpose. A magnetic
    bead closes on this exact tag at B8, and if it does not register here that
@@ -3812,8 +3815,23 @@ DRAW.ligation = drawLigation;
    tag. See the well-picking block for why that is a statement about
    diagonals.
 
+   THE OVERHANGS ARE WHY THE GAP IS WIDE — B4's reasoning, and it does not
+   stop being true a round later. A chip that slides up to another chip is
+   two objects touching; single-stranded ends reaching across the space
+   between them, bases on the fixed one pointing down and bases on the
+   arriving one pointing up so the two interleave, are two ends that are
+   complementary, which is the only reason this reaction is specific at all.
+   The ligase comes down onto that overlap and the gap closes UNDER it, and
+   the overhangs go out with the ligase because they are what the bond was
+   made of. The gap here is shorter than B4's for one reason: this molecule
+   already carries two chips, so the run of lens left to the right of the
+   join is the run the adapter has to arrive on, and it is a chip narrower.
+
    WAVY MEANS NATIVE, HARD CORNERS MEAN ADDED — B2's rule, inherited. The RNA
    wanders; everything stuck to it since sits on a level line and has corners.
+   The overhangs are the one thing drawn between the two: level, because they
+   are synthetic, but bare line and bases rather than a block, because they
+   are not sealed yet.
 
    AND THE MULTIPLICATION IS WRITTEN DOWN, off the front of the plate. It is
    the one fact on this row that is arithmetic rather than chemistry, and no
@@ -3886,16 +3904,17 @@ function drawLigation3(g,n){
   });
 
   /* ---- THE CLOCK ----------------------------------------------------
-     Declared before anything is built because the wells need it too: what a
-     well waits for is the instant its own chip seats. The hold is still the
-     longest single beat — this is the last thing that happens inside a cell,
-     and the frame it ends on is the whole barcode — but it is shorter than
-     it was, because three lenses running a phase apart all have to be up
-     together for long enough that the comparison the row exists for can
-     actually be made. */
-  const DRIFT=2.0, SEAT=0.5, EXTEND=0.8, TAG=0.4, HOLD=3.2, CLEAR=0.8;
-  const SEATT=DRIFT+SEAT, SEQ=SEATT+EXTEND+TAG+HOLD+CLEAR;
-  const RISE=0.5, STAGGER=0.8, PFADE=0.8, CYC=SEQ+2*STAGGER+0.9;
+     B4's beats to the number, with round three's two extra ones taken out of
+     the hold rather than added to the pass: the two shapes run the same
+     length, so the row does not have one station visibly slower than the one
+     beside it. Declared before anything is built because the wells need it
+     too — what a well waits for is the instant its own join closes. */
+  const DRIFT=2.6, DOCK=0.9, SEAL=1.1, LIFT=0.8;
+  const EXTEND=0.8, TAG=0.4, HOLD=3.4, CLEAR=1.0;
+  const SEALT=DRIFT+DOCK+SEAL, LIFTT=SEALT+LIFT;
+  const EXTT=LIFTT+EXTEND, TAGT=EXTT+TAG, SEQ=TAGT+HOLD+CLEAR;
+  const STAGGER=0.9, END=SEQ+2*STAGGER;
+  const RISE=0.5, CYC=END+0.6;
 
   /* ---- THE MOLECULE, MEASURED ONCE ----------------------------------
      x runs in IN from a lens centre, so every length below reads as a length
@@ -3904,54 +3923,90 @@ function drawLigation3(g,n){
      molecule, so it is measured out here rather than three times inside the
      loop.
 
-     IT IS SHORTER THAN IT WAS, and that is what the third lens costs. A
-     single lens could be half as wide again as B2's and still leave the RNA
-     room to wander before anything synthetic started; at B2's radius the
-     three chips, the Read 2 bar and the tag take that room, so the native
-     end is trimmed to the shortest length that still reads as wandering. The
-     right-hand end is the binding constraint and not the left: the tag has
-     to land INSIDE the membrane, and at 17.7 against a cell half-width of
-     18.3 it clears the wall by less than a chip. */
-  const IN=PW*0.7584;
-  const IRX=23*IN, IRY=20*IN, IDX=58*IN;
-  const c0=P(n.x,n.y,n.h), IY=c0[1]-60*IN;
+     THE LENS IS B4'S, RIM AND ALL. B4 cropped its glass to what it magnifies
+     when it went to three, and a lens here that stayed at B2's radius would
+     make the same figure two sizes on two neighbouring tiles. So IN, the
+     radii, the spacing and the height over the deck are copied across, and
+     what gives instead is the molecule: the chips are narrower than B4's
+     because three of them and a tail have to live where two did.
+
+     THE RIGHT-HAND END IS THE BINDING CONSTRAINT and not the left. The tag
+     has to land INSIDE the membrane — it is what a bead grabs at B8, and a
+     tag drawn on the wall would say the cell had already gone — and at 17.1
+     against a cell half-width of 18.1 it clears by about a base. Everything
+     to the right of the join is measured backwards from that. */
+  const IN=n.w*0.80;
+  const IRX=21*IN, IRY=15*IN, IDX=50*IN;
+  const c0=P(n.x,n.y,n.h), IY=c0[1]-46*IN;
   const RNA0=-15.6, CDNA0=-11.5, CHIP0=-7.0;
-  const CHW=3.0, CHP=6.4, CHH=2.5;        // chip half-width, pitch, half-height
+  const CHW=3.0, CHP=6.4, CHH=3.2;        // chip half-width, pitch, half-height
   const bcx=k=>CHIP0+CHW+k*CHP;           // the centre of chip k, k = 0,1,2
-  const JOIN=bcx(1)+CHW+0.2;              // where the adapter is welded on
-  const BAR0=bcx(2)+CHW, BARL=4.0;        // Read 2, longer than any barcode
-  const TAGX=BAR0+BARL+0.8, TAGR=1.1;
+  const BCR=bcx(1)+CHW;                   // BC2's far edge, where its end is
+  const JOIN=BCR+0.2;                     // where the adapter is welded on
+  const AL=bcx(2)-CHW;                    // the adapter's near edge, seated
+  const GAP=4.5;                          // how far short the adapter stops
+  const OV=1.1;                           // how far past the midline each reaches
+  const BAR0=bcx(2)+CHW, BARL=3.6;        // Read 2, drawn out of the sealed join
+  const TAGX=BAR0+BARL+0.7, TAGR=1.1;
   const GOLD="color-mix(in oklab, var(--ch2) 45%, var(--ch3))";
   /* THE TWO ALREADY ON THE STRAND. Mixed towards --fg3 rather than drawn at
      full strength: they are the same in all three lenses, and three lenses
      differing in one block out of three is a comparison a reader can only
-     make if the other two step back. The HUES are untouched — B4 draws its
-     BC1 as flat --ch5 and says in as many words that it is this chip, so
-     the two have to stay the same green and only the strength can move. */
+     make if the other two step back.
+
+     BC1 IS B4'S BC1. B4 draws the chip a cell brought out of round one as
+     flat --ch5, so the same molecule seen two stations apart carries the same
+     green and only the strength moves. BC2 is the one hue that cannot follow
+     B4: there it is the round-two well's own colour, and both of those wells
+     are warm — which is fine on a tile with no biotin in it and not fine
+     here, where a warm block in the lens would take the tag's job. So it
+     keeps a cool --ch7 and stands for "the chip from the last plate" rather
+     than for a particular well of it. */
   const OLD=["color-mix(in oklab, var(--ch5) 62%, var(--fg3))",
              "color-mix(in oklab, var(--ch7) 62%, var(--fg3))"];
 
-  const mk=(y,amp,k)=>({y,amp,k,ph:r()*6.283});
-  const at=(cx,st,x)=>[cx+x*IN, st.y+Math.sin(x*st.k+st.ph)*st.amp*IN];
-  const pathOf=(cx,st,a,b,steps)=>{
+  /* B4's helper, signature and all: a wandering backbone with hard-cornered
+     blocks bolted along it, the state carrying its own lens centre */
+  const mk=(ix,y,amp,k)=>({ix,y,amp,k,ph:r()*6.283});
+  const at=(st,x)=>[st.ix+x*IN, st.y+Math.sin(x*st.k+st.ph)*st.amp*IN];
+  const pathOf=(st,a,b,steps)=>{
     let d="";
     for(let i=0;i<=steps;i++){
-      const p=at(cx,st,a+(b-a)*i/steps);
+      const p=at(st,a+(b-a)*i/steps);
       d+=(i?" L ":"M ")+p[0].toFixed(2)+" "+p[1].toFixed(2);
     }
     return d;
   };
   /* a chip is drawn in its own coordinates and placed by a transform, so one
-     description of a barcode serves all nine of them */
+     description of a barcode serves all nine of them. It is B4's block to the
+     height — only the width gives, because three have to stand where two do */
   const chip=(host,cx,fill,label,sw)=>{
     const c=el("g",{transform:`translate(${cx.toFixed(2)},0)`});
     c.appendChild(el("rect",{x:(-CHW*IN).toFixed(2),y:(-CHH*IN).toFixed(2),
       width:(CHW*2*IN).toFixed(2),height:(CHH*2*IN).toFixed(2),fill,
       stroke:"var(--stroke)","stroke-width":sw,"stroke-opacity":".9"}));
-    const t=el("text",{x:"0",y:(0.9*IN).toFixed(2),"text-anchor":"middle",
-      "font-size":(2.5*IN).toFixed(2),"letter-spacing":".2",fill:"var(--bg)"});
+    const t=el("text",{x:"0",y:(1.0*IN).toFixed(2),"text-anchor":"middle",
+      "font-size":(2.6*IN).toFixed(2),"letter-spacing":".2",fill:"var(--bg)"});
     t.textContent=label; c.appendChild(t);
     host.appendChild(c); return c;
+  };
+
+  /* AN OVERHANG, B4's exactly: a backbone with a few bases hanging off it,
+     drawn from a chip's edge outward. Which way the bases point is the entire
+     content — down from the end that is waiting, up from the end that
+     arrives, so the two interleave where they overlap instead of lying on top
+     of each other, and a reader sees ends that FIT rather than ends that
+     meet. Rebuilt every frame because its length is the animation. */
+  const TEETH=3;
+  const comb=(x0,dir,len,y,td)=>{
+    let d=`M ${x0.toFixed(2)} ${y.toFixed(2)} `+
+          `L ${(x0+dir*len).toFixed(2)} ${y.toFixed(2)}`;
+    for(let i=0;i<TEETH;i++){
+      const t=x0+dir*len*(i+0.4)/TEETH;
+      d+=` M ${t.toFixed(2)} ${y.toFixed(2)}`+
+         ` L ${t.toFixed(2)} ${(y+td*2.6*IN).toFixed(2)}`;
+    }
+    return d;
   };
 
   /* ---- THREE LENSES, SIDE BY SIDE -----------------------------------
@@ -3977,7 +4032,7 @@ function drawLigation3(g,n){
 
     g.appendChild(el("ellipse",{cx:ix.toFixed(2),cy:IY.toFixed(2),
       rx:IRX.toFixed(2),ry:IRY.toFixed(2),fill:"var(--bg)","fill-opacity":"1",
-      stroke:"var(--stroke)","stroke-width":"1.3","stroke-opacity":".9"}));
+      stroke:"var(--stroke)","stroke-width":"1.1","stroke-opacity":".9"}));
     g.appendChild(el("ellipse",{cx:ix.toFixed(2),cy:IY.toFixed(2),
       rx:(IRX-2*IN).toFixed(2),ry:(IRY-2*IN).toFixed(2),fill:"var(--fg)",
       "fill-opacity":".04",stroke:"var(--stroke)","stroke-width":".5",
@@ -3988,15 +4043,16 @@ function drawLigation3(g,n){
        it says the wall is there and things get across it, which is why an
        adapter can reach a transcript that never left the cell. A dashed
        boundary would say the wall had gone, and this is the last step before
-       it does. */
-    const cy0=IY+1.2*IN, crx=IRX*0.80, cry=IRY*0.78;
+       it does. B4's proportions and B4's ten pores — the cell is the one
+       thing on this row that has no business changing between rounds. */
+    const cy0=IY+1.0*IN, crx=IRX*0.86, cry=IRY*0.76;
     g.appendChild(el("ellipse",{cx:ix.toFixed(2),cy:cy0.toFixed(2),
       rx:crx.toFixed(2),ry:cry.toFixed(2),fill:"var(--g-top)",
       "fill-opacity":".55",stroke:"var(--stroke)","stroke-width":"1.8",
       "stroke-opacity":".75"}));
-    const PORES=9;
+    const PORES=10;
     for(let i=0;i<PORES;i++){
-      const a=(i+0.35+idx*0.3)*2*Math.PI/PORES;
+      const a=(i+0.6+idx*0.3)*2*Math.PI/PORES;
       g.appendChild(el("circle",{cx:(ix+Math.cos(a)*crx).toFixed(2),
         cy:(cy0+Math.sin(a)*cry).toFixed(2),r:((0.85+r()*0.3)*IN).toFixed(2),
         fill:"var(--bg)",stroke:"var(--stroke)","stroke-width":".5",
@@ -4007,9 +4063,9 @@ function drawLigation3(g,n){
        scattered, because at this size strands placed at random cross more
        often than not and a crossing reads as one strand. Thin and pale: they
        are here to say the cell is full of RNA, not to be followed. */
-    [[-9.5,-11,-2],[-6.0,2,12],[8.5,-13,-3],[11.0,1,11]].forEach(([vy,a,b])=>{
-      const st=mk(cy0+vy*IN, 0.85, 0.9);
-      g.appendChild(el("path",{d:pathOf(ix,st,a,b,16),fill:"none",
+    [[-8.0,-12,-3],[-5.6,2,11],[7.2,-12,0],[9.2,3,10]].forEach(([vy,a,b])=>{
+      const st=mk(ix, cy0+vy*IN, 0.85, 0.42);
+      g.appendChild(el("path",{d:pathOf(st,a,b,18),fill:"none",
         stroke:"var(--fg)","stroke-width":".8","stroke-opacity":".22",
         "stroke-linecap":"round"}));
     });
@@ -4024,14 +4080,14 @@ function drawLigation3(g,n){
 
        Its phase is drawn per lens, so the three read as three cells rather
        than as one cell printed three times. */
-    const M=mk(cy0+1.6*IN, 1.5, 1.1);
-    const BY=at(ix,M,CHIP0)[1];             // the level line the blocks sit on
+    const M=mk(ix, cy0+2.0*IN, 1.6, 0.40);
+    const BY=at(M,CHIP0)[1];                // the level line the blocks sit on
 
-    g.appendChild(el("path",{d:pathOf(ix,M,RNA0,CDNA0,14),fill:"none",
+    g.appendChild(el("path",{d:pathOf(M,RNA0,CDNA0,16),fill:"none",
       stroke:"var(--fg)","stroke-width":"1.6","stroke-opacity":".5",
       "stroke-linecap":"round"}));
     /* the copy round one wrote — the only other bright thing on the line */
-    g.appendChild(el("path",{d:pathOf(ix,M,CDNA0,CHIP0,14),fill:"none",
+    g.appendChild(el("path",{d:pathOf(M,CDNA0,CHIP0,14),fill:"none",
       stroke:"var(--signal)","stroke-width":"2","stroke-opacity":".95",
       "stroke-linecap":"round"}));
 
@@ -4052,10 +4108,12 @@ function drawLigation3(g,n){
     const adapt=el("g",{transform:`translate(${ix.toFixed(2)},${BY.toFixed(2)})`,
       opacity:"0"});
 
-    /* the Read 2 sequence: plain, grey, unlabelled and longer than a
-       barcode, because that is what it is — a fixed handle every fragment
-       will carry rather than an address. Its width is what EXTEND drives,
-       out of zero. */
+    /* the Read 2 sequence: plain, grey, unlabelled and thinner than a chip,
+       because that is what it is — a fixed handle every fragment will carry
+       rather than an address. Its width is what EXTEND drives, out of zero,
+       so it never has to be flown in through a membrane it would not fit
+       through; by the time it draws, the ligase that shares its grey has
+       already lifted. */
     const bar=el("rect",{x:(BAR0*IN).toFixed(2),y:(-1.5*IN).toFixed(2),
       width:"0",height:(3.0*IN).toFixed(2),fill:"var(--a-top)",
       "fill-opacity":".9",stroke:"var(--stroke)","stroke-width":".7",
@@ -4085,27 +4143,58 @@ function drawLigation3(g,n){
     adapt.appendChild(drop);
     g.appendChild(adapt);
 
+    /* THE TWO ENDS THAT HAVE TO FIND EACH OTHER. Each in its own chip's
+       colour — the waiting one in BC2's muted green, because that is the
+       chip it grows out of, and the arriving one in this well's own — and
+       both born at zero length on the edge they grow out of. */
+    const fixed=el("path",{d:comb(ix+BCR*IN,1,0,BY,1),fill:"none",
+      stroke:OLD[1],"stroke-width":".65","stroke-opacity":"0",
+      "stroke-linecap":"round"});
+    g.appendChild(fixed);
+    const free=el("path",{d:comb(ix+(AL+GAP)*IN,-1,0,BY,-1),fill:"none",
+      stroke:col,"stroke-width":".65","stroke-opacity":"0",
+      "stroke-linecap":"round"});
+    g.appendChild(free);
+
     /* THE SEAM. A bond between two synthetic blocks is not invisible and the
        drawing should not pretend it is: the join stays marked once it
        closes, one tick standing slightly proud of the chips either side of
        it, so the reader can see where round two ends and round three
-       begins. */
-    const seam=el("line",{x1:(ix+JOIN*IN).toFixed(2),y1:(BY-3.4*IN).toFixed(2),
-      x2:(ix+JOIN*IN).toFixed(2),y2:(BY+3.4*IN).toFixed(2),stroke:"var(--fg)",
+       begins. It is B4's tick to the number — one unit wide and 4.2 either
+       side — so the mark at round two's join and the mark at round three's
+       are the same mark. */
+    const seam=el("line",{x1:(ix+JOIN*IN).toFixed(2),y1:(BY-4.2*IN).toFixed(2),
+      x2:(ix+JOIN*IN).toFixed(2),y2:(BY+4.2*IN).toFixed(2),stroke:"var(--fg)",
       "stroke-width":"1","stroke-opacity":"0","stroke-linecap":"round"});
     g.appendChild(seam);
 
-    return {ix,BY,adapt,bar,drop,flash,seam,delay:idx*STAGGER};
+    /* THE LIGASE, last so it sits over everything, and B4's enzyme unchanged:
+       it comes down ONTO the overlap rather than fading in on it, works while
+       the gap closes, and lifts straight off. It rides above the line so the
+       pair of ends it is working on is never hidden by the thing working on
+       them, and it leaves before the Read 2 bar draws — one enzyme, one bond,
+       and then the consequences. */
+    const lig=el("g",{opacity:"0",
+      transform:`translate(${(ix+JOIN*IN).toFixed(2)},${(BY-4.8*IN).toFixed(2)})`});
+    lig.appendChild(el("ellipse",{cx:"0",cy:"0",rx:(3.4*IN).toFixed(2),
+      ry:(2.6*IN).toFixed(2),fill:"var(--a-top)","fill-opacity":".95",
+      stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".85"}));
+    lig.appendChild(el("ellipse",{cx:(-1.0*IN).toFixed(2),cy:(-1.0*IN).toFixed(2),
+      rx:(1.7*IN).toFixed(2),ry:(1.2*IN).toFixed(2),fill:"var(--a-left)",
+      "fill-opacity":".9"}));
+    g.appendChild(lig);
+
+    return {ix,BY,adapt,bar,drop,flash,fixed,free,seam,lig,delay:idx*STAGGER};
   });
 
   /* ---- WHEN EACH WELL COMES UP --------------------------------------
-     The three tethered ones are pinned to the instant their own chip seats,
+     The three tethered ones are pinned to the instant their own join closes,
      so a lens and its well are one event seen at two scales. The other 93
      follow all three, on a diagonal wash with enough jitter to break the
      front — ligation is not dealt across a plate in an order, and a tidy
      line crossing the wells would claim it is. */
-  const onAt=wells.map(w=>SEATT+STAGGER*2+(w.i/COLS+w.j/ROWS)/2*1.6+r()*0.8);
-  SRC.forEach((k,i)=>{ onAt[k]=SEATT+i*STAGGER; });
+  const onAt=wells.map(w=>SEALT+2*STAGGER+0.4+(w.i/COLS+w.j/ROWS)/2*1.6+r()*0.8);
+  SRC.forEach((k,i)=>{ onAt[k]=SEALT+i*STAGGER; });
 
   /* ---- THE CALLOUT --------------------------------------------------
      Off the front of the plate rather than under the node's centre: the
@@ -4126,22 +4215,24 @@ function drawLigation3(g,n){
   say(FS*1.35,"= 442,368 paths","var(--fg2)","600");
 
   /* ---- THE LOOP -----------------------------------------------------
-     One clock, three lenses reading it at their own offsets. In each: the
-     adapter drifts in through the membrane, seats with a short overshoot,
-     the bar draws itself out of the join, the tag lands and flashes — and
-     then nothing moves for three seconds. They are out of step by less than
-     a phase each, which is enough to read as three separate events and not
-     enough for any of them to be over before the eye arrives. The frame this
-     is all for is the one where all three are up at once and only the last
-     block differs. */
+     One clock, three lenses reading it at their own offsets, and B4's pass
+     with a tail on it: the adapter drifts in through the membrane and stops
+     short, both ends reach out into the space between them, the ligase comes
+     down on the overlap, the gap goes — slowly and then all at once, because
+     that is what a bond forming looks like — the seam is left behind and the
+     ligase lifts with the overhangs it spent. Only then does round three
+     collect on the bond: the Read 2 bar draws out of the sealed join and the
+     tag lands and flashes. Then nothing moves for three and a half seconds,
+     and that hold is the point — all three up at once, and only the last
+     block differing. */
   let T=r()*CYC;
   const run=(dt)=>{
     T=(T+dt)%CYC;
 
-    /* what has been written stays written until the end of the cycle and
-       then goes out together: a well dimming on its own would read as its
-       barcode coming back off. */
-    const fade = T>CYC-PFADE ? 1-(T-(CYC-PFADE))/PFADE : 1;
+    /* what has been written stays written until CLEAR and then the whole
+       plate goes out with the lenses, on the same second: a well dimming on
+       its own would read as its barcode coming back off */
+    const fade=clamp(1-(T-(END-CLEAR))/CLEAR);
     dots.forEach((e,k)=>{
       const o=(DIM+(1-DIM)*clamp((T-onAt[k])/RISE)*fade).toFixed(2);
       if(o!==shown[k]){ shown[k]=o; e.setAttribute("fill-opacity",o); }
@@ -4149,28 +4240,38 @@ function drawLigation3(g,n){
 
     insets.forEach(ins=>{
       const t=T-ins.delay;
-      let op=0, u=0, ext=0, tag=0, fl=0, sm=0;
-      if(t<0||t>SEQ){ op=0; }
+      let op=0, u=1, gap=GAP, lg=0, sm=0, rch=0, ext=0, tag=0, fl=0;
+      if(t<0||t>SEQ){ /* born, seated, and waiting its turn */ }
       else if(t<DRIFT){
         op=Math.min(1,t/(DRIFT*0.30));
-        /* it arrives past its seat and comes back, which is what locking on
-           looks like at this size */
+        /* it arrives past its seat and comes back, which is what drifting up
+           against something looks like at this size */
         const v=t/DRIFT;
         u = v<0.72 ? ease(v/0.72)*1.05 : 1.05-0.05*ease((v-0.72)/0.28);
+        /* the ends only reach once there is something to reach for */
+        rch=clamp((v-0.45)/0.50);
       }
-      else if(t<SEATT){ op=1; u=1; sm=(t-DRIFT)/SEAT; }
-      else if(t<SEATT+EXTEND){ op=1; u=1; sm=1; ext=ease((t-SEATT)/EXTEND); }
-      else if(t<SEATT+EXTEND+TAG){
-        op=1; u=1; sm=1; ext=1;
-        const v=(t-SEATT-EXTEND)/TAG; tag=Math.min(1,v/0.35); fl=1-v;
+      else if(t<DRIFT+DOCK){ op=1; rch=1; lg=clamp((t-DRIFT)/(DOCK*0.7)); }
+      else if(t<SEALT){
+        op=1; lg=1; rch=1;
+        const v=(t-DRIFT-DOCK)/SEAL;
+        gap=GAP*(1-ease(v)); sm=clamp((v-0.55)/0.45);
       }
-      else if(t<SEQ-CLEAR){ op=1; u=1; sm=1; ext=1; tag=1; }
+      else if(t<LIFTT){
+        const v=(t-SEALT)/LIFT; op=1; gap=0; sm=1; lg=1-ease(v); rch=1-v;
+      }
+      else if(t<EXTT){ op=1; gap=0; sm=1; ext=ease((t-LIFTT)/EXTEND); }
+      else if(t<TAGT){
+        op=1; gap=0; sm=1; ext=1;
+        const v=(t-EXTT)/TAG; tag=Math.min(1,v/0.35); fl=1-v;
+      }
+      else if(t<SEQ-CLEAR){ op=1; gap=0; sm=1; ext=1; tag=1; }
       else { const v=(t-(SEQ-CLEAR))/CLEAR;
-        op=1-v; u=1; sm=1-v; ext=1; tag=1-v; }
+        op=1-v; gap=0; sm=1-v; ext=1; tag=1-v; }
 
       /* one transform for the whole adapter: chip, bar and tag never move
          relative to each other, which is the claim the group exists to make */
-      const dx=(1-u)*11*IN, dy=-(1-u)*9*IN;
+      const dx=gap*IN+(1-u)*3.0*IN, dy=-(1-u)*5*IN;
       ins.adapt.setAttribute("transform",
         `translate(${(ins.ix+dx).toFixed(2)},${(ins.BY+dy).toFixed(2)})`);
       ins.adapt.setAttribute("opacity",op.toFixed(2));
@@ -4178,6 +4279,29 @@ function drawLigation3(g,n){
       ins.drop.setAttribute("opacity",tag.toFixed(2));
       ins.flash.setAttribute("fill-opacity",(clamp(fl)*0.55).toFixed(2));
       ins.seam.setAttribute("stroke-opacity",(sm*0.75).toFixed(2));
+
+      /* EACH END REACHES TO THE MIDLINE AND A HAIR PAST IT, so the two
+         overlap by the same amount whatever the gap is doing — the overlap is
+         the thing being sealed, and it has to survive the gap closing under
+         it rather than being squeezed out at the last moment. They wander
+         while they are free and go still once the ligase is on them. */
+      const half=(gap*IN)/2+OV*IN;
+      const wag=Math.sin((T+ins.delay)*6.5)*0.6*IN*(1-lg);
+      ins.fixed.setAttribute("d",
+        comb(ins.ix+BCR*IN,1,half*rch,ins.BY+wag,1));
+      ins.free.setAttribute("d",
+        comb(ins.ix+(AL*IN+dx),-1,half*rch,ins.BY+dy-wag,-1));
+      const ro=(rch*op*0.9).toFixed(2);
+      ins.fixed.setAttribute("stroke-opacity",ro);
+      ins.free.setAttribute("stroke-opacity",ro);
+
+      /* it tracks the join while the join is still moving, and never quite
+         holds still while it is working */
+      const jig=Math.sin(T*11)*0.5*IN*lg;
+      ins.lig.setAttribute("transform",
+        `translate(${(ins.ix+(JOIN+gap*0.5)*IN).toFixed(2)},`+
+        `${(ins.BY-4.8*IN+jig-(1-lg)*7*IN).toFixed(2)})`);
+      ins.lig.setAttribute("opacity",(lg*op).toFixed(2));
     });
   };
   run(0);
