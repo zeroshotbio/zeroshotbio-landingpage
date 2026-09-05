@@ -5222,153 +5222,6 @@ function drawCountSplitLyse(g,n){
   const fillTube=(k,f)=>{ if(Math.abs(f-tf[k])<0.004) return; tf[k]=f;
     setTube(tubes[k],f,POOLED.op); };
 
-  /* ---- THE MAGNIFICATION, in the tile's own clear air ---------------------
-     A thin solid ellipse with two solid leaders running down to the one strip
-     tube it belongs to: the idiom /FASTQ_pipe already uses for a read drawn
-     larger than life, given a boundary here because what is inside it comes
-     apart and the pieces have to stay somewhere that is plainly not the bench.
-     Everything inside is in the group's own frame and the group is placed by
-     transform, so the burst can push seven arcs and five strands outward by
-     writing one attribute each.
-
-     IT IS THE BIGGEST THING ON THE TILE, because it is what the station is for:
-     the plate and the rack are consumables this row draws at six other stations
-     and the opening cell happens once. Half again the radius it had is what it
-     takes for three chips on a strand to resolve as three.
-
-     IT DOES NOT FOLLOW THE RACK. It used to stand directly over the strips, and
-     with the strips moved to the near-left that airspace belongs to B6 — its
-     own three lenses and its plate are in it, and a magnification laid over a
-     neighbour's magnification is the worst thing either of them could do. The
-     high ground behind the donor plate is the one field this tile owns outright
-     at this size: no neighbour and no part of this station reaches it. So the
-     lens is placed off the PLATE and the tether is left long. */
-  /* THE BOUNDARY IS SIZED BY WHAT LEAVES THE CELL, not by what is in it at
-     rest: the arcs drift half a radius and turn about their own middles, and an
-     arc poking out through the line of the lens would say the magnification had
-     lost its edge rather than that the cell had. */
-  const R=n.w*S*0.62, LRX=R*2.05, LRY=R*1.80;
-  const [KX,KY]=P(src.x+n.w*0.15, src.y-n.d*0.10, n.h*4.70);
-  /* the strip tube nearest the lens, so the leaders are as short as the new
-     placement allows — the back strip's right-hand end */
-  const anchor=tubes[PER-1];
-  /* the tether is drawn before the lens so the lens's own backing covers where
-     the two leaders would otherwise run in across the magnification. Both start
-     ON the boundary — a leader beginning inside it crosses its own line. They
-     cross the conical on the way down, and that is allowed: a leader is an
-     annotation over the scene rather than an object standing in it, which is
-     also why it is thin and faint enough to read as one. */
-  [0.72,0.28].forEach((th,i)=>{
-    const p=[LRX*Math.cos(th*Math.PI), LRY*Math.sin(th*Math.PI)];
-    g.appendChild(el("line",{x1:(KX+p[0]).toFixed(1),y1:(KY+p[1]).toFixed(1),
-      x2:(anchor.rim.x+(i?anchor.rim.rx:-anchor.rim.rx)).toFixed(1),
-      y2:anchor.rim.y.toFixed(1),
-      stroke:"var(--fg2)","stroke-width":".8","stroke-opacity":".4"}));
-  });
-  const cell=el("g",{transform:`translate(${KX.toFixed(1)},${KY.toFixed(1)})`});
-  g.appendChild(cell);
-  cell.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LRX.toFixed(1),ry:LRY.toFixed(1),
-    fill:"var(--bg)","fill-opacity":".72"}));
-  const body=el("circle",{cx:"0",cy:"0",r:(R*0.97).toFixed(1),
-    fill:"var(--fg)","fill-opacity":".10"});
-  cell.appendChild(body);
-  const nuc=el("circle",{cx:(-R*0.22).toFixed(1),cy:(R*0.12).toFixed(1),
-    r:(R*0.30).toFixed(1),fill:"var(--fg)","fill-opacity":".22"});
-  cell.appendChild(nuc);
-  /* THE MEMBRANE IS ARCS WITH GAPS IN THEM FROM THE START. A fixed cell is a
-     permeabilised one — reagents have been walking in and out of it for three
-     rounds — so the gaps are the drawing being right about the chemistry
-     before they are the drawing being ready to break. The pores are marked on
-     the gaps rather than invented somewhere else, for the same reason. */
-  const ringPts=(rad,a0,a1)=>{ const o=[];
-    for(let i=0;i<=7;i++){ const a=a0+(a1-a0)*i/7;
-      o.push([rad*Math.cos(a), rad*Math.sin(a)]); } return o; };
-  const SEG=7, seg=[], pore=[];
-  for(let i=0;i<SEG;i++){
-    const a0=(i/SEG)*2*Math.PI+0.13, a1=((i+1)/SEG)*2*Math.PI-0.13, am=(a0+a1)/2;
-    const p=el("polyline",{points:pts(ringPts(R,a0,a1)),fill:"none",
-      stroke:"var(--fg)","stroke-width":"1.5","stroke-opacity":".85",
-      "stroke-linecap":"round"});
-    cell.appendChild(p);
-    seg.push({p, a:am, mid:[R*Math.cos(am), R*Math.sin(am)], spin:(i%2?1:-1)*(26+i*8)});
-    const gp=a1+0.13;
-    pore.push(cell.appendChild(el("circle",{
-      cx:(R*Math.cos(gp)).toFixed(1), cy:(R*Math.sin(gp)).toFixed(1),
-      r:(R*0.075).toFixed(2), fill:"none", stroke:"var(--fg)",
-      "stroke-width":".9","stroke-opacity":".5"})));
-  }
-  /* WHAT SPILLS IS A HANDFUL OF STRANDS, NOT ONE. A single molecule crossing
-     the boundary reads as an incident; five read as the contents of a cell, and
-     the contents are the point — everything before this station happened inside
-     that wall. Five and not fifty because past a handful the chips stop
-     resolving and the burst becomes a cloud with nothing legible in it.
-
-     EVERY STRAND CARRIES THE SAME THREE CHIPS, in the three rounds' own plate
-     colours — green, royal blue, the yellow of the plate standing in this same
-     frame. Giving them five different triplets would be prettier and would say
-     the opposite of the truth: split-pool gives one cell ONE combination, and
-     it is the sameness across everything that comes out of this wall that makes
-     the combination a cell label rather than a decoration. */
-  const NSTR=5, EXIT=-0.35*Math.PI, RAD0=R*0.30;
-  const strands=[];
-  for(let k=0;k<NSTR;k++){
-    /* fanned across most of a turn and each drawn along its own way out, so
-       they leave as separate molecules rather than as one bundle */
-    const a=EXIT-0.42*Math.PI+k*(0.92*Math.PI/(NSTR-1));
-    const SL=R*0.50*(0.86+0.14*(k%3));
-    const s={a, r0:RAD0*(0.62+0.19*k), r1:R*(1.00+0.07*(k%3)),
-             rot:a*180/Math.PI+(k%2?12:-14), g:el("g",{})};
-    s.g.appendChild(el("path",{d:`M ${(-SL*0.5).toFixed(1)} 0 `+
-      `q ${(SL*0.3).toFixed(1)} ${(-SL*0.34).toFixed(1)} ${(SL*0.5).toFixed(1)} 0 `+
-      `q ${(SL*0.2).toFixed(1)} ${(SL*0.30).toFixed(1)} ${(SL*0.5).toFixed(1)} 0`,
-      fill:"none",stroke:"var(--fg2)","stroke-width":"1.2","stroke-opacity":".9",
-      "stroke-linecap":"round"}));
-    ["var(--ch5)","var(--ch9)","var(--ch3)"].forEach((hue,j)=>
-      s.g.appendChild(el("circle",{
-        cx:(-SL*0.30+j*SL*0.30).toFixed(1), cy:(-SL*0.10+j*SL*0.10).toFixed(1),
-        r:(R*0.10).toFixed(2), fill:hue, "fill-opacity":".95"})));
-    cell.appendChild(s.g);
-    strands.push(s);
-  }
-  /* one placer, called at birth and by the burst: a strand that is only ever
-     positioned from inside the ticker is a strand with no coordinates until the
-     first frame runs, and the first frame is not guaranteed to run */
-  const setStrand=(s,e)=>{
-    const rad=s.r0+(s.r1-s.r0)*e;
-    s.g.setAttribute("transform",
-      `translate(${(Math.cos(s.a)*rad).toFixed(1)},${(Math.sin(s.a)*rad).toFixed(1)}) `+
-      `rotate(${(s.rot+22*e).toFixed(1)})`);
-    s.g.setAttribute("opacity",(0.62+0.36*e).toFixed(2));
-  };
-  strands.forEach(s=>setStrand(s,0));
-  /* the boundary last, so nothing inside is drawn over its line */
-  cell.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LRX.toFixed(1),ry:LRY.toFixed(1),
-    fill:"none",stroke:"var(--fg2)","stroke-width":"1","stroke-opacity":".55"}));
-
-  const easeOut=x=>1-Math.pow(1-Math.max(0,Math.min(1,x)),3);
-  const burst=(f0)=>{
-    const f=Math.max(0,Math.min(1,f0)), a=f*f;   // the one accelerating motion
-    seg.forEach(s=>{
-      /* each arc leaves along its own radius and turns about its own middle:
-         turning about the centre of the cell would only slide it round the
-         ring it is still part of */
-      s.p.setAttribute("transform",
-        `translate(${(Math.cos(s.a)*R*0.48*a).toFixed(1)},`+
-        `${(Math.sin(s.a)*R*0.48*a).toFixed(1)}) `+
-        `rotate(${(s.spin*a).toFixed(1)},${s.mid[0].toFixed(1)},${s.mid[1].toFixed(1)})`);
-      s.p.setAttribute("stroke-opacity",(0.85-0.70*f).toFixed(2));
-    });
-    pore.forEach(p=>p.setAttribute("stroke-opacity",
-      (0.5*Math.max(0,1-f*1.8)).toFixed(2)));
-    body.setAttribute("fill-opacity",(0.10*(1-f)).toFixed(2));
-    nuc.setAttribute("fill-opacity",(0.22*(1-0.8*f)).toFixed(2));
-    /* the strands are the one thing that eases to a stop inside the burst: they
-       are not thrown out, they diffuse out, and they brighten because they are
-       now in open solution rather than behind a wall */
-    const e=easeOut(f);
-    strands.forEach(s=>setStrand(s,e));
-  };
-
   /* the head is as many channels as the plate has columns, at the plate's own
      pitch measured off the first two wells rather than authored — a comb built
      on a constant lands in twelve wells at the size it was drawn for and
@@ -5382,11 +5235,254 @@ function drawCountSplitLyse(g,n){
     g.appendChild(d); return d;
   });
 
-  /* the deal out, drawn last so no plastic can bury a line. Every line carries
-     the pool's own colour and not sixteen different ones: what leaves the tube
-     is one suspension divided by volume, and that is the whole reason the
-     gradient was made to converge on the way in. */
+  /* the deal out, drawn after every piece of plastic so none of them can bury
+     a line — the lens below is the one thing allowed over it, because an inset
+     is in front of the scene rather than in it. Every line carries the pool's
+     own colour and not sixteen different ones: what leaves the tube is one
+     suspension divided by volume, and that is the whole reason the gradient
+     was made to converge on the way in. */
   const OUT=flowFan(g, tubes.map(t=>t.mouth), mouth, false, ()=>POOLED.fill, SC);
+
+  /* ---- THE MAGNIFICATION, STANDING ON THE STRIPS -------------------------
+     A thin solid ellipse with two leaders running back to the strip tube it
+     belongs to: the idiom /FASTQ_pipe already uses for a read drawn larger
+     than life, given a boundary here because what is inside it comes apart
+     and the pieces have to stay somewhere that is plainly not the bench.
+
+     IT IS BUILT LAST, AFTER THE HEAD AND THE FAN, AND IT SITS ON THE NEAR
+     STRIP. Those are one decision. Built earlier it went under the comb, and
+     a magnification with a pipette tracking across it is a magnification
+     nobody can read; built last it is the front-most thing on the tile, which
+     is what an inset is. The empty air ABOVE the rack was never available to
+     hang it in — B5's plate reaches down into it and B6's deck reaches lower
+     still — so it sits in front of the rack instead, and buries the near half
+     of the front strip on purpose. A magnification of what is in a tube, held
+     against that tube, needs no explaining. What it costs is five of the
+     sixteen tubes during the deal, which is why it takes the front strip's
+     near end and not the middle of the rack: the back strip stays whole, and
+     the leaders run to its far end so the tether still names the plastic.
+
+     THE BOUNDARY IS SIZED BY WHAT LEAVES THE CELLS, not by what is in them at
+     rest: the arcs drift half a radius outward and the molecules travel a
+     cell radius further than that, and either poking out through the line
+     would say the magnification had lost its edge rather than that the cells
+     had. */
+  const R=n.w*S*0.40, LRX=n.w*S*1.68, LRY=n.w*S*1.34;
+  const [KX,KY]=P(rack.x, rack.y+n.d*1.69, rack.h+n.h*1.42);
+  const anchor=tubes[PER-1];
+  /* the tether is drawn before the lens so the lens's own backing covers where
+     the two leaders would otherwise run in across the magnification. Both
+     start ON the boundary — a leader beginning inside it crosses its own
+     line — and both leave from the side the tube is on. */
+  [-0.055,0.055].forEach((th,i)=>{
+    const p=[LRX*Math.cos(th*Math.PI), LRY*Math.sin(th*Math.PI)];
+    g.appendChild(el("line",{x1:(KX+p[0]).toFixed(1),y1:(KY+p[1]).toFixed(1),
+      x2:(anchor.rim.x+(i?anchor.rim.rx:-anchor.rim.rx)).toFixed(1),
+      y2:anchor.rim.y.toFixed(1),
+      stroke:"var(--fg2)","stroke-width":".8","stroke-opacity":".4"}));
+  });
+  const lens=el("g",{transform:`translate(${KX.toFixed(1)},${KY.toFixed(1)})`});
+  g.appendChild(lens);
+  /* the backing is nearly opaque now that there is plastic under it: at the
+     .72 it wore in open air the strip tubes read through the glass and the
+     two spaces became one */
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LRX.toFixed(1),ry:LRY.toFixed(1),
+    fill:"var(--bg)","fill-opacity":".9"}));
+
+  /* ---- THE MOLECULE, WHICH IS B6'S AT THE MOMENT B6 FINISHES -------------
+     What floats out of these cells is not a decorated strand, it is the exact
+     thing the tile next door has just finished building: native RNA, the copy
+     round one wrote, three chips, the TruSeq Read 2 sequence, and the biotin
+     hanging off the end. So the layout is ligation3's, unit for unit, with
+     only two changes. It is recentred on its own middle, because here the
+     strand is placed by a transform that also spins it and a figure spun
+     about a point outside itself swings. And the lettering is gone: B6 sets
+     BC1/BC2/BC3 in two-pixel type inside a lens that holds one molecule, and
+     nine of those would be nine grey smudges. The block colours carry it, and
+     B6 next door is where the letters are. */
+  const MU=R/18;                          // this molecule's unit, as IN is B6's
+  const MID=1.4;                          // B6's span is not centred; this centres it
+  const RNA0=-15.6-MID, CD0=-11.5-MID, CH0=-7.0-MID;
+  const CW=3.0, CP=6.4, CHH=3.2;          // chip half-width, pitch, half-height
+  const bx=k=>CH0+CW+k*CP;                // the centre of chip k, k = 0,1,2
+  const BAR0=bx(2)+CW, BARL=3.6;          // Read 2, off the end of the third chip
+  const TAGX=BAR0+BARL+0.7, TAGR=1.1;
+  const GOLD="color-mix(in oklab, var(--ch2) 45%, var(--ch3))";
+  /* BC1 AND BC2 ARE THE SAME MUTED BLOCK IN ALL THREE CELLS, which is B6's
+     choice and B6's reason. Three cells differ in all three rounds really;
+     drawing that gives nine colours and no comparison. One block moving while
+     two stand still is what makes the third round legible as the round that
+     just happened. */
+  const OLD=["color-mix(in oklab, var(--ch5) 62%, var(--fg3))",
+             "color-mix(in oklab, var(--ch7) 62%, var(--fg3))"];
+  /* and it is BC3 that moves, because split-pool gives a cell one third-round
+     well and these are three different cells. The indices are ligation3's own
+     three opened wells on the same 96-well ramp, so the cell you watched take
+     its third barcode one station ago is one of the three you now watch come
+     apart. If SRC over there ever moves, move these with it. */
+  const BC3=[72,56,35].map(k=>rampHue(k,COLS*ROWS));
+
+  /* only the RNA and the copy wander; from the first chip on, the backbone is
+     level, because everything past it is synthetic and a hard-cornered block
+     riding a sine reads as a block that has come loose. The wave is written
+     to land on zero at CH0 so the chips can sit at the group's own origin. */
+  const wave=(host,a,b,ph,stroke,sw,op)=>{
+    let d="";
+    for(let i=0;i<=10;i++){
+      const x=a+(b-a)*i/10;
+      d+=(i?" L ":"M ")+(x*MU).toFixed(2)+" "+
+         ((Math.sin(x*0.40+ph)-Math.sin(CH0*0.40+ph))*1.6*MU).toFixed(2);
+    }
+    host.appendChild(el("path",{d,fill:"none",stroke,"stroke-width":sw,
+      "stroke-opacity":op,"stroke-linecap":"round"}));
+  };
+  const molecule=(host,bc3,ph)=>{
+    wave(host,RNA0,CD0,ph,"var(--fg)","1",".5");
+    wave(host,CD0,CH0,ph,"var(--signal)","1.4",".95");
+    [OLD[0],OLD[1],bc3].forEach((fill,k)=>
+      host.appendChild(el("rect",{x:((bx(k)-CW)*MU).toFixed(2),
+        y:(-CHH*MU).toFixed(2),width:(CW*2*MU).toFixed(2),
+        height:(CHH*2*MU).toFixed(2),fill,stroke:"var(--stroke)",
+        "stroke-width":".6","stroke-opacity":".85"})));
+    /* the Read 2 sequence: plain, grey, unlabelled and thinner than a chip,
+       because that is what it is — a fixed handle every fragment will carry
+       rather than an address */
+    host.appendChild(el("rect",{x:(BAR0*MU).toFixed(2),y:(-1.5*MU).toFixed(2),
+      width:(BARL*MU).toFixed(2),height:(3.0*MU).toFixed(2),fill:"var(--a-top)",
+      "fill-opacity":".9",stroke:"var(--stroke)","stroke-width":".5",
+      "stroke-opacity":".8"}));
+    /* THE BIOTIN, and the only warm thing in the glass. It is why B8 works at
+       all, so it survives the wall: drawn as a drop lying back along the bar,
+       hanging off the end rather than sitting on it. */
+    const TR=TAGR*MU, dg=el("g",{transform:`translate(${(TAGX*MU).toFixed(2)},0)`});
+    dg.appendChild(el("path",{d:
+      `M ${(-2.05*TR).toFixed(2)} 0 `+
+      `C ${(-0.9*TR).toFixed(2)} ${(-0.95*TR).toFixed(2)} `+
+        `${(-0.2*TR).toFixed(2)} ${(-TR).toFixed(2)} ${(0.25*TR).toFixed(2)} ${(-0.72*TR).toFixed(2)} `+
+      `C ${(0.9*TR).toFixed(2)} ${(-0.42*TR).toFixed(2)} `+
+        `${(0.9*TR).toFixed(2)} ${(0.42*TR).toFixed(2)} ${(0.25*TR).toFixed(2)} ${(0.72*TR).toFixed(2)} `+
+      `C ${(-0.2*TR).toFixed(2)} ${TR.toFixed(2)} `+
+        `${(-0.9*TR).toFixed(2)} ${(0.95*TR).toFixed(2)} ${(-2.05*TR).toFixed(2)} 0 Z`,
+      fill:GOLD,stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".7"}));
+    host.appendChild(dg);
+  };
+
+  /* one placer, called at birth and by the burst: a strand that is only ever
+     positioned from inside the ticker is a strand with no coordinates until
+     the first frame runs, and the first frame is not guaranteed to run */
+  const setStrand=(s,e)=>{
+    const rad=s.r0+(s.r1-s.r0)*e;
+    s.g.setAttribute("transform",
+      `translate(${(Math.cos(s.a)*rad).toFixed(1)},${(Math.sin(s.a)*rad).toFixed(1)}) `+
+      `rotate(${(s.rot+22*e).toFixed(1)})`);
+    s.g.setAttribute("opacity",(0.62+0.36*e).toFixed(2));
+  };
+
+  /* ---- THREE CELLS, IN A TRIANGLE ----------------------------------------
+     One cell coming apart is an incident; three coming apart together is a
+     lysis, and a lysis is what the step is. A TRIANGLE AND NOT A ROW because
+     a row has a first and a last and these three are in no order — and
+     because the gaps a triangle leaves are on the inside, which is where the
+     strands end up, so the glass fills with loose barcoded DNA instead of
+     three tidy haloes that never meet. Both offsets are fractions of the
+     lens, so the figure survives a resize the way everything else here does.
+
+     THE MEMBRANE IS ARCS WITH GAPS IN THEM FROM THE START. A fixed cell is a
+     permeabilised one — reagents have been walking in and out of it for three
+     rounds — so the gaps are the drawing being right about the chemistry
+     before they are the drawing being ready to break. The pores are marked on
+     the gaps rather than invented somewhere else, for the same reason. */
+  const TRI=[[-0.34,-0.30],[0.34,-0.30],[0,0.34]];
+  const SEG=7, NSTR=3, RAD0=R*0.30;
+  const ringPts=(rad,a0,a1)=>{ const o=[];
+    for(let i=0;i<=7;i++){ const a=a0+(a1-a0)*i/7;
+      o.push([rad*Math.cos(a), rad*Math.sin(a)]); } return o; };
+  const cells=TRI.map(([fx,fy],ci)=>{
+    const cg=el("g",{transform:
+      `translate(${(fx*LRX).toFixed(1)},${(fy*LRY).toFixed(1)})`});
+    lens.appendChild(cg);
+    const body=el("circle",{cx:"0",cy:"0",r:(R*0.97).toFixed(1),
+      fill:"var(--fg)","fill-opacity":".10"});
+    cg.appendChild(body);
+    const nuc=el("circle",{cx:(-R*0.22).toFixed(1),cy:(R*0.12).toFixed(1),
+      r:(R*0.30).toFixed(1),fill:"var(--fg)","fill-opacity":".22"});
+    cg.appendChild(nuc);
+    const seg=[], pore=[];
+    for(let i=0;i<SEG;i++){
+      /* the ring is rolled a little per cell: three identical membranes read
+         as one drawing stamped three times, which is the one thing three
+         cells must not look like */
+      const roll=ci*0.31;
+      const a0=(i/SEG)*2*Math.PI+0.13+roll, a1=((i+1)/SEG)*2*Math.PI-0.13+roll,
+            am=(a0+a1)/2;
+      const p=el("polyline",{points:pts(ringPts(R,a0,a1)),fill:"none",
+        stroke:"var(--fg)","stroke-width":"1.4","stroke-opacity":".85",
+        "stroke-linecap":"round"});
+      cg.appendChild(p);
+      seg.push({p, a:am, mid:[R*Math.cos(am), R*Math.sin(am)],
+                spin:(i%2?1:-1)*(26+i*8)});
+      const gp=a1+0.13;
+      pore.push(cg.appendChild(el("circle",{
+        cx:(R*Math.cos(gp)).toFixed(1), cy:(R*Math.sin(gp)).toFixed(1),
+        r:(R*0.085).toFixed(2), fill:"none", stroke:"var(--fg)",
+        "stroke-width":".9","stroke-opacity":".5"})));
+    }
+    /* WHAT SPILLS IS A HANDFUL PER CELL, NOT ONE AND NOT FIFTY. One molecule
+       crossing a wall reads as an incident; three read as the contents of a
+       cell, and nine in the glass read as a lysate. Past a handful each the
+       chips stop resolving and the whole thing becomes a cloud.
+
+       THEY LEAVE OUTWARD FROM THE MIDDLE OF THE LENS, each cell's fan swung
+       to face away from the centre, so the three bursts open outward instead
+       of firing into each other — but the fan is most of a turn wide, so the
+       inside gaps fill too. */
+    const EXIT=Math.atan2(fy*LRY, fx*LRX);
+    const strands=[];
+    for(let k=0;k<NSTR;k++){
+      const a=EXIT-0.42*Math.PI+k*(0.92*Math.PI/(NSTR-1));
+      const s={a, r0:RAD0*(0.62+0.19*k), r1:R*(0.86+0.06*(k%3)),
+               rot:a*180/Math.PI+(k%2?12:-14), g:el("g",{})};
+      molecule(s.g, BC3[ci], (ci*2.1+k*1.7));
+      cg.appendChild(s.g);
+      strands.push(s);
+    }
+    strands.forEach(s=>setStrand(s,0));
+    return {seg, pore, body, nuc, strands};
+  });
+  /* the boundary last, so nothing inside is drawn over its line */
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LRX.toFixed(1),ry:LRY.toFixed(1),
+    fill:"none",stroke:"var(--fg2)","stroke-width":"1","stroke-opacity":".55"}));
+
+  const easeOut=x=>1-Math.pow(1-Math.max(0,Math.min(1,x)),3);
+  const burst=(f0)=>{
+    const F=Math.max(0,Math.min(1,f0));
+    cells.forEach((C,ci)=>{
+      /* a tenth of the beat between them, and the window shortened to match so
+         the last one still finishes ON the beat: three cells going off in
+         unison is one cell drawn three times, and three cells strung out over
+         the whole beat is a queue */
+      const f=Math.max(0,Math.min(1,(F-ci*0.10)/0.80)), a=f*f;
+      C.seg.forEach(s=>{
+        /* each arc leaves along its own radius and turns about its own middle:
+           turning about the centre of the cell would only slide it round the
+           ring it is still part of */
+        s.p.setAttribute("transform",
+          `translate(${(Math.cos(s.a)*R*0.48*a).toFixed(1)},`+
+          `${(Math.sin(s.a)*R*0.48*a).toFixed(1)}) `+
+          `rotate(${(s.spin*a).toFixed(1)},${s.mid[0].toFixed(1)},${s.mid[1].toFixed(1)})`);
+        s.p.setAttribute("stroke-opacity",(0.85-0.70*f).toFixed(2));
+      });
+      C.pore.forEach(p=>p.setAttribute("stroke-opacity",
+        (0.5*Math.max(0,1-f*1.8)).toFixed(2)));
+      C.body.setAttribute("fill-opacity",(0.10*(1-f)).toFixed(2));
+      C.nuc.setAttribute("fill-opacity",(0.22*(1-0.8*f)).toFixed(2));
+      /* the strands are the one thing that eases to a stop inside the burst:
+         they are not thrown out, they diffuse out, and they brighten because
+         they are now in open solution rather than behind a wall */
+      const e=easeOut(f);
+      C.strands.forEach(s=>setStrand(s,e));
+    });
+  };
 
   /* ---- TIMING -------------------------------------------------------------
      A TRIP IS A ROW, so there are as many as the grid has rows. What is fixed
