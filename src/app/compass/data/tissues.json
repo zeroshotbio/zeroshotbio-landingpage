@@ -1,0 +1,1103 @@
+{
+"groups": [
+"neural / CNS",
+"sensory",
+"muscle",
+"mesenchymal / connective",
+"epithelial",
+"digestive / metabolic",
+"other"
+],
+"tissues": [
+{
+"name": "CNS other",
+"group": "neural / CNS",
+"powered": true,
+"module": 1,
+"module_program": "neural",
+"dense_reproducibility": 0.3030721644560496,
+"sparse_reproducibility": 0.5745356480280558,
+"lodo_worst": 0.0516707946856816,
+"lodo_culprit": "LY411575",
+"transfer_chem10": null,
+"drug_discrimination": 0.4285714285714285,
+"tier": "TIER 2 - PROMISING",
+"score": 7,
+"parent": "AXIS-NEURAL",
+"n_embryos": 328,
+"cos_to_axis": {
+"neural": 0.7613,
+"mesenchymal": 0.0943,
+"module3": 0.135,
+"epithelial": -0.0583,
+"fast-muscle": -0.1209
+},
+"drug_loading_on_axis": {
+"LY411575": {
+"neural": 8.9417,
+"mesenchymal": -0.0825,
+"module3": 0.7203,
+"epithelial": -0.4418,
+"fast-muscle": -0.8276
+},
+"SB505124": {
+"neural": 2.8664,
+"mesenchymal": 1.1168,
+"module3": 2.0727,
+"epithelial": -1.1693,
+"fast-muscle": -1.4355
+},
+"DMH1": {
+"neural": 0.4262,
+"mesenchymal": -0.1104,
+"module3": -0.4268,
+"epithelial": 0.023,
+"fast-muscle": 0.0078
+},
+"SU5402": {
+"neural": 5.1744,
+"mesenchymal": 0.993,
+"module3": 1.9313,
+"epithelial": -0.1576,
+"fast-muscle": -0.9084
+},
+"WntC59": {
+"neural": 3.127,
+"mesenchymal": 0.9611,
+"module3": 1.8421,
+"epithelial": 0.0449,
+"fast-muscle": -0.7299
+},
+"Cyclopamine": {
+"neural": 1.3376,
+"mesenchymal": 0.7786,
+"module3": -0.0093,
+"epithelial": -0.1202,
+"fast-muscle": -0.2789
+},
+"DEAB": {
+"neural": 0.934,
+"mesenchymal": -0.0662,
+"module3": -0.0509,
+"epithelial": -0.2314,
+"fast-muscle": -0.1561
+}
+}
+},
+{
+"name": "blood",
+"group": "other",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "cardiomyocyte",
+"group": "muscle",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "cranial sensory ganglia",
+"group": "sensory",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "ear",
+"group": "sensory",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "endoderm",
+"group": "digestive / metabolic",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "endothelium",
+"group": "other",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "epiderm",
+"group": "epithelial",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "epithelium",
+"group": "epithelial",
+"powered": true,
+"module": 4,
+"module_program": "epithelial",
+"dense_reproducibility": 0.4191222588221232,
+"sparse_reproducibility": 0.6725024183591207,
+"lodo_worst": 0.2492963920036951,
+"lodo_culprit": "DMH1",
+"transfer_chem10": 0.4863083958625793,
+"drug_discrimination": 0.6904761904761905,
+"tier": "TIER 1 - STRONG",
+"score": 11,
+"parent": "",
+"n_embryos": 481,
+"cos_to_axis": {
+"neural": -0.0721,
+"mesenchymal": 0.0778,
+"module3": -0.0072,
+"epithelial": 1.0,
+"fast-muscle": -0.0252
+},
+"drug_loading_on_axis": {
+"LY411575": {
+"neural": 0.3163,
+"mesenchymal": 0.4544,
+"module3": 0.0117,
+"epithelial": 1.6421,
+"fast-muscle": -0.1438
+},
+"SB505124": {
+"neural": -0.5837,
+"mesenchymal": 0.0268,
+"module3": 0.5646,
+"epithelial": 5.1241,
+"fast-muscle": 0.3601
+},
+"DMH1": {
+"neural": -0.808,
+"mesenchymal": -0.3854,
+"module3": -1.2684,
+"epithelial": 7.839,
+"fast-muscle": -0.3691
+},
+"SU5402": {
+"neural": 0.0445,
+"mesenchymal": 1.2389,
+"module3": 0.5802,
+"epithelial": 3.7541,
+"fast-muscle": -0.2939
+},
+"WntC59": {
+"neural": 0.342,
+"mesenchymal": 2.1987,
+"module3": 0.8934,
+"epithelial": 1.8033,
+"fast-muscle": -0.6141
+},
+"Cyclopamine": {
+"neural": -0.0367,
+"mesenchymal": 0.2998,
+"module3": -0.2688,
+"epithelial": 2.0638,
+"fast-muscle": -0.2432
+},
+"DEAB": {
+"neural": -0.0474,
+"mesenchymal": 0.1174,
+"module3": -0.1456,
+"epithelial": 0.959,
+"fast-muscle": -0.0483
+}
+}
+},
+{
+"name": "eye",
+"group": "sensory",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "fast muscle",
+"group": "muscle",
+"powered": true,
+"module": 5,
+"module_program": "fast-muscle",
+"dense_reproducibility": 0.5336753229300181,
+"sparse_reproducibility": 0.7062257726987203,
+"lodo_worst": 0.4001880089441935,
+"lodo_culprit": "SB505124",
+"transfer_chem10": 0.4609455267588297,
+"drug_discrimination": 0.5714285714285714,
+"tier": "TIER 1 - STRONG",
+"score": 12,
+"parent": "",
+"n_embryos": 475,
+"cos_to_axis": {
+"neural": -0.1415,
+"mesenchymal": -0.1057,
+"module3": -0.1428,
+"epithelial": -0.0252,
+"fast-muscle": 1.0
+},
+"drug_loading_on_axis": {
+"LY411575": {
+"neural": -0.1889,
+"mesenchymal": 0.0631,
+"module3": -0.1533,
+"epithelial": -0.0739,
+"fast-muscle": 1.2697
+},
+"SB505124": {
+"neural": -1.0497,
+"mesenchymal": -0.9837,
+"module3": -0.9707,
+"epithelial": -0.0406,
+"fast-muscle": 9.2336
+},
+"DMH1": {
+"neural": -1.0102,
+"mesenchymal": -0.4546,
+"module3": -1.3739,
+"epithelial": -0.3404,
+"fast-muscle": 4.3837
+},
+"SU5402": {
+"neural": -0.4627,
+"mesenchymal": -0.4654,
+"module3": -0.3731,
+"epithelial": 0.0651,
+"fast-muscle": 2.1693
+},
+"WntC59": {
+"neural": 0.0308,
+"mesenchymal": 0.2438,
+"module3": 0.4504,
+"epithelial": -0.3062,
+"fast-muscle": 1.1111
+},
+"Cyclopamine": {
+"neural": -0.1651,
+"mesenchymal": 0.2252,
+"module3": -0.3661,
+"epithelial": -0.3126,
+"fast-muscle": 1.1585
+},
+"DEAB": {
+"neural": -0.1349,
+"mesenchymal": -0.1703,
+"module3": -0.2664,
+"epithelial": -0.2167,
+"fast-muscle": 0.2032
+}
+}
+},
+{
+"name": "floor plate",
+"group": "neural / CNS",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "forebrain",
+"group": "neural / CNS",
+"powered": true,
+"module": 1,
+"module_program": "neural",
+"dense_reproducibility": 0.5472241938114166,
+"sparse_reproducibility": 0.8350076079368591,
+"lodo_worst": 0.0084532971183458,
+"lodo_culprit": "LY411575",
+"transfer_chem10": 0.2001231263081232,
+"drug_discrimination": 0.5714285714285714,
+"tier": "TIER 2 - PROMISING",
+"score": 9,
+"parent": "AXIS-NEURAL",
+"n_embryos": 496,
+"cos_to_axis": {
+"neural": 0.8553,
+"mesenchymal": 0.0632,
+"module3": 0.0758,
+"epithelial": -0.1139,
+"fast-muscle": -0.1255
+},
+"drug_loading_on_axis": {
+"LY411575": {
+"neural": 10.1165,
+"mesenchymal": 0.4072,
+"module3": 1.7115,
+"epithelial": -0.758,
+"fast-muscle": -1.0944
+},
+"SB505124": {
+"neural": 1.6988,
+"mesenchymal": 0.7776,
+"module3": 2.5075,
+"epithelial": -1.4005,
+"fast-muscle": -1.5864
+},
+"DMH1": {
+"neural": 0.5264,
+"mesenchymal": -0.0544,
+"module3": 0.2672,
+"epithelial": -0.1856,
+"fast-muscle": -0.072
+},
+"SU5402": {
+"neural": 1.5795,
+"mesenchymal": 0.8977,
+"module3": 1.4913,
+"epithelial": -0.1974,
+"fast-muscle": -0.6701
+},
+"WntC59": {
+"neural": 0.9604,
+"mesenchymal": 1.2476,
+"module3": 1.3696,
+"epithelial": -0.1862,
+"fast-muscle": -0.6864
+},
+"Cyclopamine": {
+"neural": 1.893,
+"mesenchymal": 0.4529,
+"module3": -0.3502,
+"epithelial": -0.2319,
+"fast-muscle": -0.1908
+},
+"DEAB": {
+"neural": 0.7554,
+"mesenchymal": -0.1849,
+"module3": 0.089,
+"epithelial": -0.2203,
+"fast-muscle": -0.1666
+}
+}
+},
+{
+"name": "head mesenchyme",
+"group": "mesenchymal / connective",
+"powered": true,
+"module": 2,
+"module_program": "mesenchymal",
+"dense_reproducibility": 0.2880160162846247,
+"sparse_reproducibility": 0.6122487783432007,
+"lodo_worst": 0.2357603957255681,
+"lodo_culprit": "SU5402",
+"transfer_chem10": 0.3880327343940735,
+"drug_discrimination": 0.8809523809523809,
+"tier": "TIER 2 - PROMISING",
+"score": 10,
+"parent": "AXIS-MESENCH",
+"n_embryos": 415,
+"cos_to_axis": {
+"neural": 0.1039,
+"mesenchymal": 0.7604,
+"module3": 0.1258,
+"epithelial": 0.0688,
+"fast-muscle": -0.0738
+},
+"drug_loading_on_axis": {
+"LY411575": {
+"neural": 0.8803,
+"mesenchymal": 2.1525,
+"module3": 0.3337,
+"epithelial": -0.0285,
+"fast-muscle": -0.3536
+},
+"SB505124": {
+"neural": 0.0799,
+"mesenchymal": 4.186,
+"module3": 1.5048,
+"epithelial": 0.7521,
+"fast-muscle": -0.2428
+},
+"DMH1": {
+"neural": -0.1717,
+"mesenchymal": 2.3771,
+"module3": -0.6606,
+"epithelial": 0.5787,
+"fast-muscle": 0.0
+},
+"SU5402": {
+"neural": 0.8132,
+"mesenchymal": 5.1398,
+"module3": 0.9586,
+"epithelial": 0.336,
+"fast-muscle": -0.823
+},
+"WntC59": {
+"neural": 0.9795,
+"mesenchymal": 3.3135,
+"module3": 1.2892,
+"epithelial": -0.1034,
+"fast-muscle": -0.7107
+},
+"Cyclopamine": {
+"neural": 0.8257,
+"mesenchymal": 3.5083,
+"module3": 0.376,
+"epithelial": 0.1517,
+"fast-muscle": -0.1493
+},
+"DEAB": {
+"neural": 0.0105,
+"mesenchymal": 0.9152,
+"module3": -0.1265,
+"epithelial": -0.0121,
+"fast-muscle": -0.1133
+}
+}
+},
+{
+"name": "head mesenchyme neural crest",
+"group": "mesenchymal / connective",
+"powered": true,
+"module": 2,
+"module_program": "mesenchymal",
+"dense_reproducibility": 0.2172943552335103,
+"sparse_reproducibility": 0.5134316086769104,
+"lodo_worst": 0.1714564139644304,
+"lodo_culprit": "SU5402",
+"transfer_chem10": 0.0704053491353988,
+"drug_discrimination": 0.8157894736842105,
+"tier": "TIER 2 - PROMISING",
+"score": 8,
+"parent": "AXIS-MESENCH",
+"n_embryos": 399,
+"cos_to_axis": {
+"neural": 0.1583,
+"mesenchymal": 0.7634,
+"module3": 0.1902,
+"epithelial": 0.0037,
+"fast-muscle": -0.0737
+},
+"drug_loading_on_axis": {
+"LY411575": {
+"neural": 0.6945,
+"mesenchymal": 2.1312,
+"module3": -0.0099,
+"epithelial": -0.0223,
+"fast-muscle": -0.2436
+},
+"SB505124": {
+"neural": 0.5071,
+"mesenchymal": 3.8991,
+"module3": 2.6071,
+"epithelial": 0.0547,
+"fast-muscle": -0.3185
+},
+"DMH1": {
+"neural": -0.1866,
+"mesenchymal": 2.5584,
+"module3": -0.692,
+"epithelial": 0.3677,
+"fast-muscle": 0.2145
+},
+"SU5402": {
+"neural": 0.9805,
+"mesenchymal": 5.4983,
+"module3": 1.1806,
+"epithelial": -0.0996,
+"fast-muscle": -0.7216
+},
+"WntC59": {
+"neural": 1.1791,
+"mesenchymal": 4.6992,
+"module3": 1.7372,
+"epithelial": -0.1939,
+"fast-muscle": -0.7418
+},
+"Cyclopamine": {
+"neural": 1.221,
+"mesenchymal": 4.221,
+"module3": 0.5811,
+"epithelial": 0.0635,
+"fast-muscle": -0.3285
+},
+"DEAB": {
+"neural": 0.1553,
+"mesenchymal": 0.7149,
+"module3": -0.4132,
+"epithelial": -0.1141,
+"fast-muscle": -0.0825
+}
+}
+},
+{
+"name": "hindbrain",
+"group": "neural / CNS",
+"powered": true,
+"module": 3,
+"module_program": "module3",
+"dense_reproducibility": 0.0185344902177651,
+"sparse_reproducibility": 0.1100212583939234,
+"lodo_worst": -0.1751545369625091,
+"lodo_culprit": "SB505124",
+"transfer_chem10": 0.394993136326472,
+"drug_discrimination": 0.3333333333333333,
+"tier": "TIER 3 - PROVISIONAL",
+"score": 7,
+"parent": "AXIS-MODULE3",
+"n_embryos": 500,
+"cos_to_axis": {
+"neural": 0.0843,
+"mesenchymal": 0.1482,
+"module3": 0.8277,
+"epithelial": -0.0955,
+"fast-muscle": -0.1771
+},
+"drug_loading_on_axis": {
+"LY411575": {
+"neural": 1.6286,
+"mesenchymal": -0.312,
+"module3": 0.3306,
+"epithelial": -0.5903,
+"fast-muscle": -0.6233
+},
+"SB505124": {
+"neural": -0.511,
+"mesenchymal": 0.473,
+"module3": 3.2482,
+"epithelial": -1.3421,
+"fast-muscle": -1.5168
+},
+"DMH1": {
+"neural": -0.1663,
+"mesenchymal": -0.0279,
+"module3": 0.5481,
+"epithelial": -0.2048,
+"fast-muscle": -0.1649
+},
+"SU5402": {
+"neural": 0.3105,
+"mesenchymal": 0.6496,
+"module3": 1.3687,
+"epithelial": -0.0237,
+"fast-muscle": -0.486
+},
+"WntC59": {
+"neural": 0.2413,
+"mesenchymal": 0.8301,
+"module3": 1.4305,
+"epithelial": -0.0507,
+"fast-muscle": -0.5363
+},
+"Cyclopamine": {
+"neural": -0.0464,
+"mesenchymal": -0.0855,
+"module3": -0.5127,
+"epithelial": -0.1278,
+"fast-muscle": -0.0567
+},
+"DEAB": {
+"neural": -0.2429,
+"mesenchymal": -0.0701,
+"module3": 0.2215,
+"epithelial": -0.0736,
+"fast-muscle": -0.0574
+}
+}
+},
+{
+"name": "intestine",
+"group": "digestive / metabolic",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "ionocytes",
+"group": "epithelial",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "lens",
+"group": "sensory",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "lpm derivatives",
+"group": "mesenchymal / connective",
+"powered": true,
+"module": 2,
+"module_program": "mesenchymal",
+"dense_reproducibility": 0.1408089064061641,
+"sparse_reproducibility": 0.3353522022565205,
+"lodo_worst": 0.132809684301416,
+"lodo_culprit": "SU5402",
+"transfer_chem10": null,
+"drug_discrimination": 0.9411764705882352,
+"tier": "TIER 3 - PROVISIONAL",
+"score": 6,
+"parent": "AXIS-MESENCH",
+"n_embryos": 234,
+"cos_to_axis": {
+"neural": 0.1142,
+"mesenchymal": 0.7369,
+"module3": 0.218,
+"epithelial": 0.1047,
+"fast-muscle": -0.0913
+},
+"drug_loading_on_axis": {
+"LY411575": {
+"neural": 0.863,
+"mesenchymal": 2.9014,
+"module3": 0.6536,
+"epithelial": 0.1913,
+"fast-muscle": -0.2796
+},
+"SB505124": {
+"neural": 0.3349,
+"mesenchymal": 4.4661,
+"module3": 2.6059,
+"epithelial": 0.9108,
+"fast-muscle": -0.4041
+},
+"DMH1": {
+"neural": -0.7503,
+"mesenchymal": 1.4728,
+"module3": -1.1448,
+"epithelial": 1.5671,
+"fast-muscle": 0.0707
+},
+"SU5402": {
+"neural": 0.8781,
+"mesenchymal": 4.7638,
+"module3": 1.1106,
+"epithelial": 0.3052,
+"fast-muscle": -0.7284
+},
+"WntC59": {
+"neural": 0.9653,
+"mesenchymal": 4.8339,
+"module3": 2.098,
+"epithelial": 0.0726,
+"fast-muscle": -0.9124
+},
+"Cyclopamine": {
+"neural": 0.9391,
+"mesenchymal": 3.7036,
+"module3": 0.5254,
+"epithelial": 0.282,
+"fast-muscle": -0.2503
+},
+"DEAB": {
+"neural": 0.3243,
+"mesenchymal": 1.5559,
+"module3": 0.0898,
+"epithelial": 0.0911,
+"fast-muscle": -0.3238
+}
+}
+},
+{
+"name": "mesenchyme",
+"group": "mesenchymal / connective",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "midbrain",
+"group": "neural / CNS",
+"powered": true,
+"module": 1,
+"module_program": "neural",
+"dense_reproducibility": 0.120399199736615,
+"sparse_reproducibility": 0.239552034686009,
+"lodo_worst": -0.0641184231887261,
+"lodo_culprit": "SU5402",
+"transfer_chem10": null,
+"drug_discrimination": 0.4761904761904761,
+"tier": "TIER 3 - PROVISIONAL",
+"score": 5,
+"parent": "AXIS-NEURAL",
+"n_embryos": 390,
+"cos_to_axis": {
+"neural": 0.5915,
+"mesenchymal": 0.3189,
+"module3": 0.154,
+"epithelial": 0.0211,
+"fast-muscle": -0.0688
+},
+"drug_loading_on_axis": {
+"LY411575": {
+"neural": 1.8595,
+"mesenchymal": -0.0892,
+"module3": -0.3486,
+"epithelial": -0.6015,
+"fast-muscle": -0.5879
+},
+"SB505124": {
+"neural": -1.3739,
+"mesenchymal": 1.0868,
+"module3": 2.2545,
+"epithelial": -1.3589,
+"fast-muscle": -1.7838
+},
+"DMH1": {
+"neural": 0.7883,
+"mesenchymal": 0.1839,
+"module3": 0.1748,
+"epithelial": 0.044,
+"fast-muscle": 0.1019
+},
+"SU5402": {
+"neural": 3.1446,
+"mesenchymal": 2.0592,
+"module3": 1.8544,
+"epithelial": 0.1192,
+"fast-muscle": -0.6479
+},
+"WntC59": {
+"neural": 4.5768,
+"mesenchymal": 2.7198,
+"module3": 2.1706,
+"epithelial": 0.2973,
+"fast-muscle": -0.842
+},
+"Cyclopamine": {
+"neural": 1.5498,
+"mesenchymal": 1.0316,
+"module3": -0.1569,
+"epithelial": -0.032,
+"fast-muscle": -0.3925
+},
+"DEAB": {
+"neural": 1.0362,
+"mesenchymal": 0.3766,
+"module3": 0.2851,
+"epithelial": -0.0303,
+"fast-muscle": -0.1888
+}
+}
+},
+{
+"name": "motor neuron",
+"group": "neural / CNS",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "muscle",
+"group": "muscle",
+"powered": true,
+"module": 3,
+"module_program": "module3",
+"dense_reproducibility": 0.1475007409850756,
+"sparse_reproducibility": 0.3263157159090042,
+"lodo_worst": 0.114461749792099,
+"lodo_culprit": "DMH1",
+"transfer_chem10": 0.3120903372764587,
+"drug_discrimination": 0.7857142857142857,
+"tier": "TIER 3 - PROVISIONAL",
+"score": 9,
+"parent": "AXIS-MODULE3",
+"n_embryos": 351,
+"cos_to_axis": {
+"neural": 0.1008,
+"mesenchymal": 0.4158,
+"module3": 0.3208,
+"epithelial": 0.1157,
+"fast-muscle": 0.0121
+},
+"drug_loading_on_axis": {
+"LY411575": {
+"neural": -0.125,
+"mesenchymal": 0.5902,
+"module3": -0.4301,
+"epithelial": -0.007,
+"fast-muscle": -0.4253
+},
+"SB505124": {
+"neural": 0.8514,
+"mesenchymal": 3.1814,
+"module3": 4.2799,
+"epithelial": 1.3269,
+"fast-muscle": 0.4875
+},
+"DMH1": {
+"neural": -0.2466,
+"mesenchymal": 1.0025,
+"module3": 0.1399,
+"epithelial": 1.4035,
+"fast-muscle": 0.8399
+},
+"SU5402": {
+"neural": 0.8689,
+"mesenchymal": 3.4352,
+"module3": 2.0774,
+"epithelial": 0.7113,
+"fast-muscle": -0.4588
+},
+"WntC59": {
+"neural": 0.9292,
+"mesenchymal": 2.4966,
+"module3": 2.5041,
+"epithelial": -0.1528,
+"fast-muscle": -0.2392
+},
+"Cyclopamine": {
+"neural": 0.5649,
+"mesenchymal": 1.7406,
+"module3": 1.1479,
+"epithelial": 0.4615,
+"fast-muscle": -0.0244
+},
+"DEAB": {
+"neural": 0.3045,
+"mesenchymal": 0.4373,
+"module3": 0.47,
+"epithelial": -0.1766,
+"fast-muscle": -0.2294
+}
+}
+},
+{
+"name": "neural crest",
+"group": "mesenchymal / connective",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "notochord",
+"group": "mesenchymal / connective",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "olfactory",
+"group": "sensory",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "other",
+"group": "other",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "pancreas",
+"group": "digestive / metabolic",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "pectoral fin",
+"group": "mesenchymal / connective",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "periderm",
+"group": "epithelial",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "pharyngeal arch",
+"group": "mesenchymal / connective",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "pigment",
+"group": "other",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "pronephros",
+"group": "digestive / metabolic",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "retina",
+"group": "sensory",
+"powered": true,
+"module": 3,
+"module_program": "module3",
+"dense_reproducibility": -0.0142789399251341,
+"sparse_reproducibility": 0.0268311301867167,
+"lodo_worst": -0.0565651978055636,
+"lodo_culprit": "SB505124",
+"transfer_chem10": 0.2038524374365806,
+"drug_discrimination": 0.5952380952380952,
+"tier": "TIER 3 - PROVISIONAL",
+"score": 6,
+"parent": "AXIS-MODULE3",
+"n_embryos": 499,
+"cos_to_axis": {
+"neural": 0.1511,
+"mesenchymal": 0.2267,
+"module3": 0.8304,
+"epithelial": -0.0092,
+"fast-muscle": -0.1433
+},
+"drug_loading_on_axis": {
+"LY411575": {
+"neural": 2.5397,
+"mesenchymal": -0.0181,
+"module3": 0.3582,
+"epithelial": -0.3983,
+"fast-muscle": -0.5652
+},
+"SB505124": {
+"neural": -0.0585,
+"mesenchymal": 0.227,
+"module3": 2.6809,
+"epithelial": -1.2788,
+"fast-muscle": -1.2017
+},
+"DMH1": {
+"neural": -0.4211,
+"mesenchymal": -0.1097,
+"module3": 0.1984,
+"epithelial": 0.0019,
+"fast-muscle": -0.1538
+},
+"SU5402": {
+"neural": 0.0185,
+"mesenchymal": 0.7543,
+"module3": 1.1525,
+"epithelial": -0.2949,
+"fast-muscle": -0.7838
+},
+"WntC59": {
+"neural": 0.6308,
+"mesenchymal": 0.6583,
+"module3": 1.421,
+"epithelial": -0.0213,
+"fast-muscle": -0.5662
+},
+"Cyclopamine": {
+"neural": -0.295,
+"mesenchymal": 0.0797,
+"module3": -0.2788,
+"epithelial": -0.1041,
+"fast-muscle": -0.0462
+},
+"DEAB": {
+"neural": -0.4607,
+"mesenchymal": -0.5918,
+"module3": -0.3578,
+"epithelial": -0.1614,
+"fast-muscle": -0.1683
+}
+}
+},
+{
+"name": "rhombomeres",
+"group": "neural / CNS",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "sclerotome",
+"group": "mesenchymal / connective",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "slow muscle",
+"group": "muscle",
+"powered": false,
+"module": null,
+"module_program": null
+},
+{
+"name": "spinal cord",
+"group": "neural / CNS",
+"powered": true,
+"module": 1,
+"module_program": "neural",
+"dense_reproducibility": 0.5973760187625885,
+"sparse_reproducibility": 0.87246306737264,
+"lodo_worst": 0.0662403653065363,
+"lodo_culprit": "LY411575",
+"transfer_chem10": 0.2521888315677643,
+"drug_discrimination": 0.4761904761904761,
+"tier": "TIER 3 - PROVISIONAL",
+"score": 7,
+"parent": "AXIS-NEURAL",
+"n_embryos": 397,
+"cos_to_axis": {
+"neural": 0.8473,
+"mesenchymal": 0.0776,
+"module3": 0.0799,
+"epithelial": -0.0541,
+"fast-muscle": -0.1156
+},
+"drug_loading_on_axis": {
+"LY411575": {
+"neural": 11.7673,
+"mesenchymal": 0.8849,
+"module3": 1.4687,
+"epithelial": -0.5988,
+"fast-muscle": -1.4221
+},
+"SB505124": {
+"neural": -0.1009,
+"mesenchymal": 0.2087,
+"module3": 2.0831,
+"epithelial": -1.2935,
+"fast-muscle": -1.4243
+},
+"DMH1": {
+"neural": -0.4785,
+"mesenchymal": 0.1473,
+"module3": 0.003,
+"epithelial": -0.1452,
+"fast-muscle": -0.0404
+},
+"SU5402": {
+"neural": 1.4669,
+"mesenchymal": 0.9019,
+"module3": 1.5541,
+"epithelial": -0.09,
+"fast-muscle": -0.6894
+},
+"WntC59": {
+"neural": 1.1374,
+"mesenchymal": 1.1603,
+"module3": 1.2853,
+"epithelial": -0.1077,
+"fast-muscle": -0.4883
+},
+"Cyclopamine": {
+"neural": 0.2657,
+"mesenchymal": 0.8101,
+"module3": -0.0789,
+"epithelial": -0.0452,
+"fast-muscle": -0.0798
+},
+"DEAB": {
+"neural": 1.3303,
+"mesenchymal": 0.1671,
+"module3": 0.4487,
+"epithelial": -0.0163,
+"fast-muscle": -0.1109
+}
+}
+}
+],
+"source": "R/coverage_grid.csv, p5_tissue_modules.csv, p5_modules.json, p4_program_metrics.csv, response_program_catalog.csv; cosines/loadings derived (DATA_MAP)"
+}

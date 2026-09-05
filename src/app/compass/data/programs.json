@@ -1,0 +1,2894 @@
+{
+"order": [
+"neural",
+"mesenchymal",
+"module3",
+"epithelial",
+"fast-muscle"
+],
+"programs": [
+{
+"id": "neural",
+"label": "Neural differentiation",
+"module": 1,
+"cross_tissue": true,
+"tissues": [
+"CNS other",
+"forebrain",
+"midbrain",
+"spinal cord"
+],
+"catalog_id": "AXIS-NEURAL",
+"tier": "TIER 1 - STRONG",
+"score": 11,
+"rubric": {
+"reproducibility": 1,
+"lodo": 1,
+"transfer": 1,
+"strength": 0,
+"coherence": 2,
+"specificity": 2,
+"coverage": 2,
+"confounder": 2
+},
+"evidence": {
+"dense_reproducibility": 0.415,
+"sparse_reproducibility": 0.708,
+"lodo_worst": 0.275,
+"lodo_culprit": "LY411575",
+"leave_one_tissue_out": 0.5280932237704595,
+"heldout_stratum_recurrence": 0.5925899744033813,
+"direction_transfer_chem10": 0.282
+},
+"loading_conservation_chem11": 0.9178889835991741,
+"loading_transfer_chem10": 0.9052656366734121,
+"cos_placebo": 0.123,
+"cos_depth": 0.0,
+"enrichment": [
+{
+"process": "synaptic structure/transmission",
+"direction": "UP",
+"p": 1.4361828702306679e-09,
+"n_genes": 16
+},
+{
+"process": "voltage/ligand-gated channels",
+"direction": "UP",
+"p": 4.4004854134605127e-10,
+"n_genes": 13
+},
+{
+"process": "pan-neuronal differentiation",
+"direction": "UP",
+"p": 4.430832251027554e-05,
+"n_genes": 9
+},
+{
+"process": "progenitor/proliferation",
+"direction": "DOWN",
+"p": 1.2827539706689174e-08,
+"n_genes": 11
+},
+{
+"process": "ribosome/translation",
+"direction": "DOWN",
+"p": 7.99642648643558e-05,
+"n_genes": 9
+},
+{
+"process": "collagen/ECM",
+"direction": "UP",
+"p": 0.0058859887715479,
+"n_genes": 9
+},
+{
+"process": "muscle structural",
+"direction": "DOWN",
+"p": 0.2240955219630587,
+"n_genes": 10
+}
+],
+"interpretation": "Neuronal differentiation / maturation. Synaptic (p=3.6e-6) and voltage/ligand-gated channel (p=8.5e-8) genes UP; progenitor and proliferation genes (sox2, hmga1a/2, ccnd1, her6, her4.1, notch3, dla/dld) DOWN (p=1.6e-8); ribosome/translation DOWN. NOT a composition effect: the correlation between neural loading and the change in neural-tissue cell FRACTION is -0.775, i.e. drugs that raise this axis have FEWER neural cells, not more. Named for the biology, not for LY411575.",
+"caveat": "Scores Tier 2 on the pre-registered rubric only because depth-corrected reproducibility (0.42 dense) falls just under the 0.45 threshold and the axis explains less energy than a random direction. Its interpretive and transfer evidence is the strongest in the catalog: loading transfer to CHEM10 r=+0.90.",
+"top_positive": [
+{
+"symbol": "bnc2",
+"id": "ENSDARG00000069989",
+"loading": 0.0393
+},
+{
+"symbol": "kcnq5a",
+"id": "ENSDARG00000069954",
+"loading": 0.0388
+},
+{
+"symbol": "BX005003.1",
+"id": "ENSDARG00000098435",
+"loading": 0.0366
+},
+{
+"symbol": "adarb2",
+"id": "ENSDARG00000071823",
+"loading": 0.0363
+},
+{
+"symbol": "kif26ba",
+"id": "ENSDARG00000013343",
+"loading": 0.0359
+},
+{
+"symbol": "KCNB2",
+"id": "ENSDARG00000088842",
+"loading": 0.0341
+},
+{
+"symbol": "magi3b",
+"id": "ENSDARG00000025974",
+"loading": 0.0336
+},
+{
+"symbol": "cacna1ha",
+"id": "ENSDARG00000060496",
+"loading": 0.0329
+},
+{
+"symbol": "ca10a",
+"id": "ENSDARG00000052644",
+"loading": 0.0329
+},
+{
+"symbol": "emid1",
+"id": "ENSDARG00000076119",
+"loading": 0.0326
+},
+{
+"symbol": "nr4a3",
+"id": "ENSDARG00000055854",
+"loading": 0.0321
+},
+{
+"symbol": "sez6b",
+"id": "ENSDARG00000079414",
+"loading": 0.0321
+},
+{
+"symbol": "and1",
+"id": "ENSDARG00000088514",
+"loading": 0.0316
+},
+{
+"symbol": "slit3",
+"id": "ENSDARG00000034268",
+"loading": 0.0313
+},
+{
+"symbol": "CU468723.4",
+"id": "ENSDARG00000113074",
+"loading": 0.0311
+},
+{
+"symbol": "man1a1",
+"id": "ENSDARG00000005652",
+"loading": 0.0308
+},
+{
+"symbol": "and2",
+"id": "ENSDARG00000079302",
+"loading": 0.0307
+},
+{
+"symbol": "pcdh1b",
+"id": "ENSDARG00000036175",
+"loading": 0.0304
+},
+{
+"symbol": "kcnq5b",
+"id": "ENSDARG00000069953",
+"loading": 0.0303
+},
+{
+"symbol": "msi2a",
+"id": "ENSDARG00000033901",
+"loading": 0.0302
+},
+{
+"symbol": "fam20cb",
+"id": "ENSDARG00000090338",
+"loading": 0.03
+},
+{
+"symbol": "col1a1a",
+"id": "ENSDARG00000012405",
+"loading": 0.0294
+},
+{
+"symbol": "celf5a",
+"id": "ENSDARG00000071375",
+"loading": 0.0294
+},
+{
+"symbol": "col1a1b",
+"id": "ENSDARG00000035809",
+"loading": 0.0294
+},
+{
+"symbol": "klhdc8b",
+"id": "ENSDARG00000090787",
+"loading": 0.0292
+},
+{
+"symbol": "tshz2",
+"id": "ENSDARG00000079201",
+"loading": 0.0291
+},
+{
+"symbol": "znf804a",
+"id": "ENSDARG00000027079",
+"loading": 0.029
+},
+{
+"symbol": "celf4",
+"id": "ENSDARG00000070045",
+"loading": 0.0289
+},
+{
+"symbol": "erfl1",
+"id": "ENSDARG00000086892",
+"loading": 0.0287
+},
+{
+"symbol": "ebf3a",
+"id": "ENSDARG00000100244",
+"loading": 0.0285
+},
+{
+"symbol": "si:dkey-112m2.1",
+"id": "ENSDARG00000074863",
+"loading": 0.0284
+},
+{
+"symbol": "pbx3b",
+"id": "ENSDARG00000013615",
+"loading": 0.0283
+},
+{
+"symbol": "kif26ab",
+"id": "ENSDARG00000015016",
+"loading": 0.0283
+},
+{
+"symbol": "cacna2d2a",
+"id": "ENSDARG00000103390",
+"loading": 0.0283
+},
+{
+"symbol": "ntng1a",
+"id": "ENSDARG00000014973",
+"loading": 0.0281
+},
+{
+"symbol": "nol4la",
+"id": "ENSDARG00000074902",
+"loading": 0.0279
+},
+{
+"symbol": "tmeff2a",
+"id": "ENSDARG00000051824",
+"loading": 0.0277
+},
+{
+"symbol": "pde10a",
+"id": "ENSDARG00000003449",
+"loading": 0.0277
+},
+{
+"symbol": "vav2",
+"id": "ENSDARG00000044718",
+"loading": 0.0271
+},
+{
+"symbol": "znf385c",
+"id": "ENSDARG00000058154",
+"loading": 0.0271
+},
+{
+"symbol": "maml3",
+"id": "ENSDARG00000079552",
+"loading": 0.0271
+},
+{
+"symbol": "ptprga",
+"id": "ENSDARG00000045006",
+"loading": 0.027
+},
+{
+"symbol": "nrxn3a",
+"id": "ENSDARG00000043746",
+"loading": 0.027
+},
+{
+"symbol": "kcnd2",
+"id": "ENSDARG00000032799",
+"loading": 0.0264
+},
+{
+"symbol": "nos1",
+"id": "ENSDARG00000068910",
+"loading": 0.0262
+},
+{
+"symbol": "GRIK2",
+"id": "ENSDARG00000113771",
+"loading": 0.026
+},
+{
+"symbol": "zfhx4",
+"id": "ENSDARG00000075542",
+"loading": 0.0259
+},
+{
+"symbol": "fign",
+"id": "ENSDARG00000008662",
+"loading": 0.0258
+},
+{
+"symbol": "grm8a",
+"id": "ENSDARG00000077654",
+"loading": 0.0253
+},
+{
+"symbol": "nrp1a",
+"id": "ENSDARG00000102153",
+"loading": 0.0252
+}
+],
+"top_negative": [
+{
+"symbol": "CR848047.1",
+"id": "ENSDARG00000095906",
+"loading": -0.1269
+},
+{
+"symbol": "CU467822.2",
+"id": "ENSDARG00000101584",
+"loading": -0.1223
+},
+{
+"symbol": "BX465834.1",
+"id": "ENSDARG00000095715",
+"loading": -0.1155
+},
+{
+"symbol": "BX664610.1",
+"id": "ENSDARG00000095557",
+"loading": -0.1076
+},
+{
+"symbol": "hsp90aa1.2",
+"id": "ENSDARG00000024746",
+"loading": -0.1038
+},
+{
+"symbol": "si:ch73-215f7.1",
+"id": "ENSDARG00000098512",
+"loading": -0.1022
+},
+{
+"symbol": "CU929451.2",
+"id": "ENSDARG00000098395",
+"loading": -0.1001
+},
+{
+"symbol": "slc6a9",
+"id": "ENSDARG00000018534",
+"loading": -0.0905
+},
+{
+"symbol": "qkib",
+"id": "ENSDARG00000002026",
+"loading": -0.0885
+},
+{
+"symbol": "notch3",
+"id": "ENSDARG00000052139",
+"loading": -0.0847
+},
+{
+"symbol": "atp1a1b",
+"id": "ENSDARG00000019856",
+"loading": -0.0837
+},
+{
+"symbol": "ptprz1a",
+"id": "ENSDARG00000051814",
+"loading": -0.0824
+},
+{
+"symbol": "gpm6bb",
+"id": "ENSDARG00000001676",
+"loading": -0.0798
+},
+{
+"symbol": "nfia",
+"id": "ENSDARG00000062420",
+"loading": -0.0754
+},
+{
+"symbol": "npas1",
+"id": "ENSDARG00000015876",
+"loading": -0.0697
+},
+{
+"symbol": "hspa4a",
+"id": "ENSDARG00000004754",
+"loading": -0.0683
+},
+{
+"symbol": "metrn",
+"id": "ENSDARG00000030367",
+"loading": -0.0675
+},
+{
+"symbol": "plp1a",
+"id": "ENSDARG00000103732",
+"loading": -0.0653
+},
+{
+"symbol": "notch1b",
+"id": "ENSDARG00000052094",
+"loading": -0.0648
+},
+{
+"symbol": "ptprz1b",
+"id": "ENSDARG00000020871",
+"loading": -0.0641
+},
+{
+"symbol": "nrarpa",
+"id": "ENSDARG00000091419",
+"loading": -0.0635
+},
+{
+"symbol": "fgfr3",
+"id": "ENSDARG00000004782",
+"loading": -0.059
+},
+{
+"symbol": "rfx4",
+"id": "ENSDARG00000026395",
+"loading": -0.0589
+},
+{
+"symbol": "arhgef10la",
+"id": "ENSDARG00000088630",
+"loading": -0.0581
+},
+{
+"symbol": "slc1a2b",
+"id": "ENSDARG00000102453",
+"loading": -0.0575
+},
+{
+"symbol": "sema5ba",
+"id": "ENSDARG00000061471",
+"loading": -0.0574
+},
+{
+"symbol": "fgfr2",
+"id": "ENSDARG00000058115",
+"loading": -0.0571
+},
+{
+"symbol": "ptprfb",
+"id": "ENSDARG00000005754",
+"loading": -0.0553
+},
+{
+"symbol": "si:ch211-251b21.1",
+"id": "ENSDARG00000007275",
+"loading": -0.0538
+},
+{
+"symbol": "robo4",
+"id": "ENSDARG00000009387",
+"loading": -0.0537
+},
+{
+"symbol": "fosab",
+"id": "ENSDARG00000031683",
+"loading": -0.0536
+},
+{
+"symbol": "lrig1",
+"id": "ENSDARG00000075625",
+"loading": -0.0526
+},
+{
+"symbol": "adgrv1",
+"id": "ENSDARG00000021137",
+"loading": -0.0522
+},
+{
+"symbol": "her4.2",
+"id": "ENSDARG00000094426",
+"loading": -0.0499
+},
+{
+"symbol": "dtx4a",
+"id": "ENSDARG00000076302",
+"loading": -0.0493
+},
+{
+"symbol": "msi1",
+"id": "ENSDARG00000010710",
+"loading": -0.0491
+},
+{
+"symbol": "pax3a",
+"id": "ENSDARG00000010192",
+"loading": -0.0491
+},
+{
+"symbol": "KIRREL3",
+"id": "ENSDARG00000115903",
+"loading": -0.0486
+},
+{
+"symbol": "si:dkey-35m8.1",
+"id": "ENSDARG00000094587",
+"loading": -0.0485
+},
+{
+"symbol": "ndst3",
+"id": "ENSDARG00000041776",
+"loading": -0.0482
+},
+{
+"symbol": "plxnb1a",
+"id": "ENSDARG00000075821",
+"loading": -0.048
+},
+{
+"symbol": "prex2",
+"id": "ENSDARG00000071692",
+"loading": -0.0478
+},
+{
+"symbol": "FP016248.1",
+"id": "ENSDARG00000117621",
+"loading": -0.0461
+},
+{
+"symbol": "NPAS3",
+"id": "ENSDARG00000109820",
+"loading": -0.0458
+},
+{
+"symbol": "sox6",
+"id": "ENSDARG00000015536",
+"loading": -0.0457
+},
+{
+"symbol": "yap1",
+"id": "ENSDARG00000068401",
+"loading": -0.0457
+},
+{
+"symbol": "dla",
+"id": "ENSDARG00000010791",
+"loading": -0.0454
+},
+{
+"symbol": "slc1a3b",
+"id": "ENSDARG00000043148",
+"loading": -0.0453
+},
+{
+"symbol": "notch1a",
+"id": "ENSDARG00000103554",
+"loading": -0.045
+},
+{
+"symbol": "plch1",
+"id": "ENSDARG00000079253",
+"loading": -0.0445
+}
+],
+"gram_row": {
+"neural": 1.0,
+"mesenchymal": 0.1658,
+"module3": 0.1354,
+"epithelial": -0.0721,
+"fast-muscle": -0.1415
+}
+},
+{
+"id": "mesenchymal",
+"label": "Mesenchymal proliferation arrest",
+"module": 2,
+"cross_tissue": true,
+"tissues": [
+"head mesenchyme",
+"head mesenchyme neural crest",
+"lpm derivatives"
+],
+"catalog_id": "AXIS-MESENCHYMAL",
+"tier": "TIER 2 - PROMISING",
+"score": 10,
+"rubric": {
+"reproducibility": 1,
+"lodo": 1,
+"transfer": 1,
+"strength": 0,
+"coherence": 1,
+"specificity": 2,
+"coverage": 2,
+"confounder": 2
+},
+"evidence": {
+"dense_reproducibility": 0.274,
+"sparse_reproducibility": 0.537,
+"lodo_worst": 0.226,
+"lodo_culprit": "SU5402",
+"leave_one_tissue_out": 0.3614150914880965,
+"heldout_stratum_recurrence": 0.3476687421401341,
+"direction_transfer_chem10": 0.23
+},
+"loading_conservation_chem11": 0.7058999856385465,
+"loading_transfer_chem10": 0.015674845569132876,
+"cos_placebo": 0.168,
+"cos_depth": 0.0,
+"enrichment": [
+{
+"process": "synaptic structure/transmission",
+"direction": "UP",
+"p": 0.0553469483313645,
+"n_genes": 16
+},
+{
+"process": "voltage/ligand-gated channels",
+"direction": "DOWN",
+"p": 0.069467953106754,
+"n_genes": 13
+},
+{
+"process": "pan-neuronal differentiation",
+"direction": "UP",
+"p": 0.2104298644293618,
+"n_genes": 9
+},
+{
+"process": "progenitor/proliferation",
+"direction": "DOWN",
+"p": 0.0001591575848563,
+"n_genes": 11
+},
+{
+"process": "ribosome/translation",
+"direction": "DOWN",
+"p": 6.712311851250943e-07,
+"n_genes": 9
+},
+{
+"process": "collagen/ECM",
+"direction": "DOWN",
+"p": 0.0402960049729647,
+"n_genes": 9
+},
+{
+"process": "muscle structural",
+"direction": "DOWN",
+"p": 0.4272540409399563,
+"n_genes": 10
+}
+],
+"interpretation": "",
+"caveat": "",
+"top_positive": [
+{
+"symbol": "ccnd2a",
+"id": "ENSDARG00000051748",
+"loading": 0.0883
+},
+{
+"symbol": "krt4",
+"id": "ENSDARG00000017624",
+"loading": 0.0541
+},
+{
+"symbol": "and2",
+"id": "ENSDARG00000079302",
+"loading": 0.0506
+},
+{
+"symbol": "zbtb20",
+"id": "ENSDARG00000005586",
+"loading": 0.0487
+},
+{
+"symbol": "abcc5",
+"id": "ENSDARG00000061233",
+"loading": 0.0479
+},
+{
+"symbol": "adgrb3",
+"id": "ENSDARG00000059832",
+"loading": 0.0458
+},
+{
+"symbol": "and1",
+"id": "ENSDARG00000088514",
+"loading": 0.0457
+},
+{
+"symbol": "foxp2",
+"id": "ENSDARG00000005453",
+"loading": 0.0443
+},
+{
+"symbol": "nova2",
+"id": "ENSDARG00000017673",
+"loading": 0.0401
+},
+{
+"symbol": "wu:fi36a10",
+"id": "ENSDARG00000101869",
+"loading": 0.0395
+},
+{
+"symbol": "igfbp5b",
+"id": "ENSDARG00000025348",
+"loading": 0.0392
+},
+{
+"symbol": "CR848047.1",
+"id": "ENSDARG00000095906",
+"loading": 0.0385
+},
+{
+"symbol": "myo10l3",
+"id": "ENSDARG00000074143",
+"loading": 0.038
+},
+{
+"symbol": "aff2",
+"id": "ENSDARG00000052242",
+"loading": 0.0373
+},
+{
+"symbol": "BX294379.1",
+"id": "ENSDARG00000092950",
+"loading": 0.0373
+},
+{
+"symbol": "angpt4",
+"id": "ENSDARG00000076787",
+"loading": 0.037
+},
+{
+"symbol": "slco5a1a",
+"id": "ENSDARG00000071685",
+"loading": 0.037
+},
+{
+"symbol": "def8",
+"id": "ENSDARG00000068208",
+"loading": 0.0365
+},
+{
+"symbol": "col12a1b",
+"id": "ENSDARG00000019601",
+"loading": 0.0363
+},
+{
+"symbol": "col1a1b",
+"id": "ENSDARG00000035809",
+"loading": 0.0356
+},
+{
+"symbol": "kidins220a",
+"id": "ENSDARG00000031240",
+"loading": 0.0351
+},
+{
+"symbol": "cast",
+"id": "ENSDARG00000058693",
+"loading": 0.035
+},
+{
+"symbol": "qkib",
+"id": "ENSDARG00000002026",
+"loading": 0.0349
+},
+{
+"symbol": "agrn",
+"id": "ENSDARG00000079388",
+"loading": 0.0345
+},
+{
+"symbol": "mxd4",
+"id": "ENSDARG00000054031",
+"loading": 0.0345
+},
+{
+"symbol": "itgb4",
+"id": "ENSDARG00000028507",
+"loading": 0.0342
+},
+{
+"symbol": "col1a1a",
+"id": "ENSDARG00000012405",
+"loading": 0.0341
+},
+{
+"symbol": "pleca",
+"id": "ENSDARG00000062590",
+"loading": 0.034
+},
+{
+"symbol": "fam107b",
+"id": "ENSDARG00000026865",
+"loading": 0.0339
+},
+{
+"symbol": "tlcd2",
+"id": "ENSDARG00000077396",
+"loading": 0.0332
+},
+{
+"symbol": "creb5b",
+"id": "ENSDARG00000070536",
+"loading": 0.0331
+},
+{
+"symbol": "cyt1",
+"id": "ENSDARG00000092947",
+"loading": 0.0325
+},
+{
+"symbol": "lrp1aa",
+"id": "ENSDARG00000097827",
+"loading": 0.0322
+},
+{
+"symbol": "igsf3",
+"id": "ENSDARG00000077002",
+"loading": 0.032
+},
+{
+"symbol": "nlgn1",
+"id": "ENSDARG00000077710",
+"loading": 0.032
+},
+{
+"symbol": "zbtb16a",
+"id": "ENSDARG00000007184",
+"loading": 0.0317
+},
+{
+"symbol": "nfia",
+"id": "ENSDARG00000062420",
+"loading": 0.0312
+},
+{
+"symbol": "atrnl1a",
+"id": "ENSDARG00000077188",
+"loading": 0.0302
+},
+{
+"symbol": "flna",
+"id": "ENSDARG00000074201",
+"loading": 0.0302
+},
+{
+"symbol": "CABZ01056843.1",
+"id": "ENSDARG00000117747",
+"loading": 0.0301
+},
+{
+"symbol": "dacha",
+"id": "ENSDARG00000010132",
+"loading": 0.0301
+},
+{
+"symbol": "cemip",
+"id": "ENSDARG00000039881",
+"loading": 0.03
+},
+{
+"symbol": "CABZ01074130.1",
+"id": "ENSDARG00000105274",
+"loading": 0.0296
+},
+{
+"symbol": "fah",
+"id": "ENSDARG00000101762",
+"loading": 0.0295
+},
+{
+"symbol": "egfra",
+"id": "ENSDARG00000013847",
+"loading": 0.0295
+},
+{
+"symbol": "dachd",
+"id": "ENSDARG00000069440",
+"loading": 0.0292
+},
+{
+"symbol": "mpp7a",
+"id": "ENSDARG00000102470",
+"loading": 0.029
+},
+{
+"symbol": "tnn",
+"id": "ENSDARG00000024829",
+"loading": 0.0287
+},
+{
+"symbol": "RALGDS",
+"id": "ENSDARG00000042409",
+"loading": 0.0287
+},
+{
+"symbol": "cyt1l",
+"id": "ENSDARG00000036832",
+"loading": 0.0283
+}
+],
+"top_negative": [
+{
+"symbol": "hmga1a",
+"id": "ENSDARG00000028335",
+"loading": -0.0549
+},
+{
+"symbol": "diaph3",
+"id": "ENSDARG00000090785",
+"loading": -0.0527
+},
+{
+"symbol": "hmga2",
+"id": "ENSDARG00000069912",
+"loading": -0.0527
+},
+{
+"symbol": "her6",
+"id": "ENSDARG00000006514",
+"loading": -0.0524
+},
+{
+"symbol": "abcf1",
+"id": "ENSDARG00000031795",
+"loading": -0.0504
+},
+{
+"symbol": "kcnq5b",
+"id": "ENSDARG00000069953",
+"loading": -0.0494
+},
+{
+"symbol": "col11a2",
+"id": "ENSDARG00000012422",
+"loading": -0.0485
+},
+{
+"symbol": "serpinh1b",
+"id": "ENSDARG00000019949",
+"loading": -0.0485
+},
+{
+"symbol": "znf536",
+"id": "ENSDARG00000103648",
+"loading": -0.0476
+},
+{
+"symbol": "eif4g1a",
+"id": "ENSDARG00000006200",
+"loading": -0.0468
+},
+{
+"symbol": "cirbpa",
+"id": "ENSDARG00000103672",
+"loading": -0.0468
+},
+{
+"symbol": "tuba8l4",
+"id": "ENSDARG00000006260",
+"loading": -0.0453
+},
+{
+"symbol": "tnxba",
+"id": "ENSDARG00000001760",
+"loading": -0.0453
+},
+{
+"symbol": "ncl",
+"id": "ENSDARG00000002710",
+"loading": -0.0449
+},
+{
+"symbol": "hspa9",
+"id": "ENSDARG00000003035",
+"loading": -0.0436
+},
+{
+"symbol": "BX005003.1",
+"id": "ENSDARG00000098435",
+"loading": -0.0432
+},
+{
+"symbol": "epyc",
+"id": "ENSDARG00000056950",
+"loading": -0.0432
+},
+{
+"symbol": "ctdp1",
+"id": "ENSDARG00000017522",
+"loading": -0.0427
+},
+{
+"symbol": "kcnab2a",
+"id": "ENSDARG00000087247",
+"loading": -0.0426
+},
+{
+"symbol": "hey1",
+"id": "ENSDARG00000070538",
+"loading": -0.0425
+},
+{
+"symbol": "prim2",
+"id": "ENSDARG00000052721",
+"loading": -0.0424
+},
+{
+"symbol": "chaf1a",
+"id": "ENSDARG00000062152",
+"loading": -0.0424
+},
+{
+"symbol": "mki67",
+"id": "ENSDARG00000091150",
+"loading": -0.0423
+},
+{
+"symbol": "zeb2a",
+"id": "ENSDARG00000062338",
+"loading": -0.0412
+},
+{
+"symbol": "BX088707.3",
+"id": "ENSDARG00000117253",
+"loading": -0.0411
+},
+{
+"symbol": "ntrk3a",
+"id": "ENSDARG00000077228",
+"loading": -0.0409
+},
+{
+"symbol": "hnrnpa1b",
+"id": "ENSDARG00000036675",
+"loading": -0.04
+},
+{
+"symbol": "fgfr3",
+"id": "ENSDARG00000004782",
+"loading": -0.0397
+},
+{
+"symbol": "phgdh",
+"id": "ENSDARG00000001873",
+"loading": -0.0392
+},
+{
+"symbol": "ccnd1",
+"id": "ENSDARG00000101637",
+"loading": -0.039
+},
+{
+"symbol": "mcm6",
+"id": "ENSDARG00000057683",
+"loading": -0.0387
+},
+{
+"symbol": "her9",
+"id": "ENSDARG00000056438",
+"loading": -0.0385
+},
+{
+"symbol": "pcna",
+"id": "ENSDARG00000054155",
+"loading": -0.0382
+},
+{
+"symbol": "baz1b",
+"id": "ENSDARG00000102832",
+"loading": -0.0382
+},
+{
+"symbol": "eif5b",
+"id": "ENSDARG00000016548",
+"loading": -0.038
+},
+{
+"symbol": "mef2cb",
+"id": "ENSDARG00000009418",
+"loading": -0.038
+},
+{
+"symbol": "taf15",
+"id": "ENSDARG00000070019",
+"loading": -0.0379
+},
+{
+"symbol": "epha7",
+"id": "ENSDARG00000004635",
+"loading": -0.0375
+},
+{
+"symbol": "eprs1",
+"id": "ENSDARG00000060494",
+"loading": -0.0373
+},
+{
+"symbol": "si:ch73-281n10.2",
+"id": "ENSDARG00000097102",
+"loading": -0.0372
+},
+{
+"symbol": "hapln1a",
+"id": "ENSDARG00000089769",
+"loading": -0.0372
+},
+{
+"symbol": "atf4a",
+"id": "ENSDARG00000111939",
+"loading": -0.037
+},
+{
+"symbol": "pfn2l",
+"id": "ENSDARG00000012682",
+"loading": -0.0369
+},
+{
+"symbol": "tubb2b",
+"id": "ENSDARG00000098591",
+"loading": -0.0369
+},
+{
+"symbol": "lamc3",
+"id": "ENSDARG00000093572",
+"loading": -0.0369
+},
+{
+"symbol": "nat8l",
+"id": "ENSDARG00000077256",
+"loading": -0.0367
+},
+{
+"symbol": "tiparp",
+"id": "ENSDARG00000061841",
+"loading": -0.0366
+},
+{
+"symbol": "nkd1",
+"id": "ENSDARG00000020053",
+"loading": -0.0363
+},
+{
+"symbol": "eif2s2",
+"id": "ENSDARG00000053047",
+"loading": -0.0363
+},
+{
+"symbol": "col11a1a",
+"id": "ENSDARG00000026165",
+"loading": -0.036
+}
+],
+"gram_row": {
+"neural": 0.1658,
+"mesenchymal": 1.0,
+"module3": 0.2402,
+"epithelial": 0.0778,
+"fast-muscle": -0.1057
+}
+},
+{
+"id": "module3",
+"label": "Module 3 (provisional)",
+"module": 3,
+"cross_tissue": true,
+"tissues": [
+"hindbrain",
+"muscle",
+"retina"
+],
+"catalog_id": "AXIS-MODULE3",
+"tier": "TIER 2 - PROMISING",
+"score": 8,
+"rubric": {
+"reproducibility": 1,
+"lodo": 1,
+"transfer": 1,
+"strength": 0,
+"coherence": 0,
+"specificity": 2,
+"coverage": 2,
+"confounder": 1
+},
+"evidence": {
+"dense_reproducibility": 0.303,
+"sparse_reproducibility": 0.391,
+"lodo_worst": 0.231,
+"lodo_culprit": "Cyclopamine",
+"leave_one_tissue_out": 0.3409009509616428,
+"heldout_stratum_recurrence": 0.3471001982688904,
+"direction_transfer_chem10": 0.133
+},
+"loading_conservation_chem11": 0.12276426360739928,
+"loading_transfer_chem10": -0.2967990463011665,
+"cos_placebo": 0.224,
+"cos_depth": 0.0,
+"enrichment": [
+{
+"process": "synaptic structure/transmission",
+"direction": "UP",
+"p": 2.6022762218504534e-06,
+"n_genes": 16
+},
+{
+"process": "voltage/ligand-gated channels",
+"direction": "UP",
+"p": 0.2730582067386885,
+"n_genes": 13
+},
+{
+"process": "pan-neuronal differentiation",
+"direction": "DOWN",
+"p": 0.0002678890535451,
+"n_genes": 9
+},
+{
+"process": "progenitor/proliferation",
+"direction": "DOWN",
+"p": 0.0715424893043315,
+"n_genes": 11
+},
+{
+"process": "ribosome/translation",
+"direction": "DOWN",
+"p": 5.253769143026359e-06,
+"n_genes": 9
+},
+{
+"process": "collagen/ECM",
+"direction": "UP",
+"p": 5.472006799314449e-05,
+"n_genes": 9
+},
+{
+"process": "muscle structural",
+"direction": "DOWN",
+"p": 5.749613579836284e-06,
+"n_genes": 10
+}
+],
+"interpretation": "Not biologically interpretable. Membership is anatomically incoherent (hindbrain + muscle + retina) and the enrichment is internally contradictory: synaptic genes UP (p=2.6e-6) while pan-neuronal differentiation genes are DOWN (p=2.7e-4), alongside muscle-structural and translation DOWN. Most consistent with a residual mixed/technical axis.",
+"caveat": "Retained as a negative result. Direction transfer to CHEM10 is negative (loading r=-0.30).",
+"top_positive": [
+{
+"symbol": "grid1b",
+"id": "ENSDARG00000044161",
+"loading": 0.0562
+},
+{
+"symbol": "ddb1",
+"id": "ENSDARG00000074431",
+"loading": 0.044
+},
+{
+"symbol": "and2",
+"id": "ENSDARG00000079302",
+"loading": 0.0427
+},
+{
+"symbol": "si:ch211-263k4.2",
+"id": "ENSDARG00000092738",
+"loading": 0.0427
+},
+{
+"symbol": "mthfd1b",
+"id": "ENSDARG00000040492",
+"loading": 0.0422
+},
+{
+"symbol": "CR848683.2",
+"id": "ENSDARG00000117442",
+"loading": 0.0372
+},
+{
+"symbol": "pou2f2a",
+"id": "ENSDARG00000036816",
+"loading": 0.0371
+},
+{
+"symbol": "NPAS3",
+"id": "ENSDARG00000109820",
+"loading": 0.0368
+},
+{
+"symbol": "unc5a",
+"id": "ENSDARG00000099034",
+"loading": 0.0363
+},
+{
+"symbol": "ctnnd2a",
+"id": "ENSDARG00000062415",
+"loading": 0.0352
+},
+{
+"symbol": "igdcc3",
+"id": "ENSDARG00000075158",
+"loading": 0.035
+},
+{
+"symbol": "ncam2",
+"id": "ENSDARG00000017466",
+"loading": 0.0344
+},
+{
+"symbol": "dbn1",
+"id": "ENSDARG00000069113",
+"loading": 0.0341
+},
+{
+"symbol": "kaznb",
+"id": "ENSDARG00000006601",
+"loading": 0.0338
+},
+{
+"symbol": "cdh4",
+"id": "ENSDARG00000015002",
+"loading": 0.0337
+},
+{
+"symbol": "unc5db",
+"id": "ENSDARG00000061541",
+"loading": 0.0337
+},
+{
+"symbol": "grid1a",
+"id": "ENSDARG00000074583",
+"loading": 0.0334
+},
+{
+"symbol": "gabbr2",
+"id": "ENSDARG00000061042",
+"loading": 0.033
+},
+{
+"symbol": "BX548062.1",
+"id": "ENSDARG00000106248",
+"loading": 0.0322
+},
+{
+"symbol": "atf7ip",
+"id": "ENSDARG00000069619",
+"loading": 0.0321
+},
+{
+"symbol": "AL928977.1",
+"id": "ENSDARG00000094655",
+"loading": 0.0319
+},
+{
+"symbol": "ank2b",
+"id": "ENSDARG00000043313",
+"loading": 0.0319
+},
+{
+"symbol": "gnao1a",
+"id": "ENSDARG00000016676",
+"loading": 0.0317
+},
+{
+"symbol": "fam222a",
+"id": "ENSDARG00000090797",
+"loading": 0.0317
+},
+{
+"symbol": "cdc42ep4b",
+"id": "ENSDARG00000045036",
+"loading": 0.0316
+},
+{
+"symbol": "ptprua",
+"id": "ENSDARG00000092638",
+"loading": 0.0315
+},
+{
+"symbol": "slc4a4b",
+"id": "ENSDARG00000044808",
+"loading": 0.0315
+},
+{
+"symbol": "mrc2",
+"id": "ENSDARG00000078135",
+"loading": 0.0311
+},
+{
+"symbol": "msi2b",
+"id": "ENSDARG00000032614",
+"loading": 0.0311
+},
+{
+"symbol": "slc8a1b",
+"id": "ENSDARG00000043406",
+"loading": 0.031
+},
+{
+"symbol": "onecut2",
+"id": "ENSDARG00000090387",
+"loading": 0.031
+},
+{
+"symbol": "ints6l",
+"id": "ENSDARG00000017931",
+"loading": 0.0309
+},
+{
+"symbol": "CR847968.1",
+"id": "ENSDARG00000096991",
+"loading": 0.0307
+},
+{
+"symbol": "celf5a",
+"id": "ENSDARG00000071375",
+"loading": 0.0306
+},
+{
+"symbol": "ptprfb",
+"id": "ENSDARG00000005754",
+"loading": 0.0306
+},
+{
+"symbol": "brsk2b",
+"id": "ENSDARG00000077791",
+"loading": 0.0305
+},
+{
+"symbol": "dpp6a",
+"id": "ENSDARG00000076826",
+"loading": 0.0305
+},
+{
+"symbol": "dock1",
+"id": "ENSDARG00000099093",
+"loading": 0.0304
+},
+{
+"symbol": "agrn",
+"id": "ENSDARG00000079388",
+"loading": 0.0302
+},
+{
+"symbol": "celf2",
+"id": "ENSDARG00000002131",
+"loading": 0.0302
+},
+{
+"symbol": "shank1",
+"id": "ENSDARG00000060539",
+"loading": 0.0299
+},
+{
+"symbol": "slc35f1",
+"id": "ENSDARG00000053003",
+"loading": 0.0299
+},
+{
+"symbol": "peli1b",
+"id": "ENSDARG00000044083",
+"loading": 0.0297
+},
+{
+"symbol": "FQ311928.1",
+"id": "ENSDARG00000061421",
+"loading": 0.0297
+},
+{
+"symbol": "krt4",
+"id": "ENSDARG00000017624",
+"loading": 0.0296
+},
+{
+"symbol": "PLEKHH3",
+"id": "ENSDARG00000070174",
+"loading": 0.0296
+},
+{
+"symbol": "cadm2a",
+"id": "ENSDARG00000009930",
+"loading": 0.0295
+},
+{
+"symbol": "camta1a",
+"id": "ENSDARG00000077428",
+"loading": 0.0293
+},
+{
+"symbol": "slc44a5a",
+"id": "ENSDARG00000017398",
+"loading": 0.0293
+},
+{
+"symbol": "ntrk3a",
+"id": "ENSDARG00000077228",
+"loading": 0.0291
+}
+],
+"top_negative": [
+{
+"symbol": "myh7",
+"id": "ENSDARG00000079564",
+"loading": -0.0709
+},
+{
+"symbol": "si:ch73-1a9.3",
+"id": "ENSDARG00000103919",
+"loading": -0.0558
+},
+{
+"symbol": "serbp1a",
+"id": "ENSDARG00000074242",
+"loading": -0.0525
+},
+{
+"symbol": "cfl1",
+"id": "ENSDARG00000021124",
+"loading": -0.052
+},
+{
+"symbol": "h3f3d",
+"id": "ENSDARG00000045248",
+"loading": -0.0515
+},
+{
+"symbol": "si:ch73-46j18.5",
+"id": "ENSDARG00000092467",
+"loading": -0.0512
+},
+{
+"symbol": "mef2cb",
+"id": "ENSDARG00000009418",
+"loading": -0.0474
+},
+{
+"symbol": "hmga1a",
+"id": "ENSDARG00000028335",
+"loading": -0.0473
+},
+{
+"symbol": "mylpfa",
+"id": "ENSDARG00000053254",
+"loading": -0.0467
+},
+{
+"symbol": "hnrnpaba",
+"id": "ENSDARG00000007960",
+"loading": -0.0466
+},
+{
+"symbol": "si:ch73-281n10.2",
+"id": "ENSDARG00000097102",
+"loading": -0.0463
+},
+{
+"symbol": "eef1a1l1",
+"id": "ENSDARG00000020850",
+"loading": -0.0453
+},
+{
+"symbol": "hnrnpa0b",
+"id": "ENSDARG00000036162",
+"loading": -0.0449
+},
+{
+"symbol": "cirbpb",
+"id": "ENSDARG00000013351",
+"loading": -0.0435
+},
+{
+"symbol": "h1-0",
+"id": "ENSDARG00000038559",
+"loading": -0.0435
+},
+{
+"symbol": "eef1g",
+"id": "ENSDARG00000056119",
+"loading": -0.0434
+},
+{
+"symbol": "si:ch211-212k18.4",
+"id": "ENSDARG00000104169",
+"loading": -0.0427
+},
+{
+"symbol": "si:ch1073-429i10.3",
+"id": "ENSDARG00000068436",
+"loading": -0.042
+},
+{
+"symbol": "si:ch211-288g17.3",
+"id": "ENSDARG00000070959",
+"loading": -0.0418
+},
+{
+"symbol": "si:ch211-266g18.10",
+"id": "ENSDARG00000057903",
+"loading": -0.0416
+},
+{
+"symbol": "eprs1",
+"id": "ENSDARG00000060494",
+"loading": -0.0411
+},
+{
+"symbol": "eef2b",
+"id": "ENSDARG00000100371",
+"loading": -0.0402
+},
+{
+"symbol": "h3f3c",
+"id": "ENSDARG00000033009",
+"loading": -0.0401
+},
+{
+"symbol": "abcf1",
+"id": "ENSDARG00000031795",
+"loading": -0.04
+},
+{
+"symbol": "aars1",
+"id": "ENSDARG00000069142",
+"loading": -0.0399
+},
+{
+"symbol": "actb1",
+"id": "ENSDARG00000037746",
+"loading": -0.0394
+},
+{
+"symbol": "hsp90ab1",
+"id": "ENSDARG00000029150",
+"loading": -0.0393
+},
+{
+"symbol": "atp2a1",
+"id": "ENSDARG00000020574",
+"loading": -0.0391
+},
+{
+"symbol": "sox4a",
+"id": "ENSDARG00000004588",
+"loading": -0.0386
+},
+{
+"symbol": "atp5f1b",
+"id": "ENSDARG00000070083",
+"loading": -0.0384
+},
+{
+"symbol": "marcksl1a",
+"id": "ENSDARG00000039034",
+"loading": -0.0378
+},
+{
+"symbol": "hnrnpa1b",
+"id": "ENSDARG00000036675",
+"loading": -0.0377
+},
+{
+"symbol": "cenpf",
+"id": "ENSDARG00000055133",
+"loading": -0.0372
+},
+{
+"symbol": "bcl11ba",
+"id": "ENSDARG00000062510",
+"loading": -0.0369
+},
+{
+"symbol": "arglu1a",
+"id": "ENSDARG00000019223",
+"loading": -0.0369
+},
+{
+"symbol": "cirbpa",
+"id": "ENSDARG00000103672",
+"loading": -0.0368
+},
+{
+"symbol": "eif2s2",
+"id": "ENSDARG00000053047",
+"loading": -0.0368
+},
+{
+"symbol": "tpm2",
+"id": "ENSDARG00000104682",
+"loading": -0.0363
+},
+{
+"symbol": "calm1a",
+"id": "ENSDARG00000021811",
+"loading": -0.0356
+},
+{
+"symbol": "txlnba",
+"id": "ENSDARG00000020594",
+"loading": -0.0354
+},
+{
+"symbol": "ddx6",
+"id": "ENSDARG00000061338",
+"loading": -0.0353
+},
+{
+"symbol": "acta1a",
+"id": "ENSDARG00000036371",
+"loading": -0.035
+},
+{
+"symbol": "myh7l",
+"id": "ENSDARG00000079782",
+"loading": -0.035
+},
+{
+"symbol": "eif5b",
+"id": "ENSDARG00000016548",
+"loading": -0.0349
+},
+{
+"symbol": "nars1",
+"id": "ENSDARG00000061100",
+"loading": -0.0347
+},
+{
+"symbol": "tardbp",
+"id": "ENSDARG00000040031",
+"loading": -0.0346
+},
+{
+"symbol": "mki67",
+"id": "ENSDARG00000091150",
+"loading": -0.0346
+},
+{
+"symbol": "pnrc2",
+"id": "ENSDARG00000053291",
+"loading": -0.0344
+},
+{
+"symbol": "trdn",
+"id": "ENSDARG00000041779",
+"loading": -0.0341
+},
+{
+"symbol": "marcksb",
+"id": "ENSDARG00000008803",
+"loading": -0.034
+}
+],
+"gram_row": {
+"neural": 0.1354,
+"mesenchymal": 0.2402,
+"module3": 1.0,
+"epithelial": -0.0072,
+"fast-muscle": -0.1428
+}
+},
+{
+"id": "epithelial",
+"label": "Epithelial / fin-fold ECM",
+"module": 4,
+"cross_tissue": false,
+"tissues": [
+"epithelium"
+],
+"catalog_id": "TIS-EPITHELIUM",
+"tier": "TIER 1 - STRONG",
+"score": 11,
+"rubric": {
+"reproducibility": 1,
+"lodo": 1,
+"transfer": 2,
+"strength": 0,
+"coherence": 1,
+"specificity": 2,
+"coverage": 2,
+"confounder": 2
+},
+"evidence": {
+"dense_reproducibility": 0.4191222588221232,
+"sparse_reproducibility": 0.6725024183591207,
+"lodo_worst": 0.2492963920036951,
+"lodo_culprit": "DMH1",
+"leave_one_tissue_out": null,
+"heldout_stratum_recurrence": null,
+"direction_transfer_chem10": 0.4863083958625793
+},
+"loading_conservation_chem11": 0.8347931309143443,
+"loading_transfer_chem10": null,
+"cos_placebo": 0.042,
+"cos_depth": 0.021,
+"enrichment": [],
+"interpretation": "Fin-fold and ECM program: actinodins and1/and2/and3, vcanb, mdka, notch1a down; matrix remodelling and migration (mmp9, itga5, fn1b, hmcn1) up.",
+"caveat": "",
+"top_positive": [
+{
+"symbol": "nav2a",
+"id": "ENSDARG00000073688",
+"loading": 0.0771
+},
+{
+"symbol": "fn1b",
+"id": "ENSDARG00000006526",
+"loading": 0.0755
+},
+{
+"symbol": "mmp9",
+"id": "ENSDARG00000042816",
+"loading": 0.0755
+},
+{
+"symbol": "klhl4",
+"id": "ENSDARG00000016531",
+"loading": 0.0666
+},
+{
+"symbol": "itga5",
+"id": "ENSDARG00000006353",
+"loading": 0.0663
+},
+{
+"symbol": "TCF4",
+"id": "ENSDARG00000107408",
+"loading": 0.064
+},
+{
+"symbol": "si:ch211-263k4.2",
+"id": "ENSDARG00000092738",
+"loading": 0.0609
+},
+{
+"symbol": "lef1",
+"id": "ENSDARG00000031894",
+"loading": 0.0572
+},
+{
+"symbol": "hmcn1",
+"id": "ENSDARG00000016936",
+"loading": 0.0567
+},
+{
+"symbol": "slc6a17",
+"id": "ENSDARG00000068787",
+"loading": 0.0548
+},
+{
+"symbol": "CR848047.1",
+"id": "ENSDARG00000095906",
+"loading": 0.0548
+},
+{
+"symbol": "phf20l1",
+"id": "ENSDARG00000017427",
+"loading": 0.0542
+},
+{
+"symbol": "dnajb6b",
+"id": "ENSDARG00000020953",
+"loading": 0.0523
+},
+{
+"symbol": "tg",
+"id": "ENSDARG00000020084",
+"loading": 0.0519
+},
+{
+"symbol": "zfyve26",
+"id": "ENSDARG00000040131",
+"loading": 0.0508
+},
+{
+"symbol": "mboat2a",
+"id": "ENSDARG00000031845",
+"loading": 0.0502
+},
+{
+"symbol": "pcdh7b",
+"id": "ENSDARG00000060610",
+"loading": 0.0501
+},
+{
+"symbol": "myo10l3",
+"id": "ENSDARG00000074143",
+"loading": 0.049
+},
+{
+"symbol": "robo1",
+"id": "ENSDARG00000026784",
+"loading": 0.0484
+},
+{
+"symbol": "plekhg5b",
+"id": "ENSDARG00000101752",
+"loading": 0.048
+},
+{
+"symbol": "unc5da",
+"id": "ENSDARG00000092722",
+"loading": 0.0479
+},
+{
+"symbol": "BX936308.1",
+"id": "ENSDARG00000081299",
+"loading": 0.0473
+},
+{
+"symbol": "zbtb20",
+"id": "ENSDARG00000005586",
+"loading": 0.0467
+},
+{
+"symbol": "marcksl1a",
+"id": "ENSDARG00000039034",
+"loading": 0.0467
+},
+{
+"symbol": "CR855311.1",
+"id": "ENSDARG00000090352",
+"loading": 0.0458
+},
+{
+"symbol": "msna",
+"id": "ENSDARG00000058128",
+"loading": 0.0457
+},
+{
+"symbol": "trpv4",
+"id": "ENSDARG00000061941",
+"loading": 0.0456
+},
+{
+"symbol": "CU467822.2",
+"id": "ENSDARG00000101584",
+"loading": 0.0454
+},
+{
+"symbol": "kcnn4",
+"id": "ENSDARG00000086091",
+"loading": 0.0448
+},
+{
+"symbol": "anxa2a",
+"id": "ENSDARG00000003216",
+"loading": 0.0448
+},
+{
+"symbol": "mmp13a",
+"id": "ENSDARG00000114451",
+"loading": 0.0445
+},
+{
+"symbol": "kremen1",
+"id": "ENSDARG00000062579",
+"loading": 0.0444
+},
+{
+"symbol": "dsc2l",
+"id": "ENSDARG00000039677",
+"loading": 0.0442
+},
+{
+"symbol": "slc38a5a",
+"id": "ENSDARG00000009901",
+"loading": 0.044
+},
+{
+"symbol": "wwp2",
+"id": "ENSDARG00000061345",
+"loading": 0.0439
+},
+{
+"symbol": "tnnt3b",
+"id": "ENSDARG00000068457",
+"loading": 0.0435
+},
+{
+"symbol": "cntn1a",
+"id": "ENSDARG00000087843",
+"loading": 0.0433
+},
+{
+"symbol": "lrp1ab",
+"id": "ENSDARG00000029146",
+"loading": 0.0428
+},
+{
+"symbol": "timp2b",
+"id": "ENSDARG00000075261",
+"loading": 0.0425
+},
+{
+"symbol": "bcl3",
+"id": "ENSDARG00000087832",
+"loading": 0.0422
+},
+{
+"symbol": "prkg1a",
+"id": "ENSDARG00000020656",
+"loading": 0.042
+},
+{
+"symbol": "igfbp1a",
+"id": "ENSDARG00000099351",
+"loading": 0.0418
+},
+{
+"symbol": "bcar3",
+"id": "ENSDARG00000016981",
+"loading": 0.0418
+},
+{
+"symbol": "mthfd1l",
+"id": "ENSDARG00000042221",
+"loading": 0.0414
+},
+{
+"symbol": "txn",
+"id": "ENSDARG00000044125",
+"loading": 0.0414
+},
+{
+"symbol": "GARNL3",
+"id": "ENSDARG00000060631",
+"loading": 0.0411
+},
+{
+"symbol": "sema4ba",
+"id": "ENSDARG00000074414",
+"loading": 0.0409
+},
+{
+"symbol": "CU929451.2",
+"id": "ENSDARG00000098395",
+"loading": 0.0406
+},
+{
+"symbol": "cldn7b",
+"id": "ENSDARG00000014047",
+"loading": 0.0404
+},
+{
+"symbol": "rspo2",
+"id": "ENSDARG00000079570",
+"loading": 0.0402
+}
+],
+"top_negative": [
+{
+"symbol": "and2",
+"id": "ENSDARG00000079302",
+"loading": -0.1001
+},
+{
+"symbol": "and3",
+"id": "ENSDARG00000056873",
+"loading": -0.087
+},
+{
+"symbol": "vcanb",
+"id": "ENSDARG00000009401",
+"loading": -0.074
+},
+{
+"symbol": "mdka",
+"id": "ENSDARG00000036036",
+"loading": -0.0698
+},
+{
+"symbol": "CABZ01074130.1",
+"id": "ENSDARG00000105274",
+"loading": -0.0664
+},
+{
+"symbol": "notch1a",
+"id": "ENSDARG00000103554",
+"loading": -0.0655
+},
+{
+"symbol": "and1",
+"id": "ENSDARG00000088514",
+"loading": -0.061
+},
+{
+"symbol": "si:dkey-183i3.5",
+"id": "ENSDARG00000056248",
+"loading": -0.0577
+},
+{
+"symbol": "angptl7",
+"id": "ENSDARG00000027582",
+"loading": -0.0557
+},
+{
+"symbol": "col4a4",
+"id": "ENSDARG00000002831",
+"loading": -0.0532
+},
+{
+"symbol": "zmp:0000000846",
+"id": "ENSDARG00000078362",
+"loading": -0.0526
+},
+{
+"symbol": "tiparp",
+"id": "ENSDARG00000061841",
+"loading": -0.0525
+},
+{
+"symbol": "cyp1a",
+"id": "ENSDARG00000098315",
+"loading": -0.0515
+},
+{
+"symbol": "plecb",
+"id": "ENSDARG00000021987",
+"loading": -0.0492
+},
+{
+"symbol": "si:ch211-243g18.2",
+"id": "ENSDARG00000044261",
+"loading": -0.0491
+},
+{
+"symbol": "ssbp2",
+"id": "ENSDARG00000099727",
+"loading": -0.049
+},
+{
+"symbol": "vwa2",
+"id": "ENSDARG00000075441",
+"loading": -0.0468
+},
+{
+"symbol": "si:rp71-79p20.2",
+"id": "ENSDARG00000077762",
+"loading": -0.0466
+},
+{
+"symbol": "hs3st4",
+"id": "ENSDARG00000052648",
+"loading": -0.0448
+},
+{
+"symbol": "zgc:136930",
+"id": "ENSDARG00000055192",
+"loading": -0.044
+},
+{
+"symbol": "CABZ01044281.1",
+"id": "ENSDARG00000115956",
+"loading": -0.0433
+},
+{
+"symbol": "cpa6",
+"id": "ENSDARG00000012013",
+"loading": -0.0427
+},
+{
+"symbol": "adamts17",
+"id": "ENSDARG00000075555",
+"loading": -0.0416
+},
+{
+"symbol": "grm8b",
+"id": "ENSDARG00000076508",
+"loading": -0.0414
+},
+{
+"symbol": "si:dkeyp-14d3.1",
+"id": "ENSDARG00000075277",
+"loading": -0.0414
+},
+{
+"symbol": "lamb2l",
+"id": "ENSDARG00000033950",
+"loading": -0.0413
+},
+{
+"symbol": "col4a3",
+"id": "ENSDARG00000003395",
+"loading": -0.041
+},
+{
+"symbol": "emilin2b",
+"id": "ENSDARG00000102178",
+"loading": -0.0406
+},
+{
+"symbol": "padi2",
+"id": "ENSDARG00000044167",
+"loading": -0.0402
+},
+{
+"symbol": "cemip",
+"id": "ENSDARG00000039881",
+"loading": -0.0397
+},
+{
+"symbol": "igfbp2a",
+"id": "ENSDARG00000052470",
+"loading": -0.0396
+},
+{
+"symbol": "smox",
+"id": "ENSDARG00000036967",
+"loading": -0.0393
+},
+{
+"symbol": "prkd3",
+"id": "ENSDARG00000079967",
+"loading": -0.039
+},
+{
+"symbol": "wnk4b",
+"id": "ENSDARG00000088967",
+"loading": -0.0389
+},
+{
+"symbol": "her6",
+"id": "ENSDARG00000006514",
+"loading": -0.0388
+},
+{
+"symbol": "thbs4a",
+"id": "ENSDARG00000102777",
+"loading": -0.0385
+},
+{
+"symbol": "CHST13",
+"id": "ENSDARG00000004018",
+"loading": -0.0385
+},
+{
+"symbol": "gcgra",
+"id": "ENSDARG00000104022",
+"loading": -0.0385
+},
+{
+"symbol": "sh3bp5a",
+"id": "ENSDARG00000100529",
+"loading": -0.0385
+},
+{
+"symbol": "cxcl18b",
+"id": "ENSDARG00000075045",
+"loading": -0.0381
+},
+{
+"symbol": "AL929222.2",
+"id": "ENSDARG00000097738",
+"loading": -0.0379
+},
+{
+"symbol": "ephb2b",
+"id": "ENSDARG00000021539",
+"loading": -0.0378
+},
+{
+"symbol": "lepr",
+"id": "ENSDARG00000070961",
+"loading": -0.0373
+},
+{
+"symbol": "igf2bp3",
+"id": "ENSDARG00000010266",
+"loading": -0.037
+},
+{
+"symbol": "mmp30",
+"id": "ENSDARG00000045887",
+"loading": -0.037
+},
+{
+"symbol": "sema5a",
+"id": "ENSDARG00000058821",
+"loading": -0.0367
+},
+{
+"symbol": "adamtsl7",
+"id": "ENSDARG00000055439",
+"loading": -0.0365
+},
+{
+"symbol": "lum",
+"id": "ENSDARG00000045580",
+"loading": -0.0363
+},
+{
+"symbol": "sulf1",
+"id": "ENSDARG00000038428",
+"loading": -0.0358
+},
+{
+"symbol": "eya2",
+"id": "ENSDARG00000018984",
+"loading": -0.0355
+}
+],
+"gram_row": {
+"neural": -0.0721,
+"mesenchymal": 0.0778,
+"module3": -0.0072,
+"epithelial": 1.0,
+"fast-muscle": -0.0252
+}
+},
+{
+"id": "fast-muscle",
+"label": "Fast-muscle stress",
+"module": 5,
+"cross_tissue": false,
+"tissues": [
+"fast muscle"
+],
+"catalog_id": "TIS-FAST_MUSCLE",
+"tier": "TIER 1 - STRONG",
+"score": 12,
+"rubric": {
+"reproducibility": 2,
+"lodo": 2,
+"transfer": 2,
+"strength": 0,
+"coherence": 1,
+"specificity": 2,
+"coverage": 2,
+"confounder": 1
+},
+"evidence": {
+"dense_reproducibility": 0.5336753229300181,
+"sparse_reproducibility": 0.7062257726987203,
+"lodo_worst": 0.4001880089441935,
+"lodo_culprit": "SB505124",
+"leave_one_tissue_out": null,
+"heldout_stratum_recurrence": null,
+"direction_transfer_chem10": 0.4609455267588297
+},
+"loading_conservation_chem11": 0.85612190720457,
+"loading_transfer_chem10": null,
+"cos_placebo": 0.073,
+"cos_depth": 0.252,
+"enrichment": [],
+"interpretation": "Amino-acid stress / integrated-stress-response axis (slc1a4, slc7a3a, aars1, mknk2b up) against muscle structural maturation (igfn1.3, sorbs2b, slc25a4, tgfbr3 down). Orthogonal to every other tissue program (all |cos| <= 0.17).",
+"caveat": "",
+"top_positive": [
+{
+"symbol": "mknk2b",
+"id": "ENSDARG00000015164",
+"loading": 0.1236
+},
+{
+"symbol": "slc1a4",
+"id": "ENSDARG00000000551",
+"loading": 0.1096
+},
+{
+"symbol": "hsp90aa1.2",
+"id": "ENSDARG00000024746",
+"loading": 0.1015
+},
+{
+"symbol": "BX942846.1",
+"id": "ENSDARG00000104277",
+"loading": 0.1004
+},
+{
+"symbol": "slc7a3a",
+"id": "ENSDARG00000020645",
+"loading": 0.1
+},
+{
+"symbol": "aars1",
+"id": "ENSDARG00000069142",
+"loading": 0.0885
+},
+{
+"symbol": "aspg",
+"id": "ENSDARG00000052942",
+"loading": 0.0826
+},
+{
+"symbol": "bcas3",
+"id": "ENSDARG00000090764",
+"loading": 0.0803
+},
+{
+"symbol": "elmsan1b",
+"id": "ENSDARG00000053864",
+"loading": 0.0784
+},
+{
+"symbol": "mvp",
+"id": "ENSDARG00000021242",
+"loading": 0.0772
+},
+{
+"symbol": "eprs1",
+"id": "ENSDARG00000060494",
+"loading": 0.077
+},
+{
+"symbol": "psat1",
+"id": "ENSDARG00000016733",
+"loading": 0.0761
+},
+{
+"symbol": "arvcfb",
+"id": "ENSDARG00000061688",
+"loading": 0.075
+},
+{
+"symbol": "abcf1",
+"id": "ENSDARG00000031795",
+"loading": 0.0724
+},
+{
+"symbol": "phgdh",
+"id": "ENSDARG00000001873",
+"loading": 0.0714
+},
+{
+"symbol": "tjp2b",
+"id": "ENSDARG00000023443",
+"loading": 0.07
+},
+{
+"symbol": "stc2a",
+"id": "ENSDARG00000056680",
+"loading": 0.0655
+},
+{
+"symbol": "mthfd1l",
+"id": "ENSDARG00000042221",
+"loading": 0.0651
+},
+{
+"symbol": "nars1",
+"id": "ENSDARG00000061100",
+"loading": 0.0642
+},
+{
+"symbol": "chac1",
+"id": "ENSDARG00000070426",
+"loading": 0.064
+},
+{
+"symbol": "vps13a",
+"id": "ENSDARG00000039225",
+"loading": 0.0631
+},
+{
+"symbol": "stat3",
+"id": "ENSDARG00000022712",
+"loading": 0.063
+},
+{
+"symbol": "tars1",
+"id": "ENSDARG00000013250",
+"loading": 0.0624
+},
+{
+"symbol": "kmt2ba",
+"id": "ENSDARG00000062962",
+"loading": 0.0562
+},
+{
+"symbol": "oat",
+"id": "ENSDARG00000078425",
+"loading": 0.0558
+},
+{
+"symbol": "slc1a5",
+"id": "ENSDARG00000099186",
+"loading": 0.0558
+},
+{
+"symbol": "eif5b",
+"id": "ENSDARG00000016548",
+"loading": 0.0547
+},
+{
+"symbol": "atf4a",
+"id": "ENSDARG00000111939",
+"loading": 0.0542
+},
+{
+"symbol": "EML4",
+"id": "ENSDARG00000109443",
+"loading": 0.054
+},
+{
+"symbol": "sema5a",
+"id": "ENSDARG00000058821",
+"loading": 0.0538
+},
+{
+"symbol": "sgip1a",
+"id": "ENSDARG00000097897",
+"loading": 0.0534
+},
+{
+"symbol": "SBNO2",
+"id": "ENSDARG00000016188",
+"loading": 0.0519
+},
+{
+"symbol": "CR848047.1",
+"id": "ENSDARG00000095906",
+"loading": 0.0516
+},
+{
+"symbol": "arnt2",
+"id": "ENSDARG00000103697",
+"loading": 0.0516
+},
+{
+"symbol": "and2",
+"id": "ENSDARG00000079302",
+"loading": 0.0514
+},
+{
+"symbol": "TENM2",
+"id": "ENSDARG00000037122",
+"loading": 0.0509
+},
+{
+"symbol": "pnrc2",
+"id": "ENSDARG00000053291",
+"loading": 0.0508
+},
+{
+"symbol": "cars1",
+"id": "ENSDARG00000036164",
+"loading": 0.0506
+},
+{
+"symbol": "lmo7a",
+"id": "ENSDARG00000004930",
+"loading": 0.0504
+},
+{
+"symbol": "homer3b",
+"id": "ENSDARG00000010789",
+"loading": 0.0487
+},
+{
+"symbol": "irs2b",
+"id": "ENSDARG00000075282",
+"loading": 0.0485
+},
+{
+"symbol": "sipa1l2",
+"id": "ENSDARG00000061640",
+"loading": 0.0484
+},
+{
+"symbol": "iars1",
+"id": "ENSDARG00000007955",
+"loading": 0.0482
+},
+{
+"symbol": "si:ch211-39i2.2",
+"id": "ENSDARG00000104472",
+"loading": 0.0481
+},
+{
+"symbol": "hdac4",
+"id": "ENSDARG00000098349",
+"loading": 0.0475
+},
+{
+"symbol": "krt4",
+"id": "ENSDARG00000017624",
+"loading": 0.0473
+},
+{
+"symbol": "and1",
+"id": "ENSDARG00000088514",
+"loading": 0.047
+},
+{
+"symbol": "mat2ab",
+"id": "ENSDARG00000037121",
+"loading": 0.047
+},
+{
+"symbol": "pmt",
+"id": "ENSDARG00000100482",
+"loading": 0.0462
+},
+{
+"symbol": "gtpbp1",
+"id": "ENSDARG00000053467",
+"loading": 0.0459
+}
+],
+"top_negative": [
+{
+"symbol": "tgfbr3",
+"id": "ENSDARG00000099979",
+"loading": -0.071
+},
+{
+"symbol": "igfn1.3",
+"id": "ENSDARG00000097613",
+"loading": -0.0586
+},
+{
+"symbol": "dhrs11a",
+"id": "ENSDARG00000046090",
+"loading": -0.0584
+},
+{
+"symbol": "aglb",
+"id": "ENSDARG00000100352",
+"loading": -0.0543
+},
+{
+"symbol": "sorbs2b",
+"id": "ENSDARG00000061603",
+"loading": -0.0541
+},
+{
+"symbol": "trabd2b",
+"id": "ENSDARG00000088816",
+"loading": -0.0519
+},
+{
+"symbol": "scamp5a",
+"id": "ENSDARG00000018743",
+"loading": -0.0519
+},
+{
+"symbol": "nr4a3",
+"id": "ENSDARG00000055854",
+"loading": -0.051
+},
+{
+"symbol": "CABZ01072309.1",
+"id": "ENSDARG00000112959",
+"loading": -0.0474
+},
+{
+"symbol": "slc25a4",
+"id": "ENSDARG00000027355",
+"loading": -0.0471
+},
+{
+"symbol": "CR936540.1",
+"id": "ENSDARG00000098308",
+"loading": -0.047
+},
+{
+"symbol": "rab11fip4a",
+"id": "ENSDARG00000090170",
+"loading": -0.0458
+},
+{
+"symbol": "enah",
+"id": "ENSDARG00000032049",
+"loading": -0.0458
+},
+{
+"symbol": "si:dkeyp-82h4.3",
+"id": "ENSDARG00000102062",
+"loading": -0.0455
+},
+{
+"symbol": "zgc:171482",
+"id": "ENSDARG00000074415",
+"loading": -0.0442
+},
+{
+"symbol": "tob1a",
+"id": "ENSDARG00000032619",
+"loading": -0.0441
+},
+{
+"symbol": "dusp8a",
+"id": "ENSDARG00000009299",
+"loading": -0.0431
+},
+{
+"symbol": "cdh26.2",
+"id": "ENSDARG00000087641",
+"loading": -0.0426
+},
+{
+"symbol": "lamb2",
+"id": "ENSDARG00000002084",
+"loading": -0.0425
+},
+{
+"symbol": "mcu",
+"id": "ENSDARG00000101175",
+"loading": -0.0424
+},
+{
+"symbol": "nmrk2",
+"id": "ENSDARG00000067848",
+"loading": -0.0421
+},
+{
+"symbol": "coq10b",
+"id": "ENSDARG00000056141",
+"loading": -0.0421
+},
+{
+"symbol": "BX005101.1",
+"id": "ENSDARG00000097631",
+"loading": -0.0408
+},
+{
+"symbol": "rc3h2",
+"id": "ENSDARG00000063050",
+"loading": -0.0408
+},
+{
+"symbol": "pptc7b",
+"id": "ENSDARG00000052658",
+"loading": -0.0407
+},
+{
+"symbol": "mpp7a",
+"id": "ENSDARG00000102470",
+"loading": -0.0404
+},
+{
+"symbol": "pcdh7b",
+"id": "ENSDARG00000060610",
+"loading": -0.0394
+},
+{
+"symbol": "tgm2a",
+"id": "ENSDARG00000070157",
+"loading": -0.0386
+},
+{
+"symbol": "CABZ01070747.1",
+"id": "ENSDARG00000117546",
+"loading": -0.0383
+},
+{
+"symbol": "cspg4",
+"id": "ENSDARG00000078227",
+"loading": -0.0376
+},
+{
+"symbol": "ampd1",
+"id": "ENSDARG00000033832",
+"loading": -0.0376
+},
+{
+"symbol": "mbnl2",
+"id": "ENSDARG00000018460",
+"loading": -0.0376
+},
+{
+"symbol": "egln2",
+"id": "ENSDARG00000062562",
+"loading": -0.0374
+},
+{
+"symbol": "tmod4",
+"id": "ENSDARG00000020890",
+"loading": -0.0371
+},
+{
+"symbol": "atxn1a",
+"id": "ENSDARG00000061687",
+"loading": -0.0367
+},
+{
+"symbol": "zgc:195001",
+"id": "ENSDARG00000070484",
+"loading": -0.0364
+},
+{
+"symbol": "palmda",
+"id": "ENSDARG00000001913",
+"loading": -0.0364
+},
+{
+"symbol": "actc1b",
+"id": "ENSDARG00000099197",
+"loading": -0.0363
+},
+{
+"symbol": "col5a1",
+"id": "ENSDARG00000012593",
+"loading": -0.0362
+},
+{
+"symbol": "acta1b",
+"id": "ENSDARG00000055618",
+"loading": -0.036
+},
+{
+"symbol": "sema6bb",
+"id": "ENSDARG00000061976",
+"loading": -0.0359
+},
+{
+"symbol": "cntfr",
+"id": "ENSDARG00000028661",
+"loading": -0.0358
+},
+{
+"symbol": "CABZ01072309.2",
+"id": "ENSDARG00000117646",
+"loading": -0.0355
+},
+{
+"symbol": "aldoaa",
+"id": "ENSDARG00000011665",
+"loading": -0.0353
+},
+{
+"symbol": "znf385b",
+"id": "ENSDARG00000006065",
+"loading": -0.0352
+},
+{
+"symbol": "ldha",
+"id": "ENSDARG00000101251",
+"loading": -0.0351
+},
+{
+"symbol": "xirp2b",
+"id": "ENSDARG00000091090",
+"loading": -0.0348
+},
+{
+"symbol": "hipk3b",
+"id": "ENSDARG00000062082",
+"loading": -0.0344
+},
+{
+"symbol": "myl1",
+"id": "ENSDARG00000014196",
+"loading": -0.0342
+},
+{
+"symbol": "tnni2b.2",
+"id": "ENSDARG00000029995",
+"loading": -0.0342
+}
+],
+"gram_row": {
+"neural": -0.1415,
+"mesenchymal": -0.1057,
+"module3": -0.1428,
+"epithelial": -0.0252,
+"fast-muscle": 1.0
+}
+}
+],
+"global_loading_conservation_chem11": 0.7835611448778935,
+"source": "R/p5_modules.json, p5_axis_*_clean.npy, p5_module_evidence.csv, response_program_catalog.csv, p5_axis_enrichment.csv"
+}
