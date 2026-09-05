@@ -200,7 +200,7 @@ export default function Flotilla({ fontClass }: { fontClass: string }) {
           const m = iso((lead.x0 + lead.xg) / 2, lead.y0 - 2.6, 0); return <text x={m[0]} y={m[1]} fontSize={2.7} fill={GOLD} letterSpacing={0.35} fontWeight={600} opacity={ease((fShared - 0.6) / 0.4)}>SHARED CURRENT</text>;
         })()}
         {lead && showResid && lead.xg - lead.x0 > 26 && fResid > 0.5 && (() => {
-          const m = iso(lead.xa, (lead.y0 + lead.ya) / 2, 0); return <text x={m[0] - 3} y={m[1] - 2.2} textAnchor="end" fontSize={2.7} fill={CORAL} letterSpacing={0.35} fontWeight={600} opacity={ease((fResid - 0.5) / 0.5)}>RESIDUAL</text>;
+          const m = iso(lead.xa + 3.6, lead.ya, 0.9); return <text x={m[0]} y={m[1] + 4.6} fontSize={2.7} fill={CORAL} letterSpacing={0.35} fontWeight={600} opacity={ease((fResid - 0.5) / 0.5)}>RESIDUAL</text>;
         })()}
         {/* hover card */}
         {hover && (() => {
