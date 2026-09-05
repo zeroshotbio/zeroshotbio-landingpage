@@ -120,11 +120,11 @@ export default function Wildtype() {
         {MAJOR.map((s) => { const a = iso(xOf(s), -1.5), b = iso(xOf(s), W + 1.5), l = iso(xOf(s), -4);
           return <g key={s}><line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#e8eef4" strokeOpacity={0.22} strokeWidth={0.3} strokeDasharray="0.8 0.8" /><text x={l[0]} y={l[1]} fontSize={2.8} fill={MUTED} textAnchor="middle" letterSpacing={0.2}>{s} hpf</text></g>; })}
         {(() => { const l = iso(2, -4); return <text x={l[0]} y={l[1]} fontSize={2.8} fill={MUTED} textAnchor="middle" letterSpacing={0.2}>0 hpf</text>; })()}
-        {(() => { const l = iso(X18 / 2, W + 5); return <text x={l[0]} y={l[1]} fontSize={2.3} fill={MUTED} textAnchor="middle" fontStyle="italic">gastrulation · no single-cell data before 18 hpf</text>; })()}
+        {(() => { const l = iso(X18 + 1.5, W + 3.5); return <text x={l[0]} y={l[1]} fontSize={2.3} fill={MUTED} textAnchor="start" fontStyle="italic">← gastrulation · no single-cell data before 18 hpf</text>; })()}
         {/* dock */}
         <polygon points={[iso(0, -1.5, 1.1), iso(4, -1.5, 1.1), iso(4, W + 1.5, 1.1), iso(0, W + 1.5, 1.1)].map(([a, b]) => `${a},${b}`).join(" ")} fill="#2b3442" />
         {/* channel labels downstream */}
-        {channels.filter((c) => c.final > 1.8).map((c) => { const y = (c.top[xs.length - 1] + c.bot[xs.length - 1]) / 2; const p = iso(L + 3, y);
+        {channels.filter((c) => c.final > 1.8).map((c, k) => { const y = (c.top[xs.length - 1] + c.bot[xs.length - 1]) / 2; const p = iso(L + 3 + (k % 2) * 6.5, y);
           return <text key={c.name} x={p[0]} y={p[1] + 0.9} fontSize={2.5} fill={hover === c.name ? LAYER_INK[c.layer] : INK} opacity={0.9}>{c.name}</text>; })}
         {/* the normal flotilla: one boat per channel, appearing at its branch point */}
         {[0, 0.5].map((off) => { const px = (((phase + off) % 1) * (L + 6)) - 3; return px < X18 && px > 0 ? <Boat key={off} x={px} y={W / 2} z={0.15 * Math.sin(t * 2 + off)} size={1.05} color="#e8eef4" /> : null; })}
