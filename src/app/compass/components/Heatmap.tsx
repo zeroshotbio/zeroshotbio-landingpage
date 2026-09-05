@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { ProgramsFile, DrugLoadingsFile } from "../types";
-import { PATHWAY_COLOR, TIER_SHORT, TIER_CLASS, fmt } from "../types";
+import { PATHWAY_COLOR, TIER_SHORT, TIER_CLASS, SHORT_LABEL, fmt } from "../types";
 
 type Props = {
   programs: ProgramsFile; loadings: DrugLoadingsFile; drug: string; program: string;
@@ -39,7 +39,7 @@ export default function Heatmap({ programs, loadings, drug, program, onDrug, onP
                   onClick={() => onProgram(p.id)}
                   className={`cursor-pointer px-1 pb-1 text-center align-bottom text-[11px] font-medium leading-tight ${i === cross ? "border-l-2 border-gray-300 dark:border-gray-600" : ""} ${program === p.id ? "text-sky-700 underline dark:text-sky-300" : ""}`}
                   title={`${p.label} — ${p.tier} (${p.score}/16) — click to select`}>
-                  {p.label.split(" ")[0]}<br />
+                  {SHORT_LABEL[p.id] ?? p.label}<br />
                   <span className={`rounded px-1 font-mono text-[9px] ${TIER_CLASS(p.tier)}`}>{TIER_SHORT(p.tier)}</span>
                 </th>
               ))}

@@ -1,6 +1,6 @@
 "use client";
 import type { ProgramsFile, DrugResidual } from "../types";
-import { fmt } from "../types";
+import { fmt, SHORT_LABEL } from "../types";
 
 type Props = {
   programs: ProgramsFile; residual: DrugResidual; enabled: boolean[]; setEnabled: (e: boolean[]) => void;
@@ -20,7 +20,7 @@ export default function Decomposition({ programs, residual, enabled, setEnabled,
         {programs.programs.map((p, i) => (
           <label key={p.id} className={`flex cursor-pointer items-center gap-1 rounded border px-2 py-1 text-[11px] ${enabled[i] ? "border-sky-500 bg-sky-50 dark:bg-sky-950" : "border-gray-300 dark:border-gray-600"} ${program === p.id ? "ring-1 ring-sky-400" : ""}`}>
             <input type="checkbox" checked={enabled[i]} onChange={() => { const n = [...enabled]; n[i] = !n[i]; setEnabled(n); }} />
-            <span onClick={() => onProgram(p.id)}>{p.label.split(" ")[0]}</span>
+            <span onClick={() => onProgram(p.id)}>{SHORT_LABEL[p.id] ?? p.label}</span>
             <span className="font-mono text-[10px] text-gray-500">c={fmt(residual.raw_coefficients[p.id])}</span>
           </label>
         ))}

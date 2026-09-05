@@ -77,3 +77,6 @@ export const TIER_CLASS = (t: string) =>
   : "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200";
 export const fmt = (v: number | null | undefined, d = 2) => (v === null || v === undefined || Number.isNaN(v) ? "—" : v.toFixed(d));
 export const fmtP = (p: number) => (p < 1e-3 ? p.toExponential(1) : p.toFixed(3));
+export const SHORT_LABEL: Record<string, string> = {
+  neural: "Neural", mesenchymal: "Mesenchymal", module3: "Module 3", epithelial: "Epithelial", "fast-muscle": "Fast-muscle",
+};
