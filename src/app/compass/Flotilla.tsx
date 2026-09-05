@@ -90,7 +90,7 @@ function BoatGlyph({ x, y, z, member, ghost, program, sel }: { x: number; y: num
 }
 
 /* ---------------- scene ---------------- */
-export default function Flotilla({ fontClass }: { fontClass: string }) {
+export default function Flotilla() {
   const [drug, setDrug] = useState("LY411575");
   const [program, setProgram] = useState("neural");
   const [showResid, setShowResid] = useState(true);
@@ -112,7 +112,7 @@ export default function Flotilla({ fontClass }: { fontClass: string }) {
   const drugMeta = D.drugs.find((d) => d.id === drug)!;
 
   return (
-    <div className={fontClass} style={{ position: "fixed", inset: 0, background: BG, color: INK, overflow: "hidden" }}>
+    <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
       <style>{`
         @keyframes flow { to { stroke-dashoffset: -32; } }
         .flow { animation: flow 6s linear infinite; } .flow.hot { animation-duration: 2.2s; }
@@ -126,8 +126,8 @@ export default function Flotilla({ fontClass }: { fontClass: string }) {
         text{font-family:inherit}
       `}</style>
       <div className="ttl">
-        <h1>ChemFish shared response programs</h1>
-        <p>Drug responses as a biological flotilla</p>
+        <h1>Shared response programs</h1>
+        <p>one drug&apos;s tissue responses as a flotilla · ChemFish, Phase-5 programs</p>
         <div className="now"><b>{drug}</b> <span style={{ color: MUTED }}>{drugMeta.pathway} ·</span> current: <b>{D.programs[program].label.toLowerCase()}</b></div>
       </div>
       <div className="ui">

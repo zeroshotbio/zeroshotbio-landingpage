@@ -1,4 +1,5 @@
-// /compass — ChemFish "biological flotilla". One fullscreen isometric river scene.
+// /compass — two isometric rivers side by side: wild-type development (ZSCAPE controls, data/wildtype.json)
+// and the ChemFish "biological flotilla" of shared response programs (data/flotilla.json).
 //
 // Explanatory, not an embedding: the river is the metaphor's geometry. The only real quantities the
 // scene consumes are, per drug × tissue, the gene-space loading on the selected program (r·u), the
@@ -6,7 +7,7 @@
 // ./data/flotilla.json, written by chemfish_response_atlas/scripts/export_flotilla_json.py from
 // frozen Phase-5 results.
 import { Inter } from "next/font/google";
-import Flotilla from "./Flotilla";
+import Compass from "./Compass";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
 
@@ -16,5 +17,5 @@ export const metadata = {
 };
 
 export default function CompassPage() {
-  return <Flotilla fontClass={inter.className} />;
+  return <Compass fontClass={inter.className} />;
 }
