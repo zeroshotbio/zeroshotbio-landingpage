@@ -127,7 +127,7 @@ export default function River({ mode, drug = "LY411575", program = "neural", tit
           const fill = fillFor(leaf, i, k + 1); const on = hover === leaf.id;
           const isMember = mode === "drug" && memberZ.has(leaf.tissue) && S[k + 1] >= 36;
           return <path key={`${leaf.id}-${k}`} d={ribbon(XS.slice(k, k + 2), leaf.top.slice(k, k + 2), leaf.bot.slice(k, k + 2))} fill={on ? LAYER_INK[leaf.layer] : fill} fillOpacity={on ? 0.55 : 1}
-            stroke={isMember ? GOLD : fill === UNUSED ? "#3a4350" : "#0e1116"} strokeWidth={isMember ? 0.45 : 0.2} strokeDasharray={fill === UNUSED ? "0.8 0.6" : undefined} strokeOpacity={isMember ? 0.8 : 1}
+            stroke={isMember ? GOLD : fill === UNUSED ? "#3a4350" : fill} strokeWidth={isMember ? 0.45 : 0.25} strokeDasharray={fill === UNUSED ? "0.8 0.6" : undefined} strokeOpacity={isMember ? 0.8 : 1}
             onMouseEnter={() => setHover(leaf.id)} onMouseLeave={() => setHover(null)} style={{ cursor: "default" }} />;
         }))}
         {/* decision points: where a channel first becomes used */}
@@ -140,7 +140,7 @@ export default function River({ mode, drug = "LY411575", program = "neural", tit
         {(() => { const l = iso(X18 + 1.5, W + 3.5); return <text x={l[0]} y={l[1]} fontSize={2.3} fill={MUTED} fontStyle="italic">← gastrulation · no single-cell data before 18 hpf{mode === "drug" ? " · ChemFish data from 36 hpf" : ""}</text>; })()}
         <polygon points={P([iso(0, -1.5, 1.1), iso(4, -1.5, 1.1), iso(4, W + 1.5, 1.1), iso(0, W + 1.5, 1.1)])} fill="#2b3442" />
         {leaves.filter((l) => l.bot[S.length - 1] - l.top[S.length - 1] > 1.6).map((l, k) => { const y = (l.top[S.length - 1] + l.bot[S.length - 1]) / 2; const p = iso(L + 3 + (k % 2) * 6.5, y);
-          return <text key={l.id} x={p[0]} y={p[1] + 0.9} fontSize={2.4} fill={hover === l.id ? LAYER_INK[l.layer] : INK} opacity={0.9}>{l.level === "celltype" ? l.label : l.label}</text>; })}
+          return <text key={l.id} x={p[0]} y={p[1] + 0.9} fontSize={2.4} fill={hover === l.id ? LAYER_INK[l.layer] : INK} opacity={0.9}>{l.label.length > 24 ? l.label.slice(0, 23) + "…" : l.label}</text>; })}
         {/* rows of boats */}
         {rows.map((x, ri) => {
           if (x < X18) { const boats = x < 9 ? [W / 2] : pre.map((p) => (p.y0 + p.y1) / 2 * (x - 9) / (X18 - 9) + (W / 2) * (1 - (x - 9) / (X18 - 9))); return boats.map((y, k) => <Boat key={`${ri}-${k}`} x={Math.max(1, x)} y={y} z={0.15 * Math.sin(t * 2 + k)} size={0.95} color={x < 9 ? "#e8eef4" : LAYER_INK[pre[k].l]} />); }
