@@ -1,19 +1,16 @@
-// /compass — ChemFish Response Atlas V0.
+// /compass — ChemFish response space. One fullscreen 3D visualization, nothing else.
 //
-// Interactive view over the FROZEN Phase 3-5 results of
-// /data/experiments/chemfish_response_programs/. Nothing is recomputed here: every number is
-// read from src/app/compass/data/*.json, which is written only by
-// /data/experiments/chemfish_response_atlas/scripts/export_atlas_json.py and documented
-// value-by-value in that project's DATA_MAP.md.
-
-import CompassClient from "./CompassClient";
+// Data: ./data/space.json, written only by
+// /data/experiments/chemfish_response_atlas/scripts/export_space_json.py from frozen Phase-5
+// results. Read that file's docstring for the geometry contract: uncentered SVD (origin = vehicle
+// state), biological projections computed in 23,993-gene space and only then mapped to 3D.
+import SpaceLoader from "./SpaceLoader";
 
 export const metadata = {
-  title: "compass · ChemFish response atlas",
-  description:
-    "Click a drug, see how much of its whole-organism response is captured by a handful of reusable biological programs, and what drug-specific biology is left over.",
+  title: "compass · ChemFish response space",
+  description: "Drug × tissue transcriptional responses as vectors; a shared biological program direction; each response = shared component + residual.",
 };
 
 export default function CompassPage() {
-  return <CompassClient />;
+  return <SpaceLoader />;
 }
