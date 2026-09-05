@@ -58,18 +58,18 @@ type Sel = { drug: string; program: string; decomp: boolean };
 function Cloud({ sel, hover, setHover, pinned, togglePin }: { sel: Sel; hover: number | null; setHover: (i: number | null) => void; pinned: Set<number>; togglePin: (i: number) => void }) {
   const mesh = useRef<THREE.InstancedMesh>(null!);
   const n = DATA.points.length;
-  const cur = useMemo(() => new Float32Array(n).fill(0.12), [n]);
+  const cur = useMemo(() => new Float32Array(n).fill(0.05), [n]);
   const members = new Set(DATA.axes[sel.program].tissues);
   const target = useMemo(() => DATA.points.map((p) => {
     const mine = p.drug === sel.drug;
     if (mine && members.has(p.tissue)) return p.stratum === "consensus" ? 1 : 0.55;
-    if (mine) return 0.42;
-    return 0.11;
+    if (mine) return 0.40;
+    return p.stratum === "consensus" ? 0.10 : 0.05;
   }), [sel.drug, sel.program]);
   useLayoutEffect(() => {
     const m = new THREE.Matrix4();
     DATA.points.forEach((p, i) => {
-      const s = p.stratum === "consensus" ? 0.13 : 0.075;
+      const s = p.stratum === "consensus" ? 0.115 : 0.06;
       m.compose(v3(p.xyz), new THREE.Quaternion(), new THREE.Vector3(s, s, s)); mesh.current.setMatrixAt(i, m);
     });
     mesh.current.instanceMatrix.needsUpdate = true;
@@ -83,7 +83,7 @@ function Cloud({ sel, hover, setHover, pinned, togglePin }: { sel: Sel; hover: n
       const v = cur[i] + (t - cur[i]) * k;
       if (Math.abs(v - cur[i]) > 1e-4) dirty = true;
       cur[i] = v;
-      tmp.set(drugColor(DATA.points[i].drug)).multiplyScalar(0.18 + 0.95 * v);
+      tmp.set(drugColor(DATA.points[i].drug)).multiplyScalar(0.03 + 1.05 * v);
       mesh.current.setColorAt(i, tmp);
     }
     if (dirty && mesh.current.instanceColor) mesh.current.instanceColor.needsUpdate = true;
@@ -171,12 +171,12 @@ function ProgramGeometry({ sel, revealKey }: { sel: Sel; revealKey: number }) {
   return (
     <>
       <primitive object={axisLine} />
-      <mesh ref={cone}><coneGeometry args={[0.28, 0.9, 16]} /><meshBasicMaterial color={GOLD} toneMapped={false} /></mesh>
+      <mesh ref={cone}><coneGeometry args={[0.2, 0.8, 16]} /><meshBasicMaterial color={GOLD} toneMapped={false} /></mesh>
       <Html position={tipLabel} style={{ pointerEvents: "none", transform: "translate(-50%,-140%)" }}><div className="lbl gold">{ax.label.toUpperCase()}</div></Html>
       {slots.map((s, i) => <group key={i}><primitive object={s.obs} /><primitive object={s.shared} /><primitive object={s.resid} /></group>)}
       {labels.map((l, i) => (
         <group key={l.tissue}>
-          <Html position={l.tip} style={{ pointerEvents: "none", transform: "translate(8px,-10px)", opacity: l.alpha }}><div className="lbl dim">{l.tissue}</div></Html>
+          <Html position={l.tip} style={{ pointerEvents: "none", transform: `translate(9px,${-10 + 13 * ((i % 3) - 1)}px)`, opacity: l.alpha }}><div className="lbl dim">{l.tissue}</div></Html>
           <mesh position={l.foot} visible={sel.decomp && fSh > 0.2}><sphereGeometry args={[0.1, 10, 10]} /><meshBasicMaterial color={GOLD} toneMapped={false} /></mesh>
           {l.main && sel.decomp && (
             <>
@@ -199,7 +199,7 @@ function CameraRig({ sel, controls }: { sel: Sel; controls: React.MutableRefObje
     const up = new THREE.Vector3(0, 1, 0);
     const side = new THREE.Vector3().crossVectors(d, up).normalize();
     if (side.lengthSq() < 1e-4) side.set(1, 0, 0);
-    return side.multiplyScalar(30).add(up.clone().multiplyScalar(11)).add(d.clone().multiplyScalar(-4));
+    return side.multiplyScalar(19).add(up.clone().multiplyScalar(6.5)).add(d.clone().multiplyScalar(-2));
   }, [sel.program]);
   useEffect(() => {
     const c = controls.current; if (!c) return;
@@ -245,7 +245,7 @@ export default function Space() {
         <label><input type="checkbox" checked={sel.decomp} onChange={(e) => update({ decomp: e.target.checked })} /> projection</label>
       </div>
       <div className="cap"><b>{DATA.n_consensus}</b> drug × tissue responses · uncentered PCA of {DATA.n_genes.toLocaleString()} genes · <b>origin = vehicle</b> · projection computed in gene space</div>
-      <Canvas dpr={[1, 2]} gl={{ antialias: true, alpha: false }} camera={{ position: [30, 11, -4], fov: 42, near: 0.1, far: 400 }}
+      <Canvas dpr={[1, 2]} gl={{ antialias: true, alpha: false }} camera={{ position: [19, 6.5, -2], fov: 40, near: 0.1, far: 400 }}
         onCreated={({ gl }) => gl.setClearColor(BG)} onPointerMissed={() => setPinned(new Set())}>
         <Grid position={[0, -0.01, 0]} args={[60, 60]} cellSize={1} cellThickness={0.5} cellColor="#182030" sectionSize={5} sectionThickness={0.9} sectionColor="#223044" fadeDistance={55} fadeStrength={1.6} infiniteGrid />
         <mesh><sphereGeometry args={[0.16, 16, 16]} /><meshBasicMaterial color="#c9d3dc" toneMapped={false} /></mesh>
