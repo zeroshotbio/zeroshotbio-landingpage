@@ -4670,10 +4670,12 @@ function setFanLine(L,dim,f){
    --ch1..12 through rampHue, which are declared on /molecular_pipe and
    nowhere else; both shapes below are worn by that page alone.
    ------------------------------------------------------------------ */
-/* LIP is {src, dst} — the plate this station empties and the plate it
-   fills, each in its own round's colour. It is the entire difference
-   between the two stations that wear this bench. */
-function poolSplitBench(g,n,LIP){
+/* OPT is {src, dst, tubeW, tubeH} — the plate this station empties and
+   the plate it fills, each in its own round's colour, and the glassware's
+   proportions against the node. The lips are what the two stations differ
+   in chemically; the tube factors default to 1 so a caller that says
+   nothing gets the conical this bench was composed with. */
+function poolSplitBench(g,n,OPT){
   const th=n.h;
   /* ---- EVERYTHING HERE IS A FRACTION OF THE NODE, NOT A WORLD CONSTANT -----
      A shape has to read w, d and h at draw time, because those are what a
@@ -4732,7 +4734,7 @@ function poolSplitBench(g,n,LIP){
      one trip of the head, and the map index is the same k round one walked the
      ramp with — same well, same colour. Each well keeps a handle on its own
      liquid, because that is the thing the head takes away. */
-  const deckSrc=skirtSlab(g,src,th,LIP.src);
+  const deckSrc=skirtSlab(g,src,th,OPT.src);
   const WOP=0.85;              // full-strength: a tip's worth of it has to show
   const from=plateGrid(deckSrc,th,COLS,ROWS).map((w,k)=>{
     drawWell(g,w,false);
@@ -4747,8 +4749,13 @@ function poolSplitBench(g,n,LIP){
      stands twice as tall as this shape's own first attempt at one: a 15 ml
      conical is a long thin thing and the old one read as a stubby vial. The
      height is also what the rising column needs, because ninety-six wells going
-     into a short tube is a level that barely moves per trip. */
-  const T=conicalTube(g, n.x-n.w*0.40, n.y+n.d*0.50, n.w, n.h);
+     into a short tube is a level that barely moves per trip.
+     WHICH CONICAL IS THE CALLER'S. conicalTube cuts every radius from the w it
+     is handed and every height from the h, so a different format is a different
+     pair of numbers and nothing here has to know which one it got: the rim, the
+     foot and the level all come back off T. */
+  const T=conicalTube(g, n.x-n.w*0.40, n.y+n.d*0.50,
+                      n.w*(OPT.tubeW||1), n.h*(OPT.tubeH||1));
   /* the column carries the mixture's own paint rather than the glassware's
      default grey — what is standing in the tube is every colour that went in */
   T.setTint(MIX.fill, 0.5);
@@ -4760,7 +4767,7 @@ function poolSplitBench(g,n,LIP){
      one the head is standing over. Its wells are born at full size and
      invisible: the ticker only has to open them, and an element with no
      coordinates would drag the selection halo across the map. */
-  const deckDst=skirtSlab(g,dst,th,LIP.dst);
+  const deckDst=skirtSlab(g,dst,th,OPT.dst);
   const into=plateGrid(deckDst,th,COLS,ROWS).map(w=>{
     drawWell(g,w,false);
     const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
@@ -4975,9 +4982,19 @@ DRAW.poolsplit = drawPoolSplit;
    barcoding if a viewer registers it as one procedure repeated. So it is the
    twelve-channel, the conical and the row-order sweep again, and the plates
    advance one round: the royal blue plate B3 dealt into, which round two has
-   since ligated, is emptied into round three's yellow one. */
+   since ligated, is emptied into round three's yellow one.
+
+   THE TUBE IS THE 50 ML, NOT THE 15. Asked for from the page: the conical here
+   was reading as a 15 ml, and the vessel this pooling actually goes into is the
+   bigger one. A 50 ml is not a scaled-up 15 ml — it is the same length and
+   nearly twice the bore (30 x 115 mm against 17 x 120) — so it is asked for as
+   the ratio of the real two, and the cone widens with the wall because
+   conicalTube cuts its taper from the same w. B3 keeps the 15 ml it was drawn
+   with, which is the one difference between the two stations besides the
+   plates. */
 function drawPoolSplit96(g,n){
-  poolSplitBench(g,n,{src:"var(--ch9)", dst:"var(--ch3)"});
+  poolSplitBench(g,n,{src:"var(--ch9)", dst:"var(--ch3)",
+                      tubeW:30/17, tubeH:115/120});
 }
 DRAW.poolsplit96 = drawPoolSplit96;
 
