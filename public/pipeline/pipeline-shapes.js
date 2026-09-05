@@ -3961,9 +3961,9 @@ function setFanLine(L,dim,f){
    way the tool and the plate agree, and one dip is one row.
 
    THE COLOURS ARE THE WHOLE POINT, and they are the DONOR PLATE'S OWN.
-   What arrives here is the plate round one handed over: green lip,
-   ninety-six wells and ninety-six different colours in them, one per
-   barcode, drawn by the same rampHue walk that drew them next door. It
+   What arrives here is the plate the round before handed over, wearing
+   that round's lip: ninety-six wells and ninety-six different colours
+   in them, one per barcode, drawn by the same rampHue walk. It
    wore four treatment bands once, and four bands said the material was
    four things when it is ninety-six. Twelve tips lift twelve different
    colours a trip, the tube ends up holding every one of them, and every
@@ -3979,10 +3979,22 @@ function setFanLine(L,dim,f){
    they are not lost, they are unplaced, and only the barcode written in
    the round before still knows which well a cell came from.
 
-   THE SECOND PLATE TAKES A ROYAL BLUE LIP. Two plates of the same
-   plastic at two moments of one operation are hard to tell apart at a
-   glance, and which one the head is standing over is the difference
-   between pooling and dealing.
+   THE TWO PLATES TAKE DIFFERENT LIPS. Two plates of the same plastic at
+   two moments of one operation are hard to tell apart at a glance, and
+   which one the head is standing over is the difference between pooling
+   and dealing. The lip is also what says WHICH ROUND'S plate it is, so
+   it comes in from the caller rather than being written here.
+
+   THE BENCH IS SHARED WITH B5, WHICH IS THIS SAME OPERATION A ROUND
+   LATER. The row pools twice, and a reader has to register the second
+   station as the first one repeated rather than as a new trick — so the
+   two are ONE drawing rather than two that look alike, because two
+   copies diverge the first time either is tuned. Everything below is
+   therefore common, and the only thing the round changes is the pair of
+   lips: B3 pools round one's green into round two's royal blue, B5
+   pools that same royal blue into round three's yellow. The plate a
+   station empties is the plate the station before it filled, which is
+   how the plastic can be followed down the row.
 
    A TRIP IS A ROW AND THE PLATE HAS A BUDGET. A single tip needed a
    whole scheme here — bench speed for the first row, then a geometric
@@ -4016,9 +4028,12 @@ function setFanLine(L,dim,f){
    conicalTube / multiGlyph from the bench kit above, so the plastic and
    the round glassware match everything else on the map. It spends
    --ch1..12 through rampHue, which are declared on /molecular_pipe and
-   nowhere else; this shape is worn by that page alone.
+   nowhere else; both shapes below are worn by that page alone.
    ------------------------------------------------------------------ */
-function drawPoolSplit(g,n){
+/* LIP is {src, dst} — the plate this station empties and the plate it
+   fills, each in its own round's colour. It is the entire difference
+   between the two stations that wear this bench. */
+function poolSplitBench(g,n,LIP){
   const th=n.h;
   /* ---- EVERYTHING HERE IS A FRACTION OF THE NODE, NOT A WORLD CONSTANT -----
      A shape has to read w, d and h at draw time, because those are what a
@@ -4068,16 +4083,16 @@ function drawPoolSplit(g,n){
   const dst={x:n.x+n.w*0.25,   y:n.y+n.d*0.95  +PD/2, w:PW, d:PD};
 
   /* THE DONOR IS THE PLATE THE STEP BEFORE HANDS OVER, drawn as that plate and
-     not as anonymous plastic: round one's green semi-skirted 96, with round
-     one's ninety-six one-per-well colours still in it. Four treatment bands
-     said what arrives here is four things; what arrives is ninety-six
-     barcoded populations, and losing their POSITION while keeping their
-     identity is the only claim this station makes.
+     not as anonymous plastic: the previous round's semi-skirted 96 in its own
+     lip, with that round's ninety-six one-per-well colours still in it. Four
+     treatment bands said what arrives here is four things; what arrives is
+     ninety-six barcoded populations, and losing their POSITION while keeping
+     their identity is the only claim this station makes.
      plateGrid runs row-major, so a slice of the list is a row of the plate and
      one trip of the head, and the map index is the same k round one walked the
      ramp with — same well, same colour. Each well keeps a handle on its own
      liquid, because that is the thing the head takes away. */
-  const deckSrc=skirtSlab(g,src,th,"var(--ch5)");
+  const deckSrc=skirtSlab(g,src,th,LIP.src);
   const WOP=0.85;              // full-strength: a tip's worth of it has to show
   const from=plateGrid(deckSrc,th,COLS,ROWS).map((w,k)=>{
     drawWell(g,w,false);
@@ -4099,13 +4114,13 @@ function drawPoolSplit(g,n){
   T.setTint(MIX.fill, 0.5);
 
   /* THE SECOND PLATE, forward of the tube so the split runs towards the
-     viewer. It is fresh plastic and it is a DIFFERENT plate, so it takes a
-     royal blue lip against the donor's green: the two are the same object at
-     two moments otherwise, and a reader has to be able to tell at a glance
-     which one the head is standing over. Its wells are born at full size and
+     viewer. It is fresh plastic and it is a DIFFERENT plate, so it takes the
+     next round's lip against the donor's: the two are the same object at two
+     moments otherwise, and a reader has to be able to tell at a glance which
+     one the head is standing over. Its wells are born at full size and
      invisible: the ticker only has to open them, and an element with no
      coordinates would drag the selection halo across the map. */
-  const deckDst=skirtSlab(g,dst,th,"var(--ch9)");
+  const deckDst=skirtSlab(g,dst,th,LIP.dst);
   const into=plateGrid(deckDst,th,COLS,ROWS).map(w=>{
     drawWell(g,w,false);
     const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
@@ -4306,307 +4321,23 @@ function drawPoolSplit(g,n){
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
+/* B3 · the first pool: round one's green plate emptied into round two's
+   royal blue one. */
+function drawPoolSplit(g,n){
+  poolSplitBench(g,n,{src:"var(--ch5)", dst:"var(--ch9)"});
+}
 DRAW.poolsplit = drawPoolSplit;
 
-
-/* ------------------------------------------------------------------
-   POOL AND SPLIT, THE SECOND TIME · ONE OPERATION IN THREE BEATS
-
-   B3 draws this same chemistry as one continuous sweep, and it is right
-   to: there the claim is the randomisation, and a head working the plate
-   row by row, into the tube and back out, is what makes it — four
-   treatments in and one grey suspension out, watched the whole way. B5
-   is the same operation with a different
-   claim. By the time material reaches it the suspension is already one
-   population, so what is left to say is the SHAPE of the move —
-   ninety-six wells converge into one tube, the tube is mixed, and the
-   one tube diverges back into ninety-six. It is therefore drawn as
-   three beats standing in a row along the grid rather than as one long
-   sweep, and the beats are joined by flow lines rather than by sitting
-   near each other: adjacency on an isometric map says "these are close
-   together", and what has to be said here is "this goes into that".
-
-   THE TUBE BELONGS TO BEATS ONE AND THREE BOTH. There is one vessel,
-   standing on the centreline, with a fan converging into its mouth and
-   a fan leaving it again — the same conical B3 pools into, out of
-   conicalTube. Drawing a second tube for the split would say the pool
-   had been decanted into something else, which is not what happens.
-
-   THE FRESH PLATE IS OUTLINE ONLY UNTIL IT IS LOADED. Same component as
-   the source and the same wells, but no plastic under it: the faces
-   fade up as the deal fills it, so the difference between the plate the
-   material came out of and the plate it goes into needs no label. The
-   columns are dealt in a shuffled order, which is still true here even
-   though the randomisation is B3's claim to make.
-
-   BOTH PLATES ARE GREY AND THAT IS THE POINT. B3 is where four
-   treatments became one suspension, this station inherits that, and it
-   is not entitled to re-tint a well. The colour is spent entirely on
-   the flow — the lines, their chevrons and the beads running along them
-   — because the flow is the only thing here that is new information.
-
-   AND THE FLOW IS TWELVE COLOURS IN, ONE COLOUR OUT. Every arriving
-   line carries its own hue because every well it comes from is its own
-   well: the plate this station empties is where round two wrote
-   ninety-six different barcodes, so what converges on the tube really
-   is twelve distinct things, and drawing them in one colour said the
-   opposite. What leaves is a single colour, `--pool`, deliberately
-   paler than any of the twelve on a dark ground and deeper than all of
-   them on a light one, so it reads as the sum of them rather than as a
-   thirteenth. The tube's own surface wears whichever channel landed
-   last while it fills, and `--pool` from the moment it is mixed: the
-   rainbow going in, the pool coming out.
-
-   THAT IS A CLAIM ABOUT WELLS, NOT ABOUT TREATMENTS, and the two are
-   easy to confuse on a station whose neighbour two boxes back does tint
-   by treatment. The grey plastic is what says the suspension is one
-   population; the twelve hues say only that it arrived from twelve
-   channels of a head working twelve separately barcoded columns.
-
-   Reuses plateSlab / plateGrid / drawWell from the plate set and
-   conicalTube / pipetteGlyph / flowFan from the bench kit above. The fan
-   was invented here and now belongs to the kit, because B7 needed it.
-   ------------------------------------------------------------------ */
+/* B5 · THE SAME BENCH ONE ROUND ON, and same is the claim: this station used
+   to be drawn as three static beats with a flow fan between them, which said
+   the second pooling was a different KIND of thing from the first. It is not —
+   it is the identical operation, and the row only reads as split-pool
+   barcoding if a viewer registers it as one procedure repeated. So it is the
+   twelve-channel, the conical and the row-order sweep again, and the plates
+   advance one round: the royal blue plate B3 dealt into, which round two has
+   since ligated, is emptied into round three's yellow one. */
 function drawPoolSplit96(g,n){
-  const th=n.h, SC=n.w/0.6;
-  /* the grid comes off the node, because it is a fact about the round rather
-     than about the drawing: rounds two and three are 96-well and round one is
-     not, and the plate either side of this station says so in its own data. */
-  const COLS=n.cols||12, ROWS=n.rows||8;
-  const GREY={fill:"var(--fg)", op:0.34};
-  /* the twelve channels and what they add up to, both off the stylesheet like
-     every other colour here. The ramp is twelve long and the head is twelve
-     wide; a plate with more columns than that wraps, because a thirteenth hue
-     nobody has authored renders black and reads as a deliberate choice. */
-  const CH=i=>`var(--ch${i%12+1})`;
-  const POOLED={fill:"var(--pool)", op:GREY.op};
-
-  /* EVERY OFFSET IS A FRACTION OF THE NODE. A shape reads w, d and h at draw
-     time because those are what a resize changes; absolute coordinates draw
-     correctly at the authored size and come apart the moment somebody drags a
-     corner. Composed at w 0.6, d 0.6, h 0.3.
-     THE BEATS RUN ALONG y, not along x. The stations either side are a plate
-     and a cell and they are close; y is the only axis with room in it, and
-     back-to-front happens to put the source low and left on screen and the
-     fresh plate high and right, so the sequence still reads the way the row
-     does. */
-  /* THE WHOLE STATION IS TURNED THIRTY DEGREES, IN THE GROUND PLANE. It is
-     turned there rather than on the screen for one reason: a rotate() on the
-     group would tip both plates off the isometric floor and stand the tube on
-     its corner, which is not a turned figure, it is a fallen one. Turning the
-     ARRANGEMENT keeps every box square to the grid — the only thing a box can
-     be in this projection — and swings the three beats round toward x, so the
-     flow crosses the picture instead of running back to front. That is what
-     the turn is worth, and it is measurable: the inward fan used to arrive
-     between 66 and 86 degrees off the horizontal, which is a bundle standing
-     more or less straight up, and now arrives between 47 and 65, which is
-     twelve lines on an angle. */
-  const TURN=Math.PI/6, CT=Math.cos(TURN), ST=Math.sin(TURN);
-  const turn=(dx,dy)=>[n.x+dx*CT-dy*ST, n.y+dx*ST+dy*CT];
-  /* THE TURN SPENDS CLEARANCE AND THROW BUYS IT BACK. Swung round, the source
-     plate rises up-screen into the station on this one's left and the fresh
-     plate drops down-screen into the one on its right — the row is the one
-     direction with neighbours in it, and turning toward x is turning toward
-     them. So each plate takes one node depth further out along y, into the
-     empty ground the band gives this row front and back. Measured against the
-     twelve-channel head, which stands twenty-five pixels over whatever plate
-     it is working and is the tallest thing at that end of the drawing: turned
-     and not thrown, the tip crosses twenty-four pixels into the plate on the
-     left, and thrown it does not reach it at all — which is better than the
-     unturned composition managed, where it went twelve pixels in.
-
-     WHAT THE TURN DOES COST IS THE INWARD FAN'S RUN. The source plate now
-     stands out in front of the station to the left rather than behind it, so
-     the twelve lines climbing from it to the mouth pass over that station's
-     plate. That is the depth order telling the truth — the plate they leave
-     really is a unit and a half nearer the reader — and it is thin lines over
-     plastic rather than one solid thing inside another. It is the one place
-     this turn is visible as a cost, so it is written down here. */
-  const THROW=n.d;
-  const [TX,TY]=turn(0,-n.d*0.15);            // the tube, just back of the centreline
-  const PW=n.w*1.55, PD=n.d*1.10;
-  const [SX,SY]=turn( n.w*0.35, n.d*1.70);
-  const [DX,DY]=turn(-n.w*0.10,-n.d*1.50);
-  const src={x:SX, y:SY+THROW, w:PW, d:PD};
-  const dst={x:DX, y:DY-THROW, w:PW, d:PD};
-
-  /* wells are born at full size with the fill they start the cycle in, so the
-     ticker only ever has to change a number — an element with no coordinates
-     drags the selection halo off across the map */
-  const wellsOf=(p,lit)=>plateGrid(p,th,COLS,ROWS).map(w=>{
-    drawWell(g,w,false);
-    const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
-      ry:(w.e.ry*0.86).toFixed(2),fill:GREY.fill,
-      "fill-opacity":lit?String(GREY.op):"0"});
-    g.appendChild(fill);
-    return {e:w.e, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
-  });
-
-  /* BEAT 3 IS BUILT FIRST because it stands furthest back, and on an isometric
-     grid the order things are appended in is the order they occlude in. */
-  plateSlab(g,dst,th,{top:"none",left:"none",right:"none"},0.8);
-  const loaded=el("g",{opacity:"0"}); g.appendChild(loaded);
-  plateSlab(loaded,dst,th,SKIN.tile,1);
-  const into=wellsOf(dst,false);
-
-  /* BEAT 2 — the vessel, shared with beat 1 */
-  const T=conicalTube(g, TX, TY, n.w, n.h);
-
-  /* BEAT 1's plate, in front of the tube and therefore over it */
-  plateSlab(g,src,th,SKIN.tile,1);
-  const from=wellsOf(src,true);
-
-  /* ---- THE FAN ------------------------------------------------------------
-     One line per column rather than one per well: ninety-six lines into a
-     point is a solid wedge, and a wedge is not a flow. Twelve is also the
-     honest count — the head that works these plates has twelve channels, so a
-     line is a channel and the pipette gliding along the row is the thing
-     drawing them.
-
-     THE FAN ITSELF NOW LIVES IN THE BENCH KIT ABOVE, because B7 needed the
-     same figure between a tube and a rack of eight. What is still this
-     station's own is which endpoints it hangs off: the row of the plate
-     nearest the tube, so no line has to cross the plate it comes from. */
-  const mouth=[T.rim.x, T.rim.y-2.5*SC];
-  const fan=(plate,row,inward,hue)=>flowFan(g,
-    Array.from({length:COLS},(_,i)=>{ const w=plate[row*COLS+i];
-      return [w.e.x, w.e.y-1.5*SC]; }),
-    mouth, inward, hue, SC);
-  const IN =fan(from,0,true,CH);
-  const OUT=fan(into,ROWS-1,false,()=>POOLED.fill);
-
-  /* the swirl marks: two arcs standing off the collar, which is the shorthand
-     everybody already reads as "this is being rocked". They are outside the
-     tube's group on purpose — a motion mark that leans with the thing it is
-     describing is just more tube. */
-  const marks=[0,1].map(k=>{
-    const e=ellipseAt(TX,TY,T.ZT-n.h*(0.5+k*1.4), n.w*(0.30+0.05*k));
-    const p=el("polyline",{points:pts(arcPts(e, k?0.78*Math.PI:-0.22*Math.PI,
-                                                k?1.22*Math.PI: 0.22*Math.PI, 8)),
-      fill:"none",stroke:POOLED.fill,"stroke-width":"1.2","stroke-opacity":"0",
-      "stroke-linecap":"round"});
-    g.appendChild(p); return p;
-  });
-
-  const {pip,load}=pipetteGlyph(g,SC);
-
-  /* ---- TIMING -------------------------------------------------------------
-     Three beats and a rest, and the middle one is deliberately the short one:
-     mixing is a real step and it has to be seen happening, but it is not what
-     the station is about. WIN is how much of a beat one column's transfer
-     occupies — a third, so four channels are in flight at once and the fan
-     reads as a fan rather than as twelve things taking turns. */
-  const POOL=2.6, MIX=1.7, SPLIT=2.6, REST=1.3;
-  const t1=POOL, t2=t1+MIX, t3=t2+SPLIT, t4=t3+REST;
-  const WIN=0.34, TURNS=3;
-  const phase=i=>i*(1-WIN)/(COLS-1);
-  const clamp=x=>Math.max(0,Math.min(1,x));
-
-  const setCol=(plate,c,f)=>{ for(let j=0;j<ROWS;j++){ const w=plate[j*COLS+c];
-    w.fill.setAttribute("fill-opacity",(GREY.op*f).toFixed(2));
-    w.fill.setAttribute("rx",(w.rx*(0.55+0.45*f)).toFixed(2));
-    w.fill.setAttribute("ry",(w.ry*(0.55+0.45*f)).toFixed(2)); } };
-  const allCols=(plate,f)=>{ for(let c=0;c<COLS;c++) setCol(plate,c,f); };
-  const setLine=setFanLine;
-  /* a column is only rewritten when it has actually moved: ninety-six wells
-     times three attributes, twice, is a lot of DOM to touch on a frame where
-     nothing changed */
-  const advance=(L,plate,c,f,fill)=>{
-    if(Math.abs(f-L.f)>0.003){ setCol(plate,c,fill); L.f=f; }
-  };
-
-  const place=(x,y)=>pip.setAttribute("transform",
-    `translate(${x.toFixed(1)},${y.toFixed(1)})`);
-  /* the head glides along the row it is working and lifts a little between
-     columns, which is the whole of what a twelve-channel does */
-  const glide=(path,u)=>{
-    const c=Math.max(0,Math.min(COLS-1,u*(COLS-1)));
-    const c0=Math.floor(c), c1=Math.min(COLS-1,c0+1), f=c-c0;
-    const a=path[c0], b=path[c1];
-    place(a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f-2*SC-Math.sin(f*Math.PI)*3*SC);
-  };
-  /* the deal order: shuffled, so the fresh plate does not fill left to right */
-  const deal=(()=>{ const a=[...Array(COLS).keys()], r=rng(85);
-    for(let i=COLS-1;i>0;i--){ const j=Math.floor(r()*(i+1)); const s=a[i]; a[i]=a[j]; a[j]=s; }
-    return a; })();
-  const inPath=IN.map(L=>L.end), outPath=deal.map(c=>OUT[c].end);
-
-  let t=0, mode=-1;
-  /* every entry states the whole world it is entering rather than the delta
-     from the beat before. A frame long enough to skip a beat — a tab coming
-     back, a step in trace mode — must not leave the plate it skipped standing
-     half full, and stating it outright is cheaper than reasoning about which
-     transitions are possible. */
-  const enter=(m)=>{
-    mode=m;
-    allCols(from, m===0?1:0);
-    allCols(into, m===3?1:0);
-    loaded.setAttribute("opacity", m===3?"1":"0");
-    IN .forEach(L=>L.f = m===0?0:1);
-    OUT.forEach(L=>L.f = m===3?1:0);
-  };
-  const run=(dt)=>{
-    t=(t+dt)%t4;
-    const m = t<t1 ? 0 : t<t2 ? 1 : t<t3 ? 2 : 3;
-    if(m!==mode) enter(m);
-
-    if(m!==1){ T.swirl(0,0); marks.forEach(p=>p.setAttribute("stroke-opacity","0")); }
-
-    if(m===0){                                  // POOL — ninety-six into one
-      const u=t/POOL; let lvl=0, last=-1, fresh=0;
-      IN.forEach((L,i)=>{ const f=clamp((u-phase(i))/WIN);
-        advance(L,from,i,f,1-f); setLine(L,0.20,f); lvl+=f;
-        /* the surface takes the colour of whatever landed last and loses it
-           again over the next quarter of that channel's transfer, which is
-           what makes the pool flicker through the twelve as it fills rather
-           than arrive at one colour it was never mixed from */
-        if(f>0.5){ last=i; fresh=Math.max(0,1-(f-0.5)*4); } });
-      OUT.forEach(L=>setLine(L,0.06,0));
-      T.setLevel(lvl/COLS, last<0?GREY:{fill:CH(last),op:GREY.op}, fresh);
-      glide(inPath,u);
-      load.setAttribute("fill",CH(Math.round(clamp(u)*(COLS-1))));
-      load.setAttribute("fill-opacity","0.5");
-      return;
-    }
-
-    if(m===1){                                  // MIX — one tube, homogenised
-      const u=(t-t1)/MIX, env=Math.sin(Math.PI*u);
-      /* mixed, the surface holds the pool colour and holds it steady: this is
-         the beat where the twelve stop being twelve */
-      T.setLevel(1,POOLED,1);
-      T.swirl(env, u*TURNS*2*Math.PI);
-      marks.forEach(p=>p.setAttribute("stroke-opacity",(0.15+0.5*env).toFixed(2)));
-      IN.forEach(L=>setLine(L,0.20*(1-u),0));
-      OUT.forEach(L=>setLine(L,0.06+0.14*u,0));
-      /* the head stands off while the tube is being rocked, because a pipette
-         hanging in the mouth of one somebody is swirling is a broken one */
-      load.setAttribute("fill-opacity","0");
-      place(mouth[0]-env*15*SC, mouth[1]-env*4*SC);
-      return;
-    }
-
-    if(m===2){                                  // SPLIT — one back out into ninety-six
-      const u=(t-t2)/SPLIT; let done=0;
-      IN.forEach(L=>setLine(L,0.06,0));
-      deal.forEach((c,k)=>{ const f=clamp((u-phase(k))/WIN);
-        advance(OUT[c],into,c,f,f); setLine(OUT[c],0.20,f); done+=f; });
-      T.setLevel(1-done/COLS,POOLED,1);
-      loaded.setAttribute("opacity",(done/COLS).toFixed(2));
-      glide(outPath,u);
-      load.setAttribute("fill",POOLED.fill); load.setAttribute("fill-opacity","0.5");
-      return;
-    }
-
-    /* dealt: an empty tube, a loaded plate, and the fan left standing so the
-       station still says what it does when nothing is moving */
-    IN.forEach(L=>setLine(L,0.10,0));
-    OUT.forEach(L=>setLine(L,0.10,0));
-    T.setLevel(0,null,0);
-    load.setAttribute("fill-opacity","0");
-    place(mouth[0]-14*SC, mouth[1]-4*SC);
-  };
-  run(0);
-  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+  poolSplitBench(g,n,{src:"var(--ch9)", dst:"var(--ch3)"});
 }
 DRAW.poolsplit96 = drawPoolSplit96;
 
