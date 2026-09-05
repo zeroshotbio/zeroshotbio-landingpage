@@ -110,11 +110,12 @@ const NODES = [
  built:"Section 1.4, opening steps.", cond:"Clean."},
 
 /* shape is this page's own, not the lifted record's: /pipeline draws all three
-   rounds as plates, and at this bench B4 is already the compartment where the
-   ligation happens. B6 is the same operation one round later, so it gets the
-   same drawing with two barcodes already on the strand and the third landing —
-   plus the 48 x 96 x 96 the built text below asserts, which is the one thing on
-   this row no single plate can show. The prose stays lifted verbatim. */
+   rounds as one plate glyph, and here each round gets its own drawing on the
+   shared composition — a plate with a lens tethered to one well. B6 is B4 one
+   round later, so it carries two barcodes already on the strand and a third
+   landing, plus the 48 x 96 x 96 the built text below asserts, which is the
+   one thing on this row no single plate can show. The prose stays lifted
+   verbatim. */
 {id:"R3p", key:"B6", group:"In situ barcoding", shape:"ligation3", name:"Round 3 — ligation", x:9.0, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:8,
  sub:"96 wells · R3_v3 · TruSeq R2 + biotin",
  does:"A third barcode is ligated, and it brings two passengers: the Illumina TruSeq Read 2 sequence, and a biotin. After this round a cell's path through three plates is almost certainly unique — that combination is what will be read as a cell identity, and no droplet was ever involved.",
