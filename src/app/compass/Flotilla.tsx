@@ -187,7 +187,7 @@ export default function Flotilla({ fontClass }: { fontClass: string }) {
         {boats.map((b, i) => {
           const x = b.x0 + (b.xg - b.x0) * fShared, y = b.y0 + (showResid ? (b.ya - b.y0) * fResid : 0);
           const bob = 0.18 * Math.sin(clock.current * 1.7 + i * 1.3);
-          const lab = iso(x + 3.6, y, 0.9);
+          const lab = iso(x + 3.6, y, 0.9 - (i % 3) * 1.6);
           return (
             <g key={b.tissue} onMouseEnter={() => setHover(b.tissue)} onMouseLeave={() => setHover(null)} style={{ cursor: "default" }}>
               <BoatGlyph x={x} y={y} z={bob} member={b.member} program={program} sel={hover === b.tissue} />
@@ -196,10 +196,10 @@ export default function Flotilla({ fontClass }: { fontClass: string }) {
           );
         })}
         {/* the two tiny concept labels, anchored to the lead member boat */}
-        {lead && lead.xg - lead.x0 > 10 && fShared > 0.6 && (() => {
+        {lead && lead.xg - lead.x0 > 26 && fShared > 0.6 && (() => {
           const m = iso((lead.x0 + lead.xg) / 2, lead.y0 - 2.6, 0); return <text x={m[0]} y={m[1]} fontSize={2.7} fill={GOLD} letterSpacing={0.35} fontWeight={600} opacity={ease((fShared - 0.6) / 0.4)}>SHARED CURRENT</text>;
         })()}
-        {lead && showResid && lead.xg - lead.x0 > 10 && fResid > 0.5 && (() => {
+        {lead && showResid && lead.xg - lead.x0 > 26 && fResid > 0.5 && (() => {
           const m = iso(lead.xa, (lead.y0 + lead.ya) / 2, 0); return <text x={m[0] - 3} y={m[1] - 2.2} textAnchor="end" fontSize={2.7} fill={CORAL} letterSpacing={0.35} fontWeight={600} opacity={ease((fResid - 0.5) / 0.5)}>RESIDUAL</text>;
         })()}
         {/* hover card */}
