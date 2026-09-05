@@ -5088,16 +5088,22 @@ function drawCountSplitLyse(g,n){
      h .55 — this station is the widest tile on the row and the composition is
      laid out against that, not against B5's smaller box.
 
-     THE SOURCE PLATE IS THROWN NO FURTHER THAN IT HAS TO BE. Past about two
-     node-depths the head working it comes down on top of B6's plate, and a tool
-     belonging to this station standing on that one's plastic is worse than a
-     short throw. Two depths is where both are true. The rack keeps the y it was
-     tuned at and spends its extra on WIDTH, because going from eight tubes to
-     sixteen is two strips laid side by side rather than a deeper block. */
+     THE TWO ENDS SIT ON THE SIDES THEY WERE ASKED FOR: strips near-left, plate
+     far-right, tube between them. The material therefore runs right to left
+     across the tile, and what it buys is the near corner — the strips and the
+     opening cell they hold are the thing to look at here, and on this side they
+     stand in front of the row instead of behind it.
+
+     NEITHER END IS THROWN FURTHER THAN IT HAS TO BE. The perpendicular axis is
+     the only free one on a single-lane map — the neighbours run down-right — so
+     both throws spend themselves across it, and each stays under three node
+     depths so the head working the plate never comes down on somebody else's
+     plastic. The rack spends its extra on WIDTH, because going from eight tubes
+     to sixteen is two strips laid side by side rather than a deeper block. */
   const th=n.h*0.60;
   const PW=n.w*1.45, PD=PW*ROWS/COLS;
-  const src ={x:n.x+n.w*0.48, y:n.y+n.d*1.95, w:PW, d:PD};
-  const rack={x:n.x-n.w*0.15, y:n.y-n.d*2.75, w:n.w*1.70, d:n.d*0.66, h:n.h*0.50};
+  const src ={x:n.x+n.w*0.48, y:n.y-n.d*1.95, w:PW, d:PD};
+  const rack={x:n.x-n.w*0.15, y:n.y+n.d*2.75, w:n.w*1.70, d:n.d*0.66, h:n.h*0.50};
   const TX=n.x+n.w*0.05, TY=n.y-n.d*0.10;
 
   /* THE MIXTURE'S OWN PAINT, and the thing that makes the pooling watchable.
@@ -5127,9 +5133,42 @@ function drawCountSplitLyse(g,n){
       : `color-mix(in oklab, var(--pool) ${(q*100).toFixed(0)}%, var(--ch${i%12+1}))`));
   };
 
-  /* ---- BEAT 3, BUILT FIRST ------------------------------------------------
-     It stands furthest back, and on an isometric grid the order things are
-     appended in is the order they occlude in. */
+  /* ---- BEAT 1's plate, FURTHEST BACK AND THEREFORE BUILT FIRST ------------
+     On an isometric grid the order things are appended in is the order they
+     occlude in, and the plate is now the far object rather than the near one —
+     so it goes down before the tube it empties into.
+
+     Round three's plastic, which is the plate B6 next door has just ligated in,
+     so it wears round three's yellow lip and ninety-six one-per-well colours
+     walked by the same rampHue every other plate on this row is walked by. */
+  const deck=skirtSlab(g,src,th,"var(--ch3)");
+  const WOP=0.85;
+  const from=plateGrid(deck,th,COLS,ROWS).map((w,k)=>{
+    drawWell(g,w,false);
+    const hue=rampHue(k,COLS*ROWS);
+    const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
+      ry:(w.e.ry*0.86).toFixed(2),fill:hue,"fill-opacity":String(WOP)});
+    g.appendChild(fill);
+    return {e:w.e, hue, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
+  });
+
+  /* ---- BEAT 2 — the vessel, and it belongs to beats 1 and 3 both ----------
+     One conical, filled by the head and emptied by a fan. Drawing a second tube
+     for the deal would say the pool had been decanted into something else,
+     which is not what happens.
+
+     ITS HEIGHT IS NOT n.h. A 15 ml conical is a fixed shape — a long thin thing
+     with graduations up the near side — so the height that goes into it has to
+     keep its own proportion against its bore. This node stands nearly twice as
+     tall as B5's, and handing conicalTube n.h raw gives a tube half a screen
+     high. */
+  const T=conicalTube(g, TX, TY, n.w*0.75, n.h*0.62);
+  T.setTint(`url(#${gid})`, 0.62);
+  const mouth=[T.rim.x, T.rim.y-2.2*SC];
+
+  /* ---- BEAT 3, NEAREST THE VIEWER -----------------------------------------
+     The rack stands in front of the tube and the plate both, so it is appended
+     after them. */
   paint(g, rack.x, rack.y, rack.w, rack.d, rack.h, SKIN.works);
   const RT=n.w*0.076, RH=n.h*1.05;
   const CZ1=rack.h+RH*0.88, CZ0=CZ1-n.h*0.13;
@@ -5183,25 +5222,42 @@ function drawCountSplitLyse(g,n){
   const fillTube=(k,f)=>{ if(Math.abs(f-tf[k])<0.004) return; tf[k]=f;
     setTube(tubes[k],f,POOLED.op); };
 
-  /* ---- THE MAGNIFICATION, standing over the rack --------------------------
+  /* ---- THE MAGNIFICATION, in the tile's own clear air ---------------------
      A thin solid ellipse with two solid leaders running down to the one strip
      tube it belongs to: the idiom /FASTQ_pipe already uses for a read drawn
      larger than life, given a boundary here because what is inside it comes
      apart and the pieces have to stay somewhere that is plainly not the bench.
      Everything inside is in the group's own frame and the group is placed by
-     transform, so the burst can push seven arcs and a strand outward by writing
-     one attribute each. */
+     transform, so the burst can push seven arcs and five strands outward by
+     writing one attribute each.
+
+     IT IS THE BIGGEST THING ON THE TILE, because it is what the station is for:
+     the plate and the rack are consumables this row draws at six other stations
+     and the opening cell happens once. Half again the radius it had is what it
+     takes for three chips on a strand to resolve as three.
+
+     IT DOES NOT FOLLOW THE RACK. It used to stand directly over the strips, and
+     with the strips moved to the near-left that airspace belongs to B6 — its
+     own three lenses and its plate are in it, and a magnification laid over a
+     neighbour's magnification is the worst thing either of them could do. The
+     high ground behind the donor plate is the one field this tile owns outright
+     at this size: no neighbour and no part of this station reaches it. So the
+     lens is placed off the PLATE and the tether is left long. */
   /* THE BOUNDARY IS SIZED BY WHAT LEAVES THE CELL, not by what is in it at
      rest: the arcs drift half a radius and turn about their own middles, and an
      arc poking out through the line of the lens would say the magnification had
      lost its edge rather than that the cell had. */
-  const R=n.w*S*0.44, LRX=R*2.20, LRY=R*1.88;
-  const [KX,KY]=P(rack.x-rack.w*0.08, rack.y+rack.d*0.20,
-                  rack.h+RH*1.15+n.h*2.90);
-  const anchor=tubes[PER+2];
+  const R=n.w*S*0.62, LRX=R*2.05, LRY=R*1.80;
+  const [KX,KY]=P(src.x+n.w*0.15, src.y-n.d*0.10, n.h*4.70);
+  /* the strip tube nearest the lens, so the leaders are as short as the new
+     placement allows — the back strip's right-hand end */
+  const anchor=tubes[PER-1];
   /* the tether is drawn before the lens so the lens's own backing covers where
      the two leaders would otherwise run in across the magnification. Both start
-     ON the boundary — a leader beginning inside it crosses its own line. */
+     ON the boundary — a leader beginning inside it crosses its own line. They
+     cross the conical on the way down, and that is allowed: a leader is an
+     annotation over the scene rather than an object standing in it, which is
+     also why it is thin and faint enough to read as one. */
   [0.72,0.28].forEach((th,i)=>{
     const p=[LRX*Math.cos(th*Math.PI), LRY*Math.sin(th*Math.PI)];
     g.appendChild(el("line",{x1:(KX+p[0]).toFixed(1),y1:(KY+p[1]).toFixed(1),
@@ -5241,27 +5297,50 @@ function drawCountSplitLyse(g,n){
       r:(R*0.075).toFixed(2), fill:"none", stroke:"var(--fg)",
       "stroke-width":".9","stroke-opacity":".5"})));
   }
-  /* ONE STRAND, NOT TEN. What has to be legible is that a single molecule
-     carrying three rounds of barcode crosses the boundary; a crowd of them
-     leaving at once is a cloud, and a cloud has no moment in it. The three
-     chips take the three rounds' own plate colours — green, royal blue, the
-     yellow of the plate standing in this same frame — so the strand says which
-     three plates it has been through rather than merely that it has been
-     through three. */
-  const SL=R*0.52, EXIT=-0.35*Math.PI, RAD0=R*0.24;
-  const strand=el("g",{transform:
-    `translate(${(Math.cos(EXIT)*RAD0).toFixed(1)},${(Math.sin(EXIT)*RAD0).toFixed(1)}) `+
-    `rotate(-18)`, opacity:"0.72"});
-  strand.appendChild(el("path",{d:`M ${(-SL*0.5).toFixed(1)} 0 `+
-    `q ${(SL*0.3).toFixed(1)} ${(-SL*0.34).toFixed(1)} ${(SL*0.5).toFixed(1)} 0 `+
-    `q ${(SL*0.2).toFixed(1)} ${(SL*0.30).toFixed(1)} ${(SL*0.5).toFixed(1)} 0`,
-    fill:"none",stroke:"var(--fg2)","stroke-width":"1.2","stroke-opacity":".9",
-    "stroke-linecap":"round"}));
-  ["var(--ch5)","var(--ch9)","var(--ch3)"].forEach((hue,k)=>
-    strand.appendChild(el("circle",{
-      cx:(-SL*0.30+k*SL*0.30).toFixed(1), cy:(-SL*0.10+k*SL*0.10).toFixed(1),
-      r:(R*0.11).toFixed(2), fill:hue, "fill-opacity":".95"})));
-  cell.appendChild(strand);
+  /* WHAT SPILLS IS A HANDFUL OF STRANDS, NOT ONE. A single molecule crossing
+     the boundary reads as an incident; five read as the contents of a cell, and
+     the contents are the point — everything before this station happened inside
+     that wall. Five and not fifty because past a handful the chips stop
+     resolving and the burst becomes a cloud with nothing legible in it.
+
+     EVERY STRAND CARRIES THE SAME THREE CHIPS, in the three rounds' own plate
+     colours — green, royal blue, the yellow of the plate standing in this same
+     frame. Giving them five different triplets would be prettier and would say
+     the opposite of the truth: split-pool gives one cell ONE combination, and
+     it is the sameness across everything that comes out of this wall that makes
+     the combination a cell label rather than a decoration. */
+  const NSTR=5, EXIT=-0.35*Math.PI, RAD0=R*0.30;
+  const strands=[];
+  for(let k=0;k<NSTR;k++){
+    /* fanned across most of a turn and each drawn along its own way out, so
+       they leave as separate molecules rather than as one bundle */
+    const a=EXIT-0.42*Math.PI+k*(0.92*Math.PI/(NSTR-1));
+    const SL=R*0.50*(0.86+0.14*(k%3));
+    const s={a, r0:RAD0*(0.62+0.19*k), r1:R*(1.00+0.07*(k%3)),
+             rot:a*180/Math.PI+(k%2?12:-14), g:el("g",{})};
+    s.g.appendChild(el("path",{d:`M ${(-SL*0.5).toFixed(1)} 0 `+
+      `q ${(SL*0.3).toFixed(1)} ${(-SL*0.34).toFixed(1)} ${(SL*0.5).toFixed(1)} 0 `+
+      `q ${(SL*0.2).toFixed(1)} ${(SL*0.30).toFixed(1)} ${(SL*0.5).toFixed(1)} 0`,
+      fill:"none",stroke:"var(--fg2)","stroke-width":"1.2","stroke-opacity":".9",
+      "stroke-linecap":"round"}));
+    ["var(--ch5)","var(--ch9)","var(--ch3)"].forEach((hue,j)=>
+      s.g.appendChild(el("circle",{
+        cx:(-SL*0.30+j*SL*0.30).toFixed(1), cy:(-SL*0.10+j*SL*0.10).toFixed(1),
+        r:(R*0.10).toFixed(2), fill:hue, "fill-opacity":".95"})));
+    cell.appendChild(s.g);
+    strands.push(s);
+  }
+  /* one placer, called at birth and by the burst: a strand that is only ever
+     positioned from inside the ticker is a strand with no coordinates until the
+     first frame runs, and the first frame is not guaranteed to run */
+  const setStrand=(s,e)=>{
+    const rad=s.r0+(s.r1-s.r0)*e;
+    s.g.setAttribute("transform",
+      `translate(${(Math.cos(s.a)*rad).toFixed(1)},${(Math.sin(s.a)*rad).toFixed(1)}) `+
+      `rotate(${(s.rot+22*e).toFixed(1)})`);
+    s.g.setAttribute("opacity",(0.62+0.36*e).toFixed(2));
+  };
+  strands.forEach(s=>setStrand(s,0));
   /* the boundary last, so nothing inside is drawn over its line */
   cell.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LRX.toFixed(1),ry:LRY.toFixed(1),
     fill:"none",stroke:"var(--fg2)","stroke-width":"1","stroke-opacity":".55"}));
@@ -5283,44 +5362,12 @@ function drawCountSplitLyse(g,n){
       (0.5*Math.max(0,1-f*1.8)).toFixed(2)));
     body.setAttribute("fill-opacity",(0.10*(1-f)).toFixed(2));
     nuc.setAttribute("fill-opacity",(0.22*(1-0.8*f)).toFixed(2));
-    /* the strand is the one thing that eases to a stop inside the burst: it is
-       not thrown out, it diffuses out, and it brightens because it is now in
-       open solution rather than behind a wall */
-    const e=easeOut(f), rad=RAD0+(R*1.20-RAD0)*e;
-    strand.setAttribute("transform",
-      `translate(${(Math.cos(EXIT)*rad).toFixed(1)},${(Math.sin(EXIT)*rad).toFixed(1)}) `+
-      `rotate(${(-18+26*e).toFixed(1)})`);
-    strand.setAttribute("opacity",(0.72+0.28*e).toFixed(2));
+    /* the strands are the one thing that eases to a stop inside the burst: they
+       are not thrown out, they diffuse out, and they brighten because they are
+       now in open solution rather than behind a wall */
+    const e=easeOut(f);
+    strands.forEach(s=>setStrand(s,e));
   };
-
-  /* ---- BEAT 2 — the vessel, and it belongs to beats 1 and 3 both ----------
-     One conical, filled by the head and emptied by a fan. Drawing a second tube
-     for the deal would say the pool had been decanted into something else,
-     which is not what happens.
-
-     ITS HEIGHT IS NOT n.h. A 15 ml conical is a fixed shape — a long thin thing
-     with graduations up the near side — so the height that goes into it has to
-     keep its own proportion against its bore. This node stands nearly twice as
-     tall as B5's, and handing conicalTube n.h raw gives a tube half a screen
-     high. */
-  const T=conicalTube(g, TX, TY, n.w*0.75, n.h*0.62);
-  T.setTint(`url(#${gid})`, 0.62);
-  const mouth=[T.rim.x, T.rim.y-2.2*SC];
-
-  /* ---- BEAT 1's plate, in front of the tube and therefore over it ---------
-     Round three's plastic, which is the plate B6 next door has just ligated in,
-     so it wears round three's yellow lip and ninety-six one-per-well colours
-     walked by the same rampHue every other plate on this row is walked by. */
-  const deck=skirtSlab(g,src,th,"var(--ch3)");
-  const WOP=0.85;
-  const from=plateGrid(deck,th,COLS,ROWS).map((w,k)=>{
-    drawWell(g,w,false);
-    const hue=rampHue(k,COLS*ROWS);
-    const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
-      ry:(w.e.ry*0.86).toFixed(2),fill:hue,"fill-opacity":String(WOP)});
-    g.appendChild(fill);
-    return {e:w.e, hue, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
-  });
 
   /* the head is as many channels as the plate has columns, at the plate's own
      pitch measured off the first two wells rather than authored — a comb built
