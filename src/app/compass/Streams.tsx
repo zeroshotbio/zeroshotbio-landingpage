@@ -111,7 +111,7 @@ export default function Streams({ cond, title, subtitle, children }: { cond: str
   const corners = [iso(0, -5), iso(L, -WK[3] / 2 - 3), iso(L, WK[3] / 2 + 8), iso(0, 5), iso(L + 6, 0), iso(XLM[36], -WK[1] / 2 - 4)];
   const minX = Math.min(...corners.map((c) => c[0])) - 6, maxX = Math.max(...corners.map((c) => c[0])) + 14, minY = Math.min(...corners.map((c) => c[1])) - 9, maxY = Math.max(...corners.map((c) => c[1])) + 6;
   // wheel = zoom about the cursor, drag = pan (viewBox transform; preserveAspectRatio "meet" mapping)
-  const Z0 = 0.8; const home = { x: minX + ((maxX - minX) * (1 - Z0)) / 2, y: minY + ((maxY - minY) * (1 - Z0)) / 2 + 4, w: (maxX - minX) * Z0, h: (maxY - minY) * Z0 };   // open a little zoomed in
+  const Z0 = 0.95; const home = { x: minX + ((maxX - minX) * (1 - Z0)) / 2, y: minY + ((maxY - minY) * (1 - Z0)) / 2 + 6, w: (maxX - minX) * Z0, h: (maxY - minY) * Z0 };   // open a little zoomed in
   const box = useRef(home); const [vb, setVb] = useState(box.current);
   const svgRef = useRef<SVGSVGElement>(null); const drag = useRef<{ x: number; y: number } | null>(null);
   const toUser = (cx: number, cy: number) => { const r = svgRef.current!.getBoundingClientRect(); const b = box.current; const k = Math.min(r.width / b.w, r.height / b.h); const ox = (r.width - b.w * k) / 2, oy = (r.height - b.h * k) / 2; return [b.x + (cx - r.left - ox) / k, b.y + (cy - r.top - oy) / k, k] as const; };
