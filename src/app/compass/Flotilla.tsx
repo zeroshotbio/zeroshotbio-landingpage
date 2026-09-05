@@ -45,20 +45,26 @@ function layout(drug: string, program: string): Boat[] {
   let maxL = 0, maxR = 0;
   for (const d of D.drugs) for (const t of D.tissues) { const r = D.responses[d.id]?.[t]; if (!r) continue;
     maxL = Math.max(maxL, Math.abs(r.loading[program])); maxR = Math.max(maxR, r.residual[program]); }
-  const Xs = (L - DOCK - 14) / maxL, Ys = (1.45 * LANE) / maxR;
+  const Xs = (L - DOCK - 14) / maxL, Ys = (2.1 * LANE) / maxR;
   const members = D.programs[program].tissues;
   const tissues = D.tissues.filter((t) => rs[t]).sort((a, b) => Math.abs(rs[b].loading[program]) - Math.abs(rs[a].loading[program]));
   const n = tissues.length;
+  const laneCount: Record<number, number> = {};
   return tissues.map((t, rank) => {
     const r = rs[t]; const lo = r.loading[program], re = r.residual[program];
+    const member = members.includes(t);
     const other = D.program_order.filter((p) => p !== program).sort((a, b) => Math.abs(r.loading[b]) - Math.abs(r.loading[a]))[0];
     const dir = Math.sign(D.program_order.indexOf(other) - s) || (rank % 2 ? 1 : -1);
-    // launch positions: a compact formation in the selected lane, strongest movers innermost
-    const spread = ((rank % 2 ? 1 : -1) * Math.ceil(rank / 2)) * 0.62;
-    const y0 = laneY(s) + spread, x0 = DOCK + 2 + (rank % 3) * 0.9;
+    // launch: members form up in the selected lane; every other boat waits at the dock in the lane
+    // of its own strongest program (a reading aid so the dock does not pile up)
+    const home = member ? s : D.program_order.indexOf(D.program_order.slice().sort((a, b) => Math.abs(r.loading[b]) - Math.abs(r.loading[a]))[0]);
+    const k = (laneCount[home] = (laneCount[home] ?? 0) + 1);
+    const spread = ((k % 2 ? 1 : -1) * Math.ceil((k - 1) / 2)) * 1.05;
+    const y0 = laneY(home) + spread, x0 = DOCK + 2 + ((k - 1) % 3) * 1.1;
     const xg = Math.max(2, Math.min(L - 3, x0 + lo * Xs));
-    const ya = Math.max(1.4, Math.min(W - 1.4, y0 + dir * re * Ys));
-    return { tissue: t, member: members.includes(t), loading: lo, residual: re, norm: r.norm, frac: (lo * lo) / (r.norm * r.norm),
+    // residual drift is drawn for members only; non-members simply move by their (small) loading
+    const ya = member ? Math.max(1.4, Math.min(W - 1.4, y0 + dir * re * Ys)) : y0;
+    return { tissue: t, member, loading: lo, residual: re, norm: r.norm, frac: (lo * lo) / (r.norm * r.norm),
              x0, y0, xg, yg: y0, xa: xg, ya, otherLane: other };
   }).concat([]).slice(0, n);
 }
@@ -168,7 +174,7 @@ export default function Flotilla({ fontClass }: { fontClass: string }) {
         })}
         {/* ghosts + residual connectors */}
         {showResid && boats.map((b) => {
-          if (!b.member && Math.abs(b.loading) < 1e-6) return null;
+          if (!b.member) return null;
           const ye = b.y0 + (b.ya - b.y0) * fResid; const g = iso(b.xg, b.y0, 0.15), e = iso(b.xa, ye, 0.15);
           return (
             <g key={b.tissue} opacity={fShared > 0.98 ? 1 : 0}>
@@ -185,16 +191,16 @@ export default function Flotilla({ fontClass }: { fontClass: string }) {
           return (
             <g key={b.tissue} onMouseEnter={() => setHover(b.tissue)} onMouseLeave={() => setHover(null)} style={{ cursor: "default" }}>
               <BoatGlyph x={x} y={y} z={bob} member={b.member} program={program} sel={hover === b.tissue} />
-              <text x={lab[0]} y={lab[1] + 0.9} fontSize={2.6} fill={b.member ? INK : MUTED} opacity={b.member ? 0.95 : 0.7}>{b.tissue}</text>
+              {(b.member || hover === b.tissue) && <text x={lab[0]} y={lab[1] + 0.9} fontSize={2.6} fill={b.member ? INK : MUTED} opacity={b.member ? 0.95 : 0.8}>{b.tissue}</text>}
             </g>
           );
         })}
         {/* the two tiny concept labels, anchored to the lead member boat */}
-        {lead && fShared > 0.6 && (() => {
+        {lead && lead.xg - lead.x0 > 10 && fShared > 0.6 && (() => {
           const m = iso((lead.x0 + lead.xg) / 2, lead.y0 - 2.6, 0); return <text x={m[0]} y={m[1]} fontSize={2.7} fill={GOLD} letterSpacing={0.35} fontWeight={600} opacity={ease((fShared - 0.6) / 0.4)}>SHARED CURRENT</text>;
         })()}
-        {lead && showResid && fResid > 0.5 && (() => {
-          const m = iso(lead.xa + 0.6, (lead.y0 + lead.ya) / 2, 0); return <text x={m[0] + 2.5} y={m[1]} fontSize={2.7} fill={CORAL} letterSpacing={0.35} fontWeight={600} opacity={ease((fResid - 0.5) / 0.5)}>RESIDUAL</text>;
+        {lead && showResid && lead.xg - lead.x0 > 10 && fResid > 0.5 && (() => {
+          const m = iso(lead.xa, (lead.y0 + lead.ya) / 2, 0); return <text x={m[0] - 3} y={m[1] - 2.2} textAnchor="end" fontSize={2.7} fill={CORAL} letterSpacing={0.35} fontWeight={600} opacity={ease((fResid - 0.5) / 0.5)}>RESIDUAL</text>;
         })()}
         {/* hover card */}
         {hover && (() => {
