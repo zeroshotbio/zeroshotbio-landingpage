@@ -5236,56 +5236,66 @@ function drawCountSplitLyse(g,n){
   });
 
   /* the deal out, drawn after every piece of plastic so none of them can bury
-     a line — the lens below is the one thing allowed over it, because an inset
-     is in front of the scene rather than in it. Every line carries the pool's
-     own colour and not sixteen different ones: what leaves the tube is one
-     suspension divided by volume, and that is the whole reason the gradient
+     a line — the lens below is still built after it, because an inset is in
+     front of the scene rather than in it, but now that the glass hangs clear
+     of the rack there is nothing left for it to cover. Every line carries the
+     pool's own colour and not sixteen different ones: what leaves the tube is
+     one suspension divided by volume, and that is the whole reason the gradient
      was made to converge on the way in. */
   const OUT=flowFan(g, tubes.map(t=>t.mouth), mouth, false, ()=>POOLED.fill, SC);
 
-  /* ---- THE MAGNIFICATION, STANDING ON THE STRIPS -------------------------
+  /* ---- THE MAGNIFICATION, HUNG OFF THE NEAR FOOT OF THE RACK -------------
      A thin solid ellipse with two leaders running back to the strip tube it
      belongs to: the idiom /FASTQ_pipe already uses for a read drawn larger
      than life, given a boundary here because what is inside it comes apart
      and the pieces have to stay somewhere that is plainly not the bench.
 
-     IT IS BUILT LAST, AFTER THE HEAD AND THE FAN, AND IT SITS ON THE NEAR
-     STRIP. Those are one decision. Built earlier it went under the comb, and
-     a magnification with a pipette tracking across it is a magnification
-     nobody can read; built last it is the front-most thing on the tile, which
-     is what an inset is. The empty air ABOVE the rack was never available to
-     hang it in — B5's plate reaches down into it and B6's deck reaches lower
-     still — so it sits in front of the rack instead, and buries the near half
-     of the front strip on purpose. A magnification of what is in a tube, held
-     against that tube, needs no explaining. What it costs is five of the
-     sixteen tubes during the deal, which is why it takes the front strip's
-     near end and not the middle of the rack: the back strip stays whole, and
-     the leaders run to its far end so the tether still names the plastic.
+     IT IS STILL BUILT LAST, AFTER THE HEAD AND THE FAN, BUT IT NO LONGER
+     STANDS ON THE STRIPS. It did, and it buried the near half of the front
+     strip on purpose — and that was reported from the page as the tubes and
+     the inset overlapping, which is the right report. An inset drawn ON the
+     plastic it magnifies has no edge anybody can find: the glass and the
+     tubes stop being a scene and a close-up of it and become one confused
+     object, and the close-up loses because it is the thinner drawing.
+
+     So it hangs off the rack's near foot instead, down and to the left, into
+     the one piece of airspace on this tile no plastic reaches — and it is now
+     the biggest thing here, which is what it means for the inset to be the
+     panel's subject. THE OFFSET IS MEASURED IN THE LENS'S OWN RADII, not in
+     world units: what has to survive a resize is the CLEARANCE between glass
+     and plastic, and a gap stated as a fraction of the thing being cleared is
+     the same gap at every size. Hanging past the front edge of the mat is not
+     a cost — an inset is not standing on the bench, and the one place it can
+     say so is the one place the bench has run out.
 
      THE BOUNDARY IS SIZED BY WHAT LEAVES THE CELLS, not by what is in them at
      rest: the arcs drift half a radius outward and the molecules travel a
      cell radius further than that, and either poking out through the line
      would say the magnification had lost its edge rather than that the cells
      had. */
-  const R=n.w*S*0.40, LRX=n.w*S*1.68, LRY=n.w*S*1.34;
-  const [KX,KY]=P(rack.x, rack.y+n.d*1.69, rack.h+n.h*1.42);
-  const anchor=tubes[PER-1];
+  const R=n.w*S*0.488, LRX=n.w*S*2.05, LRY=n.w*S*1.64;
+  const [AX,AY]=P(rack.x, rack.y+rack.d/2, 0);   // the rack's near foot
+  const KX=AX-LRX*0.82, KY=AY+LRY*1.00;
+  /* the tether names ONE tube, so it takes the nearest one — the near strip's
+     near end, which is the tube the glass now sits beside instead of on */
+  const anchor=tubes[(STRIPS-1)*PER];
   /* the tether is drawn before the lens so the lens's own backing covers where
      the two leaders would otherwise run in across the magnification. Both
-     start ON the boundary — a leader beginning inside it crosses its own
-     line — and both leave from the side the tube is on. */
-  [-0.055,0.055].forEach((th,i)=>{
-    const p=[LRX*Math.cos(th*Math.PI), LRY*Math.sin(th*Math.PI)];
-    g.appendChild(el("line",{x1:(KX+p[0]).toFixed(1),y1:(KY+p[1]).toFixed(1),
-      x2:(anchor.rim.x+(i?anchor.rim.rx:-anchor.rim.rx)).toFixed(1),
-      y2:anchor.rim.y.toFixed(1),
+     start ON the boundary — a leader beginning inside it crosses its own line
+     — and where they start is the ray to the tube's own rim rather than a
+     fixed angle, so glass that has moved or grown still aims at the plastic. */
+  [-1,1].forEach(s=>{
+    const tx=anchor.rim.x+s*anchor.rim.rx, ty=anchor.rim.y;
+    const vx=tx-KX, vy=ty-KY, t=1/Math.hypot(vx/LRX, vy/LRY);
+    g.appendChild(el("line",{x1:(KX+vx*t).toFixed(1),y1:(KY+vy*t).toFixed(1),
+      x2:tx.toFixed(1),y2:ty.toFixed(1),
       stroke:"var(--fg2)","stroke-width":".8","stroke-opacity":".4"}));
   });
   const lens=el("g",{transform:`translate(${KX.toFixed(1)},${KY.toFixed(1)})`});
   g.appendChild(lens);
-  /* the backing is nearly opaque now that there is plastic under it: at the
-     .72 it wore in open air the strip tubes read through the glass and the
-     two spaces became one */
+  /* the backing stays nearly opaque now that what is under it is the mat and
+     the ground grid rather than plastic: glass you can read the paper through
+     is a hole in the drawing, not a lens over it */
   lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LRX.toFixed(1),ry:LRY.toFixed(1),
     fill:"var(--bg)","fill-opacity":".9"}));
 
@@ -5308,13 +5318,21 @@ function drawCountSplitLyse(g,n){
   const BAR0=bx(2)+CW, BARL=3.6;          // Read 2, off the end of the third chip
   const TAGX=BAR0+BARL+0.7, TAGR=1.1;
   const GOLD="color-mix(in oklab, var(--ch2) 45%, var(--ch3))";
-  /* BC1 AND BC2 ARE THE SAME MUTED BLOCK IN ALL THREE CELLS, which is B6's
-     choice and B6's reason. Three cells differ in all three rounds really;
-     drawing that gives nine colours and no comparison. One block moving while
-     two stand still is what makes the third round legible as the round that
-     just happened. */
-  const OLD=["color-mix(in oklab, var(--ch5) 62%, var(--fg3))",
-             "color-mix(in oklab, var(--ch7) 62%, var(--fg3))"];
+  /* BC1 AND BC2 ARE THE SAME BLOCK IN ALL THREE CELLS, which is B6's choice
+     and B6's reason. Three cells differ in all three rounds really; drawing
+     that gives nine colours and no comparison. One block moving while two
+     stand still is what makes the third round legible as the round that just
+     happened.
+
+     THEY ARE FLAT --ch5 AND --ch7, WHICH IS B4's TREATMENT AND NOT B6's. B6
+     mixes both towards --fg3, because over there the two old chips have to
+     step back so three lenses can be compared on the third. There is nothing
+     to compare here — this is one drawing of one lysate — and muted blocks in
+     a lens this small came back from the page as barcodes you could not tell
+     from each other or from the station before. So the chips carry the same
+     green and the same cyan they were ligated in, at the strength B4 draws
+     them: a barcode is the same colour at every station it survives. */
+  const OLD=["var(--ch5)","var(--ch7)"];
   /* and it is BC3 that moves, because split-pool gives a cell one third-round
      well and these are three different cells. The indices are ligation3's own
      three opened wells on the same 96-well ramp, so the cell you watched take
@@ -5391,7 +5409,18 @@ function drawCountSplitLyse(g,n){
      permeabilised one — reagents have been walking in and out of it for three
      rounds — so the gaps are the drawing being right about the chemistry
      before they are the drawing being ready to break. The pores are marked on
-     the gaps rather than invented somewhere else, for the same reason. */
+     the gaps rather than invented somewhere else, for the same reason.
+
+     THE CELL IS DRAWN AS A WISP, AND WHAT IS LEFT OF IT IS FAINTER STILL.
+     Every one of these four numbers used to be roughly twice what it is, and
+     at that strength the wreckage of three membranes was the loudest thing in
+     the glass — a lens full of grey arcs with the barcoded molecules picking
+     their way between them. It is the molecules that survive this station and
+     the cell that does not, so the cell is drawn at the weight of something
+     already on its way out, and the burst takes it the rest of the way to
+     nothing. Named here because the birth and the burst both spend them, and
+     a debris opacity written twice is a debris opacity that drifts. */
+  const WALL=0.46, PORE=0.26, CYTO=0.06, NUCO=0.13;
   const TRI=[[-0.34,-0.30],[0.34,-0.30],[0,0.34]];
   const SEG=7, NSTR=3, RAD0=R*0.30;
   const ringPts=(rad,a0,a1)=>{ const o=[];
@@ -5402,10 +5431,10 @@ function drawCountSplitLyse(g,n){
       `translate(${(fx*LRX).toFixed(1)},${(fy*LRY).toFixed(1)})`});
     lens.appendChild(cg);
     const body=el("circle",{cx:"0",cy:"0",r:(R*0.97).toFixed(1),
-      fill:"var(--fg)","fill-opacity":".10"});
+      fill:"var(--fg)","fill-opacity":CYTO.toFixed(2)});
     cg.appendChild(body);
     const nuc=el("circle",{cx:(-R*0.22).toFixed(1),cy:(R*0.12).toFixed(1),
-      r:(R*0.30).toFixed(1),fill:"var(--fg)","fill-opacity":".22"});
+      r:(R*0.30).toFixed(1),fill:"var(--fg)","fill-opacity":NUCO.toFixed(2)});
     cg.appendChild(nuc);
     const seg=[], pore=[];
     for(let i=0;i<SEG;i++){
@@ -5416,8 +5445,8 @@ function drawCountSplitLyse(g,n){
       const a0=(i/SEG)*2*Math.PI+0.13+roll, a1=((i+1)/SEG)*2*Math.PI-0.13+roll,
             am=(a0+a1)/2;
       const p=el("polyline",{points:pts(ringPts(R,a0,a1)),fill:"none",
-        stroke:"var(--fg)","stroke-width":"1.4","stroke-opacity":".85",
-        "stroke-linecap":"round"});
+        stroke:"var(--fg)","stroke-width":"1",
+        "stroke-opacity":WALL.toFixed(2),"stroke-linecap":"round"});
       cg.appendChild(p);
       seg.push({p, a:am, mid:[R*Math.cos(am), R*Math.sin(am)],
                 spin:(i%2?1:-1)*(26+i*8)});
@@ -5425,7 +5454,7 @@ function drawCountSplitLyse(g,n){
       pore.push(cg.appendChild(el("circle",{
         cx:(R*Math.cos(gp)).toFixed(1), cy:(R*Math.sin(gp)).toFixed(1),
         r:(R*0.085).toFixed(2), fill:"none", stroke:"var(--fg)",
-        "stroke-width":".9","stroke-opacity":".5"})));
+        "stroke-width":".7","stroke-opacity":PORE.toFixed(2)})));
     }
     /* WHAT SPILLS IS A HANDFUL PER CELL, NOT ONE AND NOT FIFTY. One molecule
        crossing a wall reads as an incident; three read as the contents of a
@@ -5470,12 +5499,16 @@ function drawCountSplitLyse(g,n){
           `translate(${(Math.cos(s.a)*R*0.48*a).toFixed(1)},`+
           `${(Math.sin(s.a)*R*0.48*a).toFixed(1)}) `+
           `rotate(${(s.spin*a).toFixed(1)},${s.mid[0].toFixed(1)},${s.mid[1].toFixed(1)})`);
-        s.p.setAttribute("stroke-opacity",(0.85-0.70*f).toFixed(2));
+        /* the arcs do not merely dim on the way out, they go: what is held at
+           the end of this beat is nine molecules in solution, and a ring of
+           wreckage still legible around each of them would say the cell was
+           half there rather than gone */
+        s.p.setAttribute("stroke-opacity",(WALL*(1-0.94*f)).toFixed(2));
       });
       C.pore.forEach(p=>p.setAttribute("stroke-opacity",
-        (0.5*Math.max(0,1-f*1.8)).toFixed(2)));
-      C.body.setAttribute("fill-opacity",(0.10*(1-f)).toFixed(2));
-      C.nuc.setAttribute("fill-opacity",(0.22*(1-0.8*f)).toFixed(2));
+        (PORE*Math.max(0,1-f*1.8)).toFixed(2)));
+      C.body.setAttribute("fill-opacity",(CYTO*(1-f)).toFixed(2));
+      C.nuc.setAttribute("fill-opacity",(NUCO*(1-0.9*f)).toFixed(2));
       /* the strands are the one thing that eases to a stop inside the burst:
          they are not thrown out, they diffuse out, and they brighten because
          they are now in open solution rather than behind a wall */
