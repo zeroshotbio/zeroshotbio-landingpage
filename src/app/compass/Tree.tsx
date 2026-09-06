@@ -1,6 +1,7 @@
 "use client";
 /**
- * Branching river — a recursive space-partition tree. Redesigned from scratch.
+ * Branching tree — recursive space partition, drawn orthographically top-down with straight segments
+ * and crisp elbows at each landmark (no perspective, no river curves).
  *
  * LAYOUT RULE (the whole point): every node owns a band [a,b] of the river's width. Its children
  * partition that band, with gaps between them, and each stream runs down the centre of its own band.
@@ -29,18 +30,17 @@ const FL = flot as unknown as { program_order: string[]; programs: Record<string
 const PROG_COLOR: Record<string, string> = { neural: "#35c4b5", mesenchymal: "#b794f4", module3: "#d6b26a", epithelial: "#f472b6", "fast-muscle": "#f59e0b" };
 const PROG_LABEL: Record<string, string> = { neural: "neural differentiation", mesenchymal: "mesenchymal arrest", module3: "module 3 (provisional)", epithelial: "epithelial / fin-fold", "fast-muscle": "fast-muscle stress" };
 const AMBER = "#c98a3a", BLUE = "#4f9fe6", GREY = "#38414d", INK = "#c7d0da", MUTED = "#6e7a88";
-const PHI = 25 * Math.PI / 180, CP = Math.cos(PHI), SN = Math.sin(PHI);
-const iso = (u: number, v: number, z = 0) => { const x = u * CP - v * SN, y = u * SN + v * CP; return [(x - y) * 0.866, (x + y) * 0.5 - z] as const; };
-const P = (pts: (readonly [number, number])[]) => pts.map(([a, b]) => `${a.toFixed(2)},${b.toFixed(2)}`).join(" ");
+// orthographic, top-down: no perspective, no foreshortening — time runs straight down, width across
+const iso = (u: number, v: number, _z = 0) => [v, u] as const;
 const hash = (s: string) => { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return ((h >>> 0) % 1000) / 1000; };
 
 /* river geometry: fork positions and width */
 const L = 122, XF = { groups: 8, t24: 18, s36: 40, s48: 76, s72: 112 };
 const XLM: Record<number, number> = { 24: XF.t24, 36: XF.s36, 48: XF.s48, 72: XF.s72 };
-const WPTS: [number, number][] = [[0, 3], [XF.groups, 10], [XF.t24, 30], [XF.s36, 64], [XF.s48, 98], [XF.s72, 128], [L, 134]];
+const WPTS: [number, number][] = [[0, 3], [XF.groups, 14], [XF.t24, 42], [XF.s36, 78], [XF.s48, 108], [XF.s72, 130], [L, 134]];
 const widthAt = (x: number) => { for (let i = 1; i < WPTS.length; i++) if (x <= WPTS[i][0]) { const [x0, w0] = WPTS[i - 1], [x1, w1] = WPTS[i]; return w0 + ((x - x0) / (x1 - x0)) * (w1 - w0); } return WPTS[WPTS.length - 1][1]; };
-const TRANS = 7;                                  // length over which a child leaves its parent's centre
-const smooth = (t: number) => { const u = Math.max(0, Math.min(1, t)); return u * u * (3 - 2 * u); };
+const TRANS = 2.2;                                // short diagonal elbow: a child leaves its parent's centre almost at once
+const smooth = (t: number) => Math.max(0, Math.min(1, t));   // linear: straight elbow, no easing
 
 type T = { id: string; label: string; kind: "root" | "group" | "tissue" | "rest" | "leaf"; xf: number; children: T[]; parent?: T; a: number; b: number; tissue?: string; data?: Node; nLeaves: number };
 const topOf = (c: string, pool: Node[]) => new Set(pool.slice().sort((a, b) => (b.share[c]?.[String(LAST)] ?? 0) - (a.share[c]?.[String(LAST)] ?? 0)).slice(0, TOPN).map((n) => n.id));
@@ -87,7 +87,7 @@ const splitX = (n: T) => (n.children.length ? n.children[0].xf : L);
 /* position of a node's stream at x, including the departure from its parent's centre */
 const vAt = (n: T, x: number): number => { if (!n.parent) return 0; const own = centre(n, x); if (x >= n.xf + TRANS) return own; const p = vAt(n.parent, x); return p + (own - p) * smooth((x - n.xf) / TRANS); };
 const routeV = (leaf: T, x: number): number => { let n: T = leaf; while (n.parent && n.xf > x) n = n.parent; return vAt(n, x); };
-const polyline = (n: T) => { const pts: (readonly [number, number])[] = []; const x0 = n.xf, x1 = splitX(n); for (let x = x0; x < x1; x += 1.5) pts.push(iso(x, vAt(n, x))); pts.push(iso(x1, vAt(n, x1))); return "M" + pts.map(([a, b]) => `${a.toFixed(2)},${b.toFixed(2)}`).join(" L"); };
+const polyline = (n: T) => { const x0 = n.xf, x1 = splitX(n); const xe = Math.min(x0 + TRANS, x1); const pts = [iso(x0, vAt(n, x0)), iso(xe, vAt(n, xe)), iso(x1, vAt(n, x1))]; return "M" + pts.map(([a, b]) => `${a.toFixed(2)},${b.toFixed(2)}`).join(" L"); };
 
 export default function Tree({ cond, title, subtitle, children }: { cond: string; title: string; subtitle: string; children?: React.ReactNode }) {
   const { all, drawn } = useMemo(build, []);
@@ -103,8 +103,7 @@ export default function Tree({ cond, title, subtitle, children }: { cond: string
   const engaged = useMemo(() => isWT ? [] : Array.from(new Set(all.filter((n) => status(n) === "new").map((n) => programOf(n.tissue) ?? "none"))), [all, routes, cond]);   // eslint-disable-line react-hooks/exhaustive-deps
   const taken = useMemo(() => leaves.filter((l) => routes.cond.tops.has(l.id)), [leaves, routes]);
 
-  const corners = [iso(0, -3), iso(L, -widthAt(L) / 2 - 3), iso(L, widthAt(L) / 2 + 8), iso(0, 3), iso(XF.s36, -widthAt(XF.s36) / 2 - 5)];
-  const minX = Math.min(...corners.map((c) => c[0])) - 6, maxX = Math.max(...corners.map((c) => c[0])) + 14, minY = Math.min(...corners.map((c) => c[1])) - 9, maxY = Math.max(...corners.map((c) => c[1])) + 6;
+  const minX = -widthAt(L) / 2 - 24, maxX = widthAt(L) / 2 + 6, minY = -6, maxY = L + 8;
   const home = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
   const box = useRef(home); const [vb, setVb] = useState(box.current);
   const svgRef = useRef<SVGSVGElement>(null); const drag = useRef<{ x: number; y: number } | null>(null);
@@ -147,18 +146,18 @@ export default function Tree({ cond, title, subtitle, children }: { cond: string
       {children}
       <svg ref={svgRef} viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`} preserveAspectRatio="xMidYMid meet" onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp} onDoubleClick={() => { box.current = home; setVb(box.current); }} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", cursor: "grab" }}>
         {streams}
-        {[24, 36, 48, 72].map((s) => { const x = XLM[s], w = widthAt(x) / 2 + 2.5; const a = iso(x, -w), b = iso(x, w), lb = iso(x, -w - 3.5);
-          return <g key={s}><line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#e8eef4" strokeOpacity={0.16} strokeWidth={0.3} strokeDasharray="0.8 1" /><text x={lb[0]} y={lb[1] + 1} fontSize={2.9} fill={MUTED} textAnchor="middle" letterSpacing={0.2}>{s} hpf</text>{s === 24 && <text x={lb[0]} y={lb[1] + 4.2} fontSize={2.0} fill={MUTED} textAnchor="middle" fontStyle="italic">schematic</text>}</g>; })}
-        <polygon points={P([iso(-1, -2, 1), iso(1.2, -2, 1), iso(1.2, 2, 1), iso(-1, 2, 1)])} fill="#2b3442" />
-        {rows.map((x, ri) => taken.map((l, i) => { const [cx, cy] = iso(x, routeV(l, x), 0.2 + 0.12 * Math.sin(t * 2 + i)); return <circle key={`${ri}-${l.id}`} cx={cx} cy={cy} r={0.5} fill="#e8eef4" stroke={colorOf(l)} strokeWidth={0.28} />; }))}
-        {hover && (() => { const l = leaves.find((q) => q.id === hover)!; const d = l.data!; const p = iso(L + 1, centre(l, L), 8);
+        {[24, 36, 48, 72].map((s) => { const y = XLM[s], w = widthAt(L) / 2 + 2;
+          return <g key={s}><line x1={-w} y1={y} x2={w} y2={y} stroke="#e8eef4" strokeOpacity={0.14} strokeWidth={0.3} strokeDasharray="0.8 1" /><text x={-w - 1.5} y={y + 1} fontSize={2.9} fill={MUTED} textAnchor="end" letterSpacing={0.2}>{s} hpf</text>{s === 24 && <text x={-w - 1.5} y={y + 4} fontSize={2.0} fill={MUTED} textAnchor="end" fontStyle="italic">schematic</text>}</g>; })}
+        <rect x={-2.2} y={-1.6} width={4.4} height={1.6} fill="#2b3442" />
+        {rows.map((x, ri) => taken.map((l) => { const [cx, cy] = iso(x, routeV(l, x)); return <circle key={`${ri}-${l.id}`} cx={cx} cy={cy} r={0.55} fill="#e8eef4" stroke={colorOf(l)} strokeWidth={0.3} />; }))}
+        {hover && (() => { const l = leaves.find((q) => q.id === hover)!; const d = l.data!; const p = [centre(l, L) + 1, L + 3] as const;
           const pct = (c: string, s: number) => `${((d.share[c]?.[String(s)] ?? 0) * 100).toFixed(2)}%`;
           const lines = [d.pooled ? `${d.label} (${d.pooled} rarer types)` : d.label, `tissue: ${l.tissue} · forks at ${Object.entries(XLM).find(([, v]) => v === l.xf)?.[0]} hpf`, `wild type ${pct("wildtype", 36)} · ${pct("wildtype", 48)} · ${pct("wildtype", 72)}`];
           if (isWT) lines.push(`route: ${routes.wt.tops.has(l.id) ? "taken by the wild-type flotilla" : "potential"}`);
           else { const st = status(l); lines.push(`${cond} ${pct(cond, 36)} · ${pct(cond, 48)} · ${pct(cond, 72)} → ${st}`); if (st === "new") { const pr = programOf(l.tissue); lines.push(pr ? `dominant program in ${l.tissue}: ${PROG_LABEL[pr]} (loading ${FL.responses[cond][l.tissue!].loading[pr].toFixed(2)})` : `no Phase-5 program data for ${l.tissue}`); } }
-          const w = Math.max(...lines.map((q) => q.length)) * 1.4 + 3; const px = Math.min(p[0], vb.x + vb.w - w - 2);
-          return <g pointerEvents="none"><rect x={px - 1} y={p[1] - 3 - lines.length * 2.9} width={w} height={lines.length * 2.9 + 1.8} rx={0.8} fill="#0e1116" stroke="#273140" strokeWidth={0.25} opacity={0.96} />
-            {lines.map((q, i) => <text key={i} x={px + 0.6} y={p[1] - 1.2 - (lines.length - 1 - i) * 2.9} fontSize={i ? 2.3 : 2.7} fontWeight={i ? 400 : 600} fill={i ? INK : "#e8eef4"}>{q}</text>)}</g>; })()}
+          const w = Math.max(...lines.map((q) => q.length)) * 1.4 + 3; const px = Math.min(Math.max(p[0], vb.x + 2), vb.x + vb.w - w - 2); const py = Math.min(p[1], vb.y + vb.h - lines.length * 2.9 - 4);
+          return <g pointerEvents="none"><rect x={px - 1} y={py} width={w} height={lines.length * 2.9 + 1.8} rx={0.8} fill="#0e1116" stroke="#273140" strokeWidth={0.25} opacity={0.96} />
+            {lines.map((q, i) => <text key={i} x={px + 0.6} y={py + 2.6 + i * 2.9} fontSize={i ? 2.3 : 2.7} fontWeight={i ? 400 : 600} fill={i ? INK : "#e8eef4"}>{q}</text>)}</g>; })()}
       </svg>
     </div>
   );
