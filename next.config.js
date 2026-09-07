@@ -71,6 +71,16 @@ const nextConfig = {
       // (/api/molecular_edits) and its grid, all three set in MAP_CONFIG.
       { source: '/molecular_pipe', destination: '/molecular_pipe/index.html' },
       { source: '/grcz12', destination: '/grcz12.html' },
+      // /dev_tree is a self-contained static viz in public/dev_tree/ (index.html,
+      // one classic script, one JSON, no build step) — same shape as /pipeline,
+      // same absolute-<script src> rule and the same reason: no trailing slash
+      // on the route, so a relative src would resolve against /.
+      // It is a 0-24 hpf zebrafish developmental tidy tree: the DanioCell
+      // cluster-annotation hierarchy laid out left-to-right with hpf on x.
+      // The tree's edges are ANNOTATION CONTAINMENT, not lineage — see
+      // public/dev_tree/NOTES.md before changing anything that could read as a
+      // lineage claim. SOURCE + rebuild: scripts/build_dev_tree.py.
+      { source: '/dev_tree', destination: '/dev_tree/index.html' },
     ]
   },
 
@@ -120,6 +130,19 @@ const nextConfig = {
       },
       {
         source: '/FASTQ_pipe',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      // and the same shell-and-script coupling for the developmental tree:
+      // index.html names the elements tree.js reaches for, and tree.js is
+      // written against the exact field set build_dev_tree.py emits into
+      // tree.json — a stale pairing of any two of the three draws a tree that
+      // is quietly wrong rather than visibly broken.
+      {
+        source: '/dev_tree/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/dev_tree',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
       },
       // and the same for the molecular bench
