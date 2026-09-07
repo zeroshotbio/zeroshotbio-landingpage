@@ -31,7 +31,7 @@ const SECTIONS: Section[] = [
       { href: "/pipeline", label: "Aquarium to Atlas — the MiniFin pipeline map", note: "isometric; every number sourced, gaps marked" },
       { href: "/zebrafish_ontology", label: "ZFA Atlas — zebrafish anatomy ontology", note: "dataset menus on the anatomy graph" },
       { href: "/zfa_mapping", label: "ZSCAPE → ZFA mapping — Stage 1", note: "parallel-sets + side-by-side term table" },
-      { href: "/dev_tree", label: "Developmental tree — 0–24 hpf", note: "DanioCell annotation hierarchy on a time axis; containment, not lineage" },
+      { href: "/dev_tree", label: "Developmental tree — 0–48 hpf", note: "DanioCell annotation hierarchy on a time axis; containment, not lineage" },
       { href: "/danio_specimen_poster.html", label: "DANIO — interactive specimen poster" },
       { href: "/d3_complexity_heatmap.html", label: "Complexity heatmap" },
       { href: "/prospective_diseases_treemap.html", label: "Prospective diseases treemap" },

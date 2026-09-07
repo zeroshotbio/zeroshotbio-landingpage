@@ -33,7 +33,7 @@ ANN = DANIOCELL / "sources/supplementary/cluster_annotations.csv"
 ZFA_OBO = Path("/data/scratch/zlabel/data/ontologies/zfa.obo")
 OUT = Path(__file__).resolve().parent.parent / "public/dev_tree/tree.json"
 
-HPF_MAX = 24          # the requested window
+HPF_MAX = 48          # the requested window
 MIN_CELLS = 20        # prune leaves thinner than this — prototype legibility
 DOUBLET_LABEL = "likely doublets"   # QC class in identity.super; not a cell type
 ONSET_Q = 0.02        # onset = hpf where 2% of a node's cells have appeared
@@ -47,7 +47,8 @@ PERIODS = [
     ("Blastula",     2.25,  5.25),
     ("Gastrula",     5.25, 10.0),
     ("Segmentation", 10.0, 24.0),
-    ("Pharyngula",  24.0, 26.0),
+    ("Pharyngula",   24.0, 48.0),
+    ("Hatching",     48.0, 72.0),
 ]
 
 
@@ -155,6 +156,13 @@ def structural_kind(terms: dict[str, dict], tid: str) -> str | None:
         "ZFA:0001439": "anatomical system",
         "ZFA:0001487": "organism substance",
         "ZFA:0001308": "organism subdivision",
+        # Six terms the atlas leans on (tail bud, hatching gland, the placodes,
+        # presumptive endoderm, axial chorda mesoderm) sit off the
+        # cell/tissue/organ ladder entirely: ZFA files them as things that
+        # exist only during development. That is a real distinction, so they
+        # get their own bucket rather than being forced onto the ladder.
+        "ZFA:0001105": "embryonic structure",
+        "ZFA:0001116": "embryonic structure",
     }
     seen, frontier = set(), [tid]
     hits = set()
@@ -176,7 +184,8 @@ def structural_kind(terms: dict[str, dict], tid: str) -> str | None:
         frontier = nxt
     # Most specific bucket wins where a term reaches more than one root.
     for kind in ("cell", "tissue", "multi-tissue structure", "organ",
-                 "anatomical system", "organism substance", "organism subdivision"):
+                 "anatomical system", "organism substance", "organism subdivision",
+                 "embryonic structure"):
         if kind in hits:
             return kind
     return None

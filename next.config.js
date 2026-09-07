@@ -75,8 +75,9 @@ const nextConfig = {
       // one classic script, one JSON, no build step) — same shape as /pipeline,
       // same absolute-<script src> rule and the same reason: no trailing slash
       // on the route, so a relative src would resolve against /.
-      // It is a 0-24 hpf zebrafish developmental tidy tree: the DanioCell
-      // cluster-annotation hierarchy laid out left-to-right with hpf on x.
+      // It is a 0-48 hpf zebrafish developmental tidy tree: the DanioCell
+      // cluster-annotation hierarchy laid out left-to-right with hpf on x,
+      // one panned diagram with the detail on hover.
       // The tree's edges are ANNOTATION CONTAINMENT, not lineage — see
       // public/dev_tree/NOTES.md before changing anything that could read as a
       // lineage claim. SOURCE + rebuild: scripts/build_dev_tree.py.

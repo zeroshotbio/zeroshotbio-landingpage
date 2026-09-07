@@ -1,19 +1,27 @@
-/* /dev_tree — a 0–24 hpf zebrafish developmental tidy tree.
+/* /dev_tree — a 0–48 hpf zebrafish developmental tidy tree.
  *
  * WHAT THE PICTURE CLAIMS, AND WHAT IT DOES NOT
  *   Parent -> child edges are ANNOTATION CONTAINMENT out of the DanioCell
  *   cluster-annotation table: tissue.subsets -> tissue -> identity.super.
  *   They are NOT cell lineage. DanioCell has no lineage tracing; a cell in
- *   the `notochord` leaf is not asserted to descend from anything else drawn
+ *   the `notochord` tip is not asserted to descend from anything else drawn
  *   here. Where ZFA does record a lineage relation (`develops_from`) it is
- *   shown in the detail panel, marked as ontology lineage, and never used to
+ *   shown in the hover card, marked as ontology lineage, and never used to
  *   position anything.
  *
  * COLOUR
- *   One hue. See the token block in index.html — this is an emphasis chart:
- *   neutral ink everywhere, --accent reserved for the branch under the
- *   pointer. ZFA structural kind is drawn as MARK SHAPE, not hue, so it keeps
- *   working under CVD and in greyscale. Do not add a hue per tissue.
+ *   Fill = the node's ZFA structural kind. Four hues for the four rungs of
+ *   ZFA's structural ladder; ink for the two classes off that ladder. The
+ *   set was picked by running the palette validator over both surfaces on the
+ *   ALL-PAIRS list — see the token block in index.html for the numbers and
+ *   the conditions the two WARNs come with. Mark SHAPE repeats the kind, so
+ *   nothing is ever identified by colour alone; keep it that way.
+ *
+ * LAYOUT
+ *   y is a tidy (Reingold-Tilford-style) layout over the tips; x is TIME, in
+ *   hpf, on a 0–48 domain. The root sits at 0 hpf, out on its own, because
+ *   DanioCell's first sample is at 3 and pretending otherwise would put the
+ *   root on top of the whole blastula column.
  *
  * No build step, no dependencies. Data: /dev_tree/tree.json (built by
  * scripts/build_dev_tree.py).
@@ -21,23 +29,27 @@
 (function () {
   'use strict';
 
-  var ROW = 15;           // vertical pitch per leaf
-  var GAP = 12;           // extra gap between top-level programs
-  var PAD_T = 14, PAD_B = 26;
-  var LGUT = 112;         // left gutter — the twenty programme names live here
+  var ROW = 16;           // vertical pitch per tip
+  var GAP = 14;           // extra gap between top-level programs
+  var PAD_T = 16, PAD_B = 30;
+  var LGUT = 116;         // left gutter — the twenty programme names live here
   var PLOT_L = LGUT + 10; // left edge of the time axis
-  var GUTTER = 268;       // right column the tip labels are aligned in
-  var MARK_MIN = 2.6, MARK_MAX = 8;
+  var PLOT_W_MIN = 1120;  // the time axis never squeezes below this; past it, pan
+  var GUTTER = 300;       // right column the tip labels are aligned in
+  var MARK_MIN = 2.8, MARK_MAX = 8.5;
+  var ELBOW_R = 5;        // corner radius on the branch elbows
 
-  // ZFA structural kind -> mark shape. Shape, not colour: this is the
-  // secondary encoding that lets the kind survive colour-blindness and print.
-  var SHAPES = [
-    ['cell', 'circle', 'ZFA is_a* cell'],
-    ['tissue', 'square', 'ZFA is_a* portion of tissue'],
-    ['multi-tissue structure', 'diamond', 'ZFA is_a* multi-tissue structure'],
-    ['organ', 'pentagon', 'ZFA is_a* organ'],
-    ['anatomical system', 'triangle', 'ZFA is_a* anatomical system'],
-    [null, 'hollow', 'no ZFA term on this node']
+  // ZFA structural kind -> mark shape + colour class. Shape repeats what the
+  // hue says: that is the secondary encoding the palette's CVD/contrast WARNs
+  // are conditional on, and it is also what makes the chart survive greyscale
+  // print and forced-colors. Order here is the legend order.
+  var KINDS = [
+    ['cell', 'circle', 'k-cell', 'ZFA is_a* cell'],
+    ['tissue', 'square', 'k-tissue', 'ZFA is_a* portion of tissue'],
+    ['multi-tissue structure', 'diamond', 'k-multi', 'ZFA is_a* multi-tissue structure'],
+    ['organ', 'pentagon', 'k-organ', 'ZFA is_a* organ'],
+    ['embryonic structure', 'triangle', 'k-embryo', 'ZFA files it as existing only during development — off the structural ladder'],
+    [null, 'hollow', 'k-none', 'no ZFA term on this node']
   ];
 
   var SVGNS = 'http://www.w3.org/2000/svg';
@@ -49,11 +61,18 @@
   }
   function txt(node, s) { node.textContent = s; return node; }
   function fmt(n) { return n.toLocaleString('en-US'); }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
 
-  var data = null, root = null, nodes = [], mode = 'time', hot = null, pinned = null;
+  var data = null, root = null, nodes = [], hot = null;
   var svg = document.getElementById('tree');
   var axis = document.getElementById('axis');
   var scroll = document.getElementById('scroll');
+  var axisWrap = document.querySelector('.axis-wrap');
+  var tip = document.getElementById('tip');
 
   // ---------------------------------------------------------------- shapes
   function markPath(shape, x, y, r) {
@@ -61,55 +80,62 @@
       case 'square':
         return 'M' + (x - r) + ',' + (y - r) + 'h' + 2 * r + 'v' + 2 * r + 'h' + -2 * r + 'Z';
       case 'diamond':
-        return 'M' + x + ',' + (y - r * 1.25) + 'L' + (x + r * 1.25) + ',' + y +
-               'L' + x + ',' + (y + r * 1.25) + 'L' + (x - r * 1.25) + ',' + y + 'Z';
+        return 'M' + x + ',' + (y - r * 1.3) + 'L' + (x + r * 1.3) + ',' + y +
+               'L' + x + ',' + (y + r * 1.3) + 'L' + (x - r * 1.3) + ',' + y + 'Z';
       case 'triangle':
-        return 'M' + x + ',' + (y - r * 1.3) + 'L' + (x + r * 1.2) + ',' + (y + r * 0.85) +
-               'L' + (x - r * 1.2) + ',' + (y + r * 0.85) + 'Z';
+        return 'M' + x + ',' + (y - r * 1.35) + 'L' + (x + r * 1.25) + ',' + (y + r * 0.88) +
+               'L' + (x - r * 1.25) + ',' + (y + r * 0.88) + 'Z';
       case 'pentagon': {
         var pts = [];
         for (var i = 0; i < 5; i++) {
           var a = -Math.PI / 2 + i * 2 * Math.PI / 5;
-          pts.push((x + Math.cos(a) * r * 1.2).toFixed(2) + ',' + (y + Math.sin(a) * r * 1.2).toFixed(2));
+          pts.push((x + Math.cos(a) * r * 1.25).toFixed(2) + ',' + (y + Math.sin(a) * r * 1.25).toFixed(2));
         }
         return 'M' + pts.join('L') + 'Z';
       }
       default: {
-        var rr = shape === 'hollow' ? r * 0.72 : r;
+        var rr = shape === 'hollow' ? r * 0.78 : r;
         return 'M' + (x - rr) + ',' + y + 'a' + rr + ',' + rr + ' 0 1,0 ' + 2 * rr + ',0' +
                'a' + rr + ',' + rr + ' 0 1,0 ' + -2 * rr + ',0Z';
       }
     }
   }
-  function shapeFor(kind) {
-    for (var i = 0; i < SHAPES.length; i++) if (SHAPES[i][0] === kind) return SHAPES[i][1];
-    return 'hollow';
+  function kindOf(n) {
+    var k = n.zfa_id ? (n.zfa_kind || null) : null;
+    for (var i = 0; i < KINDS.length; i++) if (KINDS[i][0] === k) return KINDS[i];
+    return KINDS[KINDS.length - 1];
+  }
+
+  // Rounded elbow: down (or up) the parent's riser, a small arc at the corner,
+  // then across to the child. Degenerate cases — a child on its parent's own
+  // row, or directly below it — fall back to the plain corner.
+  function elbow(px, py, cx, cy) {
+    var dy = cy - py, dx = cx - px;
+    if (Math.abs(dy) < 0.5) return 'M' + px + ',' + py + 'H' + cx;
+    if (Math.abs(dx) < 0.5) return 'M' + px + ',' + py + 'V' + cy;
+    var r = Math.min(ELBOW_R, Math.abs(dy) / 2, Math.abs(dx));
+    var sy = dy > 0 ? 1 : -1;
+    return 'M' + px + ',' + py +
+           'V' + (cy - sy * r) +
+           'Q' + px + ',' + cy + ' ' + (px + r) + ',' + cy +
+           'H' + cx;
   }
 
   // ---------------------------------------------------------------- layout
-  function walk(node, fn, depth, parent) {
-    depth = depth || 0;
-    fn(node, depth, parent);
-    var kids = node.collapsed ? [] : node.children;
-    for (var i = 0; i < kids.length; i++) walk(kids[i], fn, depth + 1, node);
-  }
-
   function layout() {
     nodes = [];
-    var slot = 0, maxDepth = 0;
+    var slot = 0;
 
     function place(node, depth, parent) {
       node._depth = depth;
       node._parent = parent;
-      maxDepth = Math.max(maxDepth, depth);
-      var kids = node.collapsed ? [] : node.children;
+      var kids = node.children;
       if (!kids.length) {
         node._y = PAD_T + slot * ROW;
         slot += 1;
       } else {
         for (var i = 0; i < kids.length; i++) {
-          // a visible breath between top-level programs, nothing else
-          if (depth === 0 && i > 0) slot += GAP / ROW;
+          if (depth === 0 && i > 0) slot += GAP / ROW;   // breath between programs
           place(kids[i], depth + 1, node);
         }
         node._y = (kids[0]._y + kids[kids.length - 1]._y) / 2;
@@ -119,23 +145,31 @@
     place(root, 0, null);
 
     var height = PAD_T + slot * ROW + PAD_B;
-    var avail = Math.max(560, scroll.clientWidth - GUTTER - PLOT_L - 14);
-    var w = PLOT_L + avail + GUTTER;
+    // Fill the window when there is room, and hold a readable minimum when
+    // there is not. The tree is tall (144 tips) long before it is wide, so
+    // most panning is vertical and the tip column stays close to hand.
+    var PLOT_W = Math.max(PLOT_W_MIN, scroll.clientWidth - PLOT_L - GUTTER - 22);
+    var width = PLOT_L + PLOT_W + GUTTER;
 
-    var lo = data.meta.observed_hpf[0], hi = data.meta.observed_hpf[1];
-    function xTime(hpf) { return PLOT_L + (hpf - lo) / (hi - lo) * avail; }
-    function xDepth(d) { return PLOT_L + (maxDepth ? d / maxDepth : 0) * avail; }
+    // The domain starts at 0 even though the data starts at 3: the root
+    // belongs at 0 hpf, and the empty 0–3 gap is itself a finding worth
+    // showing rather than a margin to trim away.
+    var lo = 0, hi = data.meta.window_hpf[1];
+    function xTime(hpf) { return PLOT_L + (hpf - lo) / (hi - lo) * PLOT_W; }
 
     for (var i = 0; i < nodes.length; i++) {
       var n = nodes[i];
-      n._x = mode === 'time' ? xTime(n.onset) : xDepth(n._depth);
-      n._x2 = mode === 'time' ? Math.max(n._x + 1, xTime(n.offset)) : n._x;
-      n._r = Math.min(MARK_MAX, MARK_MIN + Math.sqrt(n.cells) / 26);
+      n._x = n._depth === 0 ? xTime(0) : xTime(n.onset);
+      n._x2 = Math.max(n._x + 1, xTime(n.offset));
+      n._r = Math.min(MARK_MAX, MARK_MIN + Math.sqrt(n.cells) / 32);
     }
-    return { width: w, height: height, avail: avail, xTime: xTime, lo: lo, hi: hi, tipX: PLOT_L + avail + 14 };
+    return { width: width, height: height, xTime: xTime, lo: lo, hi: hi,
+             tipX: PLOT_L + PLOT_W + 16 };
   }
 
   // ---------------------------------------------------------------- render
+  var TICKS = [0, 3, 6, 9, 12, 15, 18, 21, 24, 30, 36, 42, 48];
+
   function render() {
     var L = layout();
     svg.setAttribute('width', L.width);
@@ -150,80 +184,61 @@
     var gLbl = el('g', null, svg);
     var gHit = el('g', null, svg);
 
-    // vertical time rules, so a node's hpf is readable without the header
-    if (mode === 'time') {
-      TICKS.forEach(function (t) {
-        if (t < L.lo || t > L.hi) return;
-        el('line', { x1: L.xTime(t), y1: 0, x2: L.xTime(t), y2: L.height, 'class': 'gridline' }, gGrid);
-      });
-      data.meta.periods.forEach(function (p) {
-        if (p.begin <= L.lo || p.begin >= L.hi) return;
-        el('line', { x1: L.xTime(p.begin), y1: 0, x2: L.xTime(p.begin), y2: L.height, 'class': 'bandline' }, gGrid);
-      });
-    }
+    // the 0–3 hpf band holds no data at all; say so rather than leave a margin
+    el('rect', { x: L.xTime(0), y: 0, width: L.xTime(3) - L.xTime(0), height: L.height,
+                 'class': 'nodata' }, gGrid);
+    el('line', { x1: L.xTime(3), y1: 0, x2: L.xTime(3), y2: L.height, 'class': 'bandline' }, gGrid);
+    TICKS.forEach(function (t) {
+      el('line', { x1: L.xTime(t), y1: 0, x2: L.xTime(t), y2: L.height, 'class': 'gridline' }, gGrid);
+    });
+    data.meta.periods.forEach(function (p) {
+      if (p.begin <= L.lo || p.begin >= L.hi) return;
+      el('line', { x1: L.xTime(p.begin), y1: 0, x2: L.xTime(p.begin), y2: L.height, 'class': 'bandline' }, gGrid);
+    });
 
     nodes.forEach(function (n) {
       var p = n._parent;
-      if (p) {
-        // classic cladogram elbow: riser at the parent's x, then across.
-        // In time mode a zero-length horizontal is meaningful — it says the
-        // child is first seen at the same sampled stage as its parent.
-        el('path', { d: 'M' + p._x + ',' + p._y + 'V' + n._y + 'H' + n._x, 'class': 'edge', 'data-id': n._id }, gEdge);
-      }
-      var leaf = n.collapsed || !n.children.length;
-      if (mode === 'time' && leaf && n._x2 > n._x + 1) {
-        el('rect', {
-          x: n._x, y: n._y - 1.5, width: n._x2 - n._x, height: 3, rx: 1.5,
-          'class': 'durbar', 'data-id': n._id
-        }, gBar);
-        // Almost every tip is CUT by the 24 hpf window rather than ended by
-        // development (86 of 96), so "continues" is the near-constant case and
-        // marking it would be ink without information. The rare, informative
-        // case is the opposite one — a population that is genuinely gone from
-        // the atlas before 24 hpf — so that is what gets a mark: a stop cap.
-        // The headline ratio is stated once, in the legend.
+      if (p) el('path', { d: elbow(p._x, p._y, n._x, n._y), 'class': 'edge', 'data-id': n._id }, gEdge);
+
+      var leaf = !n.children.length;
+      if (leaf && n._x2 > n._x + 1) {
+        el('rect', { x: n._x, y: n._y - 1.5, width: n._x2 - n._x, height: 3, rx: 1.5,
+                     'class': 'durbar', 'data-id': n._id }, gBar);
+        // Almost every tip is CUT by the window rather than ended by
+        // development (130 of 144), so "continues" is the near-constant case
+        // and marking it would be ink without information. The rare,
+        // informative case is the opposite one — a population genuinely gone
+        // from the atlas before the window closes — so that is what gets a
+        // mark. The headline ratio is stated once, in the legend.
         if (!n.continues) {
-          el('line', {
-            x1: n._x2 + 2.5, y1: n._y - 4, x2: n._x2 + 2.5, y2: n._y + 4,
-            'class': 'cont', 'data-id': n._id
-          }, gBar);
+          el('line', { x1: n._x2 + 2.5, y1: n._y - 4, x2: n._x2 + 2.5, y2: n._y + 4,
+                       'class': 'stop', 'data-id': n._id }, gBar);
         }
       }
-      var shape = shapeFor(n.zfa_kind || null);
-      var cls = 'mark' + (n.zfa_id ? ' filled' : '');
-      el('path', { d: markPath(shape, n._x, n._y, n._r), 'class': cls, 'data-id': n._id }, gMark);
 
-      // a collapsed parent wears a ring, so a hidden subtree is never silent
-      if (n.collapsed && n.children.length) {
-        el('path', { d: markPath('circle', n._x, n._y, n._r + 3), 'class': 'ring',
-                     'data-id': n._id }, gMark);
-      }
+      var kind = kindOf(n);
+      el('path', { d: markPath(kind[1], n._x, n._y, n._r),
+                   'class': 'mark ' + kind[2], 'data-id': n._id }, gMark);
 
       var t;
       if (leaf) {
         // every tip label aligned in one column, with a leader — no collisions
-        var bx = (mode === 'time' ? n._x2 + (n.continues ? 0 : 6) : n._x) + n._r + 3;
+        var bx = n._x2 + (n.continues ? 0 : 6) + n._r + 3;
         el('line', { x1: bx, y1: n._y, x2: L.tipX - 3, y2: n._y, 'class': 'leader', 'data-id': n._id }, gBar);
-        var tipText = n.name + (n.collapsed && n.children.length ? '  (+' + n.children.length + ')' : '');
-        t = el('text', { x: L.tipX, y: n._y, 'class': 'lbl' + (n._depth === 1 ? ' prog' : ''), 'data-id': n._id }, gLbl);
+        var tipText = n.name;
+        t = el('text', { x: L.tipX, y: n._y, 'class': 'lbl' + (n._depth === 1 ? ' prog' : ''),
+                         'data-id': n._id }, gLbl);
         txt(t, tipText);
-        var sub = el('text', {
-          x: L.tipX + measure(tipText, n._depth === 1 ? 11 : 10) + 8,
-          y: n._y, 'class': 'lbl sub', 'data-id': n._id
-        }, gLbl);
-        txt(sub, fmt(n.cells));
+        txt(el('text', { x: L.tipX + measure(tipText, n._depth === 1 ? 11.5 : 10) + 8, y: n._y,
+                         'class': 'lbl sub', 'data-id': n._id }, gLbl), fmt(n.cells));
       } else {
-        // Internal labels go on the node's OWN row, right-aligned into the
-        // space to its left. That space is guaranteed free of marks and bars:
-        // onset is monotone down the tree (a parent's onset is the min over
-        // its subtree), so no descendant can ever sit to the left of it. Only
-        // ancestor edges cross there, and the halo handles those. Where a node
-        // is too close to the left edge to fit, the label flips right.
-        // Depth 0-1 (the root and the twenty programmes) are the spine of the
-        // picture and get the fixed left gutter, where nothing can collide with
-        // them. Deeper internal labels take the space left of their own mark.
+        // Depth 0–1 (the root and the twenty programmes) are the spine of the
+        // picture and get the fixed left gutter, where nothing can collide
+        // with them. Deeper internal labels take the space left of their own
+        // mark — space guaranteed free of marks and bars, because onset is
+        // monotone down the tree, so no descendant can sit left of its parent.
         var deep = n._depth > 1;
-        var lw = measure(n.name, deep ? 10 : 11);
+        var lw = measure(n.name, deep ? 10 : 11.5);
         var fitsLeft = !deep || n._x - n._r - 5 - lw > PLOT_L - LGUT;
         t = el('text', {
           x: deep ? (fitsLeft ? n._x - n._r - 5 : n._x + n._r + 5) : LGUT,
@@ -234,13 +249,12 @@
         txt(t, n.name);
       }
 
-      var hy = Math.max(6, ROW - 2);
-      var hx = leaf ? Math.max(0, n._x - 9) : (n._depth <= 1 ? 0 : Math.max(0, n._x - measure(n.name) - 14));
-      el('rect', {
-        x: hx, y: n._y - hy / 2,
-        width: (leaf ? (L.tipX + 240) - hx : Math.max(28, n._x + 24 - hx)),
-        height: hy, 'class': 'hit', 'data-id': n._id
-      }, gHit);
+      var hy = Math.max(7, ROW - 2);
+      var hx = leaf ? Math.max(0, n._x - 9)
+                    : (n._depth <= 1 ? 0 : Math.max(0, n._x - measure(n.name) - 14));
+      el('rect', { x: hx, y: n._y - hy / 2,
+                   width: (leaf ? (L.tipX + GUTTER - 16) - hx : Math.max(30, n._x + 26 - hx)),
+                   height: hy, 'class': 'hit', 'data-id': n._id }, gHit);
     });
 
     renderAxis(L);
@@ -249,42 +263,36 @@
 
   var _canvas;
   function measure(s, px) {
-    if (!_canvas) { _canvas = document.createElement('canvas').getContext('2d'); }
+    if (!_canvas) _canvas = document.createElement('canvas').getContext('2d');
     _canvas.font = (px || 10) + 'px ui-monospace, monospace';
     return _canvas.measureText(s).width;
   }
-
-  var TICKS = [3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 21, 24];
 
   function renderAxis(L) {
     axis.setAttribute('width', L.width);
     axis.setAttribute('viewBox', '0 0 ' + L.width + ' 46');
     while (axis.firstChild) axis.removeChild(axis.firstChild);
-    if (mode !== 'time') {
-      var m = el('text', { x: PLOT_L, y: 28, 'class': 'axlbl' }, axis);
-      txt(m, 'x = hierarchy depth  ·  root → program → tissue → identity');
-      return;
-    }
+
+    el('rect', { x: L.xTime(0), y: 4, width: L.xTime(3) - L.xTime(0), height: 13,
+                 'class': 'nodata' }, axis);
     data.meta.periods.forEach(function (p) {
       var a = Math.max(L.lo, p.begin), b = Math.min(L.hi, p.end);
       if (b <= a) return;
       var x1 = L.xTime(a), x2 = L.xTime(b);
       el('rect', { x: x1, y: 4, width: x2 - x1, height: 13, 'class': 'band' }, axis);
       el('line', { x1: x1, y1: 4, x2: x1, y2: 17, 'class': 'bandline' }, axis);
-      if (x2 - x1 > 58) {
-        var t = el('text', { x: (x1 + x2) / 2, y: 14, 'class': 'axlbl', 'text-anchor': 'middle' }, axis);
-        txt(t, p.name);
+      // Only name a band that can hold its own name plus a gap — otherwise
+      // Blastula runs straight into the no-data label beside it.
+      if (x2 - x1 > measure(p.name.toUpperCase(), 9) * 1.1 + 12) {
+        txt(el('text', { x: (x1 + x2) / 2, y: 14, 'class': 'axlbl', 'text-anchor': 'middle' }, axis), p.name);
       }
     });
     TICKS.forEach(function (h) {
-      if (h < L.lo || h > L.hi) return;
       var x = L.xTime(h);
       el('line', { x1: x, y1: 22, x2: x, y2: 27, stroke: 'currentColor', opacity: .35 }, axis);
-      var t = el('text', { x: x, y: 37, 'class': 'axnum', 'text-anchor': 'middle' }, axis);
-      txt(t, h);
+      txt(el('text', { x: x, y: 37, 'class': 'axnum', 'text-anchor': 'middle' }, axis), h);
     });
-    var lab = el('text', { x: L.tipX, y: 37, 'class': 'axlbl' }, axis);
-    txt(lab, 'hpf  ·  first appearance → last');
+    txt(el('text', { x: L.tipX, y: 37, 'class': 'axlbl' }, axis), 'hpf  ·  first appearance → last');
   }
 
   // ---------------------------------------------------------------- hover
@@ -294,192 +302,175 @@
     return out;
   }
   function applyHot() {
-    var target = hot || pinned;
-    var chain = target ? ancestry(target) : {};
-    ['edge', 'durbar', 'leader', 'mark', 'ring', 'lbl', 'cont'].forEach(function (cls) {
+    var chain = hot ? ancestry(hot) : {};
+    ['edge', 'durbar', 'leader', 'mark', 'lbl', 'stop'].forEach(function (cls) {
       var list = svg.querySelectorAll('.' + cls);
       for (var i = 0; i < list.length; i++) {
-        var id = list[i].getAttribute('data-id');
-        list[i].classList.toggle('hot', !!(target && chain[id]));
+        list[i].classList.toggle('hot', !!(hot && chain[list[i].getAttribute('data-id')]));
       }
     });
-  }
-
-  function pathOf(n) {
-    var parts = [], cur = n;
-    while (cur) { parts.unshift(cur.name); cur = cur._parent; }
-    return parts.join('  ›  ');
   }
 
   var LEVEL_WORD = {
     root: 'all cells in window',
-    program: 'tissue program (DanioCell tissue.subsets)',
-    tissue: 'tissue (DanioCell tissue)',
-    identity: 'cell identity (DanioCell identity.super)'
+    program: 'tissue program · DanioCell tissue.subsets',
+    tissue: 'tissue · DanioCell tissue',
+    identity: 'cell identity · DanioCell identity.super'
   };
 
-  function sparkline(stages) {
-    var w = 300, h = 42, lo = 3, hi = 24;
-    var max = 0;
-    stages.forEach(function (s) { max = Math.max(max, s[1]); });
-    var s = '<svg class="spark" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">';
-    stages.forEach(function (st) {
-      var x = 4 + (st[0] - lo) / (hi - lo) * (w - 30);
-      var bh = Math.max(1, (st[1] / max) * (h - 14));
-      s += '<rect x="' + (x - 2.5) + '" y="' + (h - 10 - bh) + '" width="5" height="' + bh + '" rx="2"/>';
-    });
-    s += '<text class="sax" x="4" y="' + (h - 1) + '">3</text>';
-    s += '<text class="sax" x="' + (w - 32) + '" y="' + (h - 1) + '">24 hpf</text>';
-    return s + '</svg>';
-  }
+  function card(n) {
+    var parts = [], cur = n;
+    while (cur) { parts.unshift(esc(cur.name)); cur = cur._parent; }
+    var kind = kindOf(n);
+    var h = '<div class="t-name">' + esc(n.name) + '</div>' +
+            '<div class="t-path">' + parts.join(' › ') + '</div>' +
+            '<div class="t-row"><span class="t-k">' + LEVEL_WORD[n.level] + '</span></div>' +
+            '<div class="t-row"><b>' + fmt(n.cells) + '</b> cells <span class="t-k">(' +
+            (100 * n.cells / root.cells).toFixed(1) + '% of window)</span></div>' +
+            '<div class="t-row">first <b>' + n.first + '</b> · peak <b>' + n.peak +
+            '</b> · last <b>' + n.last + '</b> hpf</div>';
+    if (n.continues) {
+      h += '<div class="t-row t-k">cut by the ' + data.meta.window_hpf[1] + ' hpf window — ' +
+           fmt(n.after) + ' more cells beyond it</div>';
+    } else if (!n.children.length) {
+      h += '<div class="t-row t-k">gone from the atlas before ' + data.meta.window_hpf[1] + ' hpf</div>';
+    }
 
-  function detail(n) {
-    document.getElementById('d-name').textContent = n.name;
-    document.getElementById('d-path').textContent = pathOf(n);
-    var h = '';
-    h += '<dl class="kv">';
-    h += '<dt>level</dt><dd>' + (LEVEL_WORD[n.level] || n.level) + '</dd>';
-    h += '<dt>cells</dt><dd>' + fmt(n.cells) + '  <span class="zfa-id">(' +
-         (100 * n.cells / data.tree.cells).toFixed(1) + '% of window)</span></dd>';
-    h += '<dt>first seen</dt><dd>' + n.first + ' hpf</dd>';
-    h += '<dt>peak stage</dt><dd>' + n.peak + ' hpf</dd>';
-    h += '<dt>last seen</dt><dd>' + n.last + ' hpf' +
-         (n.continues ? ' <span class="zfa-id">(window edge — ' + fmt(n.after) +
-                        ' more cells past 24 hpf)</span>' : '') + '</dd>';
-    h += '<dt>bar span</dt><dd>' + n.onset + '–' + n.offset + ' hpf <span class="zfa-id">(2–98% of cells)</span></dd>';
-    if (n.children.length) h += '<dt>children</dt><dd>' + n.children.length + '</dd>';
-    h += '</dl>';
-
-    h += '<div class="sect"><h2>cells per stage</h2><div style="padding:0 8px">' +
-         sparkline(n.stages) + '</div></div>';
-
+    h += '<div class="t-sect">';
     if (n.zfa_id) {
-      h += '<div class="sect"><h2>ZFA annotation</h2>';
-      h += '<dl class="kv"><dt>term</dt><dd>' + (n.zfa_name || '—') +
-           '<br><span class="zfa-id">' + n.zfa_id + '</span></dd>';
-      if (n.zfa_kind) h += '<dt>structure</dt><dd><span class="pill">' + n.zfa_kind + '</span></dd>';
-      if (n.zfa_is_a && n.zfa_is_a.length) {
-        h += '<dt>is_a</dt><dd>' + n.zfa_is_a.map(function (p) {
-          return (p.name || p.id) + ' <span class="zfa-id">' + p.id + '</span>';
-        }).join('<br>') + '</dd>';
-      }
-      h += '</dl>';
+      h += '<div class="t-row"><b>' + esc(n.zfa_name || n.zfa_id) + '</b> ' +
+           '<span class="t-k">' + n.zfa_id + '</span></div>' +
+           '<div class="t-row t-k">' + (kind[0] || 'unbucketed') + '</div>';
       if (n.zfa_develops_from && n.zfa_develops_from.length) {
-        h += '<div class="note" style="padding-bottom:2px">ZFA <b>develops_from</b> — ontology lineage, ' +
-             'not measured here and not used to build this tree:</div>';
-        h += '<div class="lineage">' + n.zfa_develops_from.map(function (p) {
-          return (p.name || p.id) + ' <span class="zfa-id">' + p.id + '</span>';
-        }).join('<br>') + '</div>';
-      }
-      if (n.zfa_all && n.zfa_all.length > 1) {
-        h += '<div class="note">Other ZFA terms carried by clusters under this node: ' +
-             n.zfa_all.slice(1).map(function (p) { return (p.name || p.id); }).join(', ') + '.</div>';
+        h += '<div class="t-row t-k" style="margin-top:3px">ZFA develops_from — ontology lineage, ' +
+             'not measured here and not used to build this tree:</div>' +
+             '<div class="t-lin">' + n.zfa_develops_from.map(function (p) {
+               return esc(p.name || p.id) + ' <span class="t-k">' + p.id + '</span>';
+             }).join('<br>') + '</div>';
       }
     } else {
-      h += '<div class="sect"><h2>ZFA annotation</h2><div class="note">No single ZFA term covers ' +
-           (100 * data.meta.zfa_dominance) + '% of this node’s annotated cells, so none is claimed here. ' +
-           'Open a child for its term.</div></div>';
+      h += '<div class="t-row t-k">No single ZFA term covers ' +
+           (100 * data.meta.zfa_dominance) + '% of this node’s annotated cells, ' +
+           'so none is claimed. Hover a child for its term.</div>';
     }
+    h += '</div>';
 
     if (n.clusters && n.clusters.length) {
-      h += '<div class="sect"><h2>DanioCell clusters (' + n.clusters.length + ')</h2>';
-      h += '<table class="cl"><tr><th>cluster</th><th>identity.sub</th><th class="n">cells</th></tr>';
-      n.clusters.forEach(function (c) {
-        h += '<tr><td>' + c.clust + '</td><td class="zfa-id">' + (c.sub || '—') +
-             '</td><td class="n">' + fmt(c.cells) + (c.after ? ' ›' : '') + '</td></tr>';
-      });
-      h += '</table><div class="note">Counts are inside the 0–24 hpf window only. ' +
-           'A <b>›</b> marks a cluster that keeps going past 24 hpf — most do, and ' +
-           'the window, not development, is what ends its bar.</div></div>';
+      h += '<div class="t-sect t-cl">' + n.clusters.length + ' DanioCell cluster' +
+           (n.clusters.length > 1 ? 's' : '') + ': ' +
+           n.clusters.slice(0, 6).map(function (c) {
+             return esc(c.clust) + (c.sub ? ' (' + esc(c.sub) + ')' : '');
+           }).join(', ') + (n.clusters.length > 6 ? ', …' : '') + '</div>';
     }
-    if (n.children.length) {
-      h += '<div class="note" style="border-top:1px solid var(--rule);padding-top:8px">' +
-           'Click the mark to ' + (n.collapsed ? 'expand' : 'collapse') + ' this branch.</div>';
-    }
-    document.getElementById('d-body').innerHTML = h;
+    return h;
   }
 
-  // ---------------------------------------------------------------- legend
-  function legend() {
-    var box = document.getElementById('legend');
-    var endCount = 0;
-    (function rec(n) {
-      if (!n.children.length && !n.continues) endCount++;
-      n.children.forEach(rec);
-    })(root);
-    var h = '<span style="color:var(--fg2)">mark shape = ZFA structural kind</span>';
-    SHAPES.forEach(function (s) {
-      var d = markPath(s[1], 9, 9, 4.5);
-      h += '<span class="li" title="' + s[2] + '"><svg width="18" height="18">' +
-           '<path d="' + d + '" fill="' + (s[0] ? 'var(--fg2)' : 'none') +
-           '" stroke="var(--fg2)" stroke-width="1.3"/></svg>' + (s[0] || 'no term') + '</span>';
-    });
-    h += '<span class="li" style="margin-left:8px"><svg width="30" height="10">' +
-         '<rect x="0" y="3" width="28" height="4" rx="2" fill="var(--bar)" opacity=".55"/></svg>' +
-         'span of stages a tip is seen in</span>';
-    h += '<span class="li"><svg width="30" height="10">' +
-         '<rect x="0" y="3" width="20" height="3" rx="1.5" fill="var(--bar)" opacity=".55"/>' +
-         '<line x1="23" y1="1" x2="23" y2="9" stroke="var(--fg3)" stroke-width="1.3"/></svg>' +
-         'gone from the atlas before 24 hpf (' + endCount + ' of ' + data.meta.leaves + ' tips; ' +
-         'the other ' + (data.meta.leaves - endCount) + ' are cut by the window, not ended)</span>';
-    h += '<span class="li"><svg width="18" height="10">' +
-         '<circle cx="5" cy="5" r="2.6" fill="var(--fg2)"/><circle cx="14" cy="5" r="6" fill="var(--fg2)"/>' +
-         '</svg>mark area ∝ cells</span>';
-    box.innerHTML = h;
+  function moveTip(ev) {
+    var pad = 14, w = tip.offsetWidth, ht = tip.offsetHeight;
+    var x = ev.clientX + pad, y = ev.clientY + pad;
+    if (x + w > window.innerWidth - 6) x = ev.clientX - pad - w;
+    if (y + ht > window.innerHeight - 6) y = Math.max(6, ev.clientY - pad - ht);
+    tip.style.left = x + 'px';
+    tip.style.top = y + 'px';
   }
 
   // ---------------------------------------------------------------- events
-  function idOf(ev) {
-    var t = ev.target;
-    return t && t.getAttribute ? t.getAttribute('data-id') : null;
-  }
   var byId = {};
+  function nodeAt(ev) {
+    var t = ev.target;
+    var id = t && t.getAttribute ? t.getAttribute('data-id') : null;
+    return id ? byId[id] : null;
+  }
 
   svg.addEventListener('mousemove', function (ev) {
-    var id = idOf(ev);
-    var n = id ? byId[id] : null;
-    if (n !== hot) { hot = n; applyHot(); if (n) detail(n); }
+    if (drag.on) return;
+    var n = nodeAt(ev);
+    if (n !== hot) {
+      hot = n;
+      applyHot();
+      if (n) { tip.innerHTML = card(n); tip.style.display = 'block'; }
+      else tip.style.display = 'none';
+    }
+    if (hot) moveTip(ev);
   });
-  svg.addEventListener('mouseleave', function () {
-    hot = null; applyHot(); if (pinned) detail(pinned);
-  });
-  svg.addEventListener('click', function (ev) {
-    var id = idOf(ev); if (!id) return;
-    var n = byId[id]; if (!n) return;
-    pinned = n;
-    if (n.children.length) { n.collapsed = !n.collapsed; render(); }
-    detail(n);
-  });
-
-  function setMode(m) {
-    mode = m;
-    document.getElementById('btn-time').setAttribute('aria-pressed', String(m === 'time'));
-    document.getElementById('btn-tidy').setAttribute('aria-pressed', String(m === 'depth'));
-    render();
+  function clearHot() {
+    if (!hot) return;
+    hot = null; applyHot(); tip.style.display = 'none';
   }
-  document.getElementById('btn-time').onclick = function () { setMode('time'); };
-  document.getElementById('btn-tidy').onclick = function () { setMode('depth'); };
-  document.getElementById('btn-expand').onclick = function () {
-    walkAll(function (n) { n.collapsed = false; }); render();
-  };
-  document.getElementById('btn-collapse').onclick = function () {
-    walkAll(function (n) { n.collapsed = (n.level === 'tissue' || n.level === 'program') && n.children.length > 0; });
-    render();
-  };
+  svg.addEventListener('mouseleave', clearHot);
+
+  // drag to pan — plain scroll offsets, so wheel, trackpad and the scrollbars
+  // keep working exactly as they did
+  var drag = { on: false, x: 0, y: 0, sl: 0, st: 0, moved: 0 };
+  scroll.addEventListener('mousedown', function (ev) {
+    if (ev.button !== 0) return;
+    drag.on = true; drag.moved = 0;
+    drag.x = ev.clientX; drag.y = ev.clientY;
+    drag.sl = scroll.scrollLeft; drag.st = scroll.scrollTop;
+    scroll.classList.add('dragging');
+    clearHot();
+    ev.preventDefault();
+  });
+  window.addEventListener('mousemove', function (ev) {
+    if (!drag.on) return;
+    var dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
+    drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy));
+    scroll.scrollLeft = drag.sl - dx;
+    scroll.scrollTop = drag.st - dy;
+  });
+  window.addEventListener('mouseup', function () {
+    if (!drag.on) return;
+    drag.on = false;
+    scroll.classList.remove('dragging');
+  });
+  scroll.addEventListener('scroll', function () { axisWrap.scrollLeft = scroll.scrollLeft; });
+
   document.getElementById('btn-theme').onclick = function (e) {
     document.body.classList.toggle('light');
     e.currentTarget.textContent = document.body.classList.contains('light') ? 'dark' : 'light';
   };
-  function walkAll(fn) { (function rec(n) { fn(n); n.children.forEach(rec); })(root); }
 
-  var rt;
-  window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(render, 120); });
+  // ---------------------------------------------------------------- legend
+  function legend() {
+    var box = document.getElementById('legend');
+    var present = {}, endCount = 0;
+    (function rec(n) {
+      present[kindOf(n)[0]] = true;
+      if (!n.children.length && !n.continues) endCount++;
+      n.children.forEach(rec);
+    })(root);
+
+    var h = '<span style="color:var(--fg2)">ZFA structural kind</span>';
+    KINDS.forEach(function (k) {
+      if (!(k[0] in present)) return;   // never legend a class the data lacks
+      h += '<span class="li" title="' + esc(k[3]) + '"><svg width="17" height="17">' +
+           '<path d="' + markPath(k[1], 8.5, 8.5, 4.6) + '" class="mark ' + k[2] + '"/>' +
+           '</svg>' + (k[0] || 'no term') + '</span>';
+    });
+    h += '<span class="li" style="margin-left:6px"><svg width="30" height="10">' +
+         '<rect x="0" y="3.5" width="28" height="3" rx="1.5" fill="var(--bar)" opacity=".5"/></svg>' +
+         'span of stages a tip is seen in</span>';
+    h += '<span class="li"><svg width="30" height="10">' +
+         '<rect x="0" y="3.5" width="20" height="3" rx="1.5" fill="var(--bar)" opacity=".5"/>' +
+         '<line x1="23" y1="1" x2="23" y2="9" class="stop"/></svg>' +
+         'gone from the atlas before ' + data.meta.window_hpf[1] + ' hpf (' + endCount + ' of ' +
+         data.meta.leaves + ' tips; the other ' + (data.meta.leaves - endCount) +
+         ' are cut by the window, not ended)</span>';
+    h += '<span class="li"><svg width="20" height="12">' +
+         '<circle cx="4" cy="6" r="2.4" fill="var(--fg2)"/>' +
+         '<circle cx="14" cy="6" r="5.4" fill="var(--fg2)"/></svg>mark area ∝ cells</span>';
+    h += '<span class="li"><svg width="22" height="12">' +
+         '<rect x="0" y="0" width="20" height="12" fill="var(--grid)" opacity=".06"/>' +
+         '<line x1="20" y1="0" x2="20" y2="12" class="bandline"/></svg>' +
+         '0–' + data.meta.observed_hpf[0] + ' hpf: DanioCell has no cells at all</span>';
+    box.innerHTML = h;
+  }
 
   // ---------------------------------------------------------------- boot
   fetch('/dev_tree/tree.json').then(function (r) { return r.json(); }).then(function (d) {
     data = d; root = d.tree;
     var i = 0;
-    (function rec(n) { n._id = 'n' + (i++); n.collapsed = false; byId[n._id] = n; n.children.forEach(rec); })(root);
+    (function rec(n) { n._id = 'n' + (i++); byId[n._id] = n; n.children.forEach(rec); })(root);
 
     document.getElementById('hdr-sub').textContent =
       fmt(root.cells) + ' cells · ' + d.meta.leaves + ' tips · DanioCell ' +
@@ -487,12 +478,12 @@
     document.getElementById('f-cells').textContent = fmt(root.cells);
     document.getElementById('f-nodes').textContent = d.meta.nodes + ' (' + d.meta.leaves + ' tips)';
     document.getElementById('f-window').textContent =
-      d.meta.observed_hpf[0] + '–' + d.meta.observed_hpf[1] + ' hpf of the 0–24 hpf window';
+      d.meta.observed_hpf[0] + '–' + d.meta.observed_hpf[1] + ' hpf of the 0–' +
+      d.meta.window_hpf[1] + ' hpf window';
 
     legend();
     render();
-    pinned = root; detail(root);
   }).catch(function (err) {
-    document.getElementById('d-path').textContent = 'Failed to load /dev_tree/tree.json — ' + err;
+    document.getElementById('hdr-sub').textContent = 'failed to load /dev_tree/tree.json — ' + err;
   });
 })();
