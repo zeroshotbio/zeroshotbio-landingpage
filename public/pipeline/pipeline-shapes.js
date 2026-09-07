@@ -6616,149 +6616,196 @@ function drawIndexPcr(g,n){
 DRAW.indexpcr = drawIndexPcr;
 
 /* ------------------------------------------------------------------
-   C3 · QUANTIFY AND SIZE-CHECK — B9's instrument, run eight times.
+   C3 · QUANTIFY AND SIZE-CHECK — B9's frame, and one different curve.
 
-   IT IS THE SAME BENCH AND IT IS DRAWN AS THE SAME BENCH. Section 3.6 sends the
-   same tube to the same Qubit and the same tape as section 2.5 did four boxes
-   back, so this station calls qcBench and qcScreen rather than inventing a
-   second machine. The repetition is the claim: the last check before the
-   sequencer is not a new capability, it is the one the row already has, pointed
-   at material that is no longer cDNA.
+   THIS IS DELIBERATELY THE SAME PICTURE AS B9 AND THAT IS THE ARGUMENT. Section
+   3.6 sends a tube to the same Qubit and the same tape that section 2.5 used
+   four boxes back, so the station calls qcBench and qcScreen rather than
+   inventing a second machine, keeps B9's material colour, keeps its trace
+   component and runs its clock at B9's rate. Every choice here is "whatever B9
+   did", because the one thing this frame has to say is what CHANGED, and a
+   difference is only legible against a background that did not move.
 
-   IT LEAVES THE C ROW's TILE, and that is the one thing it does not share with
-   C1 and C2 either side of it. Those two are reactions in a tube standing on a
-   bench; this is a measurement taken inside a machine, which is what --works is
-   for and what B9 established. A tile here would say the size check happens on
-   the bench top, and the tube would have nowhere to be.
+   THE CURVE IS THE WHOLE CONTENT. B9 drew a broad low hump — un-fragmented cDNA
+   spread over every size the amplification made. Between there and here C1 cut
+   it and section 3.7 size-selected twice, so what comes off the tape now is one
+   tight peak with a ladder marker either side of it. Same axis, same instrument,
+   same sweep: a viewer who has watched B9 reads the narrowing without being
+   told, which no caption placed next to two unrelated drawings would achieve.
 
-   EIGHT RUNS, NOT ONE, AND THAT IS THE DIFFERENCE FROM B9. B9 measured one
-   pooled cDNA; by this point C2 has made eight distinguishable libraries, so the
-   instrument is loaded eight times and the tube in the port changes colour with
-   each — B7's eight hues, the same ones C2 indexes them into. Eight tubes drawn
-   at once would be four pixels each on a tile this size and would read as grit;
-   one tube eight times reads as eight runs, which is what the bench does.
+   THE GEL LANE UNDER THE TRACE IS THE SAME READING TWICE. A tape station prints
+   both, and the lane is the one a bench actually squints at — bands rather than
+   a curve. It fades in behind the pen so it is plainly derived from the trace
+   and not a second measurement.
 
-   THE WINDOW IS THE ONLY THING ON THE SCREEN THAT IS RECORDED. Appendix B wants
-   a single peak between 400 and 500 base pairs, so the band is drawn as a gate
-   on the glass, and the trace is drawn landing in it. That is the protocol's
-   expectation and not this run's result — cond says no electropherogram was
-   archived, so nothing here is a measurement. What keeps the drawing honest is
-   the same refusal B9 makes: the readout cells stay dashes, the screen wipes
-   clean at the end of the eighth run, and nothing is left behind that could be
-   mistaken for a record.
+   NOTHING PULSES. The lamp used to breathe on a sine here and it has been taken
+   out: a machine that shimmers while it holds says something is still
+   happening, and after the sweep nothing is. The trace drawing itself is the
+   entire motion budget, and then the station sits still for nine seconds —
+   longer than any other beat on this row, because a size check IS a long look
+   at a finished number.
 
-   ONE GHOST, NOT EIGHT. The library before last is held at a fifth opacity while
-   the current one draws, because two curves in the same window say the eight
-   agree with each other and eight curves stacked in fifteen pixels of screen say
-   nothing at all.
+   THE 400 TO 500 bp WINDOW IS PRINTED, NOT MEASURED. Appendix B expects a
+   single peak in that band, so the band is drawn on the glass and labelled and
+   the trace is drawn landing in it. cond says no electropherogram was archived,
+   so the readout cells stay dashes however long the instrument runs — the same
+   refusal B9 makes, for the same reason: the row can show that a measurement
+   happened and still decline to invent what it said.
    ------------------------------------------------------------------ */
 function drawSizeCheck(g,n){
-  const NSUB=8, N=90;
+  /* B9's colour, not one of C2's eight sublibrary hues. The eight ARE
+     distinguishable by now and a colour change would be a second difference in
+     a frame whose whole job is to isolate one. */
+  const LIBM="var(--ch6)";
   const clamp=x=>Math.max(0,Math.min(1,x));
-  const r=rng(937);
 
-  const M=qcBench(g,n,{fill:SUBHUE(0,NSUB)}), SC=M.SC;
+  const M=qcBench(g,n), SC=M.SC;
   const SCR=qcScreen(g,n);
 
-  /* ---- THE 400 TO 500 bp GATE -------------------------------------------
-     Drawn under the traces and never animated: it is printed on the glass, not
-     measured. The screen carries no axis because a scale would invite the
-     number off it, and the number is exactly what this station does not have. */
-  const W0=0.44, W1=0.62;
-  g.appendChild(el("polygon",{
-    points:SCR.sq(SCR.px0+W0*SCR.pw, SCR.px0+W1*SCR.pw, SCR.pz0, SCR.pz1),
-    fill:"var(--fg2)","fill-opacity":".10",stroke:"var(--fg2)",
-    "stroke-width":".6","stroke-opacity":".4"}));
+  /* qcScreen hands back its own frame and its own corners; everything below is
+     placed through them, so a resize moves the machine and the display together
+     and this station never has to know the tile's size itself. */
+  const ph=SCR.pz1-SCR.pz0;
+  const Z=v=>SCR.pz0+v*ph*0.92;            // at()'s v axis, in world z
+  const X=u=>SCR.px0+u*SCR.pw;
 
-  /* ---- EIGHT TRACES, EACH BORN WHOLE -------------------------------------
-     Same three gaussians B9 uses and the same two ladder markers, but the middle
-     peak is narrow here rather than broad: a size-selected library is a band,
-     and B9's smear was un-fragmented cDNA. The jitter is per-library and seeded,
-     so the eight are not identical — which is true of any eight tubes — while
-     carrying no claim about which was which. */
-  const LIBS=[];
-  for(let k=0;k<NSUB;k++){
-    const pk=[[0.10,0.024,0.72],
-              [(W0+W1)/2+(r()-0.5)*0.045, 0.038+r()*0.014, 0.92+r()*0.20],
-              [0.92,0.026,0.62]];
-    LIBS.push({hue:SUBHUE(k,NSUB), sig:u=>{ let v=0.04;
-      pk.forEach(([m,s,a])=>{ v+=a*Math.exp(-((u-m)*(u-m))/(2*s*s)); });
-      return v; }});
-  }
-  /* one normalisation across all eight, not one each: normalising per trace
-     would flatten them to the same height and say the concentrations matched */
-  let peak=0;
-  LIBS.forEach(L=>{ for(let i=0;i<=N;i++) peak=Math.max(peak,L.sig(i/N)); });
+  /* ---- THE SCREEN IS SHARED: LANE BELOW, TRACE ABOVE ---------------------
+     The panel stands about fourteen pixels tall at the authored size, so this
+     split is the tightest thing in the drawing: the lane takes the strip that
+     qcScreen already closed off with a baseline, and the trace stands on a
+     second line just above it. */
+  const LANE0=0.04, LANE1=0.25, BASE=0.30;
 
-  LIBS.forEach(L=>{
-    L.pt=[]; for(let i=0;i<=N;i++){ const u=i/N; L.pt.push(SCR.at(u, L.sig(u)/peak)); }
-    let len=0;
-    for(let i=1;i<L.pt.length;i++)
-      len+=Math.hypot(L.pt[i][0]-L.pt[i-1][0], L.pt[i][1]-L.pt[i-1][1]);
-    L.len=len;
-    /* the sweep is a dash offset rather than a rewritten point list — B9's rule.
-       The curve exists whole from the first frame and the ticker owns only how
-       much of it has been drawn yet. */
-    L.line=el("polyline",{points:pts(L.pt),fill:"none",stroke:L.hue,
-      "stroke-width":(1.4*SC).toFixed(2),"stroke-linecap":"round",
-      "stroke-linejoin":"round","stroke-opacity":"0",
-      "stroke-dasharray":`${len.toFixed(1)} ${len.toFixed(1)}`,
-      "stroke-dashoffset":len.toFixed(1)});
-    g.appendChild(L.line);
+  /* the peak has to land in the window, so the window is declared first and the
+     gaussian is centred on it rather than the other way about */
+  const W0=0.455, W1=0.585, PKC=(W0+W1)/2;
+  g.appendChild(el("polygon",{points:SCR.sq(X(W0),X(W1),Z(BASE),Z(1)),
+    fill:"var(--fg2)","fill-opacity":".09",stroke:"none"}));
+
+  /* ---- THE TRACE ---------------------------------------------------------
+     Three gaussians, the way B9 builds its own: a sharp ladder marker at each
+     end of the run and the library between them. The middle sigma is the only
+     number in this file that carries an argument — B9's is 0.110 and this one
+     is a third of it, and that ratio IS the double size selection. */
+  const PEAKS=[[0.085,0.018,0.50],[PKC,0.034,1.00],[0.930,0.020,0.44]];
+  const sig=u=>{ let v=0.035;
+    PEAKS.forEach(([m,s,a])=>{ v+=a*Math.exp(-((u-m)*(u-m))/(2*s*s)); });
+    return v; };
+  const N=160;
+  let peak=0; for(let i=0;i<=N;i++) peak=Math.max(peak,sig(i/N));
+  const PT=(u,v)=>SCR.at(u, BASE+(v/peak)*(1-BASE));
+
+  const base0=PT(0,0), base1=PT(1,0);
+  g.appendChild(el("line",{x1:base0[0].toFixed(1),y1:base0[1].toFixed(1),
+    x2:base1[0].toFixed(1),y2:base1[1].toFixed(1),stroke:"var(--fg2)",
+    "stroke-width":".8","stroke-opacity":".35"}));
+
+  /* ---- THE GEL LANE ------------------------------------------------------
+     Five bands, graded by how much signal is over them: the two markers, the
+     library, and a shoulder either side of it so the band reads as a
+     distribution rather than a hairline. Born with real coordinates and zero
+     opacity — the ticker only ever raises them. */
+  g.appendChild(el("polygon",{points:SCR.sq(X(0.02),X(0.98),Z(LANE0),Z(LANE1)),
+    fill:"var(--fg)","fill-opacity":".16",stroke:"var(--fg2)",
+    "stroke-width":".6","stroke-opacity":".5"}));
+  const BANDS=[[0.085,0.011,0.55],[0.472,0.013,0.30],[PKC,0.026,0.95],
+               [0.568,0.013,0.30],[0.930,0.010,0.46]].map(([u,hw,op])=>{
+    const e=el("polygon",{points:SCR.sq(X(u-hw),X(u+hw),Z(LANE0+0.02),Z(LANE1-0.02)),
+      fill:LIBM,"fill-opacity":"0",stroke:"none"});
+    g.appendChild(e); return {u,op,e};
   });
 
-  const b0=SCR.at(0,0), c0=SCR.at(0,1);
-  const scan=el("line",{x1:b0[0].toFixed(1),y1:b0[1].toFixed(1),
-    x2:c0[0].toFixed(1),y2:c0[1].toFixed(1),stroke:"var(--signal)",
+  const tp=[]; for(let i=0;i<=N;i++){ const u=i/N; tp.push(PT(u,sig(u))); }
+  const fill=el("polygon",{points:pts([...tp,base1,base0]),
+    fill:LIBM,"fill-opacity":"0"});
+  g.appendChild(fill);
+  /* the sweep is a dash offset rather than a rewritten point list — B9's rule.
+     The curve is born whole and the ticker owns only how much of it has been
+     drawn yet. */
+  let len=0;
+  for(let i=1;i<tp.length;i++)
+    len+=Math.hypot(tp[i][0]-tp[i-1][0], tp[i][1]-tp[i-1][1]);
+  const trace=el("polyline",{points:pts(tp),fill:"none",stroke:LIBM,
+    "stroke-width":(1.5*SC).toFixed(2),"stroke-linecap":"round",
+    "stroke-linejoin":"round","stroke-dasharray":`${len.toFixed(1)} ${len.toFixed(1)}`,
+    "stroke-dashoffset":len.toFixed(1)});
+  g.appendChild(trace);
+
+  const sTop=PT(0,peak);
+  const scan=el("line",{x1:base0[0].toFixed(1),y1:base0[1].toFixed(1),
+    x2:sTop[0].toFixed(1),y2:sTop[1].toFixed(1),stroke:"var(--signal)",
     "stroke-width":".9","stroke-opacity":"0"});
   g.appendChild(scan);
-  const pen=el("circle",{cx:LIBS[0].pt[0][0].toFixed(1),cy:LIBS[0].pt[0][1].toFixed(1),
-    r:(1.9*SC).toFixed(2),fill:LIBS[0].hue,"fill-opacity":"0"});
+  const pen=el("circle",{cx:tp[0][0].toFixed(1),cy:tp[0][1].toFixed(1),
+    r:(2*SC).toFixed(2),fill:LIBM,"fill-opacity":"0"});
   g.appendChild(pen);
 
+  /* ---- THE LABEL ---------------------------------------------------------
+     Above the bezel rather than on the glass: the panel is fourteen pixels of
+     screen and ten characters laid across it would sit on the peak they name.
+     Authored in screen pixels, so it is sized off SC rather than off n.w and
+     grows by being scaled with the machine; centred on the window's midline,
+     which is what lets it point at the peak without a leader. */
+  const FS=3.2*SC;
+  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
+  const lp=SCR.at(PKC, 1.32);
+  const cap=el("text",{x:lp[0].toFixed(1),y:lp[1].toFixed(1),"text-anchor":"middle",
+    "font-family":MONO,"font-size":FS.toFixed(2),
+    "letter-spacing":(FS*0.04).toFixed(2),fill:"var(--fg2)","fill-opacity":".75"});
+  cap.textContent="400–500 bp"; g.appendChild(cap);
+
+  /* the lamp is set once and never touched again. It used to breathe on a sine
+     and that was the only thing in the frame still moving during the hold. */
+  M.setLamp(0.22);
+
   /* ---- TIMING -------------------------------------------------------------
-     Eight runs have to fit in a loop somebody will watch the whole of, so each
-     one is a beat rather than a run: what the order has to keep is that a
-     library's trace cannot exist before its tube is in the port, and the dashes
-     cannot come up until the eighth has finished and left nothing behind. */
-  const RUN=1.15, GAP=0.14, HOLD=2.0, WIPE=1.0;
-  const STEP=RUN+GAP, SEQ=NSUB*STEP, T=SEQ+HOLD+WIPE;
-  /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion never
-     advances it, so whatever t begins at is the whole station for that reader —
-     and zero is an empty screen. Part-way through the third run is the frame
-     worth holding: one curve finished, one drawing, and both inside the gate. */
-  let t=STEP*2+RUN*0.55, lit=-1;
+     THE SWEEP IS B9's, TO THE TENTH. RUN is 3.4 s here because it is 3.4 s
+     there, and two QC traces drawn at one speed in one asset say "same
+     measurement, twice" better than any label on either of them.
+
+     THE PERIOD IS EXACTLY TWICE B9's, which is what keeps them off each other
+     forever. B9 spends 3.4 s of every 6.8 s drawing — a half duty cycle — so
+     nothing shorter than a doubling leaves a gap this sweep fits in, and any
+     period that is not a whole multiple of 6.8 drifts until the two collide.
+     At 13.6 the free windows are [3.4, 6.8) and [10.2, 13.6); this station
+     takes the first and holds through both of B9's.
+
+     THE CLOCK DOES NOT START AT ZERO, and 10.2 is the offset that lands the
+     sweep in that window: our t reaches 0 exactly 3.4 s from now, which is the
+     moment B9 lifts its pen. It is also mid-hold, so a browser asking for
+     reduced motion — which never advances t — gets the finished trace, the full
+     lane and the dashes, rather than an empty screen.
+
+     A RESIZE RESTARTS THIS CLOCK and the two fall out of step until the page is
+     reloaded. That is the honest cost of a per-shape ticker and it is cheaper
+     than a shared clock every station would then have to agree about. */
+  const RUN=3.4, HOLD=9.4, CLEAR=0.8, T=RUN+HOLD+CLEAR;
+  let t=10.2;
   const run=dt=>{
     t=(t+dt)%T;
-    const seq=t<SEQ;
-    const k=seq?Math.min(NSUB-1,Math.floor(t/STEP)):NSUB-1;
-    const u=seq?clamp((t-k*STEP)/RUN):1;
-    const running=seq && u<1;
-    const wipe=t<SEQ+HOLD ? 0 : clamp((t-SEQ-HOLD)/WIPE);
-
-    LIBS.forEach((L,i)=>{
-      const op = i===k ? 1 : (seq && i===k-1) ? 0.20 : 0;
-      L.line.setAttribute("stroke-opacity",(op*(1-wipe)).toFixed(2));
-      L.line.setAttribute("stroke-dashoffset",
-        (i<k ? 0 : i===k ? L.len*(1-u) : L.len).toFixed(1));
-    });
-
-    const j=Math.min(N,Math.round(u*N));
-    const b=SCR.at(j/N,0), c=SCR.at(j/N,1);
+    const running=t<RUN, u=clamp(t/RUN);
+    const out=t<RUN+HOLD ? 0 : clamp((t-RUN-HOLD)/CLEAR);
+    trace.setAttribute("stroke-dashoffset",(len*(1-u)).toFixed(1));
+    trace.setAttribute("stroke-opacity",(1-out).toFixed(2));
+    const i=Math.min(N,Math.round(u*N));
+    const b=PT(i/N,0), c=PT(i/N,peak);
     scan.setAttribute("x1",b[0].toFixed(1)); scan.setAttribute("y1",b[1].toFixed(1));
     scan.setAttribute("x2",c[0].toFixed(1)); scan.setAttribute("y2",c[1].toFixed(1));
     scan.setAttribute("stroke-opacity",running?".5":"0");
-    const p=LIBS[k].pt[j];
-    pen.setAttribute("cx",p[0].toFixed(1)); pen.setAttribute("cy",p[1].toFixed(1));
+    pen.setAttribute("cx",tp[i][0].toFixed(1)); pen.setAttribute("cy",tp[i][1].toFixed(1));
     pen.setAttribute("fill-opacity",running?".9":"0");
-
-    /* the tube and the lamp only change when the library does — a machine told
-       its own colour sixty times a second is sixty claims that it changed */
-    if(k!==lit){ lit=k; M.setFill(LIBS[k].hue); pen.setAttribute("fill",LIBS[k].hue); }
-    M.setLamp(running ? 0.35+0.55*Math.abs(Math.sin(t*3.2)) : 0.15);
-    /* the dashes come up after the eighth run, and stay dashes. Eight libraries
-       were measured and not one of the numbers is on this instance. */
-    M.setCells(seq?0.3:0.75);
+    /* the fill eases in over half a second as the pen lifts — B9's number and
+       B9's ramp, because a fill that snaps on is a second event at the end of
+       one, and this frame is allowed exactly one */
+    fill.setAttribute("fill-opacity",
+      (t<RUN ? 0 : 0.16*clamp((t-RUN)/0.5)*(1-out)).toFixed(2));
+    /* the bands come up behind the pen, so the lane is plainly the trace read a
+       second way rather than a second thing being measured */
+    BANDS.forEach(B=>B.e.setAttribute("fill-opacity",
+      (B.op*clamp((u-B.u)/0.06)*(1-out)).toFixed(2)));
+    /* the dashes come UP when the run ends. Nothing lands in them — that is the
+       point — but they have to be legible at the moment a number would be. */
+    M.setCells(running?0.3:0.75);
   };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
