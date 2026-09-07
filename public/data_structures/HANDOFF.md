@@ -440,6 +440,75 @@ a reason to open. The pins are now a `pins` command in two repos — ask the
 machine — but the prose has no such check, and `check-fit.mjs` cannot read.
 
 
+## The state of the data — 2026-09-07. The gold door opened, and the answer was six reads old.
+
+```
+repos      fresh clones at /data/zsb-repos/
+             zsb-medallion 7ef6198   zsb-bronze dfaf9df
+             zsb-silver    da1d04d   zsb-gold   31c381a
+buckets    aws s3 ls --recursive --summarize   on ALL FIVE, gold included
+```
+
+**This log stopped at the fifth pass while the page kept moving.** The map has had
+readings through an "eleventh read"; `ds-data.js` carries their figures and this
+file does not mention them. It is the same failure the fifth pass described in
+the other direction — prose going stale beside the numbers it describes — and the
+fix is the same: if you update the panel, update this. The gap between pass five
+and here is recoverable from `git log -- public/data_structures/ds-data.js`.
+
+**The role was widened and gold is not empty.** For six reads this map said
+*contents unknown, not known to be empty*, and insisted the distinction mattered
+because the two call for different next actions. It did. Gold holds **14 objects,
+93.85 GiB**, and has been in use since 2026-07-27.
+
+| Was on the map | Now |
+| --- | --- |
+| gold `contents unknown` · ListBucket AccessDenied | **14 obj · 93.85 GiB**, read cleanly |
+| "Ever written by zsb-silver: no — publish_gold raises" | **implemented and run** |
+| `build_gold` raises · `download_gold` raises | both implemented; gold built from silver |
+| key convention "settled 2026-08-23", an open gate | **realised** — `minifin/parse/v1/`, `minifin/zsb/v1/`, `minifin/zsb/v2/`, `megafin/parse/v1/`, `megafin/zsb/v1/` |
+| silver `86 obj · 19.82 GiB` | `91 · 76.00 GiB` — a 56.16 GiB `megafin/` prefix landed |
+| bronze panel `100,545 obj · 7.20 TiB` | `136,246 · 9.56 TiB` — the panel had fallen behind its own headline |
+| bronze `189 commits · 5,947 LOC` | `331 · 13,575` |
+| silver `60 · 3,977` · gold `37 · 93` · medallion `83 · 2,656` | `98 · 8,422` · `59 · 2,871` · `148 · 3,729` |
+| all three pin `v0.9.0` | all three pin **v0.13.0**, still in step |
+| "one steel thread: MiniFin 100k" | **two** — every repo now has `megafin/` beside `minifin/` |
+
+**Three conduits changed state, which is the only shape change.** Silver→zsb-silver
+and zsb-silver→gold are now **live**: gold holds the artifacts, so the bytes moved
+and can be shown to have. Gold→zsb-gold **stays dashed** — `fetch_release` is
+implemented for both datasets, but nothing here demonstrates it has read anything,
+and the rule on this map is *carried bytes, and can be shown to have*, not
+*implemented*. Resist the temptation to solid-line a hop because the code exists.
+
+**Gold is larger than silver** (93.85 GiB against 76.00). That is not a defect.
+The medallion shape promises shrinkage down to the tier where opinion starts; past
+it, two recipes of one dataset are two artifacts, and MegaFin's `zsb` recipe alone
+is 51.2 GiB.
+
+**The three MiniFin silver releases were re-published.** Same three keys, different
+bytes — `1,562,739,920 / 1,559,526,002 / 1,583,429,276` against the
+`1,561,917,184 / 1,562,792,160 / 1,559,446,470` the fifth pass recorded. **No check
+on this map would have caught that.** The manifest pins watch bronze; silver's
+releases are pinned by key, and a key-level pin cannot see a byte-level rewrite.
+If one thing from this read is worth acting on, it is that.
+
+**The read date moved out of `ds-view.js` into `ds-data.js` as `READ_DATE`.** The
+fifth pass found it hardcoded twice in the renderer, against the ownership table,
+and said to move it next time somebody touched the reader. Done.
+
+**Checks.** `check-overlaps` 0 pairs (93 text nodes). `check-clicks` passes.
+`check-fit` reports **8 failures, down from 9** — the pre-existing set, all of them
+conduit captions straddling the zone boundary or crowding a stub's box. They are
+not from this read; the same 9 reproduce on the previous commit. Worth fixing, but
+they are a layout debt, not a fact debt.
+
+**What could not be checked.** Open PR counts: there is no `gh` on this instance
+and no API path that does not mean handling the stored token by hand, so all four
+repos now read *not re-checked* rather than carrying a stale count. Bucket-level
+configuration (versioning, replication, encryption) is still `GetBucket*`
+AccessDenied and is still repeated as zsb-medallion's claim rather than confirmed.
+
 ## The state of the data — fifth pass, 2026-08-29. Both columns moved, and a gate had been closed for three days.
 
 ```

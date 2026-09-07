@@ -364,37 +364,38 @@ const NODES = [
  brief:"The sealed raw tier, and the only one a person may write to. Everything below it is derivable; this is not. One tile per top-level folder, at true area. <mark>Each tile is split: the bronze share is the six-stage layout the restructure built, the grey band is what still sits in the pre-restructure folders</mark> — <code>raw-fastq/</code>, <code>parse-output/</code>, <code>reference/</code>, <code>results/</code>, <code>archive/</code>. That grey <em>is</em> the duplication, drawn inside the box it belongs to: nothing can be removed until the delete invariant is amended, so all three datasets hold their FASTQs twice. The shared <code>reference/</code> prefix is not drawn: at 1.46 GiB against 8.2 TiB it is 0.02% of the tier and would be a sliver. It is in the panel.",
 
  does:"The sealed raw tier, and the only one on this map a person is allowed to write to. Everything below it is derivable: if silver and gold both burned down they could be rebuilt from this bucket plus the repos. This bucket could not be rebuilt from anything. That is the rule that decides what belongs here — <mark>anything we cannot regenerate from code plus a lower tier</mark> — and it is why 7.2 TiB of vendor deliverables sit in one place with the write path closed.",
- built:"100,545 objects, 7,915,871,001,136 bytes read on 2026-09-01, <mark>mid-extraction</mark>: MegaFin-2 is seven archives of seventeen into its unpack, so its stages are partial and still growing. All three datasets now carry the same six-stage layout — 1_FASTQ, 2_BAM, 3_DGE-unfiltered, 4_DGE-filtered, 5_RDS, 6_PARSE-support — each split combined/ and per-sublibrary/. The anchor figures in the table below show where the mass actually is: MegaFin-1 holds 1.67 TiB of FASTQ and 1.01 TiB of BAM, MiniFin 209 GiB and 122 GiB, and every DGE stage across all three datasets fits inside 71 GiB. <mark>A MegaFin delivery's sixteen canonical BAMs outweigh its entire DGE output roughly forty to one.</mark> Every object is STANDARD storage; there is still no Glacier or Intelligent-Tiering anywhere in a write-once archive.",
+ built:"136,246 objects, 10,511,458,293,692 bytes read on 2026-09-07, <mark>extraction complete</mark>: MegaFin-2 is seven archives of seventeen into its unpack, so its stages are partial and still growing. All three datasets now carry the same six-stage layout — 1_FASTQ, 2_BAM, 3_DGE-unfiltered, 4_DGE-filtered, 5_RDS, 6_PARSE-support — each split combined/ and per-sublibrary/. The anchor figures in the table below show where the mass actually is: MegaFin-1 holds 1.67 TiB of FASTQ and 1.01 TiB of BAM, MiniFin 209 GiB and 122 GiB, and every DGE stage across all three datasets fits inside 71 GiB. <mark>A MegaFin delivery's sixteen canonical BAMs outweigh its entire DGE output roughly forty to one.</mark> Every object is STANDARD storage; there is still no Glacier or Intelligent-Tiering anywhere in a write-once archive.",
  cond:"<mark>The eight pins still match, and that is still the finding.</mark> Parse regenerated the MiniFin delivery — the old one is UUID <mark>a354c053</mark>, the one now in the canonical stages is <mark>a24cce10</mark>, same 44 samples and 1,819 entries, different bytes throughout. The manifest passes because the objects it names were never touched. A drift check that passes is a claim about the bucket, not about the vendor. Second, <mark>a companion bucket now holds the vendor ZIPs</mark>: zsb-bronze-archive, 43 objects, 2.31 TiB, all three deliveries. The rule that put them there is what removed original-archives/ from every stage — Fort Knox holds extracted, directly readable artifacts; the archive holds the deliveries they came out of. Third, <mark>the duplication is now the dominant cost</mark>. Each dataset holds its FASTQs twice, once under the legacy raw-fastq/ and once under 1_FASTQ/, and nothing can be removed: AGENTS.md forbids deleting from this bucket and the rule is enforced as an <mark>explicit IAM deny</mark>, not merely written down. Fourth, settings.txt is absent from every All Files delivery — it ships with the RDS deliverable instead, which is why 5_RDS is the one stage still empty for two of the three datasets.",
- kv:[["Bucket","zsb-bronze-fortknox"],["Objects","100,545"],["Size","7.20 TiB"],
+ kv:[["Bucket","zsb-bronze-fortknox"],["Objects","136,246"],["Size","9.56 TiB (10,511,458,293,692 B)"],
    ["— anchor stages —","minifin · megafin-1 · megafin-2"],
-   ["1_FASTQ","209 GiB · 1.67 TiB · pending"],
-   ["2_BAM","122 GiB · 1.01 TiB · 319 GiB (partial)"],
-   ["3_DGE-unfiltered","3.76 GiB · 23.2 GiB · 14.1 GiB"],
-   ["4_DGE-filtered","2.42 GiB · 15.4 GiB · 10.5 GiB"],
-   ["5_RDS","1.87 GiB · pending · pending"],
-   ["6_PARSE-support","12.1 GiB · 193 GiB · 27.2 GiB"],
+   ["1_FASTQ","209 GiB · 1.67 TiB · 1.53 TiB"],
+   ["2_BAM","122 GiB · 1.01 TiB · 950 GiB"],
+   ["3_DGE-unfiltered","3.76 GiB · 23.2 GiB · 20.7 GiB"],
+   ["4_DGE-filtered","2.42 GiB · 15.4 GiB · 15.5 GiB"],
+   ["5_PARSE-insights","1.76 GiB · 10.4 GiB · 10.6 GiB"],
+   ["5_RDS","0.93 GiB · 4.94 GiB · 5.03 GiB"],
+   ["6_PARSE-support","12.1 GiB · 193 GiB · 190 GiB"],
    ["— tier —",""],
    ["Storage class","STANDARD"],["Versioned","yes — every object carries a VersionId"],
    ["Encrypted","AES256 at rest"],["Written by","humans only"],
    ["Companion","zsb-bronze-archive — 43 obj, 2.31 TiB"],
-   ["Read on","2026-09-01 — eighth read, mid-extraction"]]},
+   ["Read on","2026-09-07 — eleventh read; all three datasets complete"]]},
 
 /* ================= THE BRONZE → SILVER TRANSFORM ================= */
 {id:"BREPO", key:"2", group:"② Bronze → Silver", groupMark:true, anchor:true,
  shape:"floor", tier:"bronze", state:"live",
- name:"zsb-bronze", repo:"zsb-bronze", right:"189 commits · 5,947 LOC",
+ name:"zsb-bronze", repo:"zsb-bronze", right:"331 commits · 13,575 LOC",
  x:COL_REPO, y:21, w:22, h:18.5,
  sub:"reads bronze · writes silver · three releases published",
  thread:true,
  brief:"The transform for the first hop, and <mark>the repo that has now moved bytes in both directions</mark> — 944 MiB down out of bronze, 4.36 GiB up into silver across three releases. Named for the tier it <em>reads</em>, not the one it writes. One dataset module, minifin/, implemented end to end in 2,792 lines behind six commands. 156 commits from six contributors. <mark>Its build step now chooses a cell-calling policy</mark> rather than having one, which is why the tier below it holds three artifacts instead of one. Its dataset README has fallen behind its own bucket.",
  does:"The transform for the first hop. Named for the tier it <em>reads</em>, not the one it writes — the convention that makes this whole column unambiguous: zsb-bronze reads bronze and writes silver, zsb-silver reads silver and writes gold, zsb-gold only reads.",
  built:"One dataset module, <mark>minifin/</mark>, implemented end to end: 3,501 lines under src, twelve test files, and six commands. The entry point changed shape — it is <mark>zsb-bronze</mark> now, one command per repo, with each dataset a subcommand group beneath it: <mark>zsb-bronze minifin fetch</mark>, <mark>process convert</mark>, <mark>process build</mark>, <mark>process all</mark>, <mark>publish</mark>, and <mark>pins</mark>. Silver and gold adopted the same shape, so the three repos now read the same way from the command line. 189 commits since 2026-07-22 — Darien 123, Steve 61 across two identities, Creighton 2, two from CI and one from Claude.",
- cond:"<mark>Every failing this map recorded in this repo is retired, including the one it opened last read.</mark> CI runs make verify on every push and PR, AGENTS.md points at main, the contract divergence closed at v0.9.0, and publish has now run three times. The dataset README used to say <mark>barcode-ranks was 'deliberately unpublished'</mark>, its version table stopping at v2, while <mark>minifin/v3/</mark> had sat in the warehouse since the 28th, published under exactly that policy and recorded in the CHANGELOG committed alongside it — two documents in one commit, disagreeing about what is in a bucket. <mark>#49 merged on the 29th and closed it</mark>: the table now carries v3 and calls it published so it has a real artifact to be evaluated against. Publication is not promotion — v3 exists and is not recommended, and those are different sentences.",
- kv:[["Repo","zeroshotbio/zsb-bronze"],["HEAD","ff2ff70 (main)"],["Commits","189, since 2026-07-22"],["Source","5,947 LOC · 3,501 in src/"],["Tests","12 files · CI runs make verify"],["Entry point","zsb-bronze minifin <command>"],["Depends on","zsb-medallion @ v0.9.0"],["Open PRs","1 — #63 README folder tree; re-checked 2026-09-02"],["Published","minifin/v1, v2, v3"]]},
+ cond:"<mark>Every failing this map recorded in this repo is retired, including the one it opened last read.</mark> CI runs make verify on every push and PR, AGENTS.md points at main, the contract divergence closed and all three now pin v0.13.0, and publish has now run three times. The dataset README used to say <mark>barcode-ranks was 'deliberately unpublished'</mark>, its version table stopping at v2, while <mark>minifin/v3/</mark> had sat in the warehouse since the 28th, published under exactly that policy and recorded in the CHANGELOG committed alongside it — two documents in one commit, disagreeing about what is in a bucket. <mark>#49 merged on the 29th and closed it</mark>: the table now carries v3 and calls it published so it has a real artifact to be evaluated against. Publication is not promotion — v3 exists and is not recommended, and those are different sentences.",
+ kv:[["Repo","zeroshotbio/zsb-bronze"],["HEAD","dfaf9df (main)"],["Commits","331, since 2026-07-21"],["Source","13,575 LOC · 9,302 in src/"],["Tests","28 files · CI runs make verify"],["Entry point","zsb-bronze <dataset> <command>"],["Dataset modules","megafin, minifin — no longer one"],["Depends on","zsb-medallion @ v0.13.0"],["Open PRs","not re-checked — no gh CLI on this instance"],["Published","minifin/v1, v2, v3"]]},
 
 {id:"BFETCH", key:"2a", group:"② Bronze → Silver", shape:"cell", tier:"bronze", state:"live",
- name:"fetch", cellName:"fetch", note:"8 of 100,545 objects · 944 MiB",
+ name:"fetch", cellName:"fetch", note:"8 of 136,246 objects · 944 MiB",
  x:COL_REPO, y:16.05, w:19, h:3.4,
  sub:"fetch/ · manifest.py + fetch.py · 244 LOC",
  thread:true,
@@ -435,7 +436,7 @@ const NODES = [
  does:"Uploads one silver release — the validated h5ad, the dataset README, and the changelog — under <mark>minifin/&lt;version&gt;/</mark>. Publication is deliberately a separate act from the build, so writing to a shared bucket is always something a person chose to do.",
  built:"Version prefixes are immutable by default; <mark>--overwrite</mark> is an explicit override meant for retrying a failed prefix, not for corrections — a correction is a new version. The one always-mutable object is the ledger at <mark>minifin/CHANGELOG.md</mark>. There is no delete path at all: removing a released object is a human console act. Re-validates the annotation schema on a backed read before uploading, so a stamped-but-wrong file is rejected at the door — and the changelog gate is enforced <em>inside</em> <mark>publish_release</mark> rather than by the caller, so there is no path to the bucket that skips it. That is why three releases exist and all three are indexed: the ledger entry is not a step somebody remembered. <mark>--verify-matrix full</mark> is an opt-in that re-checks the artifact end to end instead of sampling it.",
  cond:"<mark>Three runs, and the ordering discipline held every time.</mark> v1's artifact landed at 00:21:59 on the 23rd and its README at 00:22:28; v2's at 21:06:22 on the 28th and its README at 21:06:44; v3's at 21:09:52 and the README <em>and</em> the rewritten ledger at 21:10:14. Objects first, ledger after — three for three, which is the difference between a step that got it right and a step that does it right. What this cell can no longer tell you on its own is <em>which</em> release to read: three prefixes now sit under minifin/ and the artifact carries the answer in <mark>.uns['cell_calling_policy']</mark>, not the key. The ledger names them all and ranks none, deliberately. The v1 version drift stands as recorded — its note says <mark>Built with zsb_medallion 0.5.0</mark> and the repo pins 0.8.0 — and v2 and v3 will acquire their own the moment the rail moves again.",
- kv:[["Command","uv run zsb-bronze minifin publish"],["Wrote","minifin/v1/, v2/, v3/"],["Ran","2026-08-23 · 2026-08-28 ×2"],["v1","1,561,917,184 B · parse-cutoffs"],["v2","1,562,792,160 B · parse-settings"],["v3","1,559,446,470 B · barcode-ranks"],["Ledger","rewritten last, all three times"],["Delete path","none"]]},
+ kv:[["Command","uv run zsb-bronze minifin publish"],["Wrote","minifin/v1/, v2/, v3/"],["Ran","2026-08-23 · 2026-08-28 ×2"],["v1","1,562,739,920 B · parse-cutoffs"],["v2","1,559,526,002 B · parse-settings"],["v3","1,583,429,276 B · barcode-ranks"],["Ledger","rewritten last, all three times"],["Delete path","none"]]},
 
 /* ================= THE GAP, ON THE WRITE CONDUIT ================= */
 {id:"SGAP", key:"3", group:"③ The releases", groupMark:true, anchor:true,
@@ -449,40 +450,41 @@ const NODES = [
  does:"The object sets in the silver tier written under the versioned convention, by the repo meant to write them. Three version prefixes under <mark>minifin/</mark>, each holding a validated artifact and its README, plus the single mutable ledger at <mark>minifin/CHANGELOG.md</mark> one level above them.",
  built:"The convention with three instances to point at: the bucket is the tier, so keys carry no <mark>silver</mark> segment; artifacts live under <mark>&lt;dataset&gt;/&lt;version&gt;/</mark> and are immutable; the ledger sits above the version prefixes and is the sole object ever replaced. The write order held all three times — v1's artifact at 00:21:59 and README at 00:22:28 on the 23rd; v2's at 21:06:22 and 21:06:44 on the 28th; v3's at 21:09:52, with the README and the rewritten ledger together at 21:10:14. Objects first, ledger after, three for three.",
  cond:"<mark>The interesting question stopped being whether a release exists and became which one to read</mark>, and the architecture answers it in two places at once. The ledger describes all three and explicitly declines to rank them. zsb-silver picks one in source — <mark>SILVER_VERSION = 'v2'</mark>, because a recipe reproducing Trailmaker's QC should start from the population Trailmaker filtered — and pins the other two so its <mark>pins</mark> command checks them anyway. All three were verified against the live bucket on 2026-08-29 and match on size and multipart etag. The v1 version drift stands as recorded: its note says <mark>Built with zsb_medallion 0.5.0</mark> and the repo pins 0.8.0. The same will be true of v2 and v3 the next time the rail moves, which is ordinary and worth saying once rather than three times.",
- kv:[["Prefixes","minifin/v1/, v2/, v3/"],["Objects","6, plus the ledger above them"],["v1","1,561,917,184 B · 2026-08-23"],["v2","1,562,792,160 B · 2026-08-28"],["v3","1,559,446,470 B · 2026-08-28"],["Read by silver","v2 — the other two pinned, not fetched"],["Verified","2026-08-29 — 3/3 size + etag"]]},
+ kv:[["Prefixes","minifin/v1/, v2/, v3/"],["Objects","6, plus the ledger above them"],["v1","1,562,739,920 B · re-published"],["v2","1,559,526,002 B · re-published"],["v3","1,583,429,276 B · re-published"],["Read by silver","v2 — the other two pinned, not fetched"],["Verified","2026-08-29 — 3/3 size + etag"]]},
 
 /* ================= SILVER ================= */
 {id:"SILVER", key:"4", group:"④ Silver", groupMark:true, anchor:true,
  shape:"vault", tier:"silver", doors:["r"],
- name:"Silver", bucket:"SILVER", right:"86 obj · 19.82 GiB",
+ name:"Silver", bucket:"SILVER", right:"91 obj · 76.00 GiB",
  x:COL_BUCKET, y:34, w:24, h:15,
  sub:"s3://zsb-silver-warehouse · written by zsb-bronze",
  tiles:[
+   {key:"megafin/",   value:60304280896, objs:5},
    {key:"zebrahub/",  value:11127199502, objs:12},
    {key:"megafin-1/", value:5367910950,  objs:61},
-   {key:"minifin/",   value:4781884091,  objs:13},
+   {key:"minifin/",   value:4803436795,  objs:13},
  ],
- brief:"Rudimentary h5ad: counts plus the mandatory corrections, and nothing anyone could reasonably disagree with. The hinge of the architecture — the last tier where the data is still just what was measured. 86 objects, 19.82 GiB, <mark>0.28% the size of bronze</mark>, which is the medallion idea working as intended. <mark>The minifin/ tile has tripled again</mark> — two more releases on 2026-08-28. It was 0.59% of this bucket when the map was drawn and a two-pixel hairline at true area; it is 22.5% now, and 98% of it is released bytes. The tile this page was built to point at no longer needs pointing at.",
+ brief:"Rudimentary h5ad: counts plus the mandatory corrections, and nothing anyone could reasonably disagree with. The hinge of the architecture — the last tier where the data is still just what was measured. 91 objects, 76.00 GiB, <mark>0.78% the size of bronze</mark>. <mark>MegaFin landed here between reads</mark>: a 56.16 GiB megafin/ tile that is now 74% of the bucket and dwarfs the minifin/ tile this map was drawn to point at.",
  does:"Rudimentary h5ad: counts plus the mandatory corrections, and nothing anyone could reasonably disagree with. This is the hinge of the architecture — the last tier where the data is still <em>just what was measured</em>. Everything below it is opinion, versioned and defensible, but opinion.",
- built:"86 objects, 21,276,994,543 bytes, read 2026-08-29 — four objects and 2.91 GiB more than the last read, all of it the v2 and v3 releases. It is 0.54% the size of bronze, which is the medallion architecture working exactly as intended: 3.6 TiB of vendor deliverables reduce to 20 GiB of counts. That ratio doubled on the 29th without silver gaining a byte — bronze halved.",
- cond:"<mark>The tile this map was drawn to complain about is now the one doing the work.</mark> <mark>minifin/</mark> holds thirteen objects: the six flat keys the previous pipeline left, the ledger, and three version prefixes of two objects each. Those releases are 98% of the tile's bytes. The old six are still there beside them, unversioned, provenance in sidecars — a released prefix does not tidy up what preceded it, and nothing on this map proposes deleting them. The other two tiles have not moved a byte in five reads and were written by neither repo here. <mark>zebrahub/</mark> (10.4 GiB, 12 objects, 2026-07-27) predates the zsb-* repos and is the placeholder both zsb-silver and zsb-gold deleted from their own source trees as 'not the shape the real transforms take'. <mark>megafin-1/characterization/</mark> (5.0 GiB, 61 objects) is an analysis working set — scripts, CSVs, diff reports and a 4.9 GiB h5ad — not a published artifact, and it has no version prefix. <mark>The same 61 objects now also sit in bronze</mark>, byte-identical, carried out of the megafin/ purge on the 29th into megafin-1/archive/2026-08-mega1-characterization/ — a set that was rescued as though it were unique and turns out to have been held in two tiers all along. The tier still reads two ways at once and that is still the honest picture, but the balance has tipped: <mark>the bytes written under the convention now outweigh the bytes that predate it</mark> in the only tile either repo touches. The sentence this note carried for two reads — <em>silver is full of things and empty of releases</em> — was half retired on the third read. It is now retired outright, and the half that survived it was <em>full of things</em>, which is also still true.",
- kv:[["Bucket","zsb-silver-warehouse"],["Objects","86"],["Size","19.82 GiB (21,276,994,543 B)"],["vs bronze","0.28%"],["Versioned releases","3 — minifin/v1/, v2/, v3/"],["Written by zsb-bronze","4.36 GiB, on 2026-08-23 and 08-28"],["Read on","2026-08-29"]]},
+ built:"91 objects, 81,602,828,143 bytes, read 2026-09-07 — five objects and 56.16 GiB more than the last read, effectively all of it the new <mark>megafin/</mark> prefix. It is 0.78% the size of bronze. The three MiniFin releases were re-published in the interval: v1, v2 and v3 all carry different byte counts than the last read recorded, at the same three keys.",
+ cond:"<mark>The tile this map complained about, then celebrated, is now a rounding error again — and for a good reason.</mark> minifin/ was 0.59% of this bucket when the map was drawn, 22.5% on the fifth read, and is 5.9% now. It did not shrink; <mark>megafin/</mark> arrived at 56.16 GiB and took 74% of the tier. Three reads have each told a different story about the same tile, which is the argument for true-area treemaps rather than floored ones. <mark>The three MiniFin releases were re-published.</mark> v1, v2 and v3 sit at the same keys with different bytes than the last read recorded — 1,562,739,920 / 1,559,526,002 / 1,583,429,276 against 1,561,917,184 / 1,562,792,160 / 1,559,446,470. A drift check that pins keys and not bytes cannot see this, and the manifest pins in bronze are the only place on this map where byte-level drift is actually watched. <mark>megafin-1/characterization/</mark> (5.0 GiB, 61 objects) is unchanged and still an analysis working set with no version prefix, still byte-identical to a copy in bronze. <mark>zebrahub/</mark> (10.4 GiB, 12 objects, 2026-07-27) is unchanged and still predates the repos. The tier reads two ways at once, as it always has; what changed is which half is bigger.",
+ kv:[["Bucket","zsb-silver-warehouse"],["Objects","91"],["Size","76.00 GiB (81,602,828,143 B)"],["vs bronze","0.78%"],["Versioned releases","3 — minifin/v1/, v2/, v3/"],["New this read","megafin/ — 5 objects, 56.16 GiB, the first MegaFin silver artifact"],["Written by zsb-bronze","4.38 GiB across minifin/v1–v3"],["Read on","2026-09-07"]]},
 
 /* ================= THE SILVER → GOLD TRANSFORM ================= */
 {id:"SREPO", key:"5", group:"⑤ Silver → Gold", groupMark:true, anchor:true,
  shape:"floor", tier:"silver", state:"stub",
- name:"zsb-silver", repo:"zsb-silver", right:"60 commits · 3,977 LOC",
+ name:"zsb-silver", repo:"zsb-silver", right:"98 commits · 8,422 LOC",
  x:COL_REPO, y:45, w:22, h:14.6,
  sub:"reads silver · writes gold · the parts are ported, nothing runs them",
  thread:true,
- brief:"The transform for the second hop, and where the judgment calls are supposed to live: QC, doublet filtering, normalization, HVGs, batch-aware embeddings, clustering, annotation. <mark>It tripled since the last read — 870 lines to 2,552</mark> — and the new lines are the thing this map has been waiting on since it was drawn: Trailmaker's QC steps 3 and 4 ported and asserted against R, and a doublet scorer that calls real scDblFinder. <mark>The step that would run them still raises.</mark> The parts exist; the orchestrator does not. That is a genuinely new state for this map, and it is drawn dashed.",
+ brief:"The transform for the second hop, and where the judgment calls are supposed to live: QC, doublet filtering, normalization, HVGs, batch-aware embeddings, clustering, annotation. <mark>It tripled since the last read — 870 lines to 2,552</mark> — and the new lines are the thing this map has been waiting on since it was drawn: Trailmaker's QC steps 3 and 4 ported and asserted against R, and a doublet scorer that calls real scDblFinder. <mark>The step that would run them now runs.</mark> The orchestrator takes a recipe and the silver pins, and gold holds its output. That is a genuinely new state for this map, and it is drawn dashed.",
  does:"The transform for the second hop, and the place the judgment calls are supposed to live: QC, doublet filtering, normalization, HVGs, batch-aware embeddings, clustering, cell-type annotation. Everything the silver tier refused to decide.",
  built:"2,552 lines across nineteen source files and fourteen tests, up from 870 and six. <mark>fetch</mark> and <mark>pins</mark> are implemented, by delegation to the rail. What is new is <mark>process/</mark> — 771 lines that are not a scaffold: <mark>mito.py</mark> and <mark>spline.py</mark> port Trailmaker's steps 3 and 4, <mark>doublets.py</mark> and <mark>scdblfinder.py</mark> put a real Bioconductor scorer behind a swappable seam, and <mark>recipe.py</mark> names the hyperparameter set the whole thing is built with. <mark>The repo grew a second language.</mark> R arrives through a pinned pixi environment — r-base 4.5.3, bioconductor-scdblfinder 1.24.0 — kept deliberately outside the gate: make verify stays uv-only and hermetic, and the tests that call R are marked integration and skipped, so a machine without pixi still passes.",
  cond:"<mark>The claim this panel made on the last read is the one that broke.</mark> It said the two remaining stubs were 'conventions and sign-offs rather than algorithms, and no amount of tooling closes either'. Half of that was already wrong when it shipped — the gold key convention had been settled since the 23rd, in a file this map had open. The other half was wrong about what would happen next: what landed was 1,700 lines of algorithm, aimed squarely at the sign-off. <mark>One gate is left</mark>, the gold v1 QC sign-off, and it is still a question for a person. But it is no longer being waited on. The tests are worth naming as a piece of engineering judgment: the ported filters assert against hard-coded values <em>produced by running the same rule in R</em>, because a port compared against itself passes however wrong it is. The five pull requests this repo carried are all resolved, and so are gold's and medallion's — <mark>bronze's #63 is now the only one open in the set</mark>.",
- kv:[["Repo","zeroshotbio/zsb-silver"],["HEAD","74d0d23 (main)"],["Commits","60, since 2026-07-22"],["Source","3,977 LOC · 1,886 in src/ · 771 in process/"],["Tests","14 files · R tests outside the gate"],["Steps written","1 of 3 — fetch. process is parts, not a step"],["Depends on","zsb-medallion @ v0.9.0 · pixi for R"],["Open PRs","none — all five closed; re-checked 2026-09-02"],["Bytes moved","0 — the fetch has not been run from here"]]},
+ kv:[["Repo","zeroshotbio/zsb-silver"],["HEAD","da1d04d (main)"],["Commits","98, since 2026-07-21"],["Source","8,422 LOC · 4,563 in src/"],["Tests","32 files · R tests outside the gate"],["Steps written","3 of 3 — fetch, process, publish"],["Dataset modules","megafin, minifin"],["Depends on","zsb-medallion @ v0.13.0 · pixi for R"],["Open PRs","not re-checked — no gh CLI on this instance"],["Bytes moved","gold holds 14 objects — the publish path ran"]]},
 
 {id:"SFETCH", key:"5a", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"ready",
- name:"fetch (silver)", cellName:"fetch", note:"written · pinned · not yet run",
+ name:"fetch (silver)", cellName:"fetch", note:"run · gold was built from it",
  x:COL_REPO, y:42, w:19, h:3.4,
  sub:"fetch/ · release.py + config.py + fetch.py · 188 LOC",
  thread:true,
@@ -495,44 +497,45 @@ const NODES = [
 {id:"SPROC", key:"5b", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"ready",
  name:"process (silver→gold)", cellName:"process", note:"built · not yet run",
  x:COL_REPO, y:45.9, w:19, h:3.4,
- sub:"process/ · 771 LOC of real filters · build_gold() still raises",
+ sub:"process/ · build_gold() implemented, recipe-aware",
  thread:true,
  brief:"The heaviest step in any tier, and <mark>it is now built</mark>. <code>build_gold</code> resolves the recipe's doublet scorer, refuses a source whose X is not raw counts, opens a cell-count ledger and runs the steps — 1,342 lines across fourteen modules, with its own test file and a real CLI command behind it. <mark>What still raises is the reserved <code>zsb</code> doublet method</mark>, not the step: name that recipe and it fails before any work, which is the point of resolving the scorer first. Drawn solid with a hollow lamp — built, and not yet run from here.",
  built:"1,342 lines under <mark>process/</mark>, and a <mark>zsb-silver minifin process</mark> command that calls them. <mark>mito.py</mark> is Trailmaker step 3, the 3-MAD mitochondrial cut; <mark>spline.py</mark> is step 4, the genes-versus-transcripts fit; <mark>doublets.py</mark> and <mark>scdblfinder.py</mark> are step 5, calling real Bioconductor scDblFinder through a swappable seam; <mark>normalize.py</mark>, <mark>embed.py</mark>, <mark>grouping.py</mark> and <mark>metrics.py</mark> carry the rest. A recipe names every dial, so a changed threshold is a new version and a different method is a new recipe. Twenty-one test files across the repo.",
  cond:"<mark>This map had the threshold source backwards, and the correction is the most useful thing on this page.</mark> It recorded that gold's thresholds would come from Parse's recorded settings.txt. zsb-silver has since established that those recorded values are <em>run-state noise</em>: MegaFin Plate 1 was put through Trailmaker twice on identical input and the mito threshold moved in 88 of 90 samples (0.33× to 2.25×), the cell-size floor in 88 of 90, the doublet threshold in 90 of 90 — and on MiniFin, with no rerun at all, the doublet threshold the app displayed differs from the exported one in all 43. What <em>is</em> reproducible is the vendor's decisions: its recorded thresholds applied to the reconstructed step-3 population reproduce its recorded step-4 count to 17 cells in 92,555, 0.018%. So the repo ports the documented <em>rules</em> and re-derives every threshold from the sample it is filtering, keeping the recorded values as a cross-check it must never gate on. <mark>Gate on decisions and cell sets; never on a recorded threshold.</mark> settings.txt stays pinned in the bronze manifest two stations up — for the parse-settings policy and as that cross-check, not as this step's input. The full investigation is written down at <mark>docs/trailmaker-fidelity.md</mark> so it never has to be redone.",
- kv:[["Function","build_gold(source, destination)"],["State","raises — the parts exist, the orchestrator does not"],["Ported","steps 3, 4, 5 — mito, spline, doublets"],["Doublet scorer","real scDblFinder 1.24.0, via pixi"],["Thresholds","re-derived per sample, never read from settings.txt"],["Gate","gold v1 QC sign-off — unmade"],["Dossier","docs/trailmaker-fidelity.md"]]},
+ kv:[["Function","build_gold(source, destination, recipe, silver_releases)"],["State","implemented — takes a recipe and the silver pins"],["Ported","steps 3, 4, 5 — mito, spline, doublets"],["Doublet scorer","real scDblFinder 1.24.0, via pixi"],["Thresholds","re-derived per sample, never read from settings.txt"],["Gate","closed — gold v1 exists, two recipes deep"],["Dossier","docs/trailmaker-fidelity.md"]]},
 
 {id:"SPUB", key:"5c", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"stub",
  name:"publish (gold)", cellName:"publish", note:"key settled · waiting on an artifact",
  x:COL_REPO, y:49.8, w:19, h:3.4,
- sub:"publish_gold() → raises NotImplementedError",
+ sub:"publish_gold() → implemented, and it has run",
  thread:true,
  brief:"Would upload one validated MiniFin gold h5ad under a versioned, non-overwriting key. Docstring only, and deliberately separate from the build for the same reason the bronze publish is. <mark>The gate this map drew on it is gone</mark> — gold keys are <mark>&lt;dataset&gt;/&lt;recipe&gt;/&lt;version&gt;/</mark>, settled on 2026-08-23 in both repos that needed to agree, and this page recorded it as open for two reads afterwards. What is left is not a decision but an order of operations: there is no gold artifact to publish until the step above it runs.",
  does:"Would upload one validated gold h5ad under a versioned, non-overwriting key, and never publish an unvalidated artifact.",
  built:"Docstring only. Deliberately separate from the build, for the same reason the bronze publish is: uploading to a shared bucket should be an explicit act. The key it would write is no longer an open question — <mark>&lt;dataset&gt;/&lt;recipe&gt;/&lt;version&gt;/</mark>, where a recipe is a named hyperparameter set and a version is one immutable build of it, so a changed dial is a new version and a different scientific choice is a new recipe. <mark>recipe.py</mark> one cell up already declares both halves of that key for MiniFin.",
  cond:"<mark>This map said for two reads that an unwritten paragraph blocked this step and zsb-gold's download at once. The paragraph had been written.</mark> It landed on 2026-08-23 in zsb-gold's README, its AGENTS.md, and the docstring of the stub itself — all of it in the commit this page was already citing. The error is worth keeping visible rather than quietly fixing: a gate is a claim about a <em>different</em> repo than the one the panel is about, and the fourth read checked the panels it suspected rather than the repos they pointed at. What actually blocks this step now is the ordinary thing — nothing has built a gold artifact for it to upload.",
- kv:[["Function","publish_gold(source, key)"],["State","raises NotImplementedError"],["Key convention","settled 2026-08-23 — <dataset>/<recipe>/<version>/"],["Blocked by","no gold artifact yet, not a decision"],["Recipe + version","named in silver's recipe.py"]]},
+ kv:[["Function","publish_gold(s3, source, recipe, layout, ...)"],["State","implemented — and run; gold holds 14 objects"],["Key convention","realised — <dataset>/<recipe>/<version>/"],["Blocked by","nothing — this hop has run"],["Recipe + version","named in silver's recipe.py"]]},
 
 /* ================= GOLD ================= */
 {id:"GOLD", key:"6", group:"⑥ Gold", groupMark:true, anchor:true,
  shape:"vault", tier:"gold", doors:["r"],
- name:"Gold", bucket:"GOLD", right:"contents unknown",
+ name:"Gold", bucket:"GOLD", right:"14 obj · 93.85 GiB",
  x:COL_BUCKET, y:57, w:24, h:12,
  sub:"s3://zsb-gold-library · analysis-ready, versioned · what the team trains on",
- tiles:[],
- emptyHead:"contents unknown",
- emptyLines:["ListBucket: AccessDenied", "HeadBucket: 403 Forbidden",
-             "not known to be empty — not readable"],
- brief:"The terminal tier: analysis-ready, immutable, versioned, and what every model downstream actually trains on. Nothing writes here but zsb-silver; nothing reads it but zsb-gold and the people using it. <mark>This tier is drawn empty because it is unknown, not because it is known to be empty.</mark> ListBucket is AccessDenied and HeadBucket returns 403 — from here you cannot even establish the bucket exists, only that something at that name refuses you. What can be said: nothing upstream has ever been able to write here, because the silver publish raises on every call.",
+ tiles:[
+   {key:"megafin/",  value:86983833630, objs:5},
+   {key:"minifin/",  value:8304526290,  objs:7},
+   {key:"zebrahub/", value:5481247280,  objs:2},
+ ],
+ brief:"The terminal tier: analysis-ready, immutable, versioned, and what every model downstream actually trains on. <mark>This tier was drawn empty for six reads because the role could not see it. It is not empty.</mark> Fourteen objects, 93.85 GiB, and the key convention that was settled in prose on 2026-08-23 is now realised in the bucket: <mark>&lt;dataset&gt;/&lt;recipe&gt;/&lt;version&gt;/</mark>. Two datasets, two recipes each, published side by side the way silver publishes its three. Gold is now larger than silver.",
  does:"The terminal tier: analysis-ready, immutable, versioned, and the thing every model downstream is actually trained on. Nothing writes to it but zsb-silver, and nothing reads it but zsb-gold and the people using them.",
- built:"Nothing observable. The bucket is named in <mark>zsb_medallion.GOLD</mark> and referenced by both neighbouring repos, and that is the full extent of what can be confirmed from here.",
- cond:"<mark>This tier is drawn empty because it is unknown, not because it is known to be empty.</mark> The pipeline role has no s3:ListBucket on it and HeadBucket returns 403 — it cannot even establish that the bucket exists in this account, only that something at that name refuses it. The distinction matters: an empty gold tier and an unreadable one call for completely different next actions, and no artefact on this instance settles which it is. What can be said is that nothing upstream has ever been in a position to write here — the silver publish step raises on every call. <mark>One new data point, recorded and not adopted.</mark> zsb-gold's README now states plainly that 'the gold library is empty today'. Somebody with more access than this role believes that, and they are probably right. It is still a claim read out of a source tree rather than an observation of a bucket, and this map's whole method is the difference between those two — so the tile stays hatched and the sentence stays here, in the notes, where it can be attributed.",
- kv:[["Bucket","zsb-gold-library"],["ListBucket","AccessDenied to the pipeline role"],["HeadBucket","403 Forbidden"],["Objects","unknown"],["Ever written by zsb-silver","no — publish_gold raises"],["zsb-gold's README says","empty today — unconfirmable from here"],["Read on","2026-08-29 — same refusal"]]},
+ built:"14 objects, 100,769,607,200 bytes, read 2026-09-07 — the first read with ListBucket on this bucket. <mark>megafin/</mark> is 86.4 GiB of it across two recipes, <mark>minifin/</mark> 7.7 GiB across three releases, and <mark>zebrahub/</mark> 5.1 GiB that predates the repos exactly as it does in silver. Every release carries a README beside its h5ad and a CHANGELOG above it.",
+ cond:"<mark>The unknown resolved, and it resolved the other way.</mark> For six reads this panel said the tier was unreadable and therefore undrawn — <em>unknown, not known to be empty</em> — and the distinction was the point, because the two call for different next actions. The role was widened on 2026-09-07 and the answer is that gold has been in use since 2026-07-27. <mark>The key convention is realised, not merely settled.</mark> Every artifact sits at &lt;dataset&gt;/&lt;recipe&gt;/&lt;version&gt;/ — minifin/parse/v1/, minifin/zsb/v1/, minifin/zsb/v2/, megafin/parse/v1/, megafin/zsb/v1/ — which is the convention zsb-gold wrote down on 2026-08-23 and this map carried as an open gate for two passes afterwards. <mark>Two recipes are published side by side for both datasets</mark>, the same argument silver makes with v1/v2/v3: the vendor's call and ours, neither superseding the other. <mark>Gold is larger than silver</mark> — 93.85 GiB against 76.00 — because the zsb recipe of MegaFin alone is 51.2 GiB, and the medallion shape does not promise monotonic shrinkage past the tier where opinion starts. <mark>zebrahub/</mark> is here too, 5.1 GiB from 2026-07-27, predating the repos exactly as its twin does in silver and written by neither. The lesson this tier taught for six reads still stands and is worth keeping: a refusal is not a fact about the data, and the map was right to say so rather than draw an empty box.",
+ kv:[["Bucket","zsb-gold-library"],["Objects","14"],["Size","93.85 GiB (100,769,607,200 B)"],["vs silver","123% — gold is larger than silver"],["Key convention","realised — <dataset>/<recipe>/<version>/"],["Releases","minifin parse/v1, zsb/v1, zsb/v2 · megafin parse/v1, zsb/v1"],["Recipes","two — parse and zsb, published side by side"],["Read on","2026-09-07 — first read with access"]]},
 
 /* ================= THE GOLD READER ================= */
 {id:"GREPO", key:"7", group:"⑦ Gold — the reader", groupMark:true, anchor:true,
  shape:"floor", tier:"gold", state:"stub",
- name:"zsb-gold", repo:"zsb-gold", right:"37 commits · 93 LOC",
+ name:"zsb-gold", repo:"zsb-gold", right:"59 commits · 2,871 LOC",
  x:COL_REPO, y:66, w:22, h:10.7,
  sub:"reads gold · publishes nothing · the terminal repo",
  thread:true,
@@ -540,18 +543,18 @@ const NODES = [
  does:"The consumer end. Downloads and validates released gold artifacts and hosts the starter analysis notebooks. It is the only repo in the architecture with no write path at all — by design, not by omission, which is why nothing leaves it on this map.",
  built:"92 lines: a package init, a minifin module, one fetch stub, and the docstring-convention test. Plus <mark>notebooks/minifin/README.md</mark>, which describes an <mark>01_eda.ipynb</mark> that has not landed.",
  cond:"<mark>This panel said this repo was blocked on an unwritten key convention. Its own README has said otherwise since 2026-08-23.</mark> Gold keys are <mark>&lt;dataset&gt;/&lt;recipe&gt;/&lt;version&gt;/</mark> — a recipe is a named hyperparameter set, a version one immutable build of it, and a pull names both. The reasoning is intact and worth keeping: the old download flow prefix-listed the bucket, which does not survive immutable versioned keys, so the pull must name one release. What is new is that the name has a shape. <mark>Unlike every other tier on this map, this one deliberately does not pin what it reads</mark> — which release to open is the question the reader is asking, so the key is built from their answer rather than declared in advance. That is the correct inversion at the consumer end and it is the last structural decision the architecture was missing. The stub is the same stub; nothing has committed here in six days. Note also that this README states the gold library is empty today — a claim this map records and does not adopt, because the role it reads with cannot see the bucket either way.",
- kv:[["Repo","zeroshotbio/zsb-gold"],["HEAD","497bd1c (main)"],["Commits","37"],["Source","93 LOC"],["Tests","1 file — the docstring checker"],["Depends on","zsb-medallion @ v0.9.0"],["Write path","none, by design"],["Key convention","settled — and never pinned, by design"],["Open PRs","none — #16 closed unmerged; re-checked 2026-09-02"],["Notebooks","1 README, 0 notebooks"]]},
+ kv:[["Repo","zeroshotbio/zsb-gold"],["HEAD","31c381a (main)"],["Commits","59"],["Source","2,871 LOC · 1,881 in src/"],["Tests","13 files"],["Dataset modules","megafin, minifin"],["Depends on","zsb-medallion @ v0.13.0"],["Write path","none, by design"],["Key convention","realised in the bucket, still never pinned"],["Open PRs","not re-checked — no gh CLI on this instance"],["Notebooks","2 READMEs, 0 notebooks"]]},
 
 {id:"GFETCH", key:"7a", group:"⑦ Gold — the reader", shape:"cell", tier:"gold", state:"stub",
  name:"fetch (gold)", cellName:"fetch", note:"key settled · waiting on an artifact",
  x:COL_REPO, y:64.95, w:19, h:3.4,
- sub:"download_gold() → raises NotImplementedError",
+ sub:"fetch_release() → implemented, megafin + minifin",
  thread:true,
  brief:"Would download one released MiniFin gold artifact. Docstring only — but the docstring now names the key it would build: <mark>&lt;dataset&gt;/&lt;recipe&gt;/&lt;version&gt;/</mark>, with the caller naming both. Its old blocker is retired. The reasoning behind it survives and is the good part: prefix-listing does not survive immutable versioned keys, so a pull must name one release. <mark>This is the one place on the map that reads without pinning</mark> — which release to open is the reader's question, not a fact fixed upstream.",
  does:"Would download one released MiniFin gold artifact, naming a recipe and a version rather than listing the bucket.",
  built:"Docstring only — and the docstring carries the convention: gold keys are <mark>&lt;dataset&gt;/&lt;recipe&gt;/&lt;version&gt;/</mark>, the caller names both, and the key is never discovered by listing. The error it raises says the same thing, so the constraint survives even where nobody reads the docstring.",
  cond:"The blocker this map recorded — 'the shape of that name is the paragraph nobody has written' — was retired on 2026-08-23 and this page carried it for two reads afterwards. What is left is not a gate: there is no gold artifact to download, because the step that would build one is still parts rather than a pipeline. <mark>The distinction matters for what happens next.</mark> A convention gate is closed by an argument; this is closed by somebody running a command, and the command does not exist yet.",
- kv:[["Function","download_gold(destination)"],["State","raises NotImplementedError"],["Key convention","settled 2026-08-23"],["Pins what it reads","no — by design, unlike every other tier"],["Blocked by","no gold artifact exists"]]},
+ kv:[["Function","fetch_release(...) per dataset module"],["State","implemented — megafin and minifin both"],["Key convention","realised 2026-09-04..07 in the bucket"],["Pins what it reads","no — by design, unlike every other tier"],["Blocked by","nothing"]]},
 
 {id:"GNB", key:"7b", group:"⑦ Gold — the reader", shape:"cell", tier:"gold", state:"stub",
  name:"the starter notebooks", cellName:"notebooks", note:"1 README · 0 notebooks",
@@ -562,12 +565,12 @@ const NODES = [
  does:"Where the analysis that consumes a gold release is meant to live. One README, describing an <mark>01_eda.ipynb</mark> that has not landed.",
  built:"The README specifies the notebook well: load the downloaded gold artifact, show its source and preprocessing provenance, validate shape, layers, required metadata and embeddings, and summarise QC distributions and perturbation / replicate / cell-type balance. Generated files go to a gitignored path or the sandbox bucket, never back under a gold key.",
  cond:"It cannot be written before there is an artifact to open, and it is the last thing in the chain — which makes it a useful test of the whole map. Everything above this cell has to work before a single line of it can run.",
- kv:[["Path","notebooks/minifin/"],["Files","README.md"],["Notebooks","0"],["Writes to","gitignored paths or sandbox — never a gold key"]]},
+ kv:[["Path","notebooks/megafin/, notebooks/minifin/"],["Files","README.md — megafin only"],["Notebooks","0 — still the one thing not built"],["Writes to","gitignored paths or sandbox — never a gold key"]]},
 
 /* ================= THE CONTRACT ================= */
 {id:"MED", key:"8", group:"⑧ The contract", groupMark:true, anchor:true,
  shape:"spine", tier:"code",
- name:"zsb-medallion", repo:"zsb-medallion", right:"v0.9.0",
+ name:"zsb-medallion", repo:"zsb-medallion", right:"v0.13.0",
  x:COL_RAIL, y:41, w:8, h:62, tapLen:5.5,
  /* One tap per transform repo, carrying the version that repo actually pins.
     A pin behind the rail's own version is stroked in --drop. All three agreed
@@ -580,7 +583,7 @@ const NODES = [
  does:"Not a stage, which is why it is drawn as a rail beside the transform column rather than a station in it. It is the shared vocabulary all three transforms import, and it touches no bucket. It holds exactly three things: the four bucket names, the S3 and atomic-file mechanics, and the CLI presentation helpers.",
  built:"2,632 lines, 96 commits, and a single author. It is the only repo in the set that depends on boto3, and that is enforced socially rather than technically: zsb-bronze's AGENTS.md says 'S3 mechanics come from zsb-medallion; add no boto3 here', and no transform repo does. It is also the only repo with real S3 tests — moto and boto3-stubs are in its dev group and nowhere else. Tagged v0.1.0 through v0.9.0, and the three releases since the last read are why the rail grew: <mark>fetch/</mark> is new — plan, execute and pin-check a batch of downloads — and it is what both working fetches on this map now run on. Main sits four commits past the v0.9.0 tag.",
  cond:"The interesting property of this package is still what it refuses to do. <mark>S3IO.upload</mark> will not clobber — it raises S3ObjectExistsError rather than overwrite — which is what makes 'version prefixes are immutable' a property of the code rather than a promise in a README. <mark>And the divergence this map drew here last time is closed.</mark> All three transforms are on v0.9.0. What closed it is worth naming because it is a mechanism rather than a tidy-up: a <mark>bump-consumers</mark> workflow in this repo opens a pull request against each of the three whenever a version tag lands, so the contract carries its own consumers forward. It fires on tags rather than on every merge to main, and it refuses to force-push over human commits on a bump branch — two decisions that read as somebody having already been bitten. The rail also stopped being a vocabulary and started being a library: the shared <mark>fetch</mark> is real code two repos now depend on, so a change here can break a transform in a way that renaming a constant never could.",
- kv:[["Repo","zeroshotbio/zsb-medallion"],["Version","v0.9.0 · main is on the tag"],["Pinned by all three","v0.9.0"],["Kept in step by","bump-consumers.yml, on version tags"],["Commits","83, sole author"],["Source","2,656 LOC"],["Shared fetch","used by bronze and silver"],["boto3","here only"]]},
+ kv:[["Repo","zeroshotbio/zsb-medallion"],["Version","v0.13.0 · main is on the tag"],["Pinned by all three","v0.13.0 — still in step"],["Kept in step by","bump-consumers.yml, on version tags"],["Commits","148, sole author"],["Source","3,729 LOC · 2,021 in src/"],["Shared fetch","used by bronze and silver"],["boto3","here only"]]},
 ];
 
 /* ============================================================
@@ -606,14 +609,14 @@ const EDGES = [
   {a:{n:"SGAP", s:"b"}, b:{n:"SILVER", s:"r", dy:2}, kind:"live"},
 
   /* silver → zsb-silver → gold */
-  {a:{n:"SILVER", s:"r", dy:6}, b:{n:"SREPO", s:"l", dy:0}, kind:"cold",
-   label:"fetch v2 · 1 of 3", sub:"pinned · not yet run"},
-  {a:{n:"SREPO", s:"l", dy:5}, b:{n:"GOLD", s:"r", dy:-2}, kind:"cold",
-   label:"publish_gold()", sub:"raises"},
+  {a:{n:"SILVER", s:"r", dy:6}, b:{n:"SREPO", s:"l", dy:0}, kind:"live",
+   label:"fetch · both", sub:"gold built from it"},
+  {a:{n:"SREPO", s:"l", dy:5}, b:{n:"GOLD", s:"r", dy:-2}, kind:"live",
+   label:"publish_gold()", sub:"14 obj · 93.85 GiB"},
 
   /* gold → zsb-gold */
   {a:{n:"GOLD", s:"r", dy:3}, b:{n:"GREPO", s:"l", dy:0}, kind:"cold",
-   label:"download_gold()", sub:"raises"},
+   label:"fetch_release()", sub:"no read shown"},
 ];
 
 /* one carry: the map runs out at the bottom, into everything gold feeds */
@@ -748,12 +751,19 @@ const SNIPPETS = {
 };
 
 /* nodes whose claims rest on something this instance cannot check */
-const UNVERIFIED = new Set(["GOLD"]);
+/* Gold was unverifiable for six reads — ListBucket AccessDenied, HeadBucket 403.
+   The role was widened 2026-09-07 and the bucket read cleanly. Nothing is unverified now. */
+/* The read date lives here, not in ds-view.js. The fifth pass found it hardcoded
+   twice in the renderer, against the ownership table, and said to move it the next
+   time somebody touched the reader. Moved 2026-09-07. */
+const READ_DATE = "2026-09-07";
+
+const UNVERIFIED = new Set([]);
 
 const OVERVIEW = {
   eyebrow: "Zeroshot · the medallion data architecture",
   title: "Data Structures",
-  sub: "three tiers · four hops · one steel thread: MiniFin 100k",
+  sub: "three tiers · four hops, all four run · two datasets end to end",
 
   /* The three rendered fields. Same hundred-word cap as a station's brief;
      the long-form `does` / `built` / `cond` below are the record and are not
@@ -762,7 +772,8 @@ const OVERVIEW = {
 
   how: `Down the left, the buckets in tier order — that column is the data, and each one's contents are a squarified treemap by true area. Down the middle, the transforms: one repository per hop, each sitting in the gap between the two buckets it bridges. Down the right, the contract every transform imports. Each hop is two conduits — out of a bucket into the repo, then out of the repo into the next bucket. <mark>A solid line has carried bytes. A dashed line is code that exists and has never run.</mark>`,
 
-  state: `<mark>Two of the four hops have run, and the second one is now routine</mark> — three releases sit side by side in silver, the same barcodes called three different ways, none superseding another. <mark>One gate is left, not two.</mark> The gold key convention was settled on 2026-08-23 and this map carried it as open for two reads afterwards. What remains is the gold v1 QC sign-off — and it is no longer merely being waited on: zsb-silver has ported Trailmaker's QC steps and a real doublet scorer, though the step that would run them still raises. Gold still cannot be read from here at all.`,
+  state: `<mark>All four hops have run.</mark> Gold was unreadable for six reads and is not empty — 14 objects, 93.85 GiB, at the key convention this map carried as an open gate. Two datasets now go end to end, two recipes each, published side by side. Every gate that raised is implemented. Gold is larger than silver, which is what happens past the tier where opinion starts.`,
+
 
   does: `<p>A plan of the medallion architecture, drawn straight down and read top to bottom.</p>
 <p><mark>Down the left, the buckets</mark> — bronze, then silver, then gold, in tier order. That column is the data. <mark>Down the middle, the transforms</mark> — one repository per hop, each sitting in the gap between the two buckets it bridges, so a repo is always beside the seam it works on rather than beside a tier. <mark>Down the right, the contract</mark>: zsb-medallion, a single rail every transform taps and no bucket touches.</p>
