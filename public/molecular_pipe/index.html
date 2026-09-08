@@ -722,7 +722,11 @@
        api   the shared record. Same rule, worse consequence: that one is
              shared between people rather than between tabs.
        grid  the paper. This map is one row, so it gets one row's sheet
-             rather than the big map's.
+             rather than the big map's. It has to reach past the BAND, not just
+             past the last station: check-rows asserts the sheet against
+             everything drawn on it, and a row that has been grown at the far
+             end takes its mat with it. x1 went 30 -> 32 when C7 was added and
+             the mat went to 31.4.
 
      The culls files are not loaded: nothing on row 2 carries a roof chart, and
      pipeline-view.js guards every reference to MODEL, ANNOTATIONS and FIGURES
@@ -733,7 +737,7 @@
     ns     : "molpipe",
     api    : "/api/molecular_edits",
     prompts: "/api/molecular_prompts",
-    grid   : {x0:-4, x1:30, y0:-6, y1:6},
+    grid   : {x0:-4, x1:32, y0:-6, y1:6},
   };
 </script>
 <script src="/pipeline/pipeline-iso.js?v=mol1"></script>

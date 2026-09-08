@@ -7177,3 +7177,275 @@ function drawPyramid(g,n){
   });
 }
 DRAW.pyramid = drawPyramid;
+
+/* ------------------------------------------------------------------
+   C7 · GROUP THE READS BACK INTO CELLS — a stream sorted into piles, and a
+   cell drawn over each pile.
+
+   THE BLOCK IS DELIBERATELY DULL. Every other object on this row is something
+   you could pick up in a lab — a plate, a cycler, a tube, a sequencer — and
+   this one is not: it is a low charcoal solid in the works skin C4, C5 and C6
+   already stand in, with nothing on top of it. No plates, no tubes, no cycler.
+   Whatever happens here happens to numbers, and a figure that gave it a lid or
+   a rack would put it back on the bench it has just left.
+
+   THE SORTING IS THE WHOLE FIGURE. Reads come in along the connector unsorted
+   and in no order, cross the block, and spread out over the ground in front of
+   it; then reads carrying the same four chips draw together into a pile and the
+   piles pull away from each other. That beat is the longest one by a distance
+   and the hold after it is the second longest, because this is the last station
+   on the row and it should land rather than hand on.
+
+   FOUR CHIPS, AND THEY ARE THE ONES THAT WERE INSTALLED. Chip one is a well on
+   round one's 48-well ramp, chips two and three are wells on rounds two and
+   three's 96-well ramp, and chip four is the sublibrary hue SUBHUE gives C2, C4
+   and C5 — the same walks, so a colour here is the colour that barcode was
+   ligated or indexed in and a reader can carry one back to the plate it came
+   off. The wells are named outright rather than drawn at random for the reason
+   B6 names its three: a colour that changes between reloads is a colour nobody
+   can follow across two stations.
+
+   SIX COMBINATIONS RATHER THAN FORTY-TWO, and that is a drawing's compromise,
+   not a claim. A combination carried by one read cannot be shown to gather, so
+   the stream is six combinations dealt into each other rather than a distinct
+   one per read; what arrives still reads as scattered, because arrival order is
+   the deal and not the sort.
+
+   THE CELL COMES BACK WHOLE. B7 is where the cell stops being a cell, and the
+   outline that fades in over a finished pile is plain, round and unbroken —
+   nothing is left of the object, and what is drawn is the identity that
+   survived it. It is the only closed round thing on the row after B7.
+
+   Reuses rampHue from the round-one plate and SUBHUE from B7. Spends --ch1..12,
+   which are declared on /molecular_pipe and nowhere else; this shape is worn by
+   that page alone.
+   ------------------------------------------------------------------ */
+function drawRegroup(g,n){
+  /* EVERY OFFSET IS EITHER A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC,
+     and w, d and h are read at draw time because a resize is the only reason
+     this function runs again. Composed at w 1.30, d 1.30, h .40 — WIDER than
+     C4, C5 and C6, which share a .95 tile. Six piles of seven reads with a cell
+     drawn round each is what was asked for, and on their tile a chip comes out
+     under four pixels and the four stop being four. The extra width was paid
+     for at the end of the lane the way B2 paid for its own — see the note above
+     LANES — so no gap already on the row moved. */
+  const SC=n.w/1.30;
+  const clamp=x=>x<0?0:x>1?1:x;
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  const mix=(a,b,f)=>[a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f];
+  const NCL=6, PER=7, NREAD=NCL*PER;
+  const r=rng(90731);
+
+  paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
+
+  /* ---- THE FOUR CHIPS EACH PILE WEARS ------------------------------------
+     Wells on the three plates' own ramps plus a sublibrary, picked so that no
+     two chips inside one read land on the same twelve-hue step and no two piles
+     wear the same four. Nothing about WHICH wells is a fact about the run:
+     these are six legible combinations, not six cells off this instance. */
+  const WELL=[[20, 8,64,0],[36,32, 8,3],[ 4,56,32,6],
+              [28,80,16,5],[12,40, 0,4],[40,16,48,7]];
+  const COMBO=WELL.map(w=>[rampHue(w[0],48),rampHue(w[1],96),
+                           rampHue(w[2],96),SUBHUE(w[3],8)]);
+
+  /* ---- WHERE THE SORTING HAPPENS -----------------------------------------
+     On the near ground and thrown forward and right, which is the only clear
+     screen this station has: the row ends here so there is nothing to the
+     right, the name runs off the back edge the other way, and the pyramid one
+     tile back sits high enough that the top row of piles clears it. The grid is
+     three across and two down so several piles are visibly forming at once
+     rather than one after another. */
+  const F=P(n.x+n.w*0.30, n.y+n.d*1.35, 0);
+  const CDX=56, CDY=58, PITCH=5.4, CR=23;
+  const CX=[], CY=[];
+  for(let c=0;c<NCL;c++){
+    CX.push(F[0]+((c%3)-1)*CDX*SC);
+    CY.push(F[1]+(((c/3)|0)-0.5)*CDY*SC);
+  }
+
+  /* ---- THE CONNECTOR ------------------------------------------------------
+     A stub into the gap behind rather than a line all the way to the sequencer:
+     the lane's own track already draws the run from station to station, and a
+     second line beside it would say the reads came by two routes. What this one
+     is for is the stream — it is the thing the reads are on, and it ends on the
+     block because that is where they go.
+
+     IT COMES IN HIGH AND FROM BEHIND, not low and from the left, and that is
+     the pyramid's fault rather than a taste. C6 stands one gap back at .95 and
+     a feed drawn straight along the row runs into its right face; going back as
+     well as left, and holding above the tile until it lands, clears the whole
+     solid by putting the near end of the line on the far side of C6's widest
+     screen point. Both offsets are fractions of this node, so the clearance is
+     kept when either box is resized. */
+  const A   =P(n.x-n.w*0.962, n.y-n.d*0.538, n.h*0.90);
+  const MIN =P(n.x-n.w*0.30, n.y-n.d*0.02, n.h*1.00);
+  const MOUT=P(n.x+n.w*0.16, n.y+n.d*0.44, n.h*1.00);
+  g.appendChild(el("line",{x1:A[0].toFixed(1),y1:A[1].toFixed(1),
+    x2:MIN[0].toFixed(1),y2:MIN[1].toFixed(1),stroke:"var(--fg2)",
+    "stroke-width":(1.7*SC).toFixed(2),"stroke-opacity":".45",
+    "stroke-linecap":"round"}));
+
+  /* ---- THE READS ----------------------------------------------------------
+     One group per read, born at the mouth of the connector with real
+     coordinates and zero opacity, so the ticker only ever moves something that
+     already knows where it is. The bar is authored in screen pixels — a chip is
+     a glyph and cannot be cut from a world width — and it grows by being
+     scaled: every group carries scale(SC), which is n.w over the width it was
+     drawn for. */
+  const BW=30, BH=2.4, CW=6.0, CG=0.5, CHH=5.8;
+  const chipX=k=>-BW/2+2+k*(CW+CG)+CW/2;
+  const at=(x,y)=>`translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${SC.toFixed(4)})`;
+  const read=[];
+  for(let i=0;i<NREAD;i++){
+    const c=i%NCL, j=(i/NCL)|0;                 // dealt, so arrival order is a shuffle
+    const grp=el("g",{transform:at(A[0],A[1]),opacity:"0"});
+    grp.appendChild(el("rect",{x:(-BW/2).toFixed(2),y:(-BH/2).toFixed(2),
+      width:BW.toFixed(2),height:BH.toFixed(2),rx:(BH/2).toFixed(2),
+      fill:"var(--fg3)","fill-opacity":".6"}));
+    COMBO[c].forEach((fill,k)=>grp.appendChild(el("rect",{
+      x:(chipX(k)-CW/2).toFixed(2),y:(-CHH/2).toFixed(2),
+      width:CW.toFixed(2),height:CHH.toFixed(2),fill,stroke:"var(--stroke)",
+      "stroke-width":".45","stroke-opacity":".75"})));
+    g.appendChild(grp);
+    read.push({g:grp, c,
+      /* where it lands unsorted: wider than the grid of piles, because the
+         whole point of the next beat is that it has somewhere to come from */
+      S:[F[0]+(r()*2-1)*CDX*1.45*SC, F[1]+(r()*2-1)*CDY*0.85*SC],
+      T:[CX[c], CY[c]+(j-(PER-1)/2)*PITCH*SC]});
+  }
+
+  /* ---- THE CELLS ----------------------------------------------------------
+     Appended after the reads so the outline is over the pile rather than under
+     it, and outlined rather than filled: the object is gone and this is its
+     identity, so the faint wash inside is as much body as it is entitled to. */
+  const cell=[];
+  for(let c=0;c<NCL;c++){
+    const body=el("circle",{cx:CX[c].toFixed(1),cy:CY[c].toFixed(1),
+      r:(CR*SC).toFixed(2),fill:"var(--fg2)","fill-opacity":"0"});
+    const ring=el("circle",{cx:CX[c].toFixed(1),cy:CY[c].toFixed(1),
+      r:(CR*SC).toFixed(2),fill:"none",stroke:"var(--fg)",
+      "stroke-width":(1.4*SC).toFixed(2),"stroke-opacity":"0"});
+    g.appendChild(body); g.appendChild(ring);
+    cell.push({body,ring});
+  }
+
+  /* ---- THE TWO LABELS -----------------------------------------------------
+     Both authored in screen pixels and sized off SC, the way C3's caption is:
+     type cut from a world width shrinks with the tile and stops being legible
+     long before the drawing does. FASTQ sits over the connector because that is
+     what is on it; the count sits under the piles and says what came out.
+
+     FASTQ HANGS OFF THE TOP OF THE CONNECTOR AND RUNS RIGHT, rather than
+     sitting centred over it: centred, its left half reaches back over the
+     pyramid's corner, and a caption that lands on the station before it reads
+     as that station's. */
+  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
+  const FS=7.0*SC;
+  const cap=el("text",{x:(A[0]+5*SC).toFixed(1),y:(A[1]-4*SC).toFixed(1),
+    "text-anchor":"start",
+    "font-family":MONO,"font-size":FS.toFixed(2),
+    "letter-spacing":(FS*0.12).toFixed(2),fill:"var(--fg2)","fill-opacity":".8"});
+  cap.textContent="FASTQ"; g.appendChild(cap);
+  const cnt=el("text",{x:F[0].toFixed(1),
+    y:(F[1]+(CDY*0.5+CR+17)*SC).toFixed(1),"text-anchor":"middle",
+    "font-family":MONO,"font-size":FS.toFixed(2),
+    "letter-spacing":(FS*0.06).toFixed(2),fill:"var(--fg2)","fill-opacity":"0",
+    "font-weight":"600"});
+  cnt.textContent="0 cells"; g.appendChild(cnt);
+
+  /* ---- TIMING -------------------------------------------------------------
+     SORT is the longest beat and HOLD the second longest, and that split is the
+     request: the sorting is the motion budget and the finished frame is what
+     the row ends on. AWIN is how much of the arrival one read occupies — about
+     a third, so forty-two of them read as a stream that keeps coming rather
+     than as forty-two things taking turns. SWIN is nearly the whole sort beat,
+     because the piles are meant to form at once and not in sequence; the little
+     left over is all that keeps six identical motions from reading as one
+     motion drawn six times. */
+  const ARRIVE=4.2, SORT=6.8, SETTLE=1.8, HOLD=5.6, CLEAR=1.2;
+  const t1=ARRIVE, t2=t1+SORT, t3=t2+SETTLE, t4=t3+HOLD, t5=t4+CLEAR;
+  const AWIN=0.34, SWIN=0.82, DIMV=0.30, STEP=0.42, RAMP=0.58;
+  const setRead=(i,x,y,op)=>{
+    read[i].g.setAttribute("transform",at(x,y));
+    read[i].g.setAttribute("opacity",op.toFixed(3)); };
+  const setCell=(c,v)=>{
+    cell[c].body.setAttribute("fill-opacity",(0.10*v).toFixed(3));
+    cell[c].ring.setAttribute("stroke-opacity",(0.85*v).toFixed(3)); };
+  const setCount=(k,v)=>{
+    cnt.textContent=`${k} ${k===1?"cell":"cells"}`;
+    cnt.setAttribute("fill-opacity",(0.80*v).toFixed(3)); };
+  /* how far a read has got along the connector, over the block, and out onto
+     the ground — one function, so the route is stated once */
+  const inflight=(i,f)=> f<0.44 ? mix(A,MIN,f/0.44)
+                       : f<0.66 ? mix(MIN,MOUT,(f-0.44)/0.22)
+                                : mix(MOUT,read[i].S,(f-0.66)/0.34);
+
+  /* THE CLOCK DOES NOT START AT ZERO. A reader who asks for reduced motion
+     never advances it, so whatever t begins at is the whole station for them,
+     and for this one that has to be the arrival: six finished piles, a cell
+     round each, and the count under them. Half way through the hold. */
+  let t=t3+HOLD*0.5, mode=-1;
+  /* every entry states the whole world it is entering rather than the delta
+     from the beat before, so a frame long enough to skip one — a tab coming
+     back, a step in trace mode — cannot leave a cell drawn over an empty patch
+     of ground. */
+  const enter=m=>{
+    mode=m;
+    cap.setAttribute("fill-opacity", m===0?".8":".3");
+    for(let i=0;i<NREAD;i++){
+      const R=read[i];
+      if(m===0)      setRead(i,A[0],A[1],0);
+      else if(m===1) setRead(i,R.S[0],R.S[1],1);
+      else           setRead(i,R.T[0],R.T[1], m===2?1:DIMV);
+    }
+    for(let c=0;c<NCL;c++) setCell(c, m>=3?1:0);
+    setCount(m>=3?NCL:0, m>=3?1:0);
+  };
+  const run=dt=>{
+    t=(t+dt)%t5;
+    const m = t<t1?0 : t<t2?1 : t<t3?2 : t<t4?3 : 4;
+    if(m!==mode) enter(m);
+
+    if(m===0){                          // the stream, unsorted, still arriving
+      const u=t/ARRIVE;
+      for(let i=0;i<NREAD;i++){
+        const f=clamp((u-i*(1-AWIN)/(NREAD-1))/AWIN);
+        const p=inflight(i,f);
+        setRead(i,p[0],p[1],clamp(f/0.10));
+      }
+      return;
+    }
+    if(m===1){                          // THE SORT, and it is the whole budget
+      const u=(t-t1)/SORT;
+      for(let i=0;i<NREAD;i++){
+        const R=read[i];
+        const p=mix(R.S,R.T,ease(clamp((u-R.c*(1-SWIN)/(NCL-1))/SWIN)));
+        setRead(i,p[0],p[1],1);
+      }
+      return;
+    }
+    if(m===2){                          // a pile completes, dims, becomes a cell
+      const u=(t-t2)/SETTLE;
+      const done=c=>clamp((u-c*STEP/(NCL-1))/RAMP);
+      let k=0;
+      for(let c=0;c<NCL;c++){ const v=done(c); setCell(c,v); if(v>=0.6) k++; }
+      for(let i=0;i<NREAD;i++){
+        const R=read[i];
+        setRead(i,R.T[0],R.T[1], 1-(1-DIMV)*done(R.c));
+      }
+      setCount(k, clamp(u/0.5));
+      return;
+    }
+    if(m===4){                          // CLEAR
+      const u=clamp((t-t4)/CLEAR);
+      for(let i=0;i<NREAD;i++){ const R=read[i]; setRead(i,R.T[0],R.T[1],DIMV*(1-u)); }
+      for(let c=0;c<NCL;c++) setCell(c,1-u);
+      setCount(NCL,1-u);
+      return;
+    }
+    /* held: six piles, six cells, and nothing physical left of any of them */
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.regroup = drawRegroup;
