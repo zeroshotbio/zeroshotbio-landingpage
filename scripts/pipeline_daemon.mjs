@@ -90,7 +90,12 @@ const MAPS = MAPS_DEF.filter((m) => { const only = val("--map", ""); return !onl
    and uncommitted. A drawing is allowed to take as long as a drawing takes. */
 const TIMEOUT = Math.max(60, Number(val("--timeout", 1500))) * 1000;
 const MODEL = val("--model", "opus");
-const MAX_PER_HOUR = Number(val("--max-per-hour", 12));
+/* 12 was a guess made when the only user of this queue was the map editing itself, a few
+   requests an afternoon. A lab tech working a real bench session runs through it in twenty
+   minutes: on 2026-09-08 the /molecular_pipe queue took 39 requests and the cap turned away 9
+   of them. Over-rate requests now WAIT rather than being thrown away, so this number governs
+   spend and pace, not whether work survives. --max-per-hour still overrides it. */
+const MAX_PER_HOUR = Number(val("--max-per-hour", 30));
 
 const LOGDIR = path.join(REPO, ".pipeline-daemon");
 mkdirSync(LOGDIR, { recursive: true });
@@ -412,16 +417,42 @@ function overRate() {
   while (recent.length && recent[0] < cut) recent.shift();
   return recent.length >= MAX_PER_HOUR;
 }
+/* When the oldest run in the window ages out — the moment a slot opens. Used to
+   tell the person how long the wait is instead of making them guess. */
+const rateFreesAt = () => (recent.length ? recent[0] + 3600_000 : Date.now());
+
+/* Which held requests have already been told why they are waiting. The note is
+   written once per request, not once per poll: at --every 10 a request waiting
+   twenty minutes would otherwise rewrite its row a hundred and twenty times. */
+const rateNoted = new Set();
+let rateLoggedAt = 0;
 
 async function handle(map, p) {
   log(`--- [${map.id}] ${p.id}  ${p.target ? p.target.key + " · " + p.target.name : "no target"}`);
   log(`    "${p.text.replace(/\s+/g, " ").slice(0, 140)}"`);
 
+  /* HOLD, DO NOT DROP. Being over the hourly budget is a transient condition,
+     exactly like the dirty working tree below — and that case has always held
+     the request in the queue and run it later. This one used to throw the
+     request away, so the person lost what they typed and had to write it again,
+     which is a harsher answer to a smaller problem. It is the same queue and it
+     drains on its own; the only thing the cap should decide is WHEN a request
+     runs, never WHETHER it does. */
   if (overRate()) {
-    log(`    over ${MAX_PER_HOUR}/hour — dropping`);
-    await move(map, p.id, "dropped", `More than ${MAX_PER_HOUR} requests in an hour; this one was not run.`);
-    return;
+    const waitMin = Math.max(1, Math.round((rateFreesAt() - Date.now()) / 60_000));
+    if (Date.now() - rateLoggedAt > 60_000) {
+      rateLoggedAt = Date.now();
+      log(`    at ${MAX_PER_HOUR}/hour — holding ${p.id} in the queue, a slot opens in ~${waitMin}m`);
+    }
+    if (!rateNoted.has(p.id)) {
+      rateNoted.add(p.id);
+      await move(map, p.id, "queued",
+        `Waiting for the hourly budget — ${MAX_PER_HOUR} requests run per hour and a slot opens in about ${waitMin} minutes. This request is still queued and will run; you do not need to send it again.`);
+    }
+    /* The budget is global, so every other queued request is over it too. */
+    return "rate";
   }
+  rateNoted.delete(p.id);
   recent.push(Date.now());
 
   // start clean, so "did anything ship" is an honest question
@@ -521,12 +552,23 @@ async function tickOne(map) {
   try { rows = (await api(map)).prompts || []; }
   catch (e) { log(`${map.id} queue unreachable: ` + e.message); return; }
   const queued = rows.filter((r) => r.status === "queued").sort((a, b) => a.at - b.at);
+  /* Forget the "you are waiting" bookkeeping for anything that has left the
+     queue, so a daemon up for months does not accumulate ids for ever. */
+  if (rateNoted.size) {
+    const live = new Set(queued.map((r) => r.id));
+    for (const id of rateNoted) if (!live.has(id)) rateNoted.delete(id);
+  }
   for (const p of queued) {
-    try { await handle(map, p); }
+    let outcome;
+    try { outcome = await handle(map, p); }
     catch (e) {
       log("handler blew up: " + e.message);
       try { await move(map, p.id, "dropped", "The daemon errored: " + e.message); } catch {}
     }
+    /* The hourly budget is one counter for every map, so if this request could
+       not have a slot then nothing behind it can either. Stop rather than
+       walking the rest of the queue to tell each one the same thing. */
+    if (outcome === "rate") break;
   }
 }
 
