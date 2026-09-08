@@ -178,10 +178,17 @@ DRAW.vault = (g, n) => {
          0.17 vertically: clear of the outline, and visibly clear of it. */
       const availPx = Math.max((L.w - 0.62) * S, 1);
       const availH = Math.max(L.h - 0.34, 0.01);
+      /* WHOLLY LEGACY. `legacy` is a byte count, and the split-tile path above
+         handles a prefix that is part legacy. When it covers the whole prefix
+         there is no boundary to draw — the tile itself is the legacy thing —
+         and it should not read as "here is a live dataset" in a dataset
+         accent. It takes the reader panel's legacy vocabulary instead: dashed
+         rule, no accent, captions receded a step. */
+      const wholly = it.value > 0 && it.legacy >= it.value;
       const base = [
-        { t: it.key, z: 10.5, c: "var(--fg)" },
-        { t: fmtBytes(it.value), z: 9, c: "var(--fg2)" },
-        { t: fmtCount(it.objs) + " obj", z: 8.2, c: "var(--fg3)" }
+        { t: it.key, z: 10.5, c: wholly ? "var(--fg3)" : "var(--fg)" },
+        { t: fmtBytes(it.value), z: 9, c: wholly ? "var(--fg3)" : "var(--fg2)" },
+        { t: (wholly ? "legacy · " : "") + fmtCount(it.objs) + " obj", z: 8.2, c: "var(--fg3)" }
       ];
       let k = 1;
       for (const r of base) k = Math.min(k, availPx / textW(r.t, r.z));
@@ -198,9 +205,11 @@ DRAW.vault = (g, n) => {
 
       /* the dataset's own outline, in its category colour, drawn over the fill
          so a tile reads as the same kind of thing the reader's tree calls it */
-      if (it.accent) {
+      if (it.accent || wholly) {
         plate(g, L.x, L.y, L.w - 0.30, L.h - 0.30,
-          { fill: "none", stroke: it.accent, sw: 4.2, so: 1 });
+          wholly
+            ? { fill: "none", stroke: "var(--fg3)", sw: 2.4, so: 0.8, dash: "7 5" }
+            : { fill: "none", stroke: it.accent, sw: 4.2, so: 1 });
       }
     });
 
