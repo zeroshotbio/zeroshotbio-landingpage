@@ -43,31 +43,6 @@ function titlebar(g, n, text, right) {
   return y0 + BAR_H;
 }
 
-/* ============================================================
-   LEADER
-
-   The textbook move: when the thing being labelled is far smaller than its
-   own label, put the label in clear space and run a line to the feature.
-
-   The case that forces it here is silver's minifin/ tile — 0.59% of its
-   bucket, which at true area is a strip a couple of pixels thick, and which
-   is the single most important thing in that bucket. The alternatives were
-   both lies: shrink the caption until it fits (illegible), or give the tile a
-   minimum area (wrong about the size). A leader keeps the area honest and the
-   caption readable.
-
-   Anchored with a dot on the feature, elbowed down and across to a caption
-   sitting below the enclosure in open space.
-   ============================================================ */
-function leader(g, ax, ay, tx, ty, text, ink) {
-  add(g, "path", {
-    d: path([[ax, ay], [ax, ty], [tx - 0.35, ty]]),
-    fill: "none", stroke: ink, "stroke-width": 1.1, "stroke-opacity": 0.75
-  });
-  const [dx, dy] = P(ax, ay);
-  add(g, "circle", { cx: dx, cy: dy, r: 3.4, fill: ink });
-  label(g, tx, ty, text, { size: 9, anchor: "start", fill: ink, ls: 0.03 });
-}
 
 /* ============================================================
    VAULT — an S3 bucket, seen from above.
@@ -112,7 +87,6 @@ DRAW.vault = (g, n) => {
   if (n.tiles && n.tiles.length) {
     const laid = squarify(n.tiles, fx, fy, fw, fh);
     const max = Math.max(...n.tiles.map(t => t.value));
-    const led = [];   /* tiles too small to caption in place */
 
     laid.forEach(L => {
       const it = L.item;
@@ -146,32 +120,33 @@ DRAW.vault = (g, n) => {
         const ay = horiz ? L.y : L.y - h / 2 + ah / 2;
 
         const cap = (cx, cy, cw, ch, kind, short, bytes, col) => {
-          const avail = (cw - 0.4) * S;
-          /* Size on the LONGEST row, not on the key: "aspirational structure"
-             is far wider than "minifin/", and sizing on the key spills it
-             across the split. Then degrade rather than vanish — the full
-             phrase, the short one, the key alone. A half with no label at all
-             is the one outcome worth avoiding. */
-          const tries = [[it.key, kind], [it.key, short], [it.key, null]];
-          for (const [k, sub] of tries) {
-            const longest = Math.max(k.length, sub ? sub.length : 0);
-            const z = Math.min(9.5, avail / (longest * TYPE * 0.62));
-            const rows = [{ t: k, z, c: col }];
-            if (sub) rows.push({ t: sub, z: z * 0.82, c: col });
-            rows.push({ t: fmtBytes(bytes), z: z * 0.84, c: "var(--fg3)" });
-            let tot = rows.reduce((a, b) => a + lineH(b.z), 0);
-            /* the byte figure goes before the kind word does: "legacy" is what
-               the half IS, the size is available in the panel */
-            if (ch < tot + 0.12 && rows.length === 3) { rows.pop(); tot = rows.reduce((a, b) => a + lineH(b.z), 0); }
-            if (z < 5.6 || ch < tot + 0.12) continue;
-            let y = cy - tot / 2;
-            rows.forEach(r => { y += lineH(r.z) / 2;
-              label(g, cx, y, r.t, { size: r.z, fill: r.c, ls: 0.03 }); y += lineH(r.z) / 2; });
-            return;
-          }
+          /* Three rows, always: what the half is called, what kind of half it
+             is, and how big it is. Earlier this degraded by dropping rows —
+             first the size, then the kind word — which is how the aspirational
+             half came to carry no figure and the legacy half no label at all.
+             A half is now sized on its longest row and the whole stack scaled
+             by one factor, with no floor, so it shrinks rather than sheds. */
+          const availPx = Math.max((cw - 0.30) * S, 1);
+          const availH = Math.max(ch - 0.12, 0.01);
+          const base = [
+            { t: it.key, z: 9.5, c: col },
+            { t: kind, z: 7.8, c: col },
+            { t: fmtBytes(bytes), z: 8.0, c: "var(--fg3)" }
+          ];
+          let k = 1;
+          for (const r of base) k = Math.min(k, availPx / textW(r.t, r.z));
+          k = Math.min(k, availH / base.reduce((a, b) => a + lineH(b.z), 0));
+          const rows = base.map(r => ({ t: r.t, z: r.z * k, c: r.c }));
+          const tot = rows.reduce((a, b) => a + lineH(b.z), 0);
+          let y = cy - tot / 2;
+          rows.forEach(r => {
+            y += lineH(r.z) / 2;
+            label(g, cx, y, r.t, { size: r.z, fill: r.c, ls: 0.03 });
+            y += lineH(r.z) / 2;
+          });
         };
-        cap(ax, ay, aw, ah, "aspirational structure", "aspirational", it.value - it.legacy, "var(--fg)");
-        cap(lx, ly, lw, lh, "legacy", "legacy", it.legacy, "var(--fg3)");
+        cap(ax, ay, aw, ah, "aspirational", null, it.value - it.legacy, "var(--fg)");
+        cap(lx, ly, lw, lh, "legacy", null, it.legacy, "var(--fg3)");
 
         /* the dataset's own outline, drawn last so it sits over both halves */
         plate(g, L.x, L.y, w, h,
@@ -188,32 +163,27 @@ DRAW.vault = (g, n) => {
           { fill: "none", stroke: "var(--drop)", sw: 1.6, so: 0.95 });
       }
 
-      /* FIT OR LEAD.
-         The key shrinks to fit the tile's width, down to a floor. Below that
-         floor, or when the tile is too short to seat even one line, the tile
-         gets a leader instead of a caption crushed into it. */
-      const avail = (L.w - 0.5) * S;
-      const keySize = Math.min(10.5, avail / (it.key.length * TYPE * 0.6));
-      /* The bar is key AND size, not key alone. A tile captioned "minifin/"
-         with no figure is the worst of both: it takes the space of a label and
-         answers none of the question the treemap exists to answer. If the tile
-         cannot seat both, it leads, and the caption keeps its numbers. */
-      if (keySize < 7.6 || L.h < lineH(keySize) + lineH(9) + 0.2) {
-        led.push({ it, x: L.x, y: L.y });
-        return;
-      }
-
-      const rows = [{ t: it.key, z: keySize, c: "var(--fg)" }];
-      const more = [
+      /* FIT, ALWAYS.
+         Nothing is captioned outside the enclosure. A caption that has been
+         led out to open ground is wrong at every zoom; a caption shrunk to
+         two points is merely small at overview and exact once you are in,
+         and this map zooms. So the whole stack — key, bytes, objects — is
+         scaled by one factor until it fits the tile on both axes, and the
+         factor has no floor. Keep the three rows together: a tile captioned
+         with a key and no figure answers none of the question the treemap
+         exists to ask. */
+      const availPx = Math.max((L.w - 0.30) * S, 1);
+      const availH = Math.max(L.h - 0.16, 0.01);
+      const base = [
+        { t: it.key, z: 10.5, c: "var(--fg)" },
         { t: fmtBytes(it.value), z: 9, c: "var(--fg2)" },
         { t: fmtCount(it.objs) + " obj", z: 8.2, c: "var(--fg3)" }
       ];
-      /* add the figures only while they still fit, width and height both */
-      for (const r of more) {
-        const h = rows.reduce((a, b) => a + lineH(b.z), 0) + lineH(r.z);
-        if (h + 0.2 > L.h || textW(r.t, r.z) > avail) break;
-        rows.push(r);
-      }
+      let k = 1;
+      for (const r of base) k = Math.min(k, availPx / textW(r.t, r.z));
+      k = Math.min(k, availH / base.reduce((a, b) => a + lineH(b.z), 0));
+      const rows = base.map(r => ({ t: r.t, z: r.z * k, c: r.c }));
+
       const total = rows.reduce((a, b) => a + lineH(b.z), 0);
       let cy = L.y - total / 2;
       rows.forEach(r => {
@@ -221,15 +191,15 @@ DRAW.vault = (g, n) => {
         label(g, L.x, cy, r.t, { size: r.z, fill: it.stale ? "var(--drop)" : r.c, ls: 0.03 });
         cy += lineH(r.z) / 2;
       });
+
+      /* the dataset's own outline, in its category colour, drawn over the fill
+         so a tile reads as the same kind of thing the reader's tree calls it */
+      if (it.accent) {
+        plate(g, L.x, L.y, L.w - 0.30, L.h - 0.30,
+          { fill: "none", stroke: it.accent, sw: 4.2, so: 1 });
+      }
     });
 
-    /* captions for the slivers, stacked in the open below the enclosure */
-    led.forEach((L, i) => {
-      const ty = n.y + n.h / 2 + 1.15 + i * lineH(9) * 1.35;
-      const txt = `${L.it.key}  ${fmtBytes(L.it.value)} · ${fmtCount(L.it.objs)} obj`;
-      leader(g, L.x, L.y, n.x - textW(txt, 9) / S / 2, ty, txt,
-        L.it.stale ? "var(--drop)" : ink);
-    });
   }
 };
 
