@@ -1,0 +1,198 @@
+{
+ "generated_by": "scripts/build_fate_map_zebrahub.py",
+ "source": {
+  "paper": "Lange et al., A multimodal zebrafish developmental atlas reveals the state-transition dynamics of late-vertebrate pluripotent axial progenitors",
+  "journal": "Cell (2024)",
+  "doi": "10.1016/j.cell.2024.09.047",
+  "figshare": "10.6084/m9.figshare.20510367.v1",
+  "portal": "https://zebrahub.ds.czbiohub.org/",
+  "code": "https://github.com/czbiohub-sf/zebrahub_analysis",
+  "atlas_file": "zf_atlas_full_v1_release.h5ad (author md5 c26f326d67bb169e187008467c1ef2f2)",
+  "tracks_url": "http://public.czbiohub.org/royerlab/zebrahub/imaging/single-objective/ZSNS001_tail_tracks.csv",
+  "warehouse": "s3://zsb-silver-warehouse/zebrahub/"
+ },
+ "counts": {
+  "cells": 120444,
+  "genes": 32060,
+  "timepoints": 10,
+  "fish": 40,
+  "classes": 10,
+  "timepoint_clusters": 336,
+  "track_rows": 7505357,
+  "tracks": 101676,
+  "track_frames": 791,
+  "track_divisions": 36878,
+  "track_samples": 759298
+ },
+ "timepoints": [
+  {
+   "name": "10hpf",
+   "stage": "0 somites",
+   "cells": 1251
+  },
+  {
+   "name": "12hpf",
+   "stage": "05 somites",
+   "cells": 6699
+  },
+  {
+   "name": "14hpf",
+   "stage": "10 somites",
+   "cells": 3862
+  },
+  {
+   "name": "16hpf",
+   "stage": "15 somites",
+   "cells": 6297
+  },
+  {
+   "name": "19hpf",
+   "stage": "20 somites",
+   "cells": 5899
+  },
+  {
+   "name": "24hpf",
+   "stage": "30 somites",
+   "cells": 12914
+  },
+  {
+   "name": "2dpf",
+   "stage": "larval-2dpf",
+   "cells": 15483
+  },
+  {
+   "name": "3dpf",
+   "stage": "larval-3dpf",
+   "cells": 22473
+  },
+  {
+   "name": "5dpf",
+   "stage": "larval-5dpf",
+   "cells": 24987
+  },
+  {
+   "name": "10dpf",
+   "stage": "larval-10dpf",
+   "cells": 20579
+  }
+ ],
+ "classes": [
+  {
+   "key": "central_nervous_system",
+   "zfa": "ZFA:0000012",
+   "cells": 43690
+  },
+  {
+   "key": "endoderm",
+   "zfa": "ZFA:0000017",
+   "cells": 2226
+  },
+  {
+   "key": "hematopoietic_system",
+   "zfa": "ZFA:0000045",
+   "cells": 5444
+  },
+  {
+   "key": "intermediate_mesoderm",
+   "zfa": "ZFA:0000135",
+   "cells": 4522
+  },
+  {
+   "key": "lateral_mesoderm",
+   "zfa": "ZFA:0000255",
+   "cells": 7565
+  },
+  {
+   "key": "mesenchyme",
+   "zfa": "ZFA:0000393",
+   "cells": 26331
+  },
+  {
+   "key": "neural_crest",
+   "zfa": "ZFA:0001065",
+   "cells": 2185
+  },
+  {
+   "key": "notochord",
+   "zfa": "ZFA:0001185",
+   "cells": 1190
+  },
+  {
+   "key": "paraxial_mesoderm",
+   "zfa": "ZFA:0001206",
+   "cells": 10663
+  },
+  {
+   "key": "periderm",
+   "zfa": "ZFA:0005023",
+   "cells": 16628
+  }
+ ],
+ "fish": [
+  "TDR18",
+  "TDR19",
+  "TDR21",
+  "TDR22",
+  "TDR23",
+  "TDR24",
+  "TDR25",
+  "TDR26",
+  "TDR27",
+  "TDR28",
+  "TDR29",
+  "TDR30",
+  "TDR35",
+  "TDR36",
+  "TDR37",
+  "TDR38",
+  "TDR39",
+  "TDR40",
+  "TDR41",
+  "TDR42",
+  "TDR43",
+  "TDR44",
+  "TDR45",
+  "TDR46",
+  "TDR47",
+  "TDR48",
+  "TDR49",
+  "TDR50",
+  "TDR51",
+  "TDR52",
+  "TDR53",
+  "TDR54",
+  "TDR67",
+  "TDR68",
+  "TDR69",
+  "TDR70",
+  "TDR71",
+  "TDR72",
+  "TDR73",
+  "TDR74"
+ ],
+ "axial_states": [
+  "neither",
+  "neural markers only",
+  "mesodermal markers only",
+  "both \u2014 bipotent-like"
+ ],
+ "axial_markers": {
+  "sox2": "neural",
+  "sox3": "neural",
+  "sox19a": "neural",
+  "tbxta": "meso",
+  "tbx16": "meso",
+  "msgn1": "meso"
+ },
+ "axial_detect_log1p_cp10k": 1.0,
+ "xy_scale": 500.0,
+ "track_step": 10,
+ "caveats": [
+  "The two maps are not the same cells. The 120,444 transcriptomes come from 40 dissociated embryos; the 101,676 tracks come from one other, living embryo. They are complementary modalities and no cell appears on both plates.",
+  "The single-cell side carries no lineage. Those embryos were dissociated and read once, so proximity in the embedding is similarity of expression and nothing more.",
+  "The tracking side DOES carry lineage - a nucleus followed frame to frame, with 36,878 divisions - but it carries no transcriptome. It says where a cell went, never what it was expressing.",
+  "RNA velocity is not on this page. The authors' velocity notebooks read loom files and intermediate objects that the public release does not contain, and the released matrix has no spliced/unspliced layers, so it cannot be recomputed. Plate III shows marker composition instead and does not draw arrows it cannot justify.",
+  "The axial-progenitor states on Plate III are OUR marker definition, not the authors' annotation - the released object carries no NMP label. Cells are called by detection of the paper's own marker genes above a stated threshold.",
+  "One embryo's tail, for the tracking. The light-sheet movie is a single specimen, and the field of view is the tail, not the whole animal."
+ ]
+}

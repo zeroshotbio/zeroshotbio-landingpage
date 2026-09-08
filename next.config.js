@@ -126,6 +126,16 @@ const nextConfig = {
       // SOURCE + rebuild: scripts/build_fate_map_daniocell.py, with the
       // embeddings extracted once by scripts/extract_daniocell_seurat.R.
       { source: '/fate_map_daniocell', destination: '/fate_map_daniocell/index.html' },
+      // /fate_map_zebrahub is the third, and the only one that must hold BOTH
+      // vocabularies at once: its single-cell plates are transcriptional
+      // identity (no lineage, like /fate_map_daniocell) while its light-sheet
+      // plate IS lineage (like /fate_map_wang_2026) — and they are DIFFERENT
+      // EMBRYOS, so nothing registers one to the other. Plate IV may say
+      // "divides"; Plates I-III may not. RNA velocity is deliberately absent:
+      // the authors' velocity inputs were never deposited. Read
+      // public/fate_map_zebrahub/NOTES.md before touching any of that.
+      // SOURCE + rebuild: scripts/build_fate_map_zebrahub.py
+      { source: '/fate_map_zebrahub', destination: '/fate_map_zebrahub/index.html' },
     ]
   },
 
@@ -197,6 +207,15 @@ const nextConfig = {
       // stale pairing of any two of the three would draw a plausible, wrong
       // picture rather than fail — which is why fmLoad() also cross-checks
       // every header count against meta.json and refuses to draw on mismatch.
+      // same shell-and-scripts coupling, same reason, for the third fate map
+      {
+        source: '/fate_map_zebrahub/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/fate_map_zebrahub',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
       // same shell-and-scripts coupling, same reason, for the sister page
       {
         source: '/fate_map_daniocell/:path*',
