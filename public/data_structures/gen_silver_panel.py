@@ -15,8 +15,7 @@ KINDS=[
  ("published","#4FCB8A","Published release — written here by zsb-bronze under the version convention"),
  ("acquired", "#6FA8E8","Acquired source — taken verbatim from a public origin, custody in zsb-bronze"),
  ("prerepo",  "#8A8A92","Predates the repos — written by neither, never versioned"),
- ("working",  "#E8A33F","Analysis working set — not a published artifact"),
- ("legacy",   "#B07AA1","Legacy flat keys — the retired pipeline's output, provenance in sidecars"),
+ ("legacy",   "#B07AA1","Legacy — archived elsewhere or superseded; retained, never published"),
 ]
 COL={k:c for k,c,_ in KINDS}
 
@@ -46,9 +45,13 @@ out.append(f'<div class=\\"fkl\\">{leg}</div>')
 # ---- megafin/
 n,s=agg('megafin/')
 b=[row('CHANGELOG.md',get('megafin/CHANGELOG.md')[0][0],'published','the ledger, rewritten last on every publish')]
-for v in ('v1','v2'):
+for v,recipe,cells in (('v1','parse-settings','1,340,518'),('v2','ambient-profile','1,409,574')):
     vn,vs=agg(f'megafin/{v}/')
-    b.append(row(f'{v}/',vs,'published',f'megafin.h5ad + README — {vn} objects'))
+    b.append(row(f'{v}/',vs,'published',f'{recipe} — {cells} called cells'))
+    for sz,k in sorted(get(f'megafin/{v}/'),key=lambda r:-r[0]):
+        leaf=k.split('/')[-1]
+        b.append(row(leaf,sz,'published','the release artifact' if leaf.endswith('.h5ad')
+                     else 'what the policy was and what it produced',2))
 out.append(block('megafin/','#C08552',n,s,''.join(b)))
 
 # ---- chemfish/
@@ -76,17 +79,23 @@ n,s=agg('megafin-1/')
 g=collections.Counter(); c=collections.Counter()
 for sz,k in get('megafin-1/'):
     p='/'.join(k.split('/')[:3]); g[p]+=sz; c[p]+=1
-b=[row('characterization/',s,'working',f'{n} objects — scripts, CSVs, diff reports; byte-identical to a copy in bronze')]
+b=[row('characterization/',s,'legacy',
+        f'{n} objects — already archived to bronze 2026-08-29, byte-identical, zero size disagreements')]
 for p,sz in g.most_common(4):
-    b.append(row(p.split('/')[-1],sz,'working',f'{c[p]} obj',2))
+    b.append(row(p.split('/')[-1],sz,'legacy',f'{c[p]} obj',2))
 out.append(block('megafin-1/','#6E8CA0',n,s,''.join(b)))
 
 # ---- minifin/
 n,s=agg('minifin/')
 b=[row('CHANGELOG.md',get('minifin/CHANGELOG.md')[0][0],'published','the ledger')]
-for v in ('v1','v2','v3'):
+for v,recipe,cells in (('v1','parse-settings','94,864'),('v2','barcode-ranks','94,089'),
+                       ('v3','ambient-profile','106,022')):
     vn,vs=agg(f'minifin/{v}/')
-    b.append(row(f'{v}/',vs,'published',f'minifin.h5ad + README — {vn} objects'))
+    b.append(row(f'{v}/',vs,'published',f'{recipe} — {cells} called cells'))
+    for sz,k in sorted(get(f'minifin/{v}/'),key=lambda r:-r[0]):
+        leaf=k.split('/')[-1]
+        b.append(row(leaf,sz,'published','the release artifact' if leaf.endswith('.h5ad')
+                     else 'what the policy was and what it produced',2))
 flat=[(sz,k) for sz,k in get('minifin/') if '/' not in k[len('minifin/'):] and not k.endswith('CHANGELOG.md')]
 b.append(row('(six flat keys)',sum(sz for sz,_ in flat),'legacy',
              f'{len(flat)} objects — rebuild h5ads, a disposition parquet, and .provenance.json sidecars'))
