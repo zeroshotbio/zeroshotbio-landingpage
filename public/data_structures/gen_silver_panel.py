@@ -58,9 +58,20 @@ out.append(block('megafin/','#C08552',n,s,''.join(b)))
 # Two releases of the same six URLs. The origin overwrites in place and announces nothing, so the
 # release folders are the only thing keeping the March 2025 package from having been destroyed by
 # the September 2026 one. The panel shows both because choosing between them is the reader's job.
+#
+# Paper/ sits at the dataset root, not inside a release: one publication describing work present in
+# both. Its contents are listed rather than summarised, because "Paper/" alone does not tell you
+# whether it holds one preprint or a folder of them, and the answer changes if a revision lands.
 n,s=agg('chemfish/')
 b=[row('README.md',get('chemfish/README.md')[0][0],'acquired',
        'which release to use, and why neither contains the other')]
+_,ps=agg('chemfish/Paper/')
+b.append(row('Paper/',ps,'acquired','one preprint, covering work in both releases'))
+for sz,k in sorted(get('chemfish/Paper/'),key=lambda r:-r[0]):
+    leaf=k.split('/')[-1]
+    b.append(row(leaf,sz,'acquired',
+                 'bioRxiv 2025-04-03 — 38 pages; predates the 2026-09 genetic arm'
+                 if leaf.endswith('.pdf') else 'what the preprint does and does not cover',2))
 for rel,label in (('2025_03_release','the authors’ March 2025 publication — superseded upstream, recoverable only here'),
                   ('2026_09_release','the September 2026 publication — what the six URLs serve today')):
     _,rs=agg(f'chemfish/{rel}/')
@@ -74,8 +85,8 @@ for rel,label in (('2025_03_release','the authors’ March 2025 publication — 
                      'sealed BPCells cds tarball' if k.endswith('.tar') else 'author result table',3))
     pp=get(f'chemfish/{rel}/Paper/')
     if pp:
-        b.append(row('Paper/',sum(x for x,_ in pp),'acquired',
-                     'the bioRxiv preprint — supplements were published as data, not documents',2))
+        b.append(row('Paper/',sum(x for x,_ in pp),'legacy',
+                     'superseded by chemfish/Paper/ — awaiting delete, the instance role has no s3:DeleteObject',2))
     b.append(row('README.md',get(f'chemfish/{rel}/README.md')[0][0],'acquired',
                  'provenance, what changed, and the do-not-re-fetch warning',2))
 out.append(block('chemfish/','#7FB5A8',n,s,''.join(b)))
