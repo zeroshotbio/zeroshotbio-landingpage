@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the /fate_map dataset: a 5.5 -> 11.3 hpf zebrafish cell-fate map
+"""Build the /fate_map_wang_2026 dataset: a 5.5 -> 11.3 hpf zebrafish cell-fate map
 derived from the ITEC whole-embryo lineage reconstruction (Wang et al. 2026).
 
 WHAT THE EDGES MEAN — and why this differs from /dev_tree:
@@ -38,9 +38,9 @@ Inputs (read-only, downloaded — not in the repo, ~1.2 GB):
   {RAW}/params_FISH2.csv           z_resolution 7, max_dist 50
   Source: Mendeley "Evaluation results of ITEC", doi 10.17632/tg55phtk4r.1
   Paper:  doi 10.64898/2026.03.12.711203 (CC-BY)
-  Fetch:  python3 scripts/build_fate_map.py --fetch
+  Fetch:  python3 scripts/build_fate_map_wang_2026.py --fetch
 
-Outputs (public/fate_map/):
+Outputs (public/fate_map_wang_2026/):
   meta.json    stages, territories, counts, every caveat the page prints
   founders.bin founder table at 5.5 hpf
   flow.bin     the pruned lineage forest as time-sampled polylines
@@ -59,7 +59,7 @@ from pathlib import Path
 import numpy as np
 
 RAW = Path("/data/scratch/fate_map/raw")
-OUT = Path(__file__).resolve().parent.parent / "public" / "fate_map"
+OUT = Path(__file__).resolve().parent.parent / "public" / "fate_map_wang_2026"
 
 SPOT_CSV = RAW / "ITEC-FISH2-1000-Spot.csv"
 LINK_CSV = RAW / "ITEC-FISH2-1000-Link.csv"
@@ -452,7 +452,7 @@ def main():
         fh.write(traced_mask.astype("<u1").tobytes())
 
     meta = {
-        "generated_by": "scripts/build_fate_map.py",
+        "generated_by": "scripts/build_fate_map_wang_2026.py",
         "source": {
             "paper": "Wang et al., High-Fidelity Long-term Whole-embryo Lineage and Fate "
                      "Reconstruction by Iterative Tracking with Error Correction",

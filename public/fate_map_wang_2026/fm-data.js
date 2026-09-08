@@ -1,6 +1,6 @@
-/* /fate_map — data layer.
+/* /fate_map_wang_2026 — data layer.
  *
- * Decodes the four binaries written by scripts/build_fate_map.py. Layouts are
+ * Decodes the four binaries written by scripts/build_fate_map_wang_2026.py. Layouts are
  * fixed there and mirrored here; if you change one, change both, and bump the
  * version byte so a stale cached asset fails loudly instead of drawing noise.
  *
@@ -87,11 +87,11 @@ async function fmLoad() {
     return type === 'json' ? r.json() : r.arrayBuffer();
   };
   const [meta, flowB, fdB, fnB, frB] = await Promise.all([
-    get('/fate_map/meta.json', 'json'),
-    get('/fate_map/flow.bin'),
-    get('/fate_map/founders.bin'),
-    get('/fate_map/final.bin'),
-    get('/fate_map/first.bin'),
+    get('/fate_map_wang_2026/meta.json', 'json'),
+    get('/fate_map_wang_2026/flow.bin'),
+    get('/fate_map_wang_2026/founders.bin'),
+    get('/fate_map_wang_2026/final.bin'),
+    get('/fate_map_wang_2026/first.bin'),
   ]);
   FM.meta = meta;
   FM.flow = decodeFlow(flowB);

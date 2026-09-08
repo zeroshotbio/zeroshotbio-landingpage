@@ -1,5 +1,5 @@
 {
- "generated_by": "scripts/build_fate_map.py",
+ "generated_by": "scripts/build_fate_map_wang_2026.py",
  "source": {
   "paper": "Wang et al., High-Fidelity Long-term Whole-embryo Lineage and Fate Reconstruction by Iterative Tracking with Error Correction",
   "doi": "10.64898/2026.03.12.711203",

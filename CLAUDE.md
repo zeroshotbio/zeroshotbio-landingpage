@@ -10,7 +10,7 @@ Next.js app, deployed to zeroshot.bio via Vercel (`main` auto-deploys). EC2 back
 
 ## Building a page? Pick a style before you pick a colour.
 - **`PLATE_STYLE.md`** is the house style for FIGURE pages — pages whose job is to be read
-  rather than operated. `/fate_map` is the reference implementation. It carries the tokens,
+  rather than operated. `/fate_map_wang_2026` is the reference implementation. It carries the tokens,
   the typography, the canvas practice, and the rules that are easy to get wrong
   (one ink before colour; isolate rather than hide; never rescale a comparison to fill its
   frame; furniture may be hand-drawn, data never is).

@@ -1,4 +1,4 @@
-/* /fate_map — bootstrap, interaction and the written matter.
+/* /fate_map_wang_2026 — bootstrap, interaction and the written matter.
  *
  * Every number printed on this page is read out of meta.json, which the build
  * script writes in the same pass that writes the binaries. Nothing here is a
@@ -151,7 +151,7 @@ function writeProse() {
     /^(.+?\.)(?=\s+[A-Z])/, '<b>$1</b>'))).map(s => `<li>${s}</li>`).join('');
 
   $('colophon').innerHTML =
-    `Built by <code>scripts/build_fate_map.py</code> from ` +
+    `Built by <code>${m.generated_by}</code> from ` +
     `<a href="https://doi.org/${m.source.data_doi}" target="_blank" rel="noopener">${m.source.data_name}</a> ` +
     `(${m.source.files.join(', ')}), the deposit accompanying ` +
     `<a href="https://doi.org/${m.source.doi}" target="_blank" rel="noopener">Wang et al. 2026</a> ` +

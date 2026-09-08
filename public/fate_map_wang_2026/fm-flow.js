@@ -1,4 +1,4 @@
-/* /fate_map — Plate II, the passage.
+/* /fate_map_wang_2026 — Plate II, the passage.
  *
  * Time runs DOWN the page, 5.5 hpf at the top rule to 11.3 hpf at the bottom.
  * The horizontal axis is one spherical coordinate of the cell, switchable:

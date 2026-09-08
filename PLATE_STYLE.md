@@ -1,8 +1,8 @@
 # The plate style
 
 The house style for **figure pages** on zeroshot.bio — pages whose job is to be
-*read* rather than operated. `/fate_map` is the reference implementation; copy
-from `public/fate_map/` and this document tells you which parts are the style
+*read* rather than operated. `/fate_map_wang_2026` is the reference implementation; copy
+from `public/fate_map_wang_2026/` and this document tells you which parts are the style
 and which parts were that page's problem.
 
 This is not the only style in the repo, and it is not a replacement for the
@@ -28,7 +28,7 @@ Everything below is detail. These are the ones that decide whether it works.
 
 ### 1.1 One ink first. Colour is an instrument, not a coat of paint.
 
-The single biggest lesson from `/fate_map`. Plate II draws 19,205 lineage
+The single biggest lesson from `/fate_map_wang_2026`. Plate II draws 19,205 lineage
 strokes. Tinted by category at 30% alpha they overlapped into a uniform grey —
 technically correct, visually mud, and it said nothing. The same strokes in a
 **single ink at 13% alpha** became a sepia engraving in which the shape of the
@@ -76,7 +76,7 @@ function penCircle(ctx, cx, cy, r, seed) {
 
 ### 1.4 Never rescale a comparison to fill its frame.
 
-`/fate_map` Plates I and III share one degrees-per-pixel. Plate I's blastoderm
+`/fate_map_wang_2026` Plates I and III share one degrees-per-pixel. Plate I's blastoderm
 covers half the sphere, so its **canvas is drawn smaller** rather than its
 projection drawn larger. Rescaling it to fill the column would have looked
 tidier and would have destroyed the one thing the pair exists to show.
@@ -92,7 +92,7 @@ script and the parameters. This is the repo's culture (see
 `public/dev_tree/NOTES.md`), and on a plate it is also a design element — the
 notes are part of the page, set in the same measure, not an apology in a footer.
 
-Write the caveat where the claim is made, not only in the notes: `/fate_map`
+Write the caveat where the claim is made, not only in the notes: `/fate_map_wang_2026`
 says "territories are geometric, not anatomical" in the legend header, in the
 caption, and in the notes, because a reader who lands mid-page must not be able
 to acquire the wrong belief.
@@ -243,7 +243,7 @@ Always paint a `--paper` backing rect behind canvas text that sits over marks.
   the whole directory in `next.config.js`, and have the loader cross-check the
   asset headers against `meta.json` so a half-deployed set fails loudly instead
   of drawing something plausible.
-- **Never hard-code a figure into the prose.** Every number `/fate_map` prints
+- **Never hard-code a figure into the prose.** Every number `/fate_map_wang_2026` prints
   is read from `meta.json`, which the build script writes in the same pass that
   writes the binaries. A retyped number goes stale silently.
 
@@ -251,7 +251,7 @@ Always paint a `--paper` backing rect behind canvas text that sits over marks.
 
 ## 5. Starting a new plate page
 
-1. Copy `public/fate_map/index.html` and strip to the masthead, one `figure.plate`
+1. Copy `public/fate_map_wang_2026/index.html` and strip to the masthead, one `figure.plate`
    and the notes. Keep the `:root` block verbatim.
 2. Split the JS the same way: `*-data.js` (decode + integrity checks),
    `*-plates.js` / `*-flow.js` (drawing), `*-main.js` (bootstrap, interaction,
@@ -261,6 +261,6 @@ Always paint a `--paper` backing rect behind canvas text that sits over marks.
 4. Write `public/<page>/NOTES.md` before you think you need it: what the picture
    claims, what it does not, the inputs table, and the traps.
 5. Add the page to `src/app/sitemap/page.tsx`.
-6. Render it and look at it. Every real fault in `/fate_map` — clipped labels,
+6. Render it and look at it. Every real fault in `/fate_map_wang_2026` — clipped labels,
    colliding labels, grey mush, sideways scroll — was invisible in the code and
    obvious in a screenshot.

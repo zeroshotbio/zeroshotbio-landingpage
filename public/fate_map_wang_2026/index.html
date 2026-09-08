@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>A fate map of the zebrafish gastrula — 5.5 to 11.3 hpf</title>
+<title>Fate map · Wang 2026 — zebrafish gastrula, 5.5 to 11.3 hpf</title>
 <meta name="description" content="Every tracked cell of one zebrafish embryo from 50% epiboly to early organogenesis, drawn as lineage. Built from the ITEC whole-embryo reconstruction (Wang et al. 2026).">
 <style>
 /* ---------------------------------------------------------------------------
@@ -90,6 +90,7 @@ h1 em{font-style:italic}
   font-family:var(--sans);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
   color:var(--ink-3);margin-top:30px
 }
+.source-line{font-size:13.5px;font-style:italic;color:var(--ink-3);margin-top:7px}
 .rule-orn{display:block;margin:34px auto 0;width:220px;height:14px;opacity:.75}
 
 /* ---- prose ------------------------------------------------------------- */
@@ -187,11 +188,16 @@ canvas{display:block;width:100%;touch-action:none}
 <div class="sheet">
 
   <header class="masthead">
-    <div class="eyebrow"><a href="/">zeroshot.bio</a> &nbsp;·&nbsp; fate map</div>
+    <!-- "fate maps" is deliberately not a link yet: /fate_map is reserved for the
+         index that will gather the fate_map_<author>_<year> pages, and until it
+         exists that route redirects back here, which would be a loop. Make it a
+         link the day the index ships. -->
+    <div class="eyebrow"><a href="/">zeroshot.bio</a> &nbsp;·&nbsp; fate maps &nbsp;·&nbsp; wang 2026</div>
     <h1>A fate map of the<br><em>zebrafish</em> gastrula</h1>
     <p class="dek">One embryo, from fifty-per-cent epiboly to the tail bud &mdash; every
       nucleus that could be followed, and the cell each one came from.</p>
     <div class="byline">5.5 &ndash; 11.3 hours post fertilisation</div>
+    <div class="source-line">after Wang <i>et al.</i> 2026 &nbsp;·&nbsp; ITEC whole-embryo lineage reconstruction</div>
     <svg class="rule-orn" viewBox="0 0 220 14" aria-hidden="true">
       <path d="M2 7h84M134 7h84" stroke="#8b7d69" stroke-width="1" fill="none"/>
       <path d="M96 7c4-5 8-5 14 0 6 5 10 5 14 0" stroke="#8b7d69" stroke-width="1" fill="none"/>
@@ -283,9 +289,9 @@ canvas{display:block;width:100%;touch-action:none}
   </main>
 </div>
 
-<script src="/fate_map/fm-data.js"></script>
-<script src="/fate_map/fm-plates.js"></script>
-<script src="/fate_map/fm-flow.js"></script>
-<script src="/fate_map/fm-main.js"></script>
+<script src="/fate_map_wang_2026/fm-data.js"></script>
+<script src="/fate_map_wang_2026/fm-plates.js"></script>
+<script src="/fate_map_wang_2026/fm-flow.js"></script>
+<script src="/fate_map_wang_2026/fm-main.js"></script>
 </body>
 </html>

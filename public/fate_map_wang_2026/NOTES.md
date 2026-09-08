@@ -1,12 +1,12 @@
-# /fate_map — a 5.5–11.3 hpf zebrafish cell-fate map
+# /fate_map_wang_2026 — a 5.5–11.3 hpf zebrafish cell-fate map
 
 Built 2026-09-08 on the EC2 instance from the public ITEC deposit.
 
-- Page: `public/fate_map/index.html` + `fm-data.js`, `fm-plates.js`, `fm-flow.js`,
+- Page: `public/fate_map_wang_2026/index.html` + `fm-data.js`, `fm-plates.js`, `fm-flow.js`,
   `fm-main.js` (self-contained, no build step)
-- Data: `public/fate_map/{meta,founders,flow,final,first}.{json,bin}`, rebuilt with
-  `python3 scripts/build_fate_map.py` (`--fetch` pulls the 1.2 GB of source CSVs)
-- Route: rewrite in `next.config.js` (`/fate_map` → `/fate_map/index.html`)
+- Data: `public/fate_map_wang_2026/{meta,founders,flow,final,first}.{json,bin}`, rebuilt with
+  `python3 scripts/build_fate_map_wang_2026.py` (`--fetch` pulls the 1.2 GB of source CSVs)
+- Route: rewrite in `next.config.js` (`/fate_map_wang_2026` → `/fate_map/index.html`)
 
 This page is the reference implementation of the plate style. The reusable
 rules — tokens, typography, canvas practice, and the mistakes that cost the most

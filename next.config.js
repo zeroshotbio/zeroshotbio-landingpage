@@ -58,6 +58,17 @@ const nextConfig = {
   // The contract and the reasoning behind every shape live in the file headers
   // of public/FASTQ_pipe/*.js — fq-data.js for what the map is about, and each
   // draw* block for why it is drawn that way.
+  // SCAFFOLDING — delete this whole redirects() block when the /fate_map index
+  // page is built. /fate_map was live for a few hours pointing at the Wang map,
+  // so this keeps that link working. It is 307 (permanent: false) on purpose:
+  // a 308 would be cached by browsers and would shadow the real index page for
+  // anyone who had visited before it shipped.
+  async redirects() {
+    return [
+      { source: '/fate_map', destination: '/fate_map_wang_2026', permanent: false },
+    ]
+  },
+
   async rewrites() {
     return [
       { source: '/zfa_mapping', destination: '/zfa_mapping.html' },
@@ -82,11 +93,15 @@ const nextConfig = {
       // public/dev_tree/NOTES.md before changing anything that could read as a
       // lineage claim. SOURCE + rebuild: scripts/build_dev_tree.py.
       { source: '/dev_tree', destination: '/dev_tree/index.html' },
-      // /fate_map is a self-contained static viz in public/fate_map/ (index.html,
-      // four classic scripts, four binary assets, no build step) — same shape as
-      // /pipeline and /dev_tree, same absolute-<script src> rule and the same
-      // reason: no trailing slash on the route, so a relative src would resolve
-      // against /.
+      // FATE MAPS. One page per published source, named fate_map_<author>_<year>;
+      // /fate_map itself is RESERVED for the index that will gather them and is
+      // deliberately not a page yet — do not rewrite it to any single map.
+      //
+      // /fate_map_wang_2026 is a self-contained static viz in
+      // public/fate_map_wang_2026/ (index.html, four classic scripts, four binary
+      // assets, no build step) — same shape as /pipeline and /dev_tree, same
+      // absolute-<script src> rule and the same reason: no trailing slash on the
+      // route, so a relative src would resolve against /.
       // It is a 5.5-11.3 hpf zebrafish cell-fate map built from the ITEC
       // whole-embryo lineage reconstruction (Wang et al. 2026, CC-BY).
       // Unlike /dev_tree, the edges here ARE lineage — one tracked nucleus per
@@ -94,11 +109,12 @@ const nextConfig = {
       // those are geometric regions of a fitted sphere, because the authors'
       // organ segmentation is not in the public deposit. The page says so and
       // must keep saying so.
-      // SOURCE + rebuild: scripts/build_fate_map.py (--fetch pulls the 1.2 GB
-      // of source CSVs from Mendeley doi 10.17632/tg55phtk4r.1).
-      // Read public/fate_map/NOTES.md before changing anything that could read
-      // as an anatomical claim.
-      { source: '/fate_map', destination: '/fate_map/index.html' },
+      // SOURCE + rebuild: scripts/build_fate_map_wang_2026.py (--fetch pulls the
+      // 1.2 GB of source CSVs from Mendeley doi 10.17632/tg55phtk4r.1).
+      // Read public/fate_map_wang_2026/NOTES.md before changing anything that
+      // could read as an anatomical claim. Its look is the plate style —
+      // PLATE_STYLE.md at the repo root.
+      { source: '/fate_map_wang_2026', destination: '/fate_map_wang_2026/index.html' },
     ]
   },
 
@@ -165,16 +181,17 @@ const nextConfig = {
       },
       // and the same shell-and-scripts coupling for the fate map: index.html
       // names the elements the four scripts reach for, and fm-data.js is
-      // written against the exact binary layouts build_fate_map.py emits. A
+      // written against the exact binary layouts build_fate_map_wang_2026.py
+      // emits. A
       // stale pairing of any two of the three would draw a plausible, wrong
       // picture rather than fail — which is why fmLoad() also cross-checks
       // every header count against meta.json and refuses to draw on mismatch.
       {
-        source: '/fate_map/:path*',
+        source: '/fate_map_wang_2026/:path*',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
       },
       {
-        source: '/fate_map',
+        source: '/fate_map_wang_2026',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
       },
       // and the same for the molecular bench

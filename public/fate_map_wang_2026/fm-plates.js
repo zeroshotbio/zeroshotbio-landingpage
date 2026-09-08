@@ -1,4 +1,4 @@
-/* /fate_map — Plates I and III.
+/* /fate_map_wang_2026 — Plates I and III.
  *
  * Both plates are the SAME projection at the SAME scale: an azimuthal
  * equidistant map of the fitted sphere seen down the animal pole, radius

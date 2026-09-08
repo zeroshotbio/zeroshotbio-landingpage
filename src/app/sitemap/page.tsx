@@ -32,7 +32,7 @@ const SECTIONS: Section[] = [
       { href: "/zebrafish_ontology", label: "ZFA Atlas — zebrafish anatomy ontology", note: "dataset menus on the anatomy graph" },
       { href: "/zfa_mapping", label: "ZSCAPE → ZFA mapping — Stage 1", note: "parallel-sets + side-by-side term table" },
       { href: "/dev_tree", label: "Developmental tree — 0–48 hpf", note: "DanioCell annotation hierarchy on a time axis; containment, not lineage" },
-      { href: "/fate_map", label: "Fate map — 5.5–11.3 hpf zebrafish gastrula", note: "one embryo, every followable lineage; ITEC reconstruction" },
+      { href: "/fate_map_wang_2026", label: "Fate map · Wang 2026 — 5.5–11.3 hpf zebrafish gastrula", note: "one embryo, every followable lineage; ITEC reconstruction" },
       { href: "/danio_specimen_poster.html", label: "DANIO — interactive specimen poster" },
       { href: "/d3_complexity_heatmap.html", label: "Complexity heatmap" },
       { href: "/prospective_diseases_treemap.html", label: "Prospective diseases treemap" },
