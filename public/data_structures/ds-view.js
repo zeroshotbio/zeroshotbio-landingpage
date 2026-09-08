@@ -443,13 +443,17 @@ function inspect(n) {
   if (n.thread) H.push(`<div class="thr">on the steel thread</div>`);
   if (UNVERIFIED.has(n.id)) H.push(`<div class="unver">not confirmable from here</div>`);
   if (n.panel) {
-    /* A station whose evidence is a structure rather than a paragraph supplies
-       its own body. Bronze does: a bucket with a hundred thousand objects is
-       read as a tree, not as a hundred words about a tree. */
+    /* A station whose evidence is a structure rather than a paragraph leads with
+       it: a bucket with a hundred thousand objects is read as a tree, not as a
+       hundred words about a tree.
+
+       The tree used to be the WHOLE body — this returned here — which quietly
+       discarded the prose and the kv table of every station that grew one. The
+       silver node carried an accurate, maintained `built` and `cond` that no
+       reader ever saw. A structure answers "what is in there"; the prose answers
+       "why is it like that", and the second question does not stop mattering
+       because the first got a better answer. */
     H.push(n.panel);
-    readEl.innerHTML = H.join("");
-    readEl.scrollTop = 0;
-    return;
   }
   if (n.brief) H.push(`<p>${n.brief}</p>`);
 
