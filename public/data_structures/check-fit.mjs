@@ -77,8 +77,22 @@ const found = await page.evaluate(({ CROWD, SLACK }) => {
     if (parseFloat(getComputedStyle(t).fillOpacity || '1') < 0.08) return;
     const bb = t.getBBox();
     if (!bb.width || !bb.height) return;
-    const x0 = bb.x / S, x1 = (bb.x + bb.width) / S;
-    const y0 = bb.y / S, y1 = (bb.y + bb.height) / S;
+
+    /* getBBox() reports the box BEFORE the element's own transform, so a
+       rotated caption was measured at its unrotated width. A band label
+       running up a floor's left margin is 0.3 units wide and 3.3 tall; this
+       read it as 3.3 wide and reported it hanging off both edges of the box it
+       sits comfortably inside, and trespassing on a neighbour it never
+       touches. Any check that reports a caption as broken when it is fine is
+       one somebody eventually switches off, so: take the element's own
+       transform, apply it to the four corners, and use their extent. */
+    const m = t.transform.baseVal.consolidate()?.matrix;
+    const corners = [[bb.x, bb.y], [bb.x + bb.width, bb.y],
+                     [bb.x, bb.y + bb.height], [bb.x + bb.width, bb.y + bb.height]]
+      .map(([px, py]) => m ? [m.a * px + m.c * py + m.e, m.b * px + m.d * py + m.f] : [px, py]);
+    const xs = corners.map(c => c[0]), ys = corners.map(c => c[1]);
+    const x0 = Math.min(...xs) / S, x1 = Math.max(...xs) / S;
+    const y0 = Math.min(...ys) / S, y1 = Math.max(...ys) / S;
     const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, w = x1 - x0;
 
     /* THE BOXES NEST — a cell sits inside a repo floor, a treemap tile inside

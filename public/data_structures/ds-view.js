@@ -471,6 +471,21 @@ function inspect(n) {
 }
 
 /* Nothing selected: the map's own argument, in the same hundred-word shape. */
+/* The six bronze processes, colour-keyed, as part of the reader's default body.
+   Same palette as the trees, and the same split the floor draws: what runs on a
+   Parse delivery, and what runs on something someone else published. */
+function processBlock() {
+  const gs = (typeof OVERVIEW !== "undefined" && OVERVIEW.processes) || [];
+  if (!gs.length) return "";
+  const g = gs.map(grp =>
+    `<div class="pgh" style="--c:${grp.ink}">${esc(grp.group)}</div>` +
+    grp.items.map(([name, what]) =>
+      `<div class="pgi" style="--c:${grp.ink}">` +
+      `<div class="pgn">${esc(name)}</div><div class="pgw">${what}</div></div>`).join("")
+  ).join("");
+  return `<h4>The six processes</h4><div class="pg">${g}</div>`;
+}
+
 function overview() {
   readEl.innerHTML =
     `<div class="eyebrow">${esc(OVERVIEW.eyebrow)}</div>` +
@@ -480,6 +495,7 @@ function overview() {
     `<p>${OVERVIEW.brief}</p>` +
     `<h4>How to read it</h4><p>${OVERVIEW.how}</p>` +
     `<h4>Where it stands</h4><p>${OVERVIEW.state}</p>` +
+    processBlock() +
     `<p class="note">Click any box for its own entry. Everything here was read from the live buckets and fresh clones on ${(typeof READ_DATE!=="undefined"&&READ_DATE)||"2026-09-07"}, not from the READMEs.</p>`;
   readEl.scrollTop = 0;
 }

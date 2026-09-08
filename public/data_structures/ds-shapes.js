@@ -298,6 +298,37 @@ DRAW.cell = (g, n) => {
 };
 
 /* ============================================================
+   BAND — a bounding group around the cells that share an ingest kind.
+
+   The floor used to stack five cells with nothing saying that four of them are
+   one pipeline and the fifth is a different one. They are not variations on a
+   theme: fetch/convert/build/publish run on a Parse delivery a human put in
+   Fort Knox, and acquire runs on a dataset someone else published to the open
+   internet. Same repo, same tier, incompatible provenance — and the map drew
+   them as five siblings.
+
+   The band carries the distinction structurally instead of asking the reader to
+   infer it from a note. Its label runs vertically up the left margin because
+   that is the only space a floor has spare: the cells are 19 wide inside a 22
+   floor, and a horizontal header would have meant moving every cell and every
+   wire that lands on one.
+   ============================================================ */
+DRAW.band = (g, n) => {
+  plate(g, n.x, n.y, n.w, n.h, {
+    fill: n.ink, fo: 0.05, stroke: n.ink, sw: 1.0, so: 0.5, dash: "3 2.5"
+  });
+  /* the label reads bottom-to-top up the left margin, the way a spine does */
+  const [lx, ly] = P(n.x - n.w / 2 + 0.55, n.y);
+  const t = add(g, "text", {
+    x: lx, y: ly, fill: n.ink, "font-size": 8.8, "letter-spacing": 0.5,
+    "font-weight": 700,
+    "text-anchor": "middle", "dominant-baseline": "central",
+    transform: `rotate(-90 ${lx} ${ly})`, opacity: 1
+  });
+  t.textContent = n.bandName;
+};
+
+/* ============================================================
    SPINE — zsb-medallion, the shared contract, running down beside the
    transform column.
 

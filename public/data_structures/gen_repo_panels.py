@@ -31,8 +31,8 @@ VAR = {k: v for k, v, _ in KINDS}
 
 STYLE = (
     "<style>"
-    ":root{" + ";".join(f"{k}:{v}" for k, v in DARK.items()) + "}"
-    "body.light{" + ";".join(f"{k}:{v}" for k, v in LIGHT.items()) + "}"
+    # the palette itself lives in index.html, so it is defined with no panel on
+    # screen and the LIGHT toggle switches it in one place
     ".rkw{margin:.3rem 0 0;font-family:var(--mono,ui-monospace,monospace);"
     "font-size:clamp(9px,calc(var(--reader-w,360px)*0.0145),12px)}"
     ".rkl{display:flex;flex-direction:column;gap:.2rem;margin:.1rem 0 .55rem;"
