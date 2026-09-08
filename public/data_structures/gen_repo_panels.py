@@ -251,6 +251,89 @@ def simple_panel(repo: str, pkg: str, mods: list[tuple[str, str]], acc: str, rig
     return STYLE + legend({"live"}) + block(f"{repo}", acc, right, "".join(b))
 
 
+def stage_panels() -> dict[str, str]:
+    """Build one panel per stage cell on the bronze floor.
+
+    A stage cell used to carry prose and a kv table only, which meant the thing a reader most wants
+    to know - what does this step actually touch, and for which dataset - was spread across
+    sentences. Each stage is really a small table: one shared implementation, one binding per
+    dataset, and a result. Drawn that way it is also obvious where a dataset is missing, which is
+    how the ChemFish gap became visible in the first place.
+
+    Returns:
+        dict[str, str]: Node id to panel markup.
+    """
+    b = REPOS / "zsb-bronze/src/zsb_bronze"
+    f = lambda p: f"{loc(b / p):,}"
+
+    fetch = "".join([
+        row("parse-delivery pins", "", "shared", "named keys, never a prefix sync"),
+        row("minifin/fetch/manifest.py", f("minifin/fetch/manifest.py"), "live",
+            "132 keys · 947 MiB", 2),
+        row("129 per-sample triplets", "", "live", "43 samples × 3 files", 2),
+        row("settings · summary · run def", "", "live", "3 named objects", 2),
+        row("megafin/fetch/manifest_*.py", f"{loc(b / 'megafin/fetch/manifest_megafin_1.py') + loc(b / 'megafin/fetch/manifest_megafin_2.py'):,}",
+            "live", "2 × 291 keys · 10.8 GiB", 2),
+        row("fetch.py bindings", f"{loc(b / 'minifin/fetch/fetch.py') + loc(b / 'megafin/fetch/fetch.py'):,}",
+            "shared", "bind to zsb_medallion.fetch", 2),
+        row("chemfish has no fetch", "", "none", "its origin is not Fort Knox"),
+    ])
+    convert = "".join([
+        row("parse/convert.py", f("parse/convert.py"), "shared",
+            "streams MatrixMarket → h5ad in blocks"),
+        row("2,743,021 × 32,520", "", "shared", "~279M non-zeros, ~150 MB peak", 2),
+        row("minifin/process/convert.py", f("minifin/process/convert.py"), "live",
+            "binds the converter to its dirs", 2),
+        row("megafin/process/convert.py", f("megafin/process/convert.py"), "live",
+            "same, plus plate namespacing", 2),
+        row("chemfish is not converted", "", "none", "arrives as a sealed BPCells cds"),
+    ])
+    build = "".join([
+        row("parse/cells.py", f("parse/cells.py"), "shared", "cell calling, policy-chosen"),
+        row("parse-settings → v1", "94,864", "live", "what Parse itself called", 2),
+        row("barcode-ranks → v2", "94,089", "live", "measured from the rank curve", 2),
+        row("parse/ambient.py → v3", "106,022", "live", "ambient-profile, 350 lines", 2),
+        row("parse/validate.py", f("parse/validate.py"), "shared", "the silver gate"),
+        row("parse/provenance.py", f("parse/provenance.py"), "shared", "stamps policy + overlap"),
+        row("chemfish is not built", "", "none", "nothing here to build"),
+    ])
+    publish = "".join([
+        row("parse/publish.py", f("parse/publish.py"), "shared", "preflight + release, no delete path"),
+        row("minifin/v1 v2 v3", "", "live", "4.36 GiB — 1.56 + 1.56 + 1.58", 2),
+        row("megafin/v1 v2", "", "live", "56.16 GiB — 30.06 + 30.25", 2),
+        row("5 publishes total", "", "live", "2026-08-23 · 08-28 ×2 · megafin ×2", 2),
+        row("chemfish is not published", "", "none", "it was uploaded, not published"),
+    ])
+    acquire = "".join([
+        row("acquire/manifest.py", f("chemfish/acquire/manifest.py"), "proposed",
+            "12 rows · 6 URLs · 12 silver keys"),
+        row("2025_03 · 6 artifacts", "", "proposed", "20.0 GiB — superseded upstream", 2),
+        row("2026_09 · 6 artifacts", "", "proposed", "16.1 GiB — what the URLs serve", 2),
+        row("acquire/verify.py", f("chemfish/acquire/verify.py"), "proposed",
+            "local digest check + one HEAD each"),
+        row("cli.py", f("chemfish/cli.py"), "proposed", "verify · upstream — and no more"),
+        row("runbook/*.sh", f"{loc(b / 'chemfish/runbook'):,}", "proposed",
+            "origin → disk → silver, both refuse"),
+        row("no fetch, convert, build", "", "none", "a fetch would substitute, not repair"),
+    ])
+
+    common = {"shared", "live", "none"}
+    return {
+        "BFETCH": STYLE + legend(common) + block("fetch — what it pins", DARK["--k-live"],
+                                                 "132 + 582 keys", fetch),
+        "BCONV": STYLE + legend(common) + block("process convert — what it streams",
+                                                DARK["--k-live"], "279M non-zeros", convert),
+        "BBUILD": STYLE + legend(common) + block("process build — what it calls",
+                                                 DARK["--k-live"], "3 policies", build),
+        "BPUB": STYLE + legend(common) + block("publish — what it wrote", DARK["--k-live"],
+                                               "5 releases · 60.5 GiB", publish),
+        "BACQ": STYLE + legend({"proposed", "none"}) + block("acquire — what it vouches for",
+                                                             DARK["--k-proposed"],
+                                                             "12 rows · 36.1 GiB", acquire),
+    }
+
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     panels = {
@@ -275,6 +358,7 @@ if __name__ == "__main__":
              ("console", "shared console presentation")],
             DARK["--k-proposed"], "the contract all three import"),
     }
+    panels.update(stage_panels())
     for node, html in panels.items():
         (OUT / f"panel_{node}.txt").write_text(html)
         print(f"{node}: {len(html):,} chars")

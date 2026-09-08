@@ -236,9 +236,10 @@ DRAW.floor = (g, n) => {
 /* ============================================================
    CELL — one module inside a repo floor.
 
-   state:"live"   implemented AND exercised against the real bucket
-   state:"ready"  implemented, never run
-   state:"stub"   a function that raises, with its gating reason
+   state:"live"      implemented AND exercised against the real bucket
+   state:"ready"     implemented, never run
+   state:"stub"      a function that raises, with its gating reason
+   state:"proposed"  implemented AND exercised, but not on main yet
 
    THE THIRD STATE IS NEW AND IT EARNED ITS PLACE. For as long as this map had
    two, "written" and "has run" were the same mark, because on the first reads
@@ -251,18 +252,36 @@ DRAW.floor = (g, n) => {
 
    The lamp carries the distinction and the plate carries the other half:
 
+     plate solid             ->  merged, on main
+     plate dashed            ->  not on main
      plate dashed + hatched  ->  raises
      lamp hollow             ->  has not moved bytes
      lamp filled             ->  has
 
    So a ready cell is a solid box with a hollow lamp, which reads as "built,
    not yet lit" — which is exactly what it is.
+
+   THE FOURTH STATE, LIKEWISE, EARNED ITS PLACE. ChemFish's acquire is written,
+   is exercised, and has moved 38 GB into silver — and is not on main; it is a
+   pull request. Drawing it live would claim the repo contains it. Drawing it
+   ready would claim nobody has run it, when it is the reason a whole prefix
+   exists. Drawing it as a stub would claim it raises.
+
+   The two marks already carry exactly this: the plate says what the code IS,
+   the lamp says whether bytes MOVED. Those are independent, and "proposed" is
+   simply the combination the map had not needed yet — dashed plate, no hatch,
+   filled lamp. Unmerged, and it ran.
    ============================================================ */
 DRAW.cell = (g, n) => {
-  const ink = inkOf(n), stub = n.state === "stub", live = n.state === "live";
+  const ink = inkOf(n), stub = n.state === "stub";
+  const proposed = n.state === "proposed";
+  /* filled for anything that has actually moved bytes, which now includes a
+     step that did so from a branch */
+  const live = n.state === "live" || proposed;
   plate(g, n.x, n.y, n.w, n.h, {
     fill: stub ? "var(--bg)" : ink, fo: stub ? 0.55 : 0.16,
-    stroke: ink, sw: 1.1, so: stub ? 0.55 : 0.95, dash: stub ? "5 3" : "none"
+    stroke: ink, sw: 1.1, so: stub ? 0.55 : 0.95,
+    dash: stub || proposed ? "5 3" : "none"
   });
   if (stub) plate(g, n.x, n.y, n.w, n.h, { fill: "url(#pX)", stroke: "none" });
   label(g, n.x, n.y - (n.note ? lineH(10) / 2 : 0), n.cellName || n.name,
