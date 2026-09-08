@@ -138,6 +138,30 @@ b.append(row('zebrahub_base.h5ad',get('zebrahub/zebrahub_base.h5ad')[0][0],'leg'
              'our name for zf_atlas_full_v1_release.h5ad - this tier does not rename'))
 out.append(block('zebrahub/','#6FA8E8',n,s_,''.join(b)))
 
+# ---- daniocell/
+# The first dataset here with more than one origin, and the folders say so: an accession from GEO, a
+# date from a portal that publishes nothing else, and a code prefix whose version lives in the
+# filename because only one of its two archives has one. Paper/ holds the article - which the
+# instance-side record said for months was unobtainable, under a filename that never said what it
+# was. All rows are in place; nothing here predates the convention.
+n,s_=agg('daniocell/')
+b=[row('README.md',get('daniocell/README.md')[0][0],'ok',
+       'three origins, and which object is canonical in each')]
+pn,ps=agg('daniocell/Paper/')
+b.append(row('Paper/',ps,'ok',f'{pn} objects - the article and its nine supplementary files'))
+b.append(row('mmc9.pdf',get('daniocell/Paper/mmc9.pdf')[0][0],'ok',
+             'Cell Press Document S2 - the full 55-page article, found not fetched',2))
+cn,cs=agg('daniocell/code/')
+b.append(row('code/',cs,'ok',f'{cn} objects - Zenodo v1.01 (md5-attested) + GitHub main'))
+gn,gs=agg('daniocell/GSE223922/')
+b.append(row('GSE223922/',gs,'ok',f'{gn} objects - the GEO release; the matrix is log-normalized, not raw'))
+rn,rs=agg('daniocell/portal/')
+b.append(row('portal/2024_08_release/',rs,'ok',
+             f'{rn} objects - the Seurat object, the ZFA-backed cluster table, the loader'))
+b.append(row('cluster_annotations.csv',get('daniocell/portal/2024_08_release/cluster_annotations.csv')[0][0],'ok',
+             '521 clusters, ZFA ids on 358 - in no other origin',2))
+out.append(block('daniocell/','#C4708A',n,s_,''.join(b)))
+
 # ---- megafin-1/
 n,s=agg('megafin-1/')
 g=collections.Counter(); c=collections.Counter()
