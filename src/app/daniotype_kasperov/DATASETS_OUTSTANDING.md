@@ -13,8 +13,8 @@ _Automated access is blocked; these need a browser._
 
 | Dataset | File | Why it matters | Status |
 |---|---|---|---|
-| DanioCell | Final paper PDF (PMC11181902 / Dev Cell) | Only archival gap; the Methods facts are already recorded | PMC is free-to-read but **not** OA, bot wall — **blocked** |
-| DanioCell | Supplementary Tables S1–S7 + figures | Unreviewed; may hold per-sample QC and cluster detail | Elsevier paywall — **blocked** |
+| ~~DanioCell~~ | ~~Final paper PDF (PMC11181902 / Dev Cell)~~ | ~~Only archival gap~~ | **RESOLVED 2026-09-08 — we already had it.** It is `sources/supplementary/mmc9.pdf`, Cell Press *Document S2*: the full 55-page article bundled with its supplement, filed under its attachment-slot name so nothing said what it was. Now at `s3://zsb-silver-warehouse/daniocell/Paper/` |
+| ~~DanioCell~~ | ~~Supplementary Tables S1–S7 + figures~~ | ~~Unreviewed~~ | **RESOLVED 2026-09-08 — also already held.** Tables S1–S7 are `mmc2.xlsx`–`mmc8.xlsx`, Figures S1–S7 are `mmc1.pdf`. Mapping written down in the silver `Paper/README.md` |
 | ~~all three~~ | ~~**Lawson v4.3.2** GTF~~ | ~~Would close DanioCell's 2,006-name residual~~ | **RESOLVED 2026-08-13 — we already had it.** Found undocumented at `/data/scratch/bench/ref/`, promoted to `datasets/zebrafish/references/lawson_v4_3_2/`. It does **not** close the residual: v4.3→v4.3.2 resolves only 197 names, 2,006 remain |
 | DanioCell | **Lawson v4.3.2 gene-information table** (biotypes + Ens99 cross-reference) | The GTF carries no biotypes, so the pseudogene check is still stuck at the v4.3 table's **314** vs the paper's **320**. This is the only remaining Lawson gap | UMass Cloudflare challenge — **blocked**, needs a browser |
 | DanioCell | An **untouched** v4.3.2 GTF from UMass | Ours is seqname-harmonized + MT-annotated by a since-deleted local script. Would let us attribute the 287 non-MT gene_name changes to the version delta rather than inferring it | **blocked**, low priority — biological identity is already confirmed |
