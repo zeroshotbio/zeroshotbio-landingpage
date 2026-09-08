@@ -442,6 +442,19 @@ function inspect(n) {
   if (n.sub) H.push(`<div class="sub">${esc(n.sub)}</div>`);
   if (n.thread) H.push(`<div class="thr">on the steel thread</div>`);
   if (UNVERIFIED.has(n.id)) H.push(`<div class="unver">not confirmable from here</div>`);
+  /* A station whose entry IS the list of things it contains renders that and
+     stops. zsb-bronze is the case: its six processes each have their own entry
+     one click away, so repeating their prose here made the repo's own page the
+     longest on the map and the least useful — you had to read past two trees, a
+     paragraph and a kv table to reach the six boxes you came for. Built from
+     the same OVERVIEW.processes the reader's default body uses, so the two
+     cannot drift. */
+  if (n.showProcesses) {
+    H.push(processBlock({ heading: false }));
+    readEl.innerHTML = H.join("");
+    readEl.scrollTop = 0;
+    return;
+  }
   if (n.panel) {
     /* A station whose evidence is a structure rather than a paragraph leads with
        it: a bucket with a hundred thousand objects is read as a tree, not as a
@@ -474,7 +487,7 @@ function inspect(n) {
 /* The six bronze processes, colour-keyed, as part of the reader's default body.
    Same palette as the trees, and the same split the floor draws: what runs on a
    Parse delivery, and what runs on something someone else published. */
-function processBlock() {
+function processBlock({ heading = true } = {}) {
   const gs = (typeof OVERVIEW !== "undefined" && OVERVIEW.processes) || [];
   if (!gs.length) return "";
   const g = gs.map(grp =>
@@ -483,7 +496,7 @@ function processBlock() {
       `<div class="pgi" style="--c:${grp.ink}">` +
       `<div class="pgn">${esc(name)}</div><div class="pgw">${what}</div></div>`).join("")
   ).join("");
-  return `<h4>The six processes</h4><div class="pg">${g}</div>`;
+  return (heading ? `<h4>The six processes</h4>` : "") + `<div class="pg">${g}</div>`;
 }
 
 function overview() {
