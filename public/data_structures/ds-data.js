@@ -341,9 +341,9 @@ const COL_BUCKET = 13, COL_REPO = 63, COL_RAIL = 83.5, CORRIDOR = 38;
    ============================================================ */
 const ZONES = [
   { name: "AWS S3", sub: "account 423623857952 · buckets",
-    x0: -1.5, y0: -3.6, x1: 27.5, y1: 69.5 },
+    x0: -1.5, y0: -3.6, x1: 27.5, y1: 75.5 },
   { name: "GitHub", sub: "github.com/zeroshotbio · repositories",
-    x0: 50.5, y0: 6.6, x1: 89, y1: 73.5 },
+    x0: 50.5, y0: 6.6, x1: 89, y1: 79.5 },
 ];
 
 const NODES = [
@@ -385,7 +385,7 @@ const NODES = [
 {id:"BREPO", key:"2", group:"② Bronze → Silver", groupMark:true, anchor:true,
  shape:"floor", tier:"bronze", state:"live",
  name:"zsb-bronze", repo:"zsb-bronze", right:"331 commits · 13,575 LOC",
- x:COL_REPO, y:21, w:22, h:18.5,
+ x:COL_REPO, y:22.5, w:22, h:18.5,
  sub:"reads bronze · writes silver · three releases published",
  thread:true,
  brief:"The transform for the first hop, and <mark>the repo that has now moved bytes in both directions</mark> — 944 MiB down out of bronze, 4.36 GiB up into silver across three releases. Named for the tier it <em>reads</em>, not the one it writes. One dataset module, minifin/, implemented end to end in 2,792 lines behind six commands. 156 commits from six contributors. <mark>Its build step now chooses a cell-calling policy</mark> rather than having one, which is why the tier below it holds three artifacts instead of one. Its dataset README has fallen behind its own bucket.",
@@ -396,7 +396,7 @@ const NODES = [
 
 {id:"BFETCH", key:"2a", group:"② Bronze → Silver", shape:"cell", tier:"bronze", state:"live",
  name:"fetch", cellName:"fetch", note:"8 of 136,246 objects · 944 MiB",
- x:COL_REPO, y:16.05, w:19, h:3.4,
+ x:COL_REPO, y:17.55, w:19, h:3.4,
  sub:"fetch/ · manifest.py + fetch.py · 244 LOC",
  thread:true,
  brief:"Mirrors eight named objects out of bronze, checking each one's size and etag against a pin before it lands on disk. <mark>Eight names — not a prefix, not a sync.</mark> That choice is why this hop is cheap: a prefix sync of minifin/ pulls 562 GiB, this pulls 944 MiB, and it is everything conversion and cell-calling actually read. All eight pins re-verified against the live bucket on 2026-08-31, multipart etags included — <mark>the seventh read running</mark> — and the repo carries a <mark>pins</mark> command that runs exactly that check. <mark>They now verify a superseded delivery</mark>: Parse regenerated MiniFin, the canonical matrix moved to 3_DGE-unfiltered/combined/all-sample/ at 959,585,881 B, and this manifest still names the 959,601,177 B object beside it. This was the one step in the architecture demonstrably moving bytes; as of 2026-08-23 it is no longer the only one.",
@@ -407,7 +407,7 @@ const NODES = [
 
 {id:"BCONV", key:"2b", group:"② Bronze → Silver", shape:"cell", tier:"bronze", state:"live",
  name:"convert", cellName:"process convert", note:"279M entries · ~150 MB peak",
- x:COL_REPO, y:19.95, w:19, h:3.4,
+ x:COL_REPO, y:21.45, w:19, h:3.4,
  sub:"process/convert.py · 490 LOC",
  thread:true,
  brief:"Streams Parse's unfiltered MiniFin triplet into an h5ad instead of loading it whole. The combined MatrixMarket holds roughly 279 million non-zero entries; blocks of 100,000 cells are appended to an on-disk CSR matrix, so peak memory on the measured run was about <mark>150 MB against a 2,743,021 × 32,520 matrix</mark>. Writes through AtomicPath, so a killed run leaves no half-written file where a good one should be. The intermediate is local and gitignored — correct for the tier rules, but it does mean the expensive step is thrown away between runs.",
@@ -418,7 +418,7 @@ const NODES = [
 
 {id:"BBUILD", key:"2c", group:"② Bronze → Silver", shape:"cell", tier:"bronze", state:"live",
  name:"build", cellName:"process build", note:"3 policies · --policy chooses",
- x:COL_REPO, y:23.85, w:19, h:3.4,
+ x:COL_REPO, y:25.35, w:19, h:3.4,
  sub:"process/ · cells, corrections, provenance, validate · 1,203 LOC",
  thread:true,
  brief:"Calls cells, applies the mandatory corrections, stamps provenance into .uns, validates, and writes the silver artifact. <mark>It now chooses its cell-calling policy rather than having one</mark> — <mark>--policy</mark> selects among three, and which ran is stamped into .uns. The canonical one reads Parse's per-slice thresholds and reproduces the delivered set exactly: 94,616 cells, jaccard 1.0000, a set match rather than a count match. The other two decide for themselves, so equality would be the wrong question and they are measured instead. This is a step that grew an opinion and a way to record having had it.",
@@ -429,7 +429,7 @@ const NODES = [
 
 {id:"BPUB", key:"2d", group:"② Bronze → Silver", shape:"cell", tier:"bronze", state:"live",
  name:"publish", cellName:"publish", note:"ran 3× · v1, v2, v3",
- x:COL_REPO, y:27.75, w:19, h:3.4,
+ x:COL_REPO, y:29.25, w:19, h:3.4,
  sub:"publish/publish.py · the second hop, and it is now routine",
  thread:true,
  brief:"Uploads one MiniFin silver release — the artifact, its README and the changelog — under minifin/&lt;version&gt;/. Version prefixes are immutable, the ledger is the only object ever replaced, and there is no delete path. <mark>It has now run three times</mark>: v1 on 2026-08-23, then v2 and v3 three minutes apart on the 28th. Each time the objects went up before the ledger that indexes them. What was the map's largest gap became a closed finding, and has now become the least remarkable thing on the page — which is what a working step is supposed to look like.",
@@ -441,7 +441,7 @@ const NODES = [
 /* ================= THE GAP, ON THE WRITE CONDUIT ================= */
 {id:"SGAP", key:"3", group:"③ The releases", groupMark:true, anchor:true,
  shape:"bay", tier:"silver", filled:true,
- name:"minifin/ — three releases, side by side", x:CORRIDOR, y:32, w:12.4, h:6,
+ name:"minifin/ — three releases, side by side", x:CORRIDOR, y:35, w:12.4, h:6,
  headline:"three releases",
  lines:["v1 · settings", "v2 · ranks", "v3 · ambient"],
  sub:"published by zsb-bronze · none supersedes another",
@@ -456,7 +456,7 @@ const NODES = [
 {id:"SILVER", key:"4", group:"④ Silver", groupMark:true, anchor:true,
  shape:"vault", tier:"silver", doors:["r"],
  name:"Silver", bucket:"SILVER", right:"100 obj · 96.04 GiB",
- x:COL_BUCKET, y:34, w:24, h:22,
+ x:COL_BUCKET, y:37, w:24, h:22,
  sub:"s3://zsb-silver-warehouse · written by zsb-bronze",
  tiles:[
    /* accent = the category colour the reader's tree uses, so a tile on the map
@@ -480,7 +480,7 @@ const NODES = [
 {id:"SREPO", key:"5", group:"⑤ Silver → Gold", groupMark:true, anchor:true,
  shape:"floor", tier:"silver", state:"stub",
  name:"zsb-silver", repo:"zsb-silver", right:"98 commits · 8,422 LOC",
- x:COL_REPO, y:45, w:22, h:14.6,
+ x:COL_REPO, y:49.5, w:22, h:14.6,
  sub:"reads silver · writes gold · the parts are ported, nothing runs them",
  thread:true,
  brief:"The transform for the second hop, and where the judgment calls are supposed to live: QC, doublet filtering, normalization, HVGs, batch-aware embeddings, clustering, annotation. <mark>It tripled since the last read — 870 lines to 2,552</mark> — and the new lines are the thing this map has been waiting on since it was drawn: Trailmaker's QC steps 3 and 4 ported and asserted against R, and a doublet scorer that calls real scDblFinder. <mark>The step that would run them now runs.</mark> The orchestrator takes a recipe and the silver pins, and gold holds its output. That is a genuinely new state for this map, and it is drawn dashed.",
@@ -491,7 +491,7 @@ const NODES = [
 
 {id:"SFETCH", key:"5a", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"ready",
  name:"fetch (silver)", cellName:"fetch", note:"run · gold was built from it",
- x:COL_REPO, y:42, w:19, h:3.4,
+ x:COL_REPO, y:46.5, w:19, h:3.4,
  sub:"fetch/ · release.py + config.py + fetch.py · 188 LOC",
  thread:true,
  brief:"Downloads the MiniFin silver release the bronze repo published. Written, and pinned to objects that exist. <mark>It now has to choose which release to read, and it chooses v2</mark> — the population Trailmaker itself filtered, because the recipe above it reproduces Trailmaker's QC and should start from what Trailmaker saw. v1 and v3 are pinned too but not fetched, so <mark>pins</mark> checks all three. All three matched the live warehouse on 2026-08-29. Still drawn cold: nothing on this map can show it has been run, because a fetch lands on a machine, not in a bucket.",
@@ -502,7 +502,7 @@ const NODES = [
 
 {id:"SPROC", key:"5b", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"ready",
  name:"process (silver→gold)", cellName:"process", note:"built · not yet run",
- x:COL_REPO, y:45.9, w:19, h:3.4,
+ x:COL_REPO, y:50.4, w:19, h:3.4,
  sub:"process/ · build_gold() implemented, recipe-aware",
  thread:true,
  brief:"The heaviest step in any tier, and <mark>it is now built</mark>. <code>build_gold</code> resolves the recipe's doublet scorer, refuses a source whose X is not raw counts, opens a cell-count ledger and runs the steps — 1,342 lines across fourteen modules, with its own test file and a real CLI command behind it. <mark>What still raises is the reserved <code>zsb</code> doublet method</mark>, not the step: name that recipe and it fails before any work, which is the point of resolving the scorer first. Drawn solid with a hollow lamp — built, and not yet run from here.",
@@ -512,7 +512,7 @@ const NODES = [
 
 {id:"SPUB", key:"5c", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"stub",
  name:"publish (gold)", cellName:"publish", note:"key settled · waiting on an artifact",
- x:COL_REPO, y:49.8, w:19, h:3.4,
+ x:COL_REPO, y:54.3, w:19, h:3.4,
  sub:"publish_gold() → implemented, and it has run",
  thread:true,
  brief:"Would upload one validated MiniFin gold h5ad under a versioned, non-overwriting key. Docstring only, and deliberately separate from the build for the same reason the bronze publish is. <mark>The gate this map drew on it is gone</mark> — gold keys are <mark>&lt;dataset&gt;/&lt;recipe&gt;/&lt;version&gt;/</mark>, settled on 2026-08-23 in both repos that needed to agree, and this page recorded it as open for two reads afterwards. What is left is not a decision but an order of operations: there is no gold artifact to publish until the step above it runs.",
@@ -525,7 +525,7 @@ const NODES = [
 {id:"GOLD", key:"6", group:"⑥ Gold", groupMark:true, anchor:true,
  shape:"vault", tier:"gold", doors:["r"],
  name:"Gold", bucket:"GOLD", right:"14 obj · 93.85 GiB",
- x:COL_BUCKET, y:57, w:24, h:22,
+ x:COL_BUCKET, y:63, w:24, h:22,
  sub:"s3://zsb-gold-library · analysis-ready, versioned · what the team trains on",
  tiles:[
    {key:"megafin/",  value:86983833630, objs:5},
@@ -542,7 +542,7 @@ const NODES = [
 {id:"GREPO", key:"7", group:"⑦ Gold — the reader", groupMark:true, anchor:true,
  shape:"floor", tier:"gold", state:"stub",
  name:"zsb-gold", repo:"zsb-gold", right:"59 commits · 2,871 LOC",
- x:COL_REPO, y:66, w:22, h:10.7,
+ x:COL_REPO, y:72, w:22, h:10.7,
  sub:"reads gold · publishes nothing · the terminal repo",
  thread:true,
  brief:"The consumer end. Downloads and validates released gold artifacts and hosts the starter notebooks. It is <mark>the only repo in the architecture with no write path at all</mark> — by design, not omission, which is why nothing leaves it on this map. 93 lines: a package init, a minifin module, one fetch stub, and the docstring test. <mark>Not one commit in six days</mark>, and it is the only station here that did not move. But its README moved the map: the key convention this page called a gate has been settled in it since 2026-08-23.",
@@ -553,7 +553,7 @@ const NODES = [
 
 {id:"GFETCH", key:"7a", group:"⑦ Gold — the reader", shape:"cell", tier:"gold", state:"stub",
  name:"fetch (gold)", cellName:"fetch", note:"key settled · waiting on an artifact",
- x:COL_REPO, y:64.95, w:19, h:3.4,
+ x:COL_REPO, y:70.95, w:19, h:3.4,
  sub:"fetch_release() → implemented, megafin + minifin",
  thread:true,
  brief:"Would download one released MiniFin gold artifact. Docstring only — but the docstring now names the key it would build: <mark>&lt;dataset&gt;/&lt;recipe&gt;/&lt;version&gt;/</mark>, with the caller naming both. Its old blocker is retired. The reasoning behind it survives and is the good part: prefix-listing does not survive immutable versioned keys, so a pull must name one release. <mark>This is the one place on the map that reads without pinning</mark> — which release to open is the reader's question, not a fact fixed upstream.",
@@ -564,7 +564,7 @@ const NODES = [
 
 {id:"GNB", key:"7b", group:"⑦ Gold — the reader", shape:"cell", tier:"gold", state:"stub",
  name:"the starter notebooks", cellName:"notebooks", note:"1 README · 0 notebooks",
- x:COL_REPO, y:68.85, w:19, h:3.4,
+ x:COL_REPO, y:74.85, w:19, h:3.4,
  sub:"notebooks/minifin/README.md",
  thread:true,
  brief:"Where the analysis that consumes a MiniFin gold release is meant to live. One README, describing an 01_eda.ipynb that has not landed. The README specifies it well: load the artifact, show its provenance, validate shape, layers, required metadata and embeddings, then summarise QC distributions and perturbation, replicate and cell-type balance. Generated files go to a gitignored path or the sandbox, never back under a gold key. <mark>It is the far end of the steel thread</mark> — everything above it has to work before one line of it can run.",
@@ -577,17 +577,17 @@ const NODES = [
 {id:"MED", key:"8", group:"⑧ The contract", groupMark:true, anchor:true,
  shape:"spine", tier:"code",
  name:"zsb-medallion", repo:"zsb-medallion", right:"v0.13.0",
- x:COL_RAIL, y:41, w:8, h:62, tapLen:5.5,
+ x:COL_RAIL, y:45.5, w:8, h:65, tapLen:5.5,
  /* One tap per transform repo, carrying the version that repo actually pins.
     A pin behind the rail's own version is stroked in --drop. All three agreed
     on the first read, diverged on the second, and agree again on the third —
     which is why the pin is drawn rather than written up: it moves. */
- taps:[{y:21, pin:"v0.9.0"}, {y:45, pin:"v0.9.0"}, {y:66, pin:"v0.9.0"}],
- sub:"v0.9.0 · 96 commits · 2,632 LOC · the only repo here with boto3",
+ taps:[{y:22.5, pin:"v0.13.0"}, {y:49.5, pin:"v0.13.0"}, {y:72, pin:"v0.13.0"}],
+ sub:"v0.13.0 · 148 commits · 3,729 LOC · the only repo here with boto3",
  exports:["BRONZE", "SILVER", "GOLD", "SANDBOX", "S3IO", "AtomicPath", "5 errors", "console", "fetch"],
- brief:"Not a stage — which is why it is a rail beside the transform column rather than a station in it. It is the shared vocabulary all three transforms import, and it touches no bucket: four bucket names, the S3 and atomic-file mechanics, the CLI helpers, and now <mark>the batch fetch and pin check both working transforms run on</mark>. The only repo with boto3, enforced socially rather than technically. Its interesting property is what it refuses to do — S3IO.upload raises rather than overwrite, which makes 'immutable' a property of the code. <mark>The taps agree again</mark>: all three on v0.9.0.",
+ brief:"Not a stage — which is why it is a rail beside the transform column rather than a station in it. It is the shared vocabulary all three transforms import, and it touches no bucket: four bucket names, the S3 and atomic-file mechanics, the CLI helpers, and now <mark>the batch fetch and pin check both working transforms run on</mark>. The only repo with boto3, enforced socially rather than technically. Its interesting property is what it refuses to do — S3IO.upload raises rather than overwrite, which makes 'immutable' a property of the code. <mark>The taps agree</mark>: all three on v0.13.0.",
  does:"Not a stage, which is why it is drawn as a rail beside the transform column rather than a station in it. It is the shared vocabulary all three transforms import, and it touches no bucket. It holds exactly three things: the four bucket names, the S3 and atomic-file mechanics, and the CLI presentation helpers.",
- built:"2,632 lines, 96 commits, and a single author. It is the only repo in the set that depends on boto3, and that is enforced socially rather than technically: zsb-bronze's AGENTS.md says 'S3 mechanics come from zsb-medallion; add no boto3 here', and no transform repo does. It is also the only repo with real S3 tests — moto and boto3-stubs are in its dev group and nowhere else. Tagged v0.1.0 through v0.9.0, and the three releases since the last read are why the rail grew: <mark>fetch/</mark> is new — plan, execute and pin-check a batch of downloads — and it is what both working fetches on this map now run on. Main sits four commits past the v0.9.0 tag.",
+ built:"3,729 lines, 148 commits, and a single author. It is the only repo in the set that depends on boto3, and that is enforced socially rather than technically: zsb-bronze's AGENTS.md says 'S3 mechanics come from zsb-medallion; add no boto3 here', and no transform repo does. It is also the only repo with real S3 tests — moto and boto3-stubs are in its dev group and nowhere else. Tagged v0.1.0 through v0.9.0, and the three releases since the last read are why the rail grew: <mark>fetch/</mark> is new — plan, execute and pin-check a batch of downloads — and it is what both working fetches on this map now run on. Main sits four commits past the v0.9.0 tag.",
  cond:"The interesting property of this package is still what it refuses to do. <mark>S3IO.upload</mark> will not clobber — it raises S3ObjectExistsError rather than overwrite — which is what makes 'version prefixes are immutable' a property of the code rather than a promise in a README. <mark>And the divergence this map drew here last time is closed.</mark> All three transforms are on v0.9.0. What closed it is worth naming because it is a mechanism rather than a tidy-up: a <mark>bump-consumers</mark> workflow in this repo opens a pull request against each of the three whenever a version tag lands, so the contract carries its own consumers forward. It fires on tags rather than on every merge to main, and it refuses to force-push over human commits on a bump branch — two decisions that read as somebody having already been bitten. The rail also stopped being a vocabulary and started being a library: the shared <mark>fetch</mark> is real code two repos now depend on, so a change here can break a transform in a way that renaming a constant never could.",
  kv:[["Repo","zeroshotbio/zsb-medallion"],["Version","v0.13.0 · main is on the tag"],["Pinned by all three","v0.13.0 — still in step"],["Kept in step by","bump-consumers.yml, on version tags"],["Commits","148, sole author"],["Source","3,729 LOC · 2,021 in src/"],["Shared fetch","used by bronze and silver"],["boto3","here only"]]},
 ];
@@ -627,7 +627,7 @@ const EDGES = [
 
 /* one carry: the map runs out at the bottom, into everything gold feeds */
 const CARRIES = [
-  {x0:COL_REPO, y0:71.35, x1:COL_REPO, y1:76, fade:"out",
+  {x0:COL_REPO, y0:77.35, x1:COL_REPO, y1:82, fade:"out",
    from:"zsb-gold", to:"PRISM · the models · everything trained downstream"},
 ];
 
