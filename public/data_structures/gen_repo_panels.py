@@ -251,87 +251,108 @@ def simple_panel(repo: str, pkg: str, mods: list[tuple[str, str]], acc: str, rig
     return STYLE + legend({"live"}) + block(f"{repo}", acc, right, "".join(b))
 
 
-def stage_panels() -> dict[str, str]:
-    """Build one panel per stage cell on the bronze floor.
+def boxes(groups: list[tuple[str, str, list[tuple[str, str]]]]) -> str:
+    """Render grouped callout boxes in the reader's process style.
 
-    A stage cell used to carry prose and a kv table only, which meant the thing a reader most wants
-    to know - what does this step actually touch, and for which dataset - was spread across
-    sentences. Each stage is really a small table: one shared implementation, one binding per
-    dataset, and a result. Drawn that way it is also obvious where a dataset is missing, which is
-    how the ChemFish gap became visible in the first place.
+    The same markup the reader's default body uses - .pg / .pgh / .pgi - so a stage entry and the
+    overview that lists it look like one thing rather than two. The classes and the palette live in
+    index.html, so nothing here carries a colour literal.
+
+    Args:
+        groups (list[tuple[str, str, list[tuple[str, str]]]]): (heading, colour var, items), where
+            each item is (name, explanation). Explanation may carry inline markup.
+
+    Returns:
+        str: The markup, escaped for the JS literal.
+    """
+    out = []
+    for head, var, items in groups:
+        out.append(f'<div class=\\"pgh\\" style=\\"--c:var({var})\\">{esc(head)}</div>')
+        for name, what in items:
+            out.append(
+                f'<div class=\\"pgi\\" style=\\"--c:var({var})\\">'
+                f'<div class=\\"pgn\\">{esc(name)}</div>'
+                f'<div class=\\"pgw\\">{esc(what)}</div></div>'
+            )
+    return f'<div class=\\"pg\\">{"".join(out)}</div>'
+
+
+def stage_panels() -> dict[str, str]:
+    """Build one boxed entry per stage cell.
+
+    Every stage answers the same two questions and they are worth separating: what it does, and what
+    it refuses to do. The refusals are the half that is usually undocumented and is the reason these
+    steps can be re-run without fear - a step that overwrites on a retry and a step that stops are
+    indistinguishable until the day it matters.
 
     Returns:
         dict[str, str]: Node id to panel markup.
     """
-    b = REPOS / "zsb-bronze/src/zsb_bronze"
-    f = lambda p: f"{loc(b / p):,}"
-
-    fetch = "".join([
-        row("parse-delivery pins", "", "shared", "named keys, never a prefix sync"),
-        row("minifin/fetch/manifest.py", f("minifin/fetch/manifest.py"), "live",
-            "132 keys · 947 MiB", 2),
-        row("129 per-sample triplets", "", "live", "43 samples × 3 files", 2),
-        row("settings · summary · run def", "", "live", "3 named objects", 2),
-        row("megafin/fetch/manifest_*.py", f"{loc(b / 'megafin/fetch/manifest_megafin_1.py') + loc(b / 'megafin/fetch/manifest_megafin_2.py'):,}",
-            "live", "2 × 291 keys · 10.8 GiB", 2),
-        row("fetch.py bindings", f"{loc(b / 'minifin/fetch/fetch.py') + loc(b / 'megafin/fetch/fetch.py'):,}",
-            "shared", "bind to zsb_medallion.fetch", 2),
-        row("chemfish has no fetch", "", "none", "its origin is not Fort Knox"),
-    ])
-    convert = "".join([
-        row("parse/convert.py", f("parse/convert.py"), "shared",
-            "streams MatrixMarket → h5ad in blocks"),
-        row("2,743,021 × 32,520", "", "shared", "~279M non-zeros, ~150 MB peak", 2),
-        row("minifin/process/convert.py", f("minifin/process/convert.py"), "live",
-            "binds the converter to its dirs", 2),
-        row("megafin/process/convert.py", f("megafin/process/convert.py"), "live",
-            "same, plus plate namespacing", 2),
-        row("chemfish is not converted", "", "none", "arrives as a sealed BPCells cds"),
-    ])
-    build = "".join([
-        row("parse/cells.py", f("parse/cells.py"), "shared", "cell calling, policy-chosen"),
-        row("parse-settings → v1", "94,864", "live", "what Parse itself called", 2),
-        row("barcode-ranks → v2", "94,089", "live", "measured from the rank curve", 2),
-        row("parse/ambient.py → v3", "106,022", "live", "ambient-profile, 350 lines", 2),
-        row("parse/validate.py", f("parse/validate.py"), "shared", "the silver gate"),
-        row("parse/provenance.py", f("parse/provenance.py"), "shared", "stamps policy + overlap"),
-        row("chemfish is not built", "", "none", "nothing here to build"),
-    ])
-    publish = "".join([
-        row("parse/publish.py", f("parse/publish.py"), "shared", "preflight + release, no delete path"),
-        row("minifin/v1 v2 v3", "", "live", "4.36 GiB — 1.56 + 1.56 + 1.58", 2),
-        row("megafin/v1 v2", "", "live", "56.16 GiB — 30.06 + 30.25", 2),
-        row("5 publishes total", "", "live", "2026-08-23 · 08-28 ×2 · megafin ×2", 2),
-        row("chemfish is not published", "", "none", "it was uploaded, not published"),
-    ])
-    acquire = "".join([
-        row("acquire/manifest.py", f("chemfish/acquire/manifest.py"), "proposed",
-            "12 rows · 6 URLs · 12 silver keys"),
-        row("2025_03 · 6 artifacts", "", "proposed", "20.0 GiB — superseded upstream", 2),
-        row("2026_09 · 6 artifacts", "", "proposed", "16.1 GiB — what the URLs serve", 2),
-        row("acquire/verify.py", f("chemfish/acquire/verify.py"), "proposed",
-            "local digest check + one HEAD each"),
-        row("cli.py", f("chemfish/cli.py"), "proposed", "verify · upstream — and no more"),
-        row("runbook/*.sh", f"{loc(b / 'chemfish/runbook'):,}", "proposed",
-            "origin → disk → silver, both refuse"),
-        row("no fetch, convert, build", "", "none", "a fetch would substitute, not repair"),
-    ])
-
-    common = {"shared", "live", "none"}
+    S, L, N, P = "--k-shared", "--k-live", "--k-none", "--k-proposed"
     return {
-        "BFETCH": STYLE + legend(common) + block("fetch — what it pins", DARK["--k-live"],
-                                                 "132 + 582 keys", fetch),
-        "BCONV": STYLE + legend(common) + block("process convert — what it streams",
-                                                DARK["--k-live"], "279M non-zeros", convert),
-        "BBUILD": STYLE + legend(common) + block("process build — what it calls",
-                                                 DARK["--k-live"], "3 policies", build),
-        "BPUB": STYLE + legend(common) + block("publish — what it wrote", DARK["--k-live"],
-                                               "5 releases · 60.5 GiB", publish),
-        "BACQ": STYLE + legend({"proposed", "none"}) + block("acquire — what it vouches for",
-                                                             DARK["--k-proposed"],
-                                                             "12 rows · 36.1 GiB", acquire),
+        "BFETCH": boxes([
+            ("What it does", S, [
+                ("the manifest", "132 S3File rows for MiniFin and 2 × 291 for MegaFin, each pinning a key to an exact byte count and an exact ETag. 129 of MiniFin's are the per-sample triplets - 43 samples × all_genes, cell_metadata, count_matrix - and three are settings.txt, the sample summary and the run definition."),
+                ("plan_downloads", "Pairs every pinned object with its local destination and returns the plan before any byte moves, so --dry-run is a real answer rather than a rehearsal. Guards the prefix, rejects a key that escapes its root, and rejects two sources that would land on one path."),
+                ("fetch_all", "Runs the plan through zsb_medallion.io.S3IO with a running byte callback. A complete local copy is skipped unless --overwrite is given, so an interrupted fetch resumes instead of restarting 947 MiB."),
+                ("pins", "The same identities checked without downloading anything: one head-object per key, returning a PinDrift per object rather than a single boolean. Answers \u201cis Fort Knox still what we pinned\u201d in seconds."),
+            ]),
+            ("What it refuses", N, [
+                ("a prefix sync", "Never syncs a prefix. minifin/ is 562 GiB and the pinned set is 947 MiB - 0.16% - because named keys are what conversion and cell-calling actually read. The rest is FASTQ and split-pipe intermediates nobody downloads."),
+                ("an object that moved", "A size or ETag that disagrees with its pin stops the fetch. It will not quietly take a newer object with the same key, which is exactly how the superseded a354c053 delivery was caught."),
+            ]),
+        ]),
+        "BCONV": boxes([
+            ("What it does", S, [
+                ("streams, never loads", "Parse ships one MatrixMarket triplet per sample, cell-major over a shared gene axis. Conversion appends consecutive cell blocks straight into one on-disk CSR - default 100,000 rows a block, --chunk-cells to change it - so ~279 million non-zeros across 2,743,021 × 32,520 cost ~150 MB of memory instead of tens of gigabytes."),
+                ("preserves empty rows", "Block boundaries keep row alignment even where a barcode has no counts at all, so the unfiltered matrix still has one row per barcode Parse emitted. Cell calling later needs exactly that: the empty rows are the evidence."),
+                ("concatenates in declared order", "Samples are concatenated in the order the dataset declares, not in whatever order the filesystem returns, so the same delivery converts to the same matrix on any machine."),
+            ]),
+            ("What it refuses", N, [
+                ("a mismatched gene axis", "Every triplet is validated against the first: same genes, same columns, same labels. all_genes.csv.gz is byte-for-byte the same 251,854 bytes in all 43 directories but each was gzipped separately, so the ETags differ - gene identity is asserted after load rather than trusted from the pin."),
+                ("a malformed triplet", "Dimensions are read from the MatrixMarket header and checked against the obs and var frames before a single entry is streamed."),
+            ]),
+        ]),
+        "BBUILD": boxes([
+            ("Three ways to call a cell", S, [
+                ("parse-settings \u2014 v1", "Reads the per-sample minCellSize Parse recorded in settings.txt: the threshold Trailmaker itself applied. Reproduces the delivered population exactly - 94,864 cells, jaccard 1.0000, a set match rather than a count match. The only policy that takes Parse's answer as input."),
+                ("barcode-ranks \u2014 v2", "A port of DropletUtils' barcodeRanks knee search, computing the threshold here and taking no Parse threshold at all. 94,089 cells. The R original it follows is kept at tests/reference/barcodeRanks_reference.R so the port can be re-checked against it."),
+                ("ambient-profile \u2014 v3", "emptyDrops (Lun et al. 2019) with the sublibrary as the unit: pool barcodes at or under a low total into an ambient profile, score every barcode between 100 transcripts and the sublibrary inflection by log-probability under that multinomial, get a p-value from a seeded Monte Carlo null, and correct with Benjamini-Hochberg. 106,022 cells. It exists because low-yield wells have no cliff to draw a line on - there a 150-transcript ambient barcode and a 700-transcript small cell differ only in what they express."),
+            ]),
+            ("What else it does", S, [
+                ("mandatory corrections", "The judgment-free fixes only: control and typo sample renames, recovery of the five double-loaded samples split-pipe collapsed, and the sublibrary column rename. Each is a pure frame transform so it can be tested alone."),
+                ("stamps provenance", "Writes the delivery facts, code versions, the cell-count transition, the policy and the input it read, and the pinned manifest into .uns. PROVENANCE_KEYS is the vocabulary, and the validator imports that same set to check the stamp is complete."),
+                ("the silver gate", "validate_silver checks obs, var, uns and the X matrix before anything is written. The schema half runs on a backed file, which is why the publish pre-flight can re-use it without loading the matrix."),
+            ]),
+        ]),
+        "BPUB": boxes([
+            ("What it does", S, [
+                ("a release, not a file", "Uploads the validated h5ad, the dataset README and the changelog as one set. The ledger is rewritten last, every time, so a half-finished publish never leaves a changelog describing an artifact that is not there."),
+                ("separate from the build", "The build validates and writes locally; publishing is a second, explicit act. --dry-run prints the release plan without ever constructing an S3 client."),
+                ("has run five times", "minifin/v1\u2013v3 and megafin/v1\u2013v2: 60.5 GiB in silver, each version publishing its own policy's build."),
+            ]),
+            ("What it refuses", N, [
+                ("the wrong policy", "A build stamped barcode-ranks cannot be published as the parse-settings version. All three are valid Silver artifacts so the schema check cannot tell them apart - only the .uns stamp can, and publishing the wrong one would put a population in the warehouse its own changelog describes wrongly."),
+                ("a silent overwrite", "--overwrite exists for retrying a failed or abandoned publish, not for correcting a result: a corrected result is a new version. Without it, an occupied key stops the run."),
+                ("a short upload", "S3ObjectExistsError, S3ObjectMismatchError, S3ShortUploadError and S3PublishPermissionError are distinct types, so a truncated transfer, an occupied key and a missing grant are never reported as the same failure."),
+                ("a delete", "There is no delete path anywhere in this step."),
+            ]),
+        ]),
+        "BACQ": boxes([
+            ("What it does", P, [
+                ("the custody record", "Twelve rows over six URLs: origin URL, byte count, SHA-256, silver key and upstream state, one per artifact per release. Flat across both releases rather than one table each, so the fact that the origin serves both from the same six addresses is the first thing a reader sees."),
+                ("verify --release", "Holds the local package against its pins. No network. --digest reads every byte, including a 17 GB tarball, and --no-digest gives the weaker size-only answer explicitly rather than by omission."),
+                ("upstream --release", "One HEAD per distinct URL, no payload, read against every release that claims it - so one response reports unchanged for the current package and superseded for the one it replaced."),
+                ("runbook/", "The two scripts that actually moved the 38 GB: acquire-release.sh from the origin to disk, publish-release.sh from disk to silver. They were in /data/scratch until this branch, which meant the record of what is in silver lived in the repo and the procedure that put it there did not."),
+            ]),
+            ("What it refuses", N, [
+                ("a fetch", "There is no fetch command and there must not be one. These URLs carry no version and the origin overwrites in place - it replaced five of six artifacts on 2026-09-03 without announcement - so a fetch aimed at the archived release would substitute the current one and every result computed against those bytes would quietly stop matching its inputs."),
+                ("a re-acquisition over an existing one", "acquire-release.sh refuses a non-empty destination. A directory precondition rather than a --force flag, so it cannot be waved through in a hurry."),
+                ("an overwrite in silver", "publish-release.sh treats a key holding the right byte count as done and stops on one holding different bytes. It reads success from the bucket's own head-object, never from the uploader's exit status."),
+                ("the authors' authority", "The SHA-256 values are ours, computed at acquisition. The origin publishes no checksum file - every candidate path returns 403 - so a passing verify proves the copy is unchanged since we took it, not that it is what the authors intended."),
+            ]),
+        ]),
     }
-
 
 
 if __name__ == "__main__":

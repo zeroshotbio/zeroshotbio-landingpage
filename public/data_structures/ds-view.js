@@ -455,6 +455,16 @@ function inspect(n) {
     readEl.scrollTop = 0;
     return;
   }
+  /* panelOnly: the entry IS the panel. A stage whose boxes already say what it
+     does and what it refuses does not also need a paragraph restating it and a
+     kv table restating that — which is what these cells carried, and why the
+     figures in them drifted without anyone noticing. */
+  if (n.panel && n.panelOnly) {
+    H.push(n.panel);
+    readEl.innerHTML = H.join("");
+    readEl.scrollTop = 0;
+    return;
+  }
   if (n.panel) {
     /* A station whose evidence is a structure rather than a paragraph leads with
        it: a bucket with a hundred thousand objects is read as a tree, not as a
