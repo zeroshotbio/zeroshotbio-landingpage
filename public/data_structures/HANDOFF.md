@@ -749,9 +749,16 @@ stay unrendered. The classes live in `index.html`:
 | `.pg` | the panel |
 | `.pgl` | a lede — one ruled paragraph *above* the first heading, for a rule the boxes below are instances of |
 | `.pgq` | a chip row inside the lede, for the two or three numbers a reader would otherwise assemble from the boxes |
+| `.pgq.ds` | a chip row of dataset names, in each dataset's own accent, naming what a section carries |
 | `.pgh` | a group heading; takes `--c` |
 | `.pgi` | a box; takes `--c` |
 | `.pgi.ic` | a box with a drawing of its action in a 26px column |
+
+`OVERVIEW.processes` groups take an optional `sets: [[label, ink], …]`, rendered by
+`processBlock` as a `.pgq.ds` row between the group heading and its boxes — what a
+section has under its wing, before what it does to them. The inks are the dataset
+accents the bucket treemaps use, so the two panels read as one map; they are fixed hex
+with no light variant, which is why `body.light` darkens them.
 
 `.ic` is opt-in for a reason: `.pgi` is used by five other panels whose boxes
 have no icon, and a grid applied to all of them puts their name in a 26px

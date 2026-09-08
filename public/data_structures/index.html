@@ -209,6 +209,15 @@
          border-radius:3px;border:1px solid var(--c,var(--rule));color:var(--c,var(--fg2));
          background:color-mix(in srgb,var(--c,transparent) 9%,transparent);white-space:nowrap}
   .pgq i b{font-weight:700;font-family:var(--mono,ui-monospace,monospace);font-size:10.5px}
+  /* the datasets a section has under its wing, in each one's own accent — the
+     same accents the bucket treemaps use, so the two panels read as one map. */
+  .pgq.ds{margin:-.05rem 0 .45rem}
+  /* Dataset accents are fixed hex with no light-theme variant — the bucket panels use them at
+     1.15em bold, where they hold up, and these chips are 9.5px, where they do not. Darken the
+     ink and the rule on the light ground only; the hue is what carries the identity. */
+  body.light .pgq.ds i{color:color-mix(in srgb,var(--c) 70%,#14181a);
+                       border-color:color-mix(in srgb,var(--c) 62%,#14181a);
+                       background:color-mix(in srgb,var(--c) 14%,transparent)}
   /* An action box carries a drawing of its action. Opt-in via .ic, because the
      other panels' boxes have no icon and a grid applied to all of them would
      put their name in a 20px column. */

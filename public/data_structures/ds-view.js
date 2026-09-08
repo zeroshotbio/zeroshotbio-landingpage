@@ -502,6 +502,13 @@ function processBlock({ heading = true } = {}) {
   if (!gs.length) return "";
   const g = gs.map(grp =>
     `<div class="pgh" style="--c:${grp.ink}">${esc(grp.group)}</div>` +
+    /* Which datasets this section carries, before what it does to them. A reader asking
+       "what runs on what" was previously answered only by reading four descriptions. */
+    (grp.sets && grp.sets.length
+      ? `<div class="pgq ds">` +
+        grp.sets.map(([label, ink]) => `<i style="--c:${ink}">${esc(label)}</i>`).join("") +
+        `</div>`
+      : "") +
     grp.items.map(([name, what]) =>
       `<div class="pgi" style="--c:${grp.ink}">` +
       `<div class="pgn">${esc(name)}</div><div class="pgw">${what}</div></div>`).join("")
