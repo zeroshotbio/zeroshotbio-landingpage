@@ -55,16 +55,29 @@ for v,recipe,cells in (('v1','parse-settings','1,340,518'),('v2','ambient-profil
 out.append(block('megafin/','#C08552',n,s,''.join(b)))
 
 # ---- chemfish/
+# Two releases of the same six URLs. The origin overwrites in place and announces nothing, so the
+# release folders are the only thing keeping the March 2025 package from having been destroyed by
+# the September 2026 one. The panel shows both because choosing between them is the reader's job.
 n,s=agg('chemfish/')
-b=[row('2025_03_release/',s,'acquired','the authors’ March 2025 publication, held verbatim')]
-rn,rs=agg('chemfish/2025_03_release/RDS_Data/')
-b.append(row('RDS_Data/',rs,'acquired',f'{rn} objects — 6 data files + the authors’ SHA256SUMS',2))
-for _,k in sorted(get('chemfish/2025_03_release/RDS_Data/'),key=lambda r:-r[0])[:3]:
-    sz=[x for x,y in rows if y==k][0]
-    b.append(row(k.split('/')[-1],sz,'acquired','sealed BPCells cds tarball' if k.endswith('.tar') else 'author result table',3))
-pn,ps=agg('chemfish/2025_03_release/Paper/')
-b.append(row('Paper/',ps,'acquired','the bioRxiv preprint — supplements were published as data, not documents',2))
-b.append(row('README.md',get('chemfish/2025_03_release/README.md')[0][0],'acquired','origin, DOI, and the do-not-re-fetch warning',2))
+b=[row('README.md',get('chemfish/README.md')[0][0],'acquired',
+       'which release to use, and why neither contains the other')]
+for rel,label in (('2025_03_release','the authors’ March 2025 publication — superseded upstream, recoverable only here'),
+                  ('2026_09_release','the September 2026 publication — what the six URLs serve today')):
+    _,rs=agg(f'chemfish/{rel}/')
+    b.append(row(f'{rel}/',rs,'acquired',label))
+    rn,rr=agg(f'chemfish/{rel}/RDS_Data/')
+    b.append(row('RDS_Data/',rr,'acquired',
+                 f'{rn} objects — 6 data files + SHA256SUMS computed here, not published upstream',2))
+    for _,k in sorted(get(f'chemfish/{rel}/RDS_Data/'),key=lambda r:-r[0])[:2]:
+        sz=[x for x,y in rows if y==k][0]
+        b.append(row(k.split('/')[-1],sz,'acquired',
+                     'sealed BPCells cds tarball' if k.endswith('.tar') else 'author result table',3))
+    pp=get(f'chemfish/{rel}/Paper/')
+    if pp:
+        b.append(row('Paper/',sum(x for x,_ in pp),'acquired',
+                     'the bioRxiv preprint — supplements were published as data, not documents',2))
+    b.append(row('README.md',get(f'chemfish/{rel}/README.md')[0][0],'acquired',
+                 'provenance, what changed, and the do-not-re-fetch warning',2))
 out.append(block('chemfish/','#7FB5A8',n,s,''.join(b)))
 
 # ---- zebrahub/
