@@ -7,22 +7,18 @@ rows=[(int(a),b) for a,b in rows]
 TOT=sum(sz for sz,_ in rows)
 gib=lambda b: b/1024**3
 def esc(t): return t.replace('\\','\\\\').replace('"','\\"')
-def fade(c,a=".13"):
-    r,g,b=int(c[1:3],16),int(c[3:5],16),int(c[5:7],16)
-    return f'rgba({r},{g},{b},{a})'
-
+# Three states, not four kinds. The dataset accents on the block borders are what tells you WHICH
+# dataset you are looking at; a second colour system inside each tree was competing with them and
+# winning. What a row inside a tree needs to say is only whether it is where it should be.
 KINDS=[
- ("published","#4FCB8A","Published release — written here by zsb-bronze under the version convention"),
- ("acquired", "#6FA8E8","Acquired source — taken verbatim from a public origin, custody in zsb-bronze"),
- ("prerepo",  "#8A8A92","Predates the repos — written by neither, never versioned"),
- ("legacy",   "#B07AA1","Legacy — archived elsewhere or superseded; retained, never published"),
+ ("ok",  "In place — where the convention says it belongs"),
+ ("del", "Pending deletion — superseded; the delete has not been made"),
+ ("leg", "Legacy — retained and readable, not what to build on"),
 ]
-COL={k:c for k,c,_ in KINDS}
 
 def row(path,size,kind,note,depth=1):
-    c=COL[kind]
-    pad='│   '*(depth-1)+('├── ' if depth>1 else '')
-    return (f'<div class=\\"fk d{depth}\\" style=\\"border-left-color:{c};background:{fade(c)};color:{c}\\">'
+    pad='\u2502   '*(depth-1)+('\u251c\u2500\u2500 ' if depth>1 else '')
+    return (f'<div class=\\"fk {kind} d{depth}\\">'
             f'<span class=\\"p\\">{esc(pad+path)}</span><span class=\\"n\\">{gib(size):,.2f}</span>'
             f'<span class=\\"t\\" title=\\"{esc(note)}\\">{esc(note)}</span></div>')
 
@@ -38,19 +34,18 @@ def agg(pref):
 
 out=[]
 # legend
-leg=''.join(f'<b><i style=\\"background:linear-gradient(90deg,{c} 0 50%,{fade(c)} 50%)\\"></i>{esc(t)}</b>'
-            for _,c,t in KINDS)
+leg=''.join(f'<b><i class=\\"sw {k}\\"></i>{esc(t)}</b>' for k,t in KINDS)
 out.append(f'<div class=\\"fkl\\">{leg}</div>')
 
 # ---- megafin/
 n,s=agg('megafin/')
-b=[row('CHANGELOG.md',get('megafin/CHANGELOG.md')[0][0],'published','the ledger, rewritten last on every publish')]
+b=[row('CHANGELOG.md',get('megafin/CHANGELOG.md')[0][0],'ok','the ledger, rewritten last on every publish')]
 for v,recipe,cells in (('v1','parse-settings','1,340,518'),('v2','ambient-profile','1,409,574')):
     vn,vs=agg(f'megafin/{v}/')
-    b.append(row(f'{v}/',vs,'published',f'{recipe} — {cells} called cells'))
+    b.append(row(f'{v}/',vs,'ok',f'{recipe} — {cells} called cells'))
     for sz,k in sorted(get(f'megafin/{v}/'),key=lambda r:-r[0]):
         leaf=k.split('/')[-1]
-        b.append(row(leaf,sz,'published','the release artifact' if leaf.endswith('.h5ad')
+        b.append(row(leaf,sz,'ok','the release artifact' if leaf.endswith('.h5ad')
                      else 'what the policy was and what it produced',2))
 out.append(block('megafin/','#C08552',n,s,''.join(b)))
 
@@ -63,31 +58,31 @@ out.append(block('megafin/','#C08552',n,s,''.join(b)))
 # both. Its contents are listed rather than summarised, because "Paper/" alone does not tell you
 # whether it holds one preprint or a folder of them, and the answer changes if a revision lands.
 n,s=agg('chemfish/')
-b=[row('README.md',get('chemfish/README.md')[0][0],'acquired',
+b=[row('README.md',get('chemfish/README.md')[0][0],'ok',
        'which release to use, and why neither contains the other')]
 _,ps=agg('chemfish/Paper/')
-b.append(row('Paper/',ps,'acquired','one preprint, covering work in both releases'))
+b.append(row('Paper/',ps,'ok','one preprint, covering work in both releases'))
 for sz,k in sorted(get('chemfish/Paper/'),key=lambda r:-r[0]):
     leaf=k.split('/')[-1]
-    b.append(row(leaf,sz,'acquired',
+    b.append(row(leaf,sz,'ok',
                  'bioRxiv 2025-04-03 — 38 pages; predates the 2026-09 genetic arm'
                  if leaf.endswith('.pdf') else 'what the preprint does and does not cover',2))
 for rel,label in (('2025_03_release','the authors’ March 2025 publication — superseded upstream, recoverable only here'),
                   ('2026_09_release','the September 2026 publication — what the six URLs serve today')):
     _,rs=agg(f'chemfish/{rel}/')
-    b.append(row(f'{rel}/',rs,'acquired',label))
+    b.append(row(f'{rel}/',rs,'ok',label))
     rn,rr=agg(f'chemfish/{rel}/RDS_Data/')
-    b.append(row('RDS_Data/',rr,'acquired',
+    b.append(row('RDS_Data/',rr,'ok',
                  f'{rn} objects — 6 data files + SHA256SUMS computed here, not published upstream',2))
     for _,k in sorted(get(f'chemfish/{rel}/RDS_Data/'),key=lambda r:-r[0])[:2]:
         sz=[x for x,y in rows if y==k][0]
-        b.append(row(k.split('/')[-1],sz,'acquired',
+        b.append(row(k.split('/')[-1],sz,'ok',
                      'sealed BPCells cds tarball' if k.endswith('.tar') else 'author result table',3))
     pp=get(f'chemfish/{rel}/Paper/')
     if pp:
-        b.append(row('Paper/',sum(x for x,_ in pp),'legacy',
+        b.append(row('Paper/',sum(x for x,_ in pp),'del',
                      'superseded by chemfish/Paper/ — awaiting delete, the instance role has no s3:DeleteObject',2))
-    b.append(row('README.md',get(f'chemfish/{rel}/README.md')[0][0],'acquired',
+    b.append(row('README.md',get(f'chemfish/{rel}/README.md')[0][0],'ok',
                  'provenance, what changed, and the do-not-re-fetch warning',2))
 out.append(block('chemfish/','#7FB5A8',n,s,''.join(b)))
 
@@ -97,17 +92,17 @@ out.append(block('chemfish/','#7FB5A8',n,s,''.join(b)))
 # identifier where ChemFish gives none. The merged, deduplicated object is deliberately absent: it
 # filters, merges and dedupes, which is three opinions past what this tier holds.
 n,s=agg('zscape/')
-b=[row('README.md',get('zscape/README.md')[0][0],'acquired',
+b=[row('README.md',get('zscape/README.md')[0][0],'ok',
        'which arm to use, and why the merged object is not here')]
 pn,ps=agg('zscape/Paper/')
-b.append(row('Paper/',ps,'acquired',f'{pn} objects - the paper and its supplementary workbook'))
+b.append(row('Paper/',ps,'ok',f'{pn} objects - the paper and its supplementary workbook'))
 _,gs=agg('zscape/GSE202639/')
-b.append(row('GSE202639/',gs,'acquired','the complete GEO release, 18 files, held verbatim'))
+b.append(row('GSE202639/',gs,'ok','the complete GEO release, 18 files, held verbatim'))
 for arm,note in (('reference','wild-type series + merged-in injection controls'),
                  ('zperturb_full','the perturbation atlas - 804 embryos, 98 conditions'),
                  ('zperturb_pilot','the pilot that preceded the full run')):
     an,asz=agg(f'zscape/GSE202639/{arm}/')
-    b.append(row(f'{arm}/',asz,'acquired',f'{an} files - {note}',2))
+    b.append(row(f'{arm}/',asz,'ok',f'{an} files - {note}',2))
 out.append(block('zscape/','#6E93B8',n,s,''.join(b)))
 
 # ---- zebrahub/
@@ -121,25 +116,25 @@ out.append(block('zscape/','#6E93B8',n,s,''.join(b)))
 # shape: one is renamed, none is what the origin serves, and the 15 hpf packaging duplicate sits
 # among them unmarked. Deleting a released object is a human console act, so they are described.
 n,s_=agg('zebrahub/')
-b=[row('README.md',get('zebrahub/README.md')[0][0],'acquired',
+b=[row('README.md',get('zebrahub/README.md')[0][0],'ok',
        'which object is canonical, and what predates the convention')]
 pn,ps=agg('zebrahub/Paper/')
-b.append(row('Paper/',ps,'acquired',f'{pn} objects - the paper, five videos, both tables, six related methods'))
+b.append(row('Paper/',ps,'ok',f'{pn} objects - the paper, five videos, both tables, six related methods'))
 cn,cs=agg('zebrahub/code/')
-b.append(row('code/',cs,'acquired',f'{cn} objects - the authors own source snapshots, new in this dataset'))
+b.append(row('code/',cs,'ok',f'{cn} objects - the authors own source snapshots, new in this dataset'))
 rn,rs=agg('zebrahub/20510367/v1/')
-b.append(row('20510367/v1/',rs,'acquired',f'{rn} objects - the complete Figshare article, held as .zip'))
-b.append(row('MD5SUMS.authors',get('zebrahub/20510367/v1/MD5SUMS.authors')[0][0],'acquired',
+b.append(row('20510367/v1/',rs,'ok',f'{rn} objects - the complete Figshare article, held as .zip'))
+b.append(row('MD5SUMS.authors',get('zebrahub/20510367/v1/MD5SUMS.authors')[0][0],'ok',
              'the origin attesting to its own bytes - the only one in this bucket',2))
 b.append(row('zf_atlas_full_v1_release.h5ad.zip',
-             get('zebrahub/20510367/v1/zf_atlas_full_v1_release.h5ad.zip')[0][0],'acquired',
+             get('zebrahub/20510367/v1/zf_atlas_full_v1_release.h5ad.zip')[0][0],'ok',
              'the canonical object - 120,444 cells, no concatenation needed',2))
 b.append(row('zf_atlas_15hpf_v1_release.h5ad.zip',
-             get('zebrahub/20510367/v1/zf_atlas_15hpf_v1_release.h5ad.zip')[0][0],'acquired',
+             get('zebrahub/20510367/v1/zf_atlas_15hpf_v1_release.h5ad.zip')[0][0],'ok',
              'held, NOT usable - a packaging duplicate of 14 hpf; the exclusion is recorded',2))
 tn,ts=agg('zebrahub/timepoints/')
-b.append(row('timepoints/',ts,'prerepo',f'{tn} extracted payloads from 2026-07-27 - right bytes, pre-convention shape'))
-b.append(row('zebrahub_base.h5ad',get('zebrahub/zebrahub_base.h5ad')[0][0],'prerepo',
+b.append(row('timepoints/',ts,'leg',f'{tn} extracted payloads from 2026-07-27 - right bytes, pre-convention shape'))
+b.append(row('zebrahub_base.h5ad',get('zebrahub/zebrahub_base.h5ad')[0][0],'leg',
              'our name for zf_atlas_full_v1_release.h5ad - this tier does not rename'))
 out.append(block('zebrahub/','#6FA8E8',n,s_,''.join(b)))
 
@@ -148,25 +143,25 @@ n,s=agg('megafin-1/')
 g=collections.Counter(); c=collections.Counter()
 for sz,k in get('megafin-1/'):
     p='/'.join(k.split('/')[:3]); g[p]+=sz; c[p]+=1
-b=[row('characterization/',s,'legacy',
+b=[row('characterization/',s,'leg',
         f'{n} objects — already archived to bronze 2026-08-29, byte-identical, zero size disagreements')]
 for p,sz in g.most_common(4):
-    b.append(row(p.split('/')[-1],sz,'legacy',f'{c[p]} obj',2))
+    b.append(row(p.split('/')[-1],sz,'leg',f'{c[p]} obj',2))
 out.append(block('megafin-1/','#6E8CA0',n,s,''.join(b)))
 
 # ---- minifin/
 n,s=agg('minifin/')
-b=[row('CHANGELOG.md',get('minifin/CHANGELOG.md')[0][0],'published','the ledger')]
+b=[row('CHANGELOG.md',get('minifin/CHANGELOG.md')[0][0],'ok','the ledger')]
 for v,recipe,cells in (('v1','parse-settings','94,864'),('v2','barcode-ranks','94,089'),
                        ('v3','ambient-profile','106,022')):
     vn,vs=agg(f'minifin/{v}/')
-    b.append(row(f'{v}/',vs,'published',f'{recipe} — {cells} called cells'))
+    b.append(row(f'{v}/',vs,'ok',f'{recipe} — {cells} called cells'))
     for sz,k in sorted(get(f'minifin/{v}/'),key=lambda r:-r[0]):
         leaf=k.split('/')[-1]
-        b.append(row(leaf,sz,'published','the release artifact' if leaf.endswith('.h5ad')
+        b.append(row(leaf,sz,'ok','the release artifact' if leaf.endswith('.h5ad')
                      else 'what the policy was and what it produced',2))
 flat=[(sz,k) for sz,k in get('minifin/') if '/' not in k[len('minifin/'):] and not k.endswith('CHANGELOG.md')]
-b.append(row('(six flat keys)',sum(sz for sz,_ in flat),'legacy',
+b.append(row('(six flat keys)',sum(sz for sz,_ in flat),'leg',
              f'{len(flat)} objects — rebuild h5ads, a disposition parquet, and .provenance.json sidecars'))
 out.append(block('minifin/','#9C7BA0',n,s,''.join(b)))
 
