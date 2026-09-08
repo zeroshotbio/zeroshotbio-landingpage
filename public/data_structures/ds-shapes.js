@@ -76,7 +76,10 @@ DRAW.vault = (g, n) => {
      bucket that lands here is the gold tier, whose contents are not known
      to be absent — they are not known at all. A plain hatch and a sentence
      saying which of the two it is. */
-  if (!n.tiles || !n.tiles.length) {
+  /* "no objects observed" means the bucket is empty, not that this branch forgot
+     about grouped vaults — which is exactly what it did when groups arrived and
+     it painted the hatch straight over silver's seven tiles. */
+  if (!(n.tiles && n.tiles.length) && !(n.groups && n.groups.length)) {
     plate(g, n.x, fy + fh / 2, fw, fh, { fill: "url(#pHl)", stroke: "none" });
     label(g, n.x, fy + fh / 2 - 0.95, n.emptyHead || "no objects observed",
       { size: 10, fill: ink, ls: 0.08, upper: true });
@@ -84,11 +87,13 @@ DRAW.vault = (g, n) => {
       label(g, n.x, fy + fh / 2 + 0.35 + i * lineH(8.6), L, { size: 8.6, fill: "var(--fg3)" }));
   }
 
-  if (n.tiles && n.tiles.length) {
-    const laid = squarify(n.tiles, fx, fy, fw, fh);
-    const max = Math.max(...n.tiles.map(t => t.value));
-
-    laid.forEach(L => {
+  /* GROUPS. A bucket whose prefixes fall into two kinds draws them as two
+     columns rather than one treemap, so the split is the first thing read and
+     a dataset's neighbours mean something. Column WIDTHS stay proportional to
+     the bytes in each group — the whole point of this map is that area encodes
+     size, and a 50/50 split would quietly break that across the divide. */
+  const drawTiles = (tiles, x0, y0, w0, h0, max) => {
+    squarify(tiles, x0, y0, w0, h0).forEach(L => {
       const it = L.item;
       /* opacity carries a second channel — object count density — so two
          tiles of equal bytes are still distinguishable when one is a single
@@ -110,8 +115,11 @@ DRAW.vault = (g, n) => {
         const lh = horiz ? h : h * frac;
         const lx = horiz ? L.x + w / 2 - lw / 2 : L.x;
         const ly = horiz ? L.y : L.y + h / 2 - lh / 2;
+        /* dashed, like a wholly-legacy tile's outline: one vocabulary for
+           "retained, not what to build on" whichever bucket you are looking at,
+           and it survives the accent rule being drawn over the pair below. */
         plate(g, lx, ly, lw, lh,
-          { fill: "var(--fg3)", fo: 0.22, stroke: "var(--fg3)", sw: 0.7, so: 0.5 });
+          { fill: "var(--fg3)", fo: 0.20, stroke: "var(--fg3)", sw: 1.8, so: 0.75, dash: "6 4" });
 
         /* the aspirational half is whatever the band does not cover */
         const aw = horiz ? w - lw : w;
@@ -212,7 +220,28 @@ DRAW.vault = (g, n) => {
             : { fill: "none", stroke: it.accent, sw: 4.2, so: 1 });
       }
     });
+  };
 
+  if (n.groups && n.groups.length) {
+    const all = n.groups.flatMap(gr => gr.tiles);
+    const max = Math.max(...all.map(t => t.value));
+    const totals = n.groups.map(gr => gr.tiles.reduce((a, t) => a + t.value, 0));
+    const sum = totals.reduce((a, b) => a + b, 0);
+    const capH = 1.0;
+    let gx = fx;
+    n.groups.forEach((gr, gi) => {
+      const gw = fw * totals[gi] / sum;
+      /* FIT THE CAPTION TO ITS COLUMN. The first pair of these ran into each
+         other across the divide, which reads as one long broken word. Same
+         treatment the tile captions get: shrink until it fits, no floor. */
+      const capZ = Math.min(8.2, 8.2 * ((gw - 0.6) * S) / Math.max(textW(gr.label.toUpperCase(), 8.2), 1));
+      label(g, gx + gw / 2, fy + capH / 2, gr.label,
+        { size: capZ, fill: "var(--fg3)", ls: 0.1, upper: true });
+      drawTiles(gr.tiles, gx, fy + capH, gw, fh - capH, max);
+      gx += gw;
+    });
+  } else if (n.tiles && n.tiles.length) {
+    drawTiles(n.tiles, fx, fy, fw, fh, Math.max(...n.tiles.map(t => t.value)));
   }
 };
 

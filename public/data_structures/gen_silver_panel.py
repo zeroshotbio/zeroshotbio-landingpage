@@ -22,8 +22,11 @@ def row(path,size,kind,note,depth=1):
             f'<span class=\\"p\\">{esc(pad+path)}</span><span class=\\"n\\">{gib(size):,.2f}</span>'
             f'<span class=\\"t\\" title=\\"{esc(note)}\\">{esc(note)}</span></div>')
 
-def block(name,acc,objs,size,body):
-    return (f'<div class=\\"fkds\\" style=\\"--acc:{acc}\\"><h5>{name}<s>{objs:,} obj · {gib(size):,.2f} GiB '
+def block(name,acc,objs,size,body,legacy=False):
+    # a wholly-legacy dataset wears the dashed rule its tile wears on the map,
+    # rather than an accent that would read as a live dataset in both places
+    cls='fkds leg' if legacy else 'fkds'
+    return (f'<div class=\\"{cls}\\" style=\\"--acc:{acc}\\"><h5>{name}<s>{objs:,} obj · {gib(size):,.2f} GiB '
             f'· {100*size/TOT:.1f}%</s></h5><div class=\\"fkw\\">'
             f'<div class=\\"fk fkh\\"><span>path</span><span class=\\"n\\">GiB</span><span>note</span></div>'
             f'{body}</div></div>')
@@ -33,6 +36,7 @@ def agg(pref):
     e=get(pref); return len(e), sum(s for s,_ in e)
 
 out=[]
+B={}
 # legend
 leg=''.join(f'<b><i class=\\"sw {k}\\"></i>{esc(t)}</b>' for k,t in KINDS)
 out.append(f'<div class=\\"fkl\\">{leg}</div>')
@@ -47,7 +51,7 @@ for v,recipe,cells in (('v1','parse-settings','1,340,518'),('v2','ambient-profil
         leaf=k.split('/')[-1]
         b.append(row(leaf,sz,'ok','the release artifact' if leaf.endswith('.h5ad')
                      else 'what the policy was and what it produced',2))
-out.append(block('megafin/','#C08552',n,s,''.join(b)))
+B['megafin/']=block('megafin/','#C08552',n,s,''.join(b))
 
 # ---- chemfish/
 # Two releases of the same six URLs. The origin overwrites in place and announces nothing, so the
@@ -84,7 +88,7 @@ for rel,label in (('2025_03_release','the authors’ March 2025 publication — 
                      'superseded by chemfish/Paper/ — awaiting delete, the instance role has no s3:DeleteObject',2))
     b.append(row('README.md',get(f'chemfish/{rel}/README.md')[0][0],'ok',
                  'provenance, what changed, and the do-not-re-fetch warning',2))
-out.append(block('chemfish/','#7FB5A8',n,s,''.join(b)))
+B['chemfish/']=block('chemfish/','#7FB5A8',n,s,''.join(b))
 
 # ---- zscape/
 # In the warehouse with no module in any repo - not written, not proposed. The three arms are the
@@ -103,7 +107,7 @@ for arm,note in (('reference','wild-type series + merged-in injection controls')
                  ('zperturb_pilot','the pilot that preceded the full run')):
     an,asz=agg(f'zscape/GSE202639/{arm}/')
     b.append(row(f'{arm}/',asz,'ok',f'{an} files - {note}',2))
-out.append(block('zscape/','#6E93B8',n,s,''.join(b)))
+B['zscape/']=block('zscape/','#6E93B8',n,s,''.join(b))
 
 # ---- zebrahub/
 # Reshaped 2026-09-08. The release now sits under the Figshare article id AND its version - the
@@ -136,7 +140,7 @@ tn,ts=agg('zebrahub/timepoints/')
 b.append(row('timepoints/',ts,'leg',f'{tn} extracted payloads from 2026-07-27 - right bytes, pre-convention shape'))
 b.append(row('zebrahub_base.h5ad',get('zebrahub/zebrahub_base.h5ad')[0][0],'leg',
              'our name for zf_atlas_full_v1_release.h5ad - this tier does not rename'))
-out.append(block('zebrahub/','#6FA8E8',n,s_,''.join(b)))
+B['zebrahub/']=block('zebrahub/','#6FA8E8',n,s_,''.join(b))
 
 # ---- daniocell/
 # The first dataset here with more than one origin, and the folders say so: an accession from GEO, a
@@ -160,7 +164,7 @@ b.append(row('portal/2024_08_release/',rs,'ok',
              f'{rn} objects - the Seurat object, the ZFA-backed cluster table, the loader'))
 b.append(row('cluster_annotations.csv',get('daniocell/portal/2024_08_release/cluster_annotations.csv')[0][0],'ok',
              '521 clusters, ZFA ids on 358 - in no other origin',2))
-out.append(block('daniocell/','#C4708A',n,s_,''.join(b)))
+B['daniocell/']=block('daniocell/','#C4708A',n,s_,''.join(b))
 
 # ---- megafin-1/
 n,s=agg('megafin-1/')
@@ -171,7 +175,7 @@ b=[row('characterization/',s,'leg',
         f'{n} objects — already archived to bronze 2026-08-29, byte-identical, zero size disagreements')]
 for p,sz in g.most_common(4):
     b.append(row(p.split('/')[-1],sz,'leg',f'{c[p]} obj',2))
-out.append(block('megafin-1/','#6E8CA0',n,s,''.join(b)))
+B['megafin-1/']=block('megafin-1/','#6E8CA0',n,s,''.join(b),legacy=True)
 
 # ---- minifin/
 n,s=agg('minifin/')
@@ -187,7 +191,24 @@ for v,recipe,cells in (('v1','parse-settings','94,864'),('v2','barcode-ranks','9
 flat=[(sz,k) for sz,k in get('minifin/') if '/' not in k[len('minifin/'):] and not k.endswith('CHANGELOG.md')]
 b.append(row('(six flat keys)',sum(sz for sz,_ in flat),'leg',
              f'{len(flat)} objects — rebuild h5ads, a disposition parquet, and .provenance.json sidecars'))
-out.append(block('minifin/','#9C7BA0',n,s,''.join(b)))
+B['minifin/']=block('minifin/','#9C7BA0',n,s,''.join(b))
+
+
+# ---- assemble: two sections, ours first, and inside each the order a reader wants
+# rather than the order the bytes happen to fall in. The map draws the same split as
+# two columns; this is the same distinction in the same words, so a reader crossing
+# between them is not asked to work out that they are the same idea.
+def sec(t, note):
+    return (f'<div class=\\"fksec\\"><b>{esc(t)}</b><span>{esc(note)}</span></div>')
+
+out.append(sec("Parse deliveries · ours",
+               "produced here from a Parse delivery; a disagreement with the source is our bug"))
+for k in ('minifin/','megafin/','megafin-1/'):
+    out.append(B[k])
+out.append(sec("Acquired · published by others",
+               "taken verbatim from a public origin; a disagreement is their revision, not ours"))
+for k in ('chemfish/','zscape/','zebrahub/','daniocell/'):
+    out.append(B[k])
 
 style=open('/tmp/claude-1001/-data/1a934452-8c41-4975-b302-6d9d32c09db2/scratchpad/panel_style.txt').read()
 panel=style+''.join(out)

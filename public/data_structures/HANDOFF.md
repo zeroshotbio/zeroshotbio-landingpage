@@ -747,6 +747,26 @@ camera. There used to be a fly-to; it earned its keep when a station was
 unreadable until you were on top of it, and at the current type scale it only
 took the rest of the map away from you.
 
+### A vault with two kinds of prefix
+
+`DRAW.vault` takes either `n.tiles` (one treemap) or `n.groups`
+(`[{label, tiles}]`, one column each). Silver uses groups: everything this
+account produced from a Parse delivery on the left, everything published by
+somebody else on the right. **Column widths stay proportional to the bytes in
+each group** — area encoding size is the reason this map is drawn top-down, and
+a 50/50 split would break it across the divide for free.
+
+Two things that bit while adding it. The "no objects observed" branch tested
+`n.tiles` alone and painted its hatch straight over seven grouped tiles; it
+tests both now. And two group captions ran into each other across the divide,
+so a caption is scaled to its own column the way tile captions are.
+
+`legacy` on a tile is a byte count. Less than `value` splits the tile and
+captions both halves; equal to `value` means the whole prefix is legacy, which
+takes the dashed grey rule instead of a dataset accent. The same dash is on the
+legacy half of a split tile, and on `.fkds.leg` in the reader panel — one
+vocabulary for "retained, not what to build on" in all three places.
+
 ### `panelOnly` stations, and the box vocabulary
 
 A station whose entry *is* a list of things renders `n.panel` and stops — no
