@@ -1,7 +1,7 @@
 """Generate the SILVER reader panel from a live listing of the warehouse."""
 import collections, pathlib
 
-SRC='/tmp/claude-1001/-usr-bin/03d08ecb-360f-4b56-876f-e00ce749f9b3/scratchpad/silver.tsv'
+SRC='/tmp/claude-1001/-data/1a934452-8c41-4975-b302-6d9d32c09db2/scratchpad/silver.tsv'
 rows=[l.rstrip("\n").split("\t") for l in open(SRC) if l.strip()]
 rows=[(int(a),b) for a,b in rows]
 TOT=sum(sz for sz,_ in rows)
@@ -111,11 +111,37 @@ for arm,note in (('reference','wild-type series + merged-in injection controls')
 out.append(block('zscape/','#6E93B8',n,s,''.join(b)))
 
 # ---- zebrahub/
-n,s=agg('zebrahub/')
+# Reshaped 2026-09-08. The release now sits under the Figshare article id AND its version - the
+# first prefix here whose name carries a version its origin actually declares - and it holds the
+# .h5ad.zip archives the origin serves rather than the payloads a retired downloader unzipped.
+# That is what lets MD5SUMS.authors exist: Figshare publishes a checksum per file, so this is the
+# only prefix in the bucket that can prove its bytes are the ones the authors uploaded.
+#
+# timepoints/ and zebrahub_base.h5ad are the 2026-07-27 upload and stay grey. Right bytes, wrong
+# shape: one is renamed, none is what the origin serves, and the 15 hpf packaging duplicate sits
+# among them unmarked. Deleting a released object is a human console act, so they are described.
+n,s_=agg('zebrahub/')
+b=[row('README.md',get('zebrahub/README.md')[0][0],'acquired',
+       'which object is canonical, and what predates the convention')]
+pn,ps=agg('zebrahub/Paper/')
+b.append(row('Paper/',ps,'acquired',f'{pn} objects - the paper, five videos, both tables, six related methods'))
+cn,cs=agg('zebrahub/code/')
+b.append(row('code/',cs,'acquired',f'{cn} objects - the authors own source snapshots, new in this dataset'))
+rn,rs=agg('zebrahub/20510367/v1/')
+b.append(row('20510367/v1/',rs,'acquired',f'{rn} objects - the complete Figshare article, held as .zip'))
+b.append(row('MD5SUMS.authors',get('zebrahub/20510367/v1/MD5SUMS.authors')[0][0],'acquired',
+             'the origin attesting to its own bytes - the only one in this bucket',2))
+b.append(row('zf_atlas_full_v1_release.h5ad.zip',
+             get('zebrahub/20510367/v1/zf_atlas_full_v1_release.h5ad.zip')[0][0],'acquired',
+             'the canonical object - 120,444 cells, no concatenation needed',2))
+b.append(row('zf_atlas_15hpf_v1_release.h5ad.zip',
+             get('zebrahub/20510367/v1/zf_atlas_15hpf_v1_release.h5ad.zip')[0][0],'acquired',
+             'held, NOT usable - a packaging duplicate of 14 hpf; the exclusion is recorded',2))
 tn,ts=agg('zebrahub/timepoints/')
-b=[row('zebrahub_base.h5ad',get('zebrahub/zebrahub_base.h5ad')[0][0],'prerepo','the combined atlas'),
-   row('timepoints/',ts,'prerepo',f'{tn} per-stage releases, 10 hpf to 10 dpf')]
-out.append(block('zebrahub/','#8A8A92',n,s,''.join(b)))
+b.append(row('timepoints/',ts,'prerepo',f'{tn} extracted payloads from 2026-07-27 - right bytes, pre-convention shape'))
+b.append(row('zebrahub_base.h5ad',get('zebrahub/zebrahub_base.h5ad')[0][0],'prerepo',
+             'our name for zf_atlas_full_v1_release.h5ad - this tier does not rename'))
+out.append(block('zebrahub/','#6FA8E8',n,s_,''.join(b)))
 
 # ---- megafin-1/
 n,s=agg('megafin-1/')
@@ -144,8 +170,8 @@ b.append(row('(six flat keys)',sum(sz for sz,_ in flat),'legacy',
              f'{len(flat)} objects — rebuild h5ads, a disposition parquet, and .provenance.json sidecars'))
 out.append(block('minifin/','#9C7BA0',n,s,''.join(b)))
 
-style=open('/tmp/claude-1001/-usr-bin/03d08ecb-360f-4b56-876f-e00ce749f9b3/scratchpad/panel_style.txt').read()
+style=open('/tmp/claude-1001/-data/1a934452-8c41-4975-b302-6d9d32c09db2/scratchpad/panel_style.txt').read()
 panel=style+''.join(out)
-pathlib.Path('/tmp/claude-1001/-usr-bin/03d08ecb-360f-4b56-876f-e00ce749f9b3/scratchpad/silver_panel.txt').write_text(panel)
+pathlib.Path('/tmp/claude-1001/-data/1a934452-8c41-4975-b302-6d9d32c09db2/scratchpad/silver_panel.txt').write_text(panel)
 print("panel chars:",len(panel))
 print("blocks:",len(out)-1,"| total accounted:",f"{TOT:,}")
