@@ -8,6 +8,12 @@ Built 2026-09-08 on the EC2 instance from the public ITEC deposit.
   `python3 scripts/build_fate_map.py` (`--fetch` pulls the 1.2 GB of source CSVs)
 - Route: rewrite in `next.config.js` (`/fate_map` → `/fate_map/index.html`)
 
+This page is the reference implementation of the plate style. The reusable
+rules — tokens, typography, canvas practice, and the mistakes that cost the most
+here — are written up in `PLATE_STYLE.md` at the repo root. Read that before
+copying this page's look onto another one, and add to it if you learn something
+new; keep this page and that document in step.
+
 Three plates read top to bottom: the blastoderm at 5.5 hpf, the passage of every
 followable lineage, the embryo at 11.3 hpf. Plate II pans and zooms; the plates
 are linked, so a chosen lineage lights in all three.
