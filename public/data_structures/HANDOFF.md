@@ -565,8 +565,17 @@ scheme already says it exactly: **plate dashed means it raises; lamp filled mean
 it has moved bytes.** `build_gold` raises, so the plate stays dashed, and the 771
 lines are a fact for the panel rather than for the mark. A state per situation is
 how a visual vocabulary stops being one. `DRAW.bay` also needed nothing — it
-takes an arbitrary `lines` array, so three releases render in the same three rows
-v1's three objects used to.
+takes an arbitrary `lines` array, so three releases rendered in the same three
+rows v1's three objects used to.
+
+> **That bay is gone** (2026-09-08). It sat in the corridor describing MiniFin's
+> three releases, and once the versioned convention was named on the repo's own
+> entry it was restating one dataset's release count in the middle of a write
+> path. Removing it closed group ③ up rather than leaving a hole, so the groups
+> after it renumbered; the two conduits that routed through it are one direct
+> `BREPO → SILVER` hop now, carrying the label the pair used to share.
+> `DRAW.bay` is unused but kept — the shape is sound and the next thing that
+> wants a captioned box in a corridor should not have to rewrite it.
 
 **Two pieces of stale scaffolding found while working, both now fixed:**
 

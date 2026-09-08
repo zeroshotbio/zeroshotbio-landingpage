@@ -469,32 +469,7 @@ const NODES = [
  cond:"<mark>Written, exercised, and not on main.</mark> It moved 21.4 GB into chemfish/2025_03_release/ and 17.0 GB into chemfish/2026_09_release/, both verified against a SHA-256 manifest with the tarballs read in full — and it is a pull request, pushed 2026-09-08, awaiting review. That is why this cell is dashed with a lit lamp: the plate says it is not merged, the lamp says the bytes moved. One thing it cannot claim: <mark>the digests are ours</mark>, computed at acquisition. The origin publishes no checksum file at all, so a passing verify proves the copy is unchanged since we took it, not that it is what the authors intended.",
  kv:[["Run it", "runbook/acquire-release.sh → publish-release.sh"], ["Then check", "zsb-bronze <dataset> verify · upstream"], ["Datasets", "ChemFish · ZSCAPE · Zebrahub · DanioCell"], ["Rows pinned", "51 — 12 + 18 + 12 + 9"], ["Bytes", "62,386,852,978 pinned (58.1 GiB) · 74.7 GiB across the four prefixes"], ["Reproducible", "46 of 51 — 5 ChemFish files overwritten at origin"], ["Authors' digests", "13 of 51 — Figshare (12) and Zenodo (1) are the only origins that publish any"], ["Not checkable", "1 — a GitHub branch archive is rebuilt per request"], ["Placed by hand", "60 of 123 objects — papers, code, READMEs, checksum files"], ["Pre-convention", "12 zebrahub objects from 2026-07-27, described not deleted"], ["Verified", "2026-09-08 — 51/51 size + digests"], ["Absent by design", "fetch, convert, build, publish"], ["State", "PROPOSED — four branches, none on main"]]},
 
-/* ================= THE GAP, ON THE WRITE CONDUIT ================= */
-{id:"SGAP", key:"3", group:"③ The releases", groupMark:true, anchor:true,
- shape:"bay", tier:"silver", filled:true,
- name:"minifin/ — three releases, side by side", x:CORRIDOR, y:35, w:15.4, h:6.6,
- /* WHAT THIS BAY IS, ON THE BAY. It read "three releases" and named three
-    version suffixes, which says nothing about whose releases they are or why
-    there are three — and this is the only place on the map where the versioned
-    convention is drawn, so it was carrying the whole idea on two words. The
-    dataset is named now, the three calls are named by their policy rather than
-    by a suffix, and MegaFin is named because a reader otherwise has no way to
-    tell whether "three" is the convention or just this dataset's count. */
- headline:"three releases",
- lines:["minifin/ · one input",
-        "three cell calls",
-        "none supersedes",
-        "megafin/ has two"],
- sub:"published by zsb-bronze under the versioned convention · MiniFin's three and MegaFin's two are the only instances of it",
- thread:true,
- brief:"<mark>This bay held one release on the last read and holds three now</mark> — v1 on 2026-08-23, v2 and v3 three minutes apart on the 28th. They are not revisions of each other. The same 2,743,021 barcodes are called three different ways and published side by side: Parse's own delivered set, the knee filter Trailmaker itself applied, and a call that reads no Parse threshold at all. <mark>The ledger names all three and ranks none.</mark> That is a real decision — a version here is a question answered differently, not a defect fixed.",
- does:"The object sets in the silver tier written under the versioned convention, by the repo meant to write them. Three version prefixes under <mark>minifin/</mark>, each holding a validated artifact and its README, plus the single mutable ledger at <mark>minifin/CHANGELOG.md</mark> one level above them.",
- built:"The convention with three instances to point at: the bucket is the tier, so keys carry no <mark>silver</mark> segment; artifacts live under <mark>&lt;dataset&gt;/&lt;version&gt;/</mark> and are immutable; the ledger sits above the version prefixes and is the sole object ever replaced. The write order held all three times — v1's artifact at 00:21:59 and README at 00:22:28 on the 23rd; v2's at 21:06:22 and 21:06:44 on the 28th; v3's at 21:09:52, with the README and the rewritten ledger together at 21:10:14. Objects first, ledger after, three for three.",
- cond:"<mark>The interesting question stopped being whether a release exists and became which one to read</mark>, and the architecture answers it in two places at once. The ledger describes all three and explicitly declines to rank them. zsb-silver picks one in source — <mark>SILVER_VERSION = 'v2'</mark>, because a recipe reproducing Trailmaker's QC should start from the population Trailmaker filtered — and pins the other two so its <mark>pins</mark> command checks them anyway. All three were verified against the live bucket on 2026-08-29 and match on size and multipart etag. The v1 version drift stands as recorded: its note says <mark>Built with zsb_medallion 0.5.0</mark> and the repo pins 0.8.0. The same will be true of v2 and v3 the next time the rail moves, which is ordinary and worth saying once rather than three times.",
- kv:[["Prefixes","minifin/v1/, v2/, v3/"],["Objects","6, plus the ledger above them"],["v1","1,562,739,920 B · re-published"],["v2","1,559,526,002 B · re-published"],["v3","1,583,429,276 B · re-published"],["Read by silver","v2 — the other two pinned, not fetched"],["Verified","2026-08-29 — 3/3 size + etag"]]},
-
-/* ================= SILVER ================= */
-{id:"SILVER", key:"4", group:"④ Silver", groupMark:true, anchor:true,
+{id:"SILVER", key:"3", group:"③ Silver", groupMark:true, anchor:true,
  shape:"vault", tier:"silver", doors:["r"],
  name:"Silver", bucket:"SILVER", right:"202 obj · 135.24 GiB",
  x:COL_BUCKET, y:37, w:24, h:22,
@@ -523,7 +498,7 @@ const NODES = [
  built:"135 objects, 135,914,569,730 bytes, read 2026-09-08 — nine objects and 16.06 GiB more than the read earlier the same day, the newest 14.46 GiB of it <mark>zscape/</mark>, the complete GEO GSE202639 release. It is 1.29% the size of bronze. Every ChemFish file was verified against a SHA-256 manifest before upload, both multi-gigabyte tarballs read in full. <mark>Those digests are ours, computed at acquisition</mark> — the origin publishes no checksum file at all, so a passing check proves the copy is unchanged since we took it, not that it is what the authors intended.",
  cond:"<mark>A tile on this map now holds two copies of the same six URLs, and that is the point.</mark> ChemFish\u2019s origin publishes at fixed addresses carrying no version, date or checksum, and on 2026-09-03 it silently replaced five of six artifacts. <mark>chemfish/2025_03_release/</mark> and <mark>chemfish/2026_09_release/</mark> both exist because the first is no longer retrievable from anywhere else. Read that against <mark>minifin/v1–v3</mark>, three versions of one delivery that we made on purpose: the same folder convention is doing opposite jobs, recording our own choices in one tile and defending against someone else\u2019s in the other. Neither release contains the other — the newer adds a genetic arm and usable FDR, the older holds a curated pectoral-fin annotation with no successor — so the root <mark>chemfish/README.md</mark> exists to make a reader choose rather than assume. minifin/ was 0.59% of this bucket when the map was drawn, 22.5% on the fifth read, and is 4.0% now. It did not shrink; <mark>megafin/</mark> arrived at 56.16 GiB and ChemFish doubled, leaving them at 50.1% and 32.2% of the tier. Three reads have each told a different story about the same tile, which is the argument for true-area treemaps rather than floored ones. <mark>The three MiniFin releases were re-published.</mark> v1, v2 and v3 sit at the same keys with different bytes than the last read recorded — 1,562,739,920 / 1,559,526,002 / 1,583,429,276 against 1,561,917,184 / 1,562,792,160 / 1,559,446,470. A drift check that pins keys and not bytes cannot see this, and the manifest pins in bronze are the only place on this map where byte-level drift is actually watched. <mark>megafin-1/characterization/</mark> (5.0 GiB, 61 objects) is unchanged and still an analysis working set with no version prefix, still byte-identical to a copy in bronze. <mark>zebrahub/</mark> (10.4 GiB, 12 objects, 2026-07-27) is unchanged and still predates the repos. The tier reads two ways at once, as it always has; what changed is which half is bigger.",},
 
-{id:"SREPO", key:"5", group:"⑤ Silver → Gold", groupMark:true, anchor:true,
+{id:"SREPO", key:"4", group:"④ Silver → Gold", groupMark:true, anchor:true,
  shape:"floor", tier:"silver", state:"stub",
  name:"zsb-silver", repo:"zsb-silver", right:"98 commits · 8,422 LOC",
  x:COL_REPO, y:49.5, w:22, h:14.6,
@@ -536,7 +511,7 @@ const NODES = [
  cond:"<mark>The claim this panel made on the last read is the one that broke.</mark> It said the two remaining stubs were 'conventions and sign-offs rather than algorithms, and no amount of tooling closes either'. Half of that was already wrong when it shipped — the gold key convention had been settled since the 23rd, in a file this map had open. The other half was wrong about what would happen next: what landed was 1,700 lines of algorithm, aimed squarely at the sign-off. <mark>One gate is left</mark>, the gold v1 QC sign-off, and it is still a question for a person. But it is no longer being waited on. The tests are worth naming as a piece of engineering judgment: the ported filters assert against hard-coded values <em>produced by running the same rule in R</em>, because a port compared against itself passes however wrong it is. The five pull requests this repo carried are all resolved, and so are gold's and medallion's — <mark>bronze's #63 is now the only one open in the set</mark>.",
  kv:[["Repo","zeroshotbio/zsb-silver"],["HEAD","da1d04d (main)"],["Commits","98, since 2026-07-21"],["Source","8,422 LOC · 4,563 in src/"],["Tests","32 files · R tests outside the gate"],["Steps written","3 of 3 — fetch, process, publish"],["Dataset modules","megafin, minifin"],["Depends on","zsb-medallion @ v0.13.0 · pixi for R"],["Open PRs","not re-checked — no gh CLI on this instance"],["Bytes moved","gold holds 14 objects — the publish path ran"]]},
 
-{id:"SFETCH", key:"5a", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"ready",
+{id:"SFETCH", key:"4a", group:"④ Silver → Gold", shape:"cell", tier:"silver", state:"ready",
  name:"fetch (silver)", cellName:"fetch", note:"run · gold was built from it",
  x:COL_REPO, y:46.5, w:19, h:3.4,
  sub:"fetch/ · release.py + config.py + fetch.py · 188 LOC",
@@ -547,7 +522,7 @@ const NODES = [
  cond:"It still has not been run from here, and this map still cannot tell you whether it ever will be — a fetch writes to a working directory, and a working directory is not in the account. What can be said is that it would succeed: all three pinned objects were checked against the live warehouse on 2026-08-29 and matched on size and multipart etag. <mark>The more interesting thing this cell now carries is a choice.</mark> When there was one release, pinning it was bookkeeping. With three, naming one in source is a scientific decision with a comment explaining it, sitting in a file the drift checker also reads — which is roughly the best place a decision like that can live. The step below is still the one that cannot run, and still for a reason that has nothing to do with this one.",
  kv:[["Command","uv run zsb-silver minifin fetch"],["Drift check","zsb-silver minifin pins"],["Fetches","minifin/v2/minifin.h5ad"],["Bytes fetched","1,562,792,160 (1.46 GiB)"],["Also pinned","v1 and v3 — checked, not fetched"],["Verified","2026-08-29 — 3/3 size + etag"],["State","written · not run from here"]]},
 
-{id:"SPROC", key:"5b", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"ready",
+{id:"SPROC", key:"4b", group:"④ Silver → Gold", shape:"cell", tier:"silver", state:"ready",
  name:"process (silver→gold)", cellName:"process", note:"built · not yet run",
  x:COL_REPO, y:50.4, w:19, h:3.4,
  sub:"process/ · build_gold() implemented, recipe-aware",
@@ -557,7 +532,7 @@ const NODES = [
  cond:"<mark>This map had the threshold source backwards, and the correction is the most useful thing on this page.</mark> It recorded that gold's thresholds would come from Parse's recorded settings.txt. zsb-silver has since established that those recorded values are <em>run-state noise</em>: MegaFin Plate 1 was put through Trailmaker twice on identical input and the mito threshold moved in 88 of 90 samples (0.33× to 2.25×), the cell-size floor in 88 of 90, the doublet threshold in 90 of 90 — and on MiniFin, with no rerun at all, the doublet threshold the app displayed differs from the exported one in all 43. What <em>is</em> reproducible is the vendor's decisions: its recorded thresholds applied to the reconstructed step-3 population reproduce its recorded step-4 count to 17 cells in 92,555, 0.018%. So the repo ports the documented <em>rules</em> and re-derives every threshold from the sample it is filtering, keeping the recorded values as a cross-check it must never gate on. <mark>Gate on decisions and cell sets; never on a recorded threshold.</mark> settings.txt stays pinned in the bronze manifest two stations up — for the parse-settings policy and as that cross-check, not as this step's input. The full investigation is written down at <mark>docs/trailmaker-fidelity.md</mark> so it never has to be redone.",
  kv:[["Function","build_gold(source, destination, recipe, silver_releases)"],["State","implemented — takes a recipe and the silver pins"],["Ported","steps 3, 4, 5 — mito, spline, doublets"],["Doublet scorer","real scDblFinder 1.24.0, via pixi"],["Thresholds","re-derived per sample, never read from settings.txt"],["Gate","closed — gold v1 exists, two recipes deep"],["Dossier","docs/trailmaker-fidelity.md"]]},
 
-{id:"SPUB", key:"5c", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"stub",
+{id:"SPUB", key:"4c", group:"④ Silver → Gold", shape:"cell", tier:"silver", state:"stub",
  name:"publish (gold)", cellName:"publish", note:"key settled · waiting on an artifact",
  x:COL_REPO, y:54.3, w:19, h:3.4,
  sub:"publish_gold() → implemented, and it has run",
@@ -569,7 +544,7 @@ const NODES = [
  kv:[["Function","publish_gold(s3, source, recipe, layout, ...)"],["State","implemented — and run; gold holds 14 objects"],["Key convention","realised — <dataset>/<recipe>/<version>/"],["Blocked by","nothing — this hop has run"],["Recipe + version","named in silver's recipe.py"]]},
 
 /* ================= GOLD ================= */
-{id:"GOLD", key:"6", group:"⑥ Gold", groupMark:true, anchor:true,
+{id:"GOLD", key:"5", group:"⑤ Gold", groupMark:true, anchor:true,
  shape:"vault", tier:"gold", doors:["r"],
  name:"Gold", bucket:"GOLD", right:"14 obj · 93.85 GiB",
  x:COL_BUCKET, y:63, w:24, h:22,
@@ -586,7 +561,7 @@ const NODES = [
  kv:[["Bucket","zsb-gold-library"],["Objects","14"],["Size","93.85 GiB (100,769,607,200 B)"],["vs silver","123% — gold is larger than silver"],["Key convention","realised — <dataset>/<recipe>/<version>/"],["Releases","minifin parse/v1, zsb/v1, zsb/v2 · megafin parse/v1, zsb/v1"],["Recipes","two — parse and zsb, published side by side"],["Read on","2026-09-07 — first read with access"]]},
 
 /* ================= THE GOLD READER ================= */
-{id:"GREPO", key:"7", group:"⑦ Gold — the reader", groupMark:true, anchor:true,
+{id:"GREPO", key:"6", group:"⑥ Gold — the reader", groupMark:true, anchor:true,
  shape:"floor", tier:"gold", state:"stub",
  name:"zsb-gold", repo:"zsb-gold", right:"59 commits · 2,871 LOC",
  x:COL_REPO, y:72, w:22, h:10.7,
@@ -599,7 +574,7 @@ const NODES = [
  cond:"<mark>This panel said this repo was blocked on an unwritten key convention. Its own README has said otherwise since 2026-08-23.</mark> Gold keys are <mark>&lt;dataset&gt;/&lt;recipe&gt;/&lt;version&gt;/</mark> — a recipe is a named hyperparameter set, a version one immutable build of it, and a pull names both. The reasoning is intact and worth keeping: the old download flow prefix-listed the bucket, which does not survive immutable versioned keys, so the pull must name one release. What is new is that the name has a shape. <mark>Unlike every other tier on this map, this one deliberately does not pin what it reads</mark> — which release to open is the question the reader is asking, so the key is built from their answer rather than declared in advance. That is the correct inversion at the consumer end and it is the last structural decision the architecture was missing. The stub is the same stub; nothing has committed here in six days. Note also that this README states the gold library is empty today — a claim this map records and does not adopt, because the role it reads with cannot see the bucket either way.",
  kv:[["Repo","zeroshotbio/zsb-gold"],["HEAD","31c381a (main)"],["Commits","59"],["Source","2,871 LOC · 1,881 in src/"],["Tests","13 files"],["Dataset modules","megafin, minifin"],["Depends on","zsb-medallion @ v0.13.0"],["Write path","none, by design"],["Key convention","realised in the bucket, still never pinned"],["Open PRs","not re-checked — no gh CLI on this instance"],["Notebooks","2 READMEs, 0 notebooks"]]},
 
-{id:"GFETCH", key:"7a", group:"⑦ Gold — the reader", shape:"cell", tier:"gold", state:"stub",
+{id:"GFETCH", key:"6a", group:"⑥ Gold — the reader", shape:"cell", tier:"gold", state:"stub",
  name:"fetch (gold)", cellName:"fetch", note:"key settled · waiting on an artifact",
  x:COL_REPO, y:70.95, w:19, h:3.4,
  sub:"fetch_release() → implemented, megafin + minifin",
@@ -610,7 +585,7 @@ const NODES = [
  cond:"The blocker this map recorded — 'the shape of that name is the paragraph nobody has written' — was retired on 2026-08-23 and this page carried it for two reads afterwards. What is left is not a gate: there is no gold artifact to download, because the step that would build one is still parts rather than a pipeline. <mark>The distinction matters for what happens next.</mark> A convention gate is closed by an argument; this is closed by somebody running a command, and the command does not exist yet.",
  kv:[["Function","fetch_release(...) per dataset module"],["State","implemented — megafin and minifin both"],["Key convention","realised 2026-09-04..07 in the bucket"],["Pins what it reads","no — by design, unlike every other tier"],["Blocked by","nothing"]]},
 
-{id:"GNB", key:"7b", group:"⑦ Gold — the reader", shape:"cell", tier:"gold", state:"stub",
+{id:"GNB", key:"6b", group:"⑥ Gold — the reader", shape:"cell", tier:"gold", state:"stub",
  name:"the starter notebooks", cellName:"notebooks", note:"1 README · 0 notebooks",
  x:COL_REPO, y:74.85, w:19, h:3.4,
  sub:"notebooks/minifin/README.md",
@@ -622,7 +597,7 @@ const NODES = [
  kv:[["Path","notebooks/megafin/, notebooks/minifin/"],["Files","README.md — megafin only"],["Notebooks","0 — still the one thing not built"],["Writes to","gitignored paths or sandbox — never a gold key"]]},
 
 /* ================= THE CONTRACT ================= */
-{id:"MED", key:"8", group:"⑧ The contract", groupMark:true, anchor:true,
+{id:"MED", key:"7", group:"⑦ The contract", groupMark:true, anchor:true,
  shape:"spine", tier:"code",
  name:"zsb-medallion", repo:"zsb-medallion", right:"v0.13.0",
  x:COL_RAIL, y:45.5, w:8, h:65, tapLen:5.5,
@@ -659,9 +634,11 @@ const EDGES = [
   /* bronze → zsb-bronze → silver */
   {a:{n:"BRONZE", s:"r", dy:-4}, b:{n:"BREPO", s:"l", dy:-4.95}, kind:"live",
    label:"132 keys · 947 MiB", sub:"size + etag verified"},
-  {a:{n:"BREPO", s:"l", dy:6}, b:{n:"SGAP", s:"t"}, kind:"live",
+  /* One hop, not two. This used to route through a bay that sat in the corridor
+     describing MiniFin's three releases; the bay is gone and the write it was
+     standing in the middle of is not, so the conduit joins up directly. */
+  {a:{n:"BREPO", s:"l", dy:6}, b:{n:"SILVER", s:"r", dy:2}, kind:"live",
    label:"publish · 5 releases", sub:"5 runs · 60.5 GiB"},
-  {a:{n:"SGAP", s:"b"}, b:{n:"SILVER", s:"r", dy:2}, kind:"live"},
 
   /* silver → zsb-silver → gold */
   {a:{n:"SILVER", s:"r", dy:6}, b:{n:"SREPO", s:"l", dy:0}, kind:"live",
@@ -744,29 +721,6 @@ const SNIPPETS = {
       "# policy until #49 merged, on the 29th."
     ].join("\n"),
     note: "This map once ran this command against a key that was not there, then against one the writing repo's own README denied publishing. #49 merged on the 29th and the README now records v3 — the key and the documentation finally agree."
-  }),
-  SGAP: () => ({
-    title: "aws s3 ls s3://zsb-silver-warehouse/minifin/",
-    body: [
-      "2026-08-28       4270  CHANGELOG.md",
-      "2026-08-09   12159345  ...disposition_ensembl99.parquet",
-      "2026-08-09       5532  ...parquet.provenance.json",
-      "2026-08-07   40307760  minifin_rebuild_ensembl99.h5ad",
-      "2026-08-07      13166  ...ensembl99.h5ad.provenance.json",
-      "2026-08-07   45190039  minifin_rebuild_lawson.h5ad",
-      "2026-08-07      13044  ...lawson.h5ad.provenance.json",
-      "2026-08-23      10109  v1/README.md",
-      "2026-08-23 1561917184  v1/minifin.h5ad",
-      "2026-08-28      12307  v2/README.md",
-      "2026-08-28 1562792160  v2/minifin.h5ad",
-      "2026-08-28      12705  v3/README.md",
-      "2026-08-28 1559446470  v3/minifin.h5ad",
-      "",
-      "# the six flat keys are the old pipeline's, and stay.",
-      "# three versions, three cell-calling policies,",
-      "# one ledger above them naming all three."
-    ].join("\n"),
-    note: "The same listing this map ran twice and found six objects in, and once and found nine. The version prefixes are now most of the tile."
   }),
   GOLD: () => ({
     title: "aws s3api head-bucket --bucket zsb-gold-library",
