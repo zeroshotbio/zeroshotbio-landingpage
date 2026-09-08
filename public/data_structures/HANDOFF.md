@@ -738,6 +738,36 @@ camera. There used to be a fly-to; it earned its keep when a station was
 unreadable until you were on top of it, and at the current type scale it only
 took the rest of the map away from you.
 
+### `panelOnly` stations, and the box vocabulary
+
+A station whose entry *is* a list of things renders `n.panel` and stops — no
+brief, no kv. `does` / `built` / `cond` stay in `ds-data.js` for these too, and
+stay unrendered. The classes live in `index.html`:
+
+| class | what it is |
+|---|---|
+| `.pg` | the panel |
+| `.pgl` | a lede — one ruled paragraph *above* the first heading, for a rule the boxes below are instances of |
+| `.pgq` | a chip row inside the lede, for the two or three numbers a reader would otherwise assemble from the boxes |
+| `.pgh` | a group heading; takes `--c` |
+| `.pgi` | a box; takes `--c` |
+| `.pgi.ic` | a box with a drawing of its action in a 26px column |
+
+`.ic` is opt-in for a reason: `.pgi` is used by five other panels whose boxes
+have no icon, and a grid applied to all of them puts their name in a 26px
+column. An icon is a 24×24 inline `<svg>`, `fill:none`, stroking `var(--c)` so
+it inherits the box's accent in both themes; `.sf` fills a mark instead,
+`.th` thins it, `.dm` dashes it. Draw the **action**, not a symbol for its
+name — a bucket with something going into it, an origin with an arrow leaving
+it — and check it at 26px, where four strokes crossing become a smudge.
+
+**A step box says what the step does in one plain sentence, then at most one
+concrete detail.** The acquire panel is the worked example: it opened as nine
+boxes of 47 words each with no lede, which is a record rather than a panel.
+The rewrite put the claim at the top (run these and you get the warehouse
+back), the exceptions to it in their own section, and numbered the boxes in
+the order a person runs them.
+
 ## Clicking a station — and the pointer-capture trap
 
 `check-clicks.mjs` (beside these files, `node check-clicks.mjs <url>`) clicks

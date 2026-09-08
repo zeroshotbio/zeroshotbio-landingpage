@@ -202,6 +202,23 @@
        border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
        padding:.5em 0;margin:0 0 .8rem}
   .pgl b{color:var(--fg);font-weight:700}
+  /* a chip row under the lede: the two or three numbers a reader would
+     otherwise have to assemble from the boxes below. */
+  .pgq{display:flex;flex-wrap:wrap;gap:5px;margin:.55em 0 0}
+  .pgq i{font-style:normal;font-size:9.5px;letter-spacing:.05em;padding:.28em .5em;
+         border-radius:3px;border:1px solid var(--c,var(--rule));color:var(--c,var(--fg2));
+         background:color-mix(in srgb,var(--c,transparent) 9%,transparent);white-space:nowrap}
+  .pgq i b{font-weight:700;font-family:var(--mono,ui-monospace,monospace);font-size:10.5px}
+  /* An action box carries a drawing of its action. Opt-in via .ic, because the
+     other panels' boxes have no icon and a grid applied to all of them would
+     put their name in a 20px column. */
+  .pgi.ic{display:grid;grid-template-columns:26px 1fr;gap:.6em;align-items:start;padding:.42em .6em}
+  .pgi.ic svg{width:26px;height:26px;display:block;margin-top:.1em;
+              fill:none;stroke:var(--c);stroke-width:1.4;
+              stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+  .pgi.ic svg .sf{fill:var(--c);stroke:none}
+  .pgi.ic svg .dm{stroke-dasharray:2.4 2}
+  .pgi.ic svg .th{stroke-width:1.1}
   mark{background:var(--fg);color:var(--bg);padding:0 3px}
   .kv{display:flex;gap:10px;padding:3px 0;border-bottom:1px dotted var(--rule);margin:0}
   .kv dt{width:112px;flex:none;color:var(--fg3);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
