@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A fate map of the zebrafish gastrula — 5.5 to 11.3 hpf</title>
+<meta name="description" content="Every tracked cell of one zebrafish embryo from 50% epiboly to early organogenesis, drawn as lineage. Built from the ITEC whole-embryo reconstruction (Wang et al. 2026).">
+<style>
+/* ---------------------------------------------------------------------------
+   The look is a plate in a Victorian monograph: laid paper, one ink, hand-
+   tinted washes for the territories. It deliberately departs from the dark
+   monospace shell of /pipeline and /data_structures — this page is a figure to
+   be read, not an instrument panel.
+
+   Only the FURNITURE is hand-drawn: plate borders and rules carry a small
+   deterministic wobble so they read as pen rather than CSS. No data mark is
+   ever jittered. If you add a wobble, add it in the frame code, never in the
+   projection.
+--------------------------------------------------------------------------- */
+:root{
+  --paper:#f3ede1;
+  --paper-deep:#eae2d2;
+  --ink:#2b2219;
+  --ink-2:#5f5344;
+  --ink-3:#8b7d69;
+  --rule:#c3b6a0;
+  --rule-2:#d9cfbb;
+  --select:#8f2d16;      /* madder — the chosen lineage, and nothing else */
+
+  /* Hand-tinted territory washes. Muted enough to sit on paper without
+     shouting; separated enough to tell apart. Every territory ALSO carries a
+     written label in the legend and on the plates, so nothing is identified by
+     colour alone. */
+  --t0:#a8442a;   /* anterior axial   — madder      */
+  --t1:#b0802c;   /* trunk axial      — ochre       */
+  --t2:#6d7a34;   /* posterior axial  — olive       */
+  --t3:#3d6f68;   /* paraxial         — verdigris   */
+  --t4:#57688a;   /* lateral-ventral  — indigo grey */
+  --t5:#8a6c4e;   /* animal pole      — sepia       */
+  --t6:#6d4665;   /* vegetal pole     — plum        */
+
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--serif);
+  font-size:16px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+  /* laid-paper tooth: two very faint gradients, no image asset */
+  background-image:
+    repeating-linear-gradient(90deg, rgba(120,100,70,.030) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(0deg,  rgba(120,100,70,.022) 0 1px, transparent 1px 4px),
+    radial-gradient(120% 80% at 50% 0%, rgba(255,252,244,.65), transparent 60%);
+}
+
+.sheet{max-width:none;margin:0;padding:0 40px 120px}
+/* Everything is centred at the text measure EXCEPT the flow plate, which is
+   allowed to run wider — it is the tall figure and it needs the room. Doing
+   this by capping each block rather than by a negative margin on the wide one
+   keeps the page from ever scrolling sideways. */
+header.masthead,section.prose,#boot,#fail{max-width:1100px;margin-left:auto;margin-right:auto}
+#stage>figure.plate,#stage>section.notes{max-width:1100px;margin-left:auto;margin-right:auto}
+#stage>figure.plate.wide{max-width:1480px}
+
+/* ---- masthead ---------------------------------------------------------- */
+header.masthead{padding:76px 0 0;text-align:center}
+.eyebrow{
+  font-family:var(--sans);font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--ink-3);margin-bottom:26px
+}
+.eyebrow a{color:inherit;text-decoration:none;border-bottom:1px solid var(--rule)}
+.eyebrow a:hover{color:var(--ink)}
+h1{
+  font-size:clamp(30px,4.4vw,50px);font-weight:400;line-height:1.12;margin:0 0 6px;
+  letter-spacing:-.012em;font-variant-ligatures:common-ligatures
+}
+h1 em{font-style:italic}
+.dek{
+  font-style:italic;color:var(--ink-2);font-size:clamp(15px,1.7vw,18.5px);
+  max-width:680px;margin:14px auto 0;line-height:1.55
+}
+.byline{
+  font-family:var(--sans);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-3);margin-top:30px
+}
+.rule-orn{display:block;margin:34px auto 0;width:220px;height:14px;opacity:.75}
+
+/* ---- prose ------------------------------------------------------------- */
+section.prose{max-width:660px;margin:0 auto}
+section.prose p{margin:0 0 1.05em}
+section.prose p.lead::first-letter{
+  float:left;font-size:3.35em;line-height:.84;padding:.06em .1em 0 0;font-weight:400
+}
+.small{font-size:14px;color:var(--ink-2)}
+a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule)}
+a:hover{border-bottom-color:var(--ink)}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+     background:var(--paper-deep);padding:.08em .32em;border-radius:2px}
+
+/* ---- plates ------------------------------------------------------------ */
+figure.plate{margin:96px auto 0}
+.plate-head{display:flex;align-items:baseline;gap:16px;margin-bottom:6px;
+            border-bottom:1px solid var(--ink);padding-bottom:7px}
+.plate-num{font-family:var(--sans);font-size:10.5px;letter-spacing:.28em;
+           text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.plate-title{font-size:20px;font-style:italic;font-weight:400;margin:0}
+.plate-when{margin-left:auto;font-family:var(--sans);font-size:11px;letter-spacing:.13em;
+            color:var(--ink-3);white-space:nowrap}
+figcaption{font-size:14px;color:var(--ink-2);margin-top:14px;max-width:760px;line-height:1.6}
+figcaption b{font-weight:600;color:var(--ink)}
+
+.plates-2{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
+@media(max-width:940px){.plates-2{grid-template-columns:1fr}}
+
+.canvas-hold{position:relative;background:transparent}
+canvas{display:block;width:100%;touch-action:none}
+
+/* the flow figure gets its own bounded viewport with pan/zoom inside */
+#flowHold{height:min(1240px,150vh);border-top:1px solid var(--rule-2);
+          border-bottom:1px solid var(--rule-2);cursor:grab;overflow:hidden}
+#flowHold.dragging{cursor:grabbing}
+
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+         padding:12px 0 14px;font-family:var(--sans);font-size:11px}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden}
+.seg button{
+  font:inherit;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);
+  background:transparent;border:0;padding:6px 13px;cursor:pointer
+}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.hint{color:var(--ink-3);font-style:italic;font-family:var(--serif);font-size:13px}
+.spacer{margin-left:auto}
+.btn{font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+     color:var(--ink-2);background:transparent;border:1px solid var(--rule);
+     border-radius:2px;padding:6px 13px;cursor:pointer}
+.btn:hover{border-color:var(--ink);color:var(--ink)}
+
+/* ---- legend ------------------------------------------------------------ */
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(212px,1fr));
+        gap:6px 26px;margin:22px 0 0;padding:18px 0 0;border-top:1px solid var(--rule-2)}
+.leg{display:flex;gap:9px;align-items:baseline;font-size:13.5px;cursor:pointer;
+     padding:3px 0;border:0;background:none;text-align:left;font-family:inherit;color:inherit}
+.leg:hover .leg-name{border-bottom:1px solid var(--ink)}
+.leg[aria-pressed="false"]{opacity:.34}
+.swatch{flex:none;width:15px;height:15px;border-radius:50%;margin-top:3px;
+        box-shadow:inset 0 0 0 1px rgba(43,34,25,.28)}
+.leg-name{font-variant:small-caps;letter-spacing:.04em}
+.leg-note{display:block;font-size:12px;color:var(--ink-3);font-style:italic;line-height:1.4}
+
+/* ---- read-out card ----------------------------------------------------- */
+#card{
+  position:sticky;bottom:22px;margin:22px 0 0;
+  border:1px solid var(--ink);background:var(--paper);
+  padding:16px 20px;font-size:14px;box-shadow:3px 3px 0 rgba(43,34,25,.10)
+}
+#card[hidden]{display:none!important}
+#card h4{margin:0 0 8px;font-size:12px;font-family:var(--sans);letter-spacing:.2em;
+         text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 18px;font-size:13.5px}
+.kv dt{color:var(--ink-3);font-style:italic}
+.kv dd{margin:0}
+.card-close{position:absolute;top:10px;right:12px}
+
+/* ---- notes ------------------------------------------------------------- */
+.notes{margin:104px auto 0;border-top:1px solid var(--ink);padding-top:12px}
+.notes h3{font-size:11px;font-family:var(--sans);letter-spacing:.28em;text-transform:uppercase;
+          color:var(--ink-3);font-weight:500;margin:0 0 20px}
+.notes ol{margin:0;padding-left:1.3em;max-width:720px}
+.notes li{margin-bottom:.85em;font-size:14px;color:var(--ink-2);line-height:1.58}
+.notes li b{color:var(--ink)}
+.colophon{margin-top:44px;font-size:12.5px;color:var(--ink-3);max-width:720px;font-style:italic}
+
+.loading{padding:120px 0;text-align:center;color:var(--ink-3);font-style:italic}
+.err{border:1px solid var(--select);color:var(--select);padding:16px 20px;margin:40px 0;
+     font-size:14px}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="masthead">
+    <div class="eyebrow"><a href="/">zeroshot.bio</a> &nbsp;·&nbsp; fate map</div>
+    <h1>A fate map of the<br><em>zebrafish</em> gastrula</h1>
+    <p class="dek">One embryo, from fifty-per-cent epiboly to the tail bud &mdash; every
+      nucleus that could be followed, and the cell each one came from.</p>
+    <div class="byline">5.5 &ndash; 11.3 hours post fertilisation</div>
+    <svg class="rule-orn" viewBox="0 0 220 14" aria-hidden="true">
+      <path d="M2 7h84M134 7h84" stroke="#8b7d69" stroke-width="1" fill="none"/>
+      <path d="M96 7c4-5 8-5 14 0 6 5 10 5 14 0" stroke="#8b7d69" stroke-width="1" fill="none"/>
+    </svg>
+  </header>
+
+  <section class="prose" style="margin-top:56px">
+    <p class="lead">Zebrafish has no invariant lineage. Unlike <i>C.&nbsp;elegans</i>, where
+      the same cell divides in the same order in every animal, a fish embryo mixes and
+      rearranges through gastrulation, and where a cell ends up is a matter of tendency
+      rather than of law. What it has instead are <i>fate maps</i>: statements about which
+      region of the early embryo tends to give rise to which part of the animal.</p>
+
+    <p>Those maps have historically been drawn by labelling a handful of cells and
+      looking later. This one is drawn differently. In 2026 Wang and colleagues published
+      <span id="mCites"></span> a reconstruction of the lineage of an entire zebrafish
+      embryo from 3D time-lapse microscopy &mdash; <span id="mSpots"></span> nucleus
+      detections across <span id="mFrames"></span> frames, linked frame to frame into
+      explicit parent-to-child relations. The plates below are built from that
+      reconstruction, and from nothing else.</p>
+
+    <p>Read the page downward: the embryo as it stands at the start, the passage of every
+      lineage through the five and three-quarter hours that follow, and the embryo as it
+      stands at the end. <b>Choose any lineage and it is lit through all three.</b></p>
+  </section>
+
+  <div id="boot" class="loading">drawing the plates&hellip;</div>
+  <div id="fail" class="err" hidden></div>
+
+  <main id="stage" hidden>
+
+    <figure class="plate" id="plate1">
+      <div class="plate-head">
+        <span class="plate-num">Plate I</span>
+        <h2 class="plate-title">The blastoderm, seen from the animal pole</h2>
+        <span class="plate-when">5.5 hpf &nbsp;·&nbsp; 50% epiboly</span>
+      </div>
+      <div class="plates-2">
+        <div class="canvas-hold"><canvas id="cvFirst"></canvas></div>
+        <div>
+          <figcaption id="capFirst"></figcaption>
+          <div class="legend" id="legend"></div>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="plate wide" id="plate2">
+      <div class="plate-head">
+        <span class="plate-num">Plate II</span>
+        <h2 class="plate-title">The passage</h2>
+        <span class="plate-when">5.5 &ndash; 11.3 hpf</span>
+      </div>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="horizontal axis">
+          <button id="axLat" aria-pressed="true">animal to vegetal</button>
+          <button id="axLon" aria-pressed="false">dorsal and ventral</button>
+        </div>
+        <span class="hint">drag to pan &middot; scroll to zoom &middot; click a line to follow its lineage</span>
+        <span class="spacer"></span>
+        <button class="btn" id="btnReset">reset view</button>
+      </div>
+      <div class="canvas-hold" id="flowHold"><canvas id="cvFlow"></canvas></div>
+      <figcaption id="capFlow"></figcaption>
+      <div id="card" hidden>
+        <button class="btn card-close" id="cardClose">close</button>
+        <h4>Chosen lineage</h4>
+        <dl class="kv" id="cardBody"></dl>
+      </div>
+    </figure>
+
+    <figure class="plate" id="plate3">
+      <div class="plate-head">
+        <span class="plate-num">Plate III</span>
+        <h2 class="plate-title">The embryo at the tail bud</h2>
+        <span class="plate-when">11.3 hpf &nbsp;·&nbsp; early organogenesis</span>
+      </div>
+      <div class="plates-2">
+        <div class="canvas-hold"><canvas id="cvFinal"></canvas></div>
+        <div><figcaption id="capFinal"></figcaption></div>
+      </div>
+    </figure>
+
+    <section class="notes">
+      <h3>Notes on the plates</h3>
+      <ol id="noteList"></ol>
+      <p class="colophon" id="colophon"></p>
+    </section>
+
+  </main>
+</div>
+
+<script src="/fate_map/fm-data.js"></script>
+<script src="/fate_map/fm-plates.js"></script>
+<script src="/fate_map/fm-flow.js"></script>
+<script src="/fate_map/fm-main.js"></script>
+</body>
+</html>
