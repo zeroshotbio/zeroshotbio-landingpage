@@ -126,8 +126,8 @@ DRAW.vault = (g, n) => {
              half came to carry no figure and the legacy half no label at all.
              A half is now sized on its longest row and the whole stack scaled
              by one factor, with no floor, so it shrinks rather than sheds. */
-          const availPx = Math.max((cw - 0.30) * S, 1);
-          const availH = Math.max(ch - 0.12, 0.01);
+          const availPx = Math.max((cw - 0.50) * S, 1);
+          const availH = Math.max(ch - 0.28, 0.01);
           const base = [
             { t: it.key, z: 9.5, c: col },
             { t: kind, z: 7.8, c: col },
@@ -172,8 +172,12 @@ DRAW.vault = (g, n) => {
          factor has no floor. Keep the three rows together: a tile captioned
          with a key and no figure answers none of the question the treemap
          exists to ask. */
-      const availPx = Math.max((L.w - 0.30) * S, 1);
-      const availH = Math.max(L.h - 0.16, 0.01);
+      /* Padding, not just fitting. The accent outline is inset 0.15 from the
+         tile edge and strokes 4.2px about that line, so text clearing only the
+         tile would still sit on the rule. Reserve 0.31 a side horizontally and
+         0.17 vertically: clear of the outline, and visibly clear of it. */
+      const availPx = Math.max((L.w - 0.62) * S, 1);
+      const availH = Math.max(L.h - 0.34, 0.01);
       const base = [
         { t: it.key, z: 10.5, c: "var(--fg)" },
         { t: fmtBytes(it.value), z: 9, c: "var(--fg2)" },

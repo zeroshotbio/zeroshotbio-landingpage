@@ -341,7 +341,7 @@ const COL_BUCKET = 13, COL_REPO = 63, COL_RAIL = 83.5, CORRIDOR = 38;
    ============================================================ */
 const ZONES = [
   { name: "AWS S3", sub: "account 423623857952 · buckets",
-    x0: -1.5, y0: -3.6, x1: 27.5, y1: 64.5 },
+    x0: -1.5, y0: -3.6, x1: 27.5, y1: 69.5 },
   { name: "GitHub", sub: "github.com/zeroshotbio · repositories",
     x0: 50.5, y0: 6.6, x1: 89, y1: 73.5 },
 ];
@@ -456,7 +456,7 @@ const NODES = [
 {id:"SILVER", key:"4", group:"④ Silver", groupMark:true, anchor:true,
  shape:"vault", tier:"silver", doors:["r"],
  name:"Silver", bucket:"SILVER", right:"100 obj · 96.04 GiB",
- x:COL_BUCKET, y:34, w:24, h:15,
+ x:COL_BUCKET, y:34, w:24, h:22,
  sub:"s3://zsb-silver-warehouse · written by zsb-bronze",
  tiles:[
    /* accent = the category colour the reader's tree uses, so a tile on the map
@@ -525,7 +525,7 @@ const NODES = [
 {id:"GOLD", key:"6", group:"⑥ Gold", groupMark:true, anchor:true,
  shape:"vault", tier:"gold", doors:["r"],
  name:"Gold", bucket:"GOLD", right:"14 obj · 93.85 GiB",
- x:COL_BUCKET, y:57, w:24, h:12,
+ x:COL_BUCKET, y:57, w:24, h:22,
  sub:"s3://zsb-gold-library · analysis-ready, versioned · what the team trains on",
  tiles:[
    {key:"megafin/",  value:86983833630, objs:5},
