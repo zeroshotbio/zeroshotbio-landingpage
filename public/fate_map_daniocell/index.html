@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fate map · DanioCell — five days of becoming a fish</title>
+<meta name="description" content="489,686 cells of wild-type zebrafish from 3.3 to 120 hpf, drawn as transcriptional identity: where states sit, how long they last, which programs they share, and one inferred trajectory. From the DanioCell atlas (Sur et al. 2023).">
+<style>
+/* ---------------------------------------------------------------------------
+   The plate style — see PLATE_STYLE.md at the repo root. This page is the
+   sister of /fate_map_wang_2026 and shares its tokens, type and furniture
+   exactly, so that the difference between the two pages reads as a difference
+   of SUBJECT and not of house.
+
+   Wang draws physical ancestry. This page draws transcriptional identity.
+   Nothing here is lineage, and the writing must never borrow that vocabulary.
+--------------------------------------------------------------------------- */
+:root{
+  --paper:#f3ede1;
+  --paper-deep:#eae2d2;
+  --ink:#2b2219;
+  --ink-2:#5f5344;
+  --ink-3:#8b7d69;
+  --rule:#c3b6a0;
+  --rule-2:#d9cfbb;
+  --select:#8f2d16;      /* madder — the chosen thing, and nothing else */
+
+  /* Hand-tinted washes. Nineteen tissues is more than a categorical palette
+     can carry honestly, so colour is NEVER the primary encoding here: the
+     plates are one ink by default and a tissue is tinted only when it is
+     isolated, one or a few at a time, always beside its written name. */
+  --t0:#a8442a; --t1:#b0802c; --t2:#6d7a34; --t3:#3d6f68;
+  --t4:#57688a; --t5:#8a6c4e; --t6:#6d4665;
+
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--serif);font-size:16px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(120,100,70,.030) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(0deg,  rgba(120,100,70,.022) 0 1px, transparent 1px 4px),
+    radial-gradient(120% 80% at 50% 0%, rgba(255,252,244,.65), transparent 60%);
+}
+
+.sheet{max-width:none;margin:0;padding:0 40px 120px}
+header.masthead,section.prose,#boot,#fail{max-width:1100px;margin-left:auto;margin-right:auto}
+#stage>figure.plate,#stage>section.notes{max-width:1100px;margin-left:auto;margin-right:auto}
+#stage>figure.plate.wide{max-width:1480px}
+
+/* ---- masthead ---------------------------------------------------------- */
+header.masthead{padding:76px 0 0;text-align:center}
+.eyebrow{font-family:var(--sans);font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;
+         color:var(--ink-3);margin-bottom:26px}
+.eyebrow a{color:inherit;text-decoration:none;border-bottom:1px solid var(--rule)}
+.eyebrow a:hover{color:var(--ink)}
+h1{font-size:clamp(30px,4.4vw,50px);font-weight:400;line-height:1.12;margin:0 0 6px;
+   letter-spacing:-.012em}
+h1 em{font-style:italic}
+.dek{font-style:italic;color:var(--ink-2);font-size:clamp(15px,1.7vw,18.5px);
+     max-width:680px;margin:14px auto 0;line-height:1.55}
+.byline{font-family:var(--sans);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+        color:var(--ink-3);margin-top:30px}
+.source-line{font-size:13.5px;font-style:italic;color:var(--ink-3);margin-top:7px}
+.rule-orn{display:block;margin:34px auto 0;width:220px;height:14px;opacity:.75}
+
+/* ---- prose ------------------------------------------------------------- */
+section.prose{max-width:660px}
+section.prose p{margin:0 0 1.05em}
+section.prose p.lead::first-letter{float:left;font-size:3.35em;line-height:.84;
+                                   padding:.06em .1em 0 0;font-weight:400}
+a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule)}
+a:hover{border-bottom-color:var(--ink)}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+     background:var(--paper-deep);padding:.08em .32em;border-radius:2px}
+.caution{border-left:2px solid var(--select);padding:2px 0 2px 16px;margin:26px 0;
+         font-style:italic;color:var(--ink-2);font-size:15px}
+
+/* ---- plates ------------------------------------------------------------ */
+figure.plate{margin:96px auto 0}
+.plate-head{display:flex;align-items:baseline;gap:16px;margin-bottom:6px;
+            border-bottom:1px solid var(--ink);padding-bottom:7px}
+.plate-num{font-family:var(--sans);font-size:10.5px;letter-spacing:.28em;
+           text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.plate-title{font-size:20px;font-style:italic;font-weight:400;margin:0}
+.plate-when{margin-left:auto;font-family:var(--sans);font-size:11px;letter-spacing:.13em;
+            color:var(--ink-3);white-space:nowrap}
+figcaption{font-size:14px;color:var(--ink-2);margin-top:14px;max-width:760px;line-height:1.6}
+figcaption b{font-weight:600;color:var(--ink)}
+
+.canvas-hold{position:relative;background:transparent}
+canvas{display:block;width:100%;touch-action:none}
+
+#landHold{height:min(720px,86vh);border-top:1px solid var(--rule-2);
+          border-bottom:1px solid var(--rule-2);cursor:crosshair;overflow:hidden}
+#scoreHold{border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2)}
+#progHold{height:min(760px,90vh)}
+#cascHold{border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2)}
+
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+         padding:12px 0 14px;font-family:var(--sans);font-size:11px}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden}
+.seg button{font:inherit;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);
+            background:transparent;border:0;padding:6px 13px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.hint{color:var(--ink-3);font-style:italic;font-family:var(--serif);font-size:13px}
+.spacer{margin-left:auto}
+.btn{font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+     color:var(--ink-2);background:transparent;border:1px solid var(--rule);
+     border-radius:2px;padding:6px 13px;cursor:pointer}
+.btn:hover{border-color:var(--ink);color:var(--ink)}
+
+/* time scrubber */
+.scrub{display:flex;align-items:center;gap:14px;padding:6px 0 14px}
+.scrub input[type=range]{flex:1;accent-color:#8f2d16;height:2px}
+.scrub .read{font-family:var(--sans);font-size:12px;letter-spacing:.08em;color:var(--ink-2);
+             min-width:132px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---- tissue legend ----------------------------------------------------- */
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+        gap:2px 22px;margin:18px 0 0;padding:16px 0 0;border-top:1px solid var(--rule-2)}
+.legend .lhead{grid-column:1/-1;font-family:var(--sans);font-size:10px;letter-spacing:.22em;
+               text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+.leg{display:flex;gap:8px;align-items:baseline;font-size:13.5px;cursor:pointer;padding:2px 0;
+     border:0;background:none;text-align:left;font-family:inherit;color:inherit}
+.leg:hover .leg-name{border-bottom:1px solid var(--ink)}
+.leg[aria-pressed="false"]{opacity:.36}
+.swatch{flex:none;width:10px;height:10px;border-radius:50%;
+        box-shadow:inset 0 0 0 1px rgba(43,34,25,.3)}
+.leg-name{font-variant:small-caps;letter-spacing:.04em}
+.leg-n{color:var(--ink-3);font-size:12px;font-variant-numeric:tabular-nums}
+
+/* ---- programs list ----------------------------------------------------- */
+.prog-wrap{display:grid;grid-template-columns:300px 1fr;gap:36px;align-items:start}
+@media(max-width:900px){.prog-wrap{grid-template-columns:1fr}}
+.prog-list{max-height:min(760px,90vh);overflow-y:auto;border:1px solid var(--rule-2);
+           padding:6px}
+.prog-item{display:block;width:100%;text-align:left;border:0;background:none;cursor:pointer;
+           font-family:inherit;color:inherit;font-size:13px;padding:6px 8px;line-height:1.34}
+.prog-item:hover{background:var(--paper-deep)}
+.prog-item[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.prog-item .pid{font-family:var(--sans);font-size:10px;letter-spacing:.1em;color:var(--ink-3)}
+.prog-item[aria-pressed="true"] .pid{color:var(--paper-deep)}
+.prog-item .pt{color:var(--ink-3);font-size:11.5px;font-style:italic}
+.prog-item[aria-pressed="true"] .pt{color:var(--paper-deep)}
+
+/* ---- read-out card ----------------------------------------------------- */
+.card{border:1px solid var(--ink);background:var(--paper);padding:15px 19px;font-size:14px;
+      box-shadow:3px 3px 0 rgba(43,34,25,.10);margin-top:18px}
+.card[hidden]{display:none!important}
+.card h4{margin:0 0 8px;font-size:11px;font-family:var(--sans);letter-spacing:.2em;
+         text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 18px;font-size:13.5px}
+.kv dt{color:var(--ink-3);font-style:italic}
+.kv dd{margin:0}
+
+/* ---- notes ------------------------------------------------------------- */
+.notes{margin:104px auto 0;border-top:1px solid var(--ink);padding-top:12px}
+.notes h3{font-size:11px;font-family:var(--sans);letter-spacing:.28em;text-transform:uppercase;
+          color:var(--ink-3);font-weight:500;margin:0 0 20px}
+.notes ol{margin:0;padding-left:1.3em;max-width:720px}
+.notes li{margin-bottom:.85em;font-size:14px;color:var(--ink-2);line-height:1.58}
+.notes li b{color:var(--ink)}
+.colophon{margin-top:44px;font-size:12.5px;color:var(--ink-3);max-width:720px;font-style:italic}
+
+.loading{padding:120px 0;text-align:center;color:var(--ink-3);font-style:italic}
+.err{border:1px solid var(--select);color:var(--select);padding:16px 20px;margin:40px 0;font-size:14px}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="masthead">
+    <!-- "fate maps" is not a link yet: /fate_map is reserved for the index that
+         will gather these pages, and until it exists that route redirects. -->
+    <div class="eyebrow"><a href="/">zeroshot.bio</a> &nbsp;·&nbsp; fate maps &nbsp;·&nbsp; daniocell</div>
+    <h1>Five days of<br>becoming a <em>fish</em></h1>
+    <p class="dek">Half a million cells of one species&rsquo; first five days, sorted not by where
+      they are but by what they are expressing.</p>
+    <div class="byline">3.3 &ndash; 120 hours post fertilisation</div>
+    <div class="source-line">after Sur <i>et al.</i> 2023 &nbsp;·&nbsp; the DanioCell atlas</div>
+    <svg class="rule-orn" viewBox="0 0 220 14" aria-hidden="true">
+      <path d="M2 7h84M134 7h84" stroke="#8b7d69" stroke-width="1" fill="none"/>
+      <path d="M96 7c4-5 8-5 14 0 6 5 10 5 14 0" stroke="#8b7d69" stroke-width="1" fill="none"/>
+    </svg>
+  </header>
+
+  <section class="prose" style="margin-top:56px">
+    <p class="lead">The companion to this page follows single nuclei through a microscope and can
+      say, of one cell, that it came from another. This page cannot, and does not try. DanioCell is
+      a census, not a film: <span id="mCells"></span> cells dissociated from wild-type embryos at
+      <span id="mStages"></span> closely spaced stages, each one read once, for its transcriptome,
+      and then gone.</p>
+
+    <p>What that buys is a different kind of map. Not where a cell went, but what it was being &mdash;
+      and because the sampling is dense in time, how the whole vocabulary of &ldquo;what a cell can
+      be&rdquo; changes over five days. The plates below ask four questions of it: where the states
+      sit, how long each one lasts, which programs are shared between states that have nothing else
+      in common, and what one inferred trajectory looks like from end to end.</p>
+
+    <p class="caution">One thing to hold on to throughout. Cells that sit near each other in these
+      plates are <i>expressing similar genes</i>. They are not relatives. DanioCell carries no
+      lineage tracing at all, and no plate on this page &mdash; including the trajectory in Plate IV
+      &mdash; observed any cell turning into any other.</p>
+  </section>
+
+  <div id="boot" class="loading">drawing the plates&hellip;</div>
+  <div id="fail" class="err" hidden></div>
+
+  <main id="stage" hidden>
+
+    <figure class="plate wide" id="plate1">
+      <div class="plate-head">
+        <span class="plate-num">Plate I</span>
+        <h2 class="plate-title">The transcriptional landscape</h2>
+        <span class="plate-when">3.3 &ndash; 120 hpf</span>
+      </div>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="colour by">
+          <button id="cbTime" aria-pressed="true">by time</button>
+          <button id="cbTissue" aria-pressed="false">by tissue</button>
+        </div>
+        <span class="hint">drag the scrubber to move through development &middot; click a cell to hold its state</span>
+        <span class="spacer"></span>
+        <button class="btn" id="landReset">reset</button>
+      </div>
+      <div class="scrub">
+        <input type="range" id="tScrub" min="0" max="64" value="64" step="1" aria-label="developmental stage">
+        <span class="read" id="tRead"></span>
+      </div>
+      <div class="canvas-hold" id="landHold"><canvas id="cvLand"></canvas></div>
+      <figcaption id="capLand"></figcaption>
+      <div class="legend" id="legend"></div>
+      <div class="card" id="landCard" hidden><h4>Held state</h4><dl class="kv" id="landCardBody"></dl></div>
+    </figure>
+
+    <figure class="plate wide" id="plate2">
+      <div class="plate-head">
+        <span class="plate-num">Plate II</span>
+        <h2 class="plate-title">How long does a state last?</h2>
+        <span class="plate-when">522 states</span>
+      </div>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="order">
+          <button id="soTissue" aria-pressed="true">by tissue</button>
+          <button id="soOnset" aria-pressed="false">by first appearance</button>
+          <button id="soDur" aria-pressed="false">by persistence</button>
+        </div>
+        <span class="hint">each rule is one state &middot; hover to read it</span>
+      </div>
+      <div class="canvas-hold" id="scoreHold"><canvas id="cvScore"></canvas></div>
+      <figcaption id="capScore"></figcaption>
+      <div class="card" id="scoreCard" hidden><h4>State</h4><dl class="kv" id="scoreCardBody"></dl></div>
+    </figure>
+
+    <figure class="plate" id="plate3">
+      <div class="plate-head">
+        <span class="plate-num">Plate III</span>
+        <h2 class="plate-title">Biology reuses its programs</h2>
+        <span class="plate-when" id="progWhen"></span>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-list" id="progList"></div>
+        <div>
+          <div class="canvas-hold" id="progHold"><canvas id="cvProg"></canvas></div>
+          <figcaption id="capProg"></figcaption>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="plate wide" id="plate4">
+      <div class="plate-head">
+        <span class="plate-num">Plate IV</span>
+        <h2 class="plate-title">One inferred trajectory</h2>
+        <span class="plate-when">URD pseudotime</span>
+      </div>
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="trajectory">
+          <button id="cxIsmc" aria-pressed="true">intestinal smooth muscle</button>
+          <button id="cxBest4" aria-pressed="false">best4+ cells</button>
+        </div>
+        <span class="hint">genes ordered by where they peak &middot; hover to read a gene</span>
+      </div>
+      <div class="canvas-hold" id="cascHold"><canvas id="cvCasc"></canvas></div>
+      <figcaption id="capCasc"></figcaption>
+    </figure>
+
+    <section class="notes">
+      <h3>Notes on the plates</h3>
+      <ol id="noteList"></ol>
+      <p class="colophon" id="colophon"></p>
+    </section>
+
+  </main>
+</div>
+
+<script src="/fate_map_daniocell/dc-data.js"></script>
+<script src="/fate_map_daniocell/dc-landscape.js"></script>
+<script src="/fate_map_daniocell/dc-score.js"></script>
+<script src="/fate_map_daniocell/dc-programs.js"></script>
+<script src="/fate_map_daniocell/dc-cascade.js"></script>
+<script src="/fate_map_daniocell/dc-main.js"></script>
+</body>
+</html>

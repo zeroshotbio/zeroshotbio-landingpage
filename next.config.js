@@ -115,6 +115,17 @@ const nextConfig = {
       // could read as an anatomical claim. Its look is the plate style —
       // PLATE_STYLE.md at the repo root.
       { source: '/fate_map_wang_2026', destination: '/fate_map_wang_2026/index.html' },
+      // /fate_map_daniocell is the sister page, same shape and same plate style,
+      // built from the DanioCell atlas (Sur et al. 2023).
+      // It draws TRANSCRIPTIONAL IDENTITY, not ancestry: DanioCell dissociates
+      // and reads each cell once and carries no lineage tracing at all. The
+      // Wang page's vocabulary — descends from, ancestor, lineage — is banned
+      // here, and Plate IV's URD trajectory is INFERRED from expression, never
+      // observed. Read public/fate_map_daniocell/NOTES.md before touching
+      // anything that could read as a lineage claim.
+      // SOURCE + rebuild: scripts/build_fate_map_daniocell.py, with the
+      // embeddings extracted once by scripts/extract_daniocell_seurat.R.
+      { source: '/fate_map_daniocell', destination: '/fate_map_daniocell/index.html' },
     ]
   },
 
@@ -186,6 +197,15 @@ const nextConfig = {
       // stale pairing of any two of the three would draw a plausible, wrong
       // picture rather than fail — which is why fmLoad() also cross-checks
       // every header count against meta.json and refuses to draw on mismatch.
+      // same shell-and-scripts coupling, same reason, for the sister page
+      {
+        source: '/fate_map_daniocell/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/fate_map_daniocell',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
       {
         source: '/fate_map_wang_2026/:path*',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],

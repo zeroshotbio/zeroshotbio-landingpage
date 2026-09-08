@@ -8,6 +8,10 @@ Built 2026-09-08 on the EC2 instance from the public ITEC deposit.
   `python3 scripts/build_fate_map_wang_2026.py` (`--fetch` pulls the 1.2 GB of source CSVs)
 - Route: rewrite in `next.config.js` (`/fate_map_wang_2026` → `/fate_map/index.html`)
 
+Its sister page is `/fate_map_daniocell`, built from the DanioCell atlas. That one
+draws transcriptional identity and is forbidden the lineage vocabulary this page is
+entitled to; keep the two straight.
+
 This page is the reference implementation of the plate style. The reusable
 rules — tokens, typography, canvas practice, and the mistakes that cost the most
 here — are written up in `PLATE_STYLE.md` at the repo root. Read that before

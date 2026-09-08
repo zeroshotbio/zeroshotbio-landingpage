@@ -1,0 +1,187 @@
+{
+ "generated_by": "scripts/build_fate_map_daniocell.py",
+ "source": {
+  "paper": "Sur, Wang, Capar, Margolin, Prochaska & Farrell, Single-cell analysis of shared signatures and transcriptional diversity during zebrafish development",
+  "journal": "Developmental Cell 58, 3028-3047.e12 (2023)",
+  "doi": "10.1016/j.devcel.2023.11.001",
+  "geo": "GSE223922",
+  "portal": "https://daniocell.nichd.nih.gov",
+  "code": "https://github.com/farrelllab/2023_Sur",
+  "code_doi": "10.5281/zenodo.10048114",
+  "embedding_from": "Daniocell2023_SeuratV4.rds (portal, 2024-08 release), sha256 754043e7878e8594b9c3044b69268bad9ec4652d685f90ce6c34a2ea15ea72f9",
+  "warehouse": "s3://zsb-silver-warehouse/daniocell/"
+ },
+ "counts": {
+  "cells": 489686,
+  "stages": 65,
+  "clusters": 522,
+  "tissues": 20,
+  "programs": 146,
+  "programs_shared": 93,
+  "program_tissue_edges": 217,
+  "cells_cycling": 204457,
+  "cells_long_term": 91295
+ },
+ "stages": [
+  3.3,
+  3.8,
+  4.3,
+  4.7,
+  5.3,
+  6.0,
+  7.0,
+  8.0,
+  9.0,
+  10.0,
+  11.0,
+  12.0,
+  14.0,
+  16.0,
+  18.0,
+  21.0,
+  24.0,
+  26.0,
+  28.0,
+  30.0,
+  32.0,
+  34.0,
+  36.0,
+  38.0,
+  40.0,
+  42.0,
+  44.0,
+  46.0,
+  48.0,
+  50.0,
+  52.0,
+  54.0,
+  56.0,
+  58.0,
+  60.0,
+  62.0,
+  64.0,
+  66.0,
+  68.0,
+  70.0,
+  72.0,
+  74.0,
+  76.0,
+  78.0,
+  80.0,
+  82.0,
+  84.0,
+  86.0,
+  88.0,
+  90.0,
+  92.0,
+  94.0,
+  96.0,
+  98.0,
+  100.0,
+  102.0,
+  104.0,
+  106.0,
+  108.0,
+  110.0,
+  112.0,
+  114.0,
+  116.0,
+  118.0,
+  120.0
+ ],
+ "tissues": [
+  {
+   "key": "blastomeres",
+   "cells": 8675
+  },
+  {
+   "key": "periderm",
+   "cells": 34051
+  },
+  {
+   "key": "epidermis",
+   "cells": 25187
+  },
+  {
+   "key": "neural",
+   "cells": 165054
+  },
+  {
+   "key": "glial",
+   "cells": 40039
+  },
+  {
+   "key": "eye",
+   "cells": 62293
+  },
+  {
+   "key": "otic",
+   "cells": 4542
+  },
+  {
+   "key": "taste",
+   "cells": 4131
+  },
+  {
+   "key": "axial",
+   "cells": 6002
+  },
+  {
+   "key": "muscle",
+   "cells": 31707
+  },
+  {
+   "key": "mural",
+   "cells": 3865
+  },
+  {
+   "key": "mesenchyme",
+   "cells": 42848
+  },
+  {
+   "key": "fin",
+   "cells": 6911
+  },
+  {
+   "key": "hematopoietic",
+   "cells": 25406
+  },
+  {
+   "key": "endoderm",
+   "cells": 12592
+  },
+  {
+   "key": "pronephros",
+   "cells": 2200
+  },
+  {
+   "key": "ionocytes",
+   "cells": 3803
+  },
+  {
+   "key": "pigment",
+   "cells": 7068
+  },
+  {
+   "key": "pgc",
+   "cells": 121
+  },
+  {
+   "key": "cephalic",
+   "cells": 3191
+  }
+ ],
+ "xy_scale": 1000.0,
+ "long_term_hours": 36.0,
+ "span_quantiles": [
+  0.02,
+  0.98
+ ],
+ "caveats": [
+  "Nothing on this page is lineage. DanioCell carries no lineage tracing. Two cells near each other in the embedding are similar in expression, which is a statement about identity and not about ancestry.",
+  "Persistence is not a lifetime. It is a per-cell statistic: the mean absolute developmental-stage difference between a cell and its neighbours within a fixed distance in gene-expression space, computed within tissue subsets. A state's ribbon length here is the separate, observed quantity - when its cells are actually seen.",
+  "The embedding is one fixed 2D projection of the whole atlas. Distances in it are not quantitative, and a population that appears to move is a population whose expression changed, not one that travelled.",
+  "Plate IV is an inferred trajectory. URD reconstructs it from expression alone; no cell in it was observed turning into another.",
+  "The programs on Plate III come from the authors' curated free-text annotation of each module, normalised onto the 19 tissue subsets by this script. Modules the authors described in prose as broad are marked as such rather than given invented edges."
+ ]
+}
