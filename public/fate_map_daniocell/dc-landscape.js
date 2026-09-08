@@ -28,12 +28,9 @@ function landInit(cv, hold) {
 }
 
 function landResize() {
-  land.dpr = Math.min(window.devicePixelRatio || 1, 2);
   land.W = land.hold.clientWidth; land.H = land.hold.clientHeight;
-  land.cv.width = Math.round(land.W * land.dpr);
-  land.cv.height = Math.round(land.H * land.dpr);
-  land.cv.style.height = land.H + 'px';
-  land.ctx.setTransform(land.dpr, 0, 0, land.dpr, 0, 0);
+  const r = dcSizeCanvas(land.cv, land.W, land.H);
+  land.ctx = r.ctx; land.dpr = r.dpr;
   const b = DC.bounds, pad = 26;
   const k = Math.min((land.W - 2 * pad) / (b.x1 - b.x0), (land.H - 2 * pad) / (b.y1 - b.y0));
   land.sx = k; land.sy = -k;                       // flip y: canvas grows downward
@@ -61,42 +58,30 @@ function landPaint() {
   // 1. the whole atlas as ground — this is the shape the reader keeps
   ctx.fillStyle = ink;
   ctx.globalAlpha = 0.055;
-  ctx.beginPath();
-  for (let i = 0; i < C.n; i++) {
-    const x = landX(i), y = landY(i);
-    ctx.rect(x, y, 0.8, 0.8);
-  }
-  ctx.fill();
+  dcFillPoints(ctx, (pt) => { for (let i = 0; i < C.n; i++) pt(landX(i), landY(i)); }, 0.8);
 
   // 2. the cells collected at or before the scrubbed stage
   if (!iso.size) {
     ctx.fillStyle = ink;
     ctx.globalAlpha = 0.30;
-    ctx.beginPath();
-    for (let i = 0; i < C.n; i++) {
-      if (C.t[i] > upto) continue;
-      ctx.rect(landX(i), landY(i), 1.0, 1.0);
-    }
-    ctx.fill();
+    dcFillPoints(ctx, (pt) => {
+      for (let i = 0; i < C.n; i++) if (C.t[i] <= upto) pt(landX(i), landY(i));
+    }, 1.0);
   } else {
     // isolated tissues get their wash; everything else in the window stays ink
     ctx.fillStyle = ink; ctx.globalAlpha = 0.10;
-    ctx.beginPath();
-    for (let i = 0; i < C.n; i++) {
-      if (C.t[i] > upto || iso.has(C.s[i])) continue;
-      ctx.rect(landX(i), landY(i), 0.9, 0.9);
-    }
-    ctx.fill();
+    dcFillPoints(ctx, (pt) => {
+      for (let i = 0; i < C.n; i++)
+        if (C.t[i] <= upto && !iso.has(C.s[i])) pt(landX(i), landY(i));
+    }, 0.9);
     let k = 0;
     for (const t of iso) {
       ctx.fillStyle = css.getPropertyValue('--t' + (k++ % 7)).trim();
       ctx.globalAlpha = 0.68;
-      ctx.beginPath();
-      for (let i = 0; i < C.n; i++) {
-        if (C.t[i] > upto || C.s[i] !== t) continue;
-        ctx.rect(landX(i), landY(i), 1.3, 1.3);
-      }
-      ctx.fill();
+      dcFillPoints(ctx, (pt) => {
+        for (let i = 0; i < C.n; i++)
+          if (C.t[i] <= upto && C.s[i] === t) pt(landX(i), landY(i));
+      }, 1.3);
     }
   }
 
@@ -104,12 +89,9 @@ function landPaint() {
   if (land.mode === 'time' && upto > 0) {
     ctx.fillStyle = css.getPropertyValue('--select').trim();
     ctx.globalAlpha = 0.85;
-    ctx.beginPath();
-    for (let i = 0; i < C.n; i++) {
-      if (C.t[i] !== upto) continue;
-      ctx.rect(landX(i), landY(i), 1.5, 1.5);
-    }
-    ctx.fill();
+    dcFillPoints(ctx, (pt) => {
+      for (let i = 0; i < C.n; i++) if (C.t[i] === upto) pt(landX(i), landY(i));
+    }, 1.5);
   }
 
   // 4. a held state, across all of time
@@ -117,12 +99,9 @@ function landPaint() {
     const idx = DC.cellsOfCluster(land.held);
     ctx.fillStyle = css.getPropertyValue('--select').trim();
     ctx.globalAlpha = 1;
-    ctx.beginPath();
-    for (let k = 0; k < idx.length; k++) {
-      const i = idx[k];
-      ctx.rect(landX(i) - 0.5, landY(i) - 0.5, 2.2, 2.2);
-    }
-    ctx.fill();
+    dcFillPoints(ctx, (pt) => {
+      for (let k = 0; k < idx.length; k++) pt(landX(idx[k]) - 0.5, landY(idx[k]) - 0.5);
+    }, 2.2);
   }
   ctx.globalAlpha = 1;
 

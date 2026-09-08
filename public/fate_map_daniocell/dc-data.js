@@ -101,3 +101,59 @@ DC.stageProfile = function (ci) {
   for (let k = 0; k < idx.length; k++) out[DC.cells.t[idx[k]]]++;
   return out;
 };
+
+
+/* ---------------------------------------------------------------------------
+ * Canvas sizing, and why it is not just devicePixelRatio.
+ *
+ * A canvas backing store costs 4 bytes a pixel, and WebKit caps how much of it
+ * one document may hold — on the order of 224 MB on iOS Safari — then BLANKS
+ * canvases rather than failing loudly. This page's four plates at dpr 2 asked
+ * for about 24 Mpx, roughly 96 MB, which is enough for Safari to drop a plate
+ * while Chrome renders all four happily. That is the failure this guards.
+ *
+ * So: take the largest scale that keeps a single canvas under DC_MAX_PX, never
+ * below 1. The tall score plate loses a little crispness; a plate that is there
+ * beats a plate that is sharp.
+ * ------------------------------------------------------------------------- */
+const DC_MAX_PX = 4.0e6;
+
+function dcSizeCanvas(cv, cssW, cssH) {
+  const want = Math.min(window.devicePixelRatio || 1, 2);
+  const cap = Math.sqrt(DC_MAX_PX / Math.max(1, cssW * cssH));
+  const dpr = Math.max(1, Math.min(want, cap));
+  cv.width = Math.max(1, Math.round(cssW * dpr));
+  cv.height = Math.max(1, Math.round(cssH * dpr));
+  cv.style.height = cssH + 'px';
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, dpr };
+}
+
+/* Fill many tiny squares WITHOUT building one enormous path.
+ *
+ * Half a million rect() calls in a single beginPath()/fill() renders in Chrome
+ * and is a documented way to get nothing at all out of other engines, which
+ * quietly give up on paths past an internal limit. Chunking keeps every path
+ * small, costs nothing measurable, and removes the whole class of problem.
+ *
+ * `emit` is called with a callback it should invoke once per point. */
+function dcFillPoints(ctx, emit, size) {
+  const CHUNK = 16384;
+  let k = 0;
+  ctx.beginPath();
+  emit((x, y) => {
+    ctx.rect(x, y, size, size);
+    if (++k % CHUNK === 0) { ctx.fill(); ctx.beginPath(); }
+  });
+  ctx.fill();
+}
+
+/* Re-paint a plate when it comes back into view. If a browser has dropped a
+ * canvas's backing store to reclaim memory, this is what puts it back. */
+function dcRepaintOnView(el, paint) {
+  if (!('IntersectionObserver' in window)) return;
+  new IntersectionObserver((es) => {
+    for (const e of es) if (e.isIntersecting) paint();
+  }, { rootMargin: '200px' }).observe(el);
+}

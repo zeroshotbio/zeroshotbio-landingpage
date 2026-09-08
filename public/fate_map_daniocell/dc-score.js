@@ -76,14 +76,11 @@ function scoreLayout() {
 }
 
 function scoreResize() {
-  score.dpr = Math.min(window.devicePixelRatio || 1, 2);
   score.W = score.hold.clientWidth;
   score.H = score.contentH;
   score.hold.style.height = score.H + 'px';
-  score.cv.width = Math.round(score.W * score.dpr);
-  score.cv.height = Math.round(score.H * score.dpr);
-  score.cv.style.height = score.H + 'px';
-  score.ctx.setTransform(score.dpr, 0, 0, score.dpr, 0, 0);
+  const r = dcSizeCanvas(score.cv, score.W, score.H);
+  score.ctx = r.ctx; score.dpr = r.dpr;
   scoreDraw();
 }
 

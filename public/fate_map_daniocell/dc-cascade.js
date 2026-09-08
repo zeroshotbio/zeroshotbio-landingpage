@@ -45,14 +45,11 @@ function cascLayout() {
 }
 
 function cascResize() {
-  casc.dpr = Math.min(window.devicePixelRatio || 1, 2);
   casc.W = casc.hold.clientWidth;
   casc.H = Math.max(320, casc.contentH);
   casc.hold.style.height = casc.H + 'px';
-  casc.cv.width = Math.round(casc.W * casc.dpr);
-  casc.cv.height = Math.round(casc.H * casc.dpr);
-  casc.cv.style.height = casc.H + 'px';
-  casc.ctx.setTransform(casc.dpr, 0, 0, casc.dpr, 0, 0);
+  const r = dcSizeCanvas(casc.cv, casc.W, casc.H);
+  casc.ctx = r.ctx; casc.dpr = r.dpr;
   cascDraw();
 }
 

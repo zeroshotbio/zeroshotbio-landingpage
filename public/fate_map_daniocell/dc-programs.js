@@ -28,12 +28,9 @@ function progInit(cv, hold) {
 }
 
 function progResize() {
-  prog.dpr = Math.min(window.devicePixelRatio || 1, 2);
   prog.W = prog.hold.clientWidth; prog.H = prog.hold.clientHeight;
-  prog.cv.width = Math.round(prog.W * prog.dpr);
-  prog.cv.height = Math.round(prog.H * prog.dpr);
-  prog.cv.style.height = prog.H + 'px';
-  prog.ctx.setTransform(prog.dpr, 0, 0, prog.dpr, 0, 0);
+  const r = dcSizeCanvas(prog.cv, prog.W, prog.H);
+  prog.ctx = r.ctx; prog.dpr = r.dpr;
 
   // Tissues on a ring, in the atlas's own order so neighbours on the ring are
   // neighbours in the atlas's own grouping rather than in an arbitrary one.

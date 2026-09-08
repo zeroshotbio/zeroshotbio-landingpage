@@ -313,6 +313,12 @@ window.addEventListener('resize', () => {
     wireCascade();
     writeProse();
     redrawAll();
+    // If a browser drops a canvas's backing store to reclaim memory — Safari
+    // does this, silently — repaint the plate when it scrolls back into view.
+    dcRepaintOnView($('plate1'), () => landDraw());
+    dcRepaintOnView($('plate2'), () => scoreDraw());
+    dcRepaintOnView($('plate3'), () => progDraw());
+    dcRepaintOnView($('plate4'), () => cascDraw());
   } catch (err) {
     $('boot').hidden = true;
     const f = $('fail'); f.hidden = false;
