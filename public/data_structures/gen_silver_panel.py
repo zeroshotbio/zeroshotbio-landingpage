@@ -91,6 +91,25 @@ for rel,label in (('2025_03_release','the authors’ March 2025 publication — 
                  'provenance, what changed, and the do-not-re-fetch warning',2))
 out.append(block('chemfish/','#7FB5A8',n,s,''.join(b)))
 
+# ---- zscape/
+# In the warehouse with no module in any repo - not written, not proposed. The three arms are the
+# authors' own split and the folder is the accession rather than a date, because GEO gives a stable
+# identifier where ChemFish gives none. The merged, deduplicated object is deliberately absent: it
+# filters, merges and dedupes, which is three opinions past what this tier holds.
+n,s=agg('zscape/')
+b=[row('README.md',get('zscape/README.md')[0][0],'acquired',
+       'which arm to use, and why the merged object is not here')]
+pn,ps=agg('zscape/Paper/')
+b.append(row('Paper/',ps,'acquired',f'{pn} objects - the paper and its supplementary workbook'))
+_,gs=agg('zscape/GSE202639/')
+b.append(row('GSE202639/',gs,'acquired','the complete GEO release, 18 files, held verbatim'))
+for arm,note in (('reference','wild-type series + merged-in injection controls'),
+                 ('zperturb_full','the perturbation atlas - 804 embryos, 98 conditions'),
+                 ('zperturb_pilot','the pilot that preceded the full run')):
+    an,asz=agg(f'zscape/GSE202639/{arm}/')
+    b.append(row(f'{arm}/',asz,'acquired',f'{an} files - {note}',2))
+out.append(block('zscape/','#6E93B8',n,s,''.join(b)))
+
 # ---- zebrahub/
 n,s=agg('zebrahub/')
 tn,ts=agg('zebrahub/timepoints/')

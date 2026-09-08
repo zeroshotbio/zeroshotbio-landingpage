@@ -345,6 +345,9 @@ def stage_panels() -> dict[str, str]:
                 ("upstream --release", "One HEAD per distinct URL, no payload, read against every release that claims it - so one response reports unchanged for the current package and superseded for the one it replaced."),
                 ("runbook/", "The two scripts that actually moved the 38 GB: acquire-release.sh from the origin to disk, publish-release.sh from disk to silver. They were in /data/scratch until this branch, which meant the record of what is in silver lived in the repo and the procedure that put it there did not."),
             ]),
+            ("What it does not cover", N, [
+                ("ZSCAPE", "24 objects and 14.46 GiB of GEO GSE202639 went into silver on 2026-09-08 with no manifest, no verifier and no module in any repo - not written, not proposed. The acquisition ran from scripts in /data/scratch. It is the strongest argument that this stage should be shared rather than per-dataset: the generalised acquire script ran against GEO unchanged, and only discovery - how you learn the file list - differed."),
+            ]),
             ("What it refuses", N, [
                 ("a fetch", "There is no fetch command and there must not be one. These URLs carry no version and the origin overwrites in place - it replaced five of six artifacts on 2026-09-03 without announcement - so a fetch aimed at the archived release would substitute the current one and every result computed against those bytes would quietly stop matching its inputs."),
                 ("a re-acquisition over an existing one", "acquire-release.sh refuses a non-empty destination. A directory precondition rather than a --force flag, so it cannot be waved through in a hurry."),
