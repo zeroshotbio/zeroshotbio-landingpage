@@ -5385,14 +5385,24 @@ function drawCountSplitLyse(g,n){
     host.appendChild(dg);
   };
 
-  /* one placer, called at birth and by the burst: a strand that is only ever
-     positioned from inside the ticker is a strand with no coordinates until
-     the first frame runs, and the first frame is not guaranteed to run */
+  /* A STRAND INSIDE A CELL IS SMALLER THAN A STRAND IN SOLUTION — not because
+     the molecule changes size, but because the drawing changes subject. While
+     the wall is up the cell is what you are looking at and nine strands drawn
+     at their full span read as nine things straining against three membranes;
+     the molecule at full size is a claim about scale that only becomes worth
+     making once there is nothing else left in the glass to compare it to. So
+     the strand is born at SMALL and reaches its authored span exactly as the
+     debris goes faint, which is the whole handover this station is about. It
+     scales about the group's own origin, which is why the layout above was
+     recentred on its middle: a figure scaled about a point outside itself
+     walks, and this one is already travelling. */
+  const SMALL=0.56;
   const setStrand=(s,e)=>{
     const rad=s.r0+(s.r1-s.r0)*e;
     s.g.setAttribute("transform",
       `translate(${(Math.cos(s.a)*rad).toFixed(1)},${(Math.sin(s.a)*rad).toFixed(1)}) `+
-      `rotate(${(s.rot+22*e).toFixed(1)})`);
+      `rotate(${(s.rot+22*e).toFixed(1)}) `+
+      `scale(${(SMALL+(1-SMALL)*e).toFixed(3)})`);
     s.g.setAttribute("opacity",(0.62+0.36*e).toFixed(2));
   };
 
@@ -5417,10 +5427,19 @@ function drawCountSplitLyse(g,n){
      the glass — a lens full of grey arcs with the barcoded molecules picking
      their way between them. It is the molecules that survive this station and
      the cell that does not, so the cell is drawn at the weight of something
-     already on its way out, and the burst takes it the rest of the way to
+     already on its way out, and the burst takes it most of the way to
      nothing. Named here because the birth and the burst both spend them, and
-     a debris opacity written twice is a debris opacity that drifts. */
-  const WALL=0.46, PORE=0.26, CYTO=0.06, NUCO=0.13;
+     a debris opacity written twice is a debris opacity that drifts.
+
+     BUT NOT ALL THE WAY. The burst used to erase the membranes outright, and
+     an empty lens says the cell was removed from the tube; it was not. What
+     the wash at B8 has to carry away is still in there with the molecules,
+     floating, and the drawing can say so at a weight that costs the strands
+     nothing. REST is the fraction of its own birth strength each piece of the
+     cell keeps once the beat is over — low enough that the molecules are
+     plainly the subject, high enough that the debris is still there to be
+     washed off next door. */
+  const WALL=0.46, PORE=0.26, CYTO=0.06, NUCO=0.13, REST=0.24;
   const TRI=[[-0.34,-0.30],[0.34,-0.30],[0,0.34]];
   const SEG=7, NSTR=3, RAD0=R*0.30;
   const ringPts=(rad,a0,a1)=>{ const o=[];
@@ -5499,16 +5518,19 @@ function drawCountSplitLyse(g,n){
           `translate(${(Math.cos(s.a)*R*0.48*a).toFixed(1)},`+
           `${(Math.sin(s.a)*R*0.48*a).toFixed(1)}) `+
           `rotate(${(s.spin*a).toFixed(1)},${s.mid[0].toFixed(1)},${s.mid[1].toFixed(1)})`);
-        /* the arcs do not merely dim on the way out, they go: what is held at
-           the end of this beat is nine molecules in solution, and a ring of
-           wreckage still legible around each of them would say the cell was
-           half there rather than gone */
-        s.p.setAttribute("stroke-opacity",(WALL*(1-0.94*f)).toFixed(2));
+        /* the arcs dim to REST and stop there: what is held at the end of this
+           beat is nine molecules in solution and the wreckage they are in
+           solution WITH, drifting and nearly out of the picture but not out of
+           the tube — the wash that finally removes it is B8's, not this beat's */
+        s.p.setAttribute("stroke-opacity",(WALL*(1-(1-REST)*f)).toFixed(2));
       });
+      /* the pores go first and fastest — a hole in a wall stops meaning
+         anything once the wall is in pieces — but they stop where the wall
+         stops, because one rule for the debris is what keeps it one object */
       C.pore.forEach(p=>p.setAttribute("stroke-opacity",
-        (PORE*Math.max(0,1-f*1.8)).toFixed(2)));
-      C.body.setAttribute("fill-opacity",(CYTO*(1-f)).toFixed(2));
-      C.nuc.setAttribute("fill-opacity",(NUCO*(1-0.9*f)).toFixed(2));
+        (PORE*Math.max(REST,1-f*1.8)).toFixed(2)));
+      C.body.setAttribute("fill-opacity",(CYTO*Math.max(REST,1-f)).toFixed(2));
+      C.nuc.setAttribute("fill-opacity",(NUCO*(1-(1-REST)*0.9*f)).toFixed(2));
       /* the strands are the one thing that eases to a stop inside the burst:
          they are not thrown out, they diffuse out, and they brighten because
          they are now in open solution rather than behind a wall */
