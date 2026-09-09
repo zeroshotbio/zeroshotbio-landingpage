@@ -6140,13 +6140,12 @@ function drawCapture(g,n){
 DRAW.capture = drawCapture;
 
 /* ------------------------------------------------------------------
-   B8a · PCR AMPLIFICATION — a shut block, and the doubling under glass.
+   B8a · PCR AMPLIFICATION — the doubling under glass, and nothing else.
 
    ASKED FOR FROM THE PAGE, from the map's own "Add a module" button, and what
    it asked for is one object and one event: a thermal cycler with its lid down
    and one lamp lit, and tethered over it a magnification in which a single
-   barcoded molecule becomes two and then four. That is the whole of the
-   request, so it is the whole of the drawing.
+   barcoded molecule becomes two and then four.
 
    ASKED FOR A SECOND TIME, from "Edit visual", and the second request replaces
    what is in the glass. It said three things: draw the strands the way B8 next
@@ -6156,15 +6155,29 @@ DRAW.capture = drawCapture;
    molecule. So the glass now runs three strands, three enzymes and three
    copies, and then fills.
 
-   THE BLOCK IS DELIBERATELY SHUT AND DELIBERATELY DULL. B8's own header says
-   why a closed lid at this size says nothing, and it is still true — nothing
-   about an amplification is visible from outside a machine. What is different
-   here is that the claim has somewhere else to live: it lives in the glass,
-   and the block's job is to be the object the glass is tethered to. A lid that
-   opened, a block that swung between anneal and denature, a row of pips
-   counting cycles — each would be a second event competing with the only one
-   this station has, and each would assert a cycle count, a programme or a
-   protocol the request never named.
+   ASKED FOR A THIRD TIME, and that request went the other way: make the block
+   look more like a PCR machine, and make the glass bigger. It got a heated
+   lid, a clamp bar, a grille and a console, and the glass got the ZOOM factor
+   it still carries.
+
+   ASKED FOR A FOURTH TIME, AND THE MACHINE IS GONE. "I don't think the pcr
+   machine needs to be there. The image can just be black circle showing the
+   pcr amplification." So the chassis, the heated lid, the clamp bar, the
+   grille, the lamp, the console and the connector in from B8's rack have all
+   come out, and the station is the glass. That is a subtraction this drawing
+   had coming. A shut block cannot show its own event — nothing about an
+   amplification is visible from outside a machine — which is why each earlier
+   request kept adding RECOGNITION to it, a lid, a console, a slot, and never
+   once added meaning; and all the while the thing beside it carried the whole
+   step. Two objects on one tile where one of them says nothing is one object
+   too many, and the one that goes is the one that says nothing.
+
+   WHAT IS LEFT ON THE BENCH IS THE TETHER. The two leaders now land on this
+   node's own footprint instead of on a lid, because a glass naming no place is
+   a picture floating over the map rather than a view of one station on it —
+   and the track, the dot and the name all arrive at that footprint. The bench
+   is bare under them on purpose: this step is free DNA in a closed tube, and
+   there was never anything about it to see at bench scale.
 
    IT IS NOT A PLATE AND IT IS NOT ONE OF THE HEATED BLOCKS. Rounds one to
    three are chemistry inside an intact cell and this row draws them as plates
@@ -6213,7 +6226,10 @@ DRAW.capture = drawCapture;
    tile's own airspace and B6's ends further left again, so the clear air starts
    just over where B7's runs out. Hence the height below — measured from this
    tile's top in screen lengths times SC, so the clearance survives a resize
-   rather than being true at one size.
+   rather than being true at one size. AND LOSING THE MACHINE DOES NOT FREE IT.
+   What pins the glass up there is the names, not the object that used to stand
+   under it, so the fourth request took the block away and left the height
+   exactly where three iterations against those names had put it.
 
    Borrows nothing but the idioms. Spends --ch4, --ch8 and --ch11 for the chips
    and --c-top for a strand, all declared on /molecular_pipe — the only page
@@ -6229,118 +6245,11 @@ function drawPcrAmplify(g,n){
   const ease=u=>u*u*(3-2*u);
   const r=rng(97);
 
-  /* ---- THE CONNECTOR ------------------------------------------------------
-     A stub in from B8's magnetic rack, which stands forward and left of this
-     tile. It starts clear of the nearest tube rather than on it — this node is
-     drawn after B8, so anything overlapping that rack is painted on top of it
-     and reads as part of it — and it ENDS INSIDE this chassis, which is painted
-     over it a few lines below. A cable that stops at a wall reads as unplugged. */
-  const A=P(n.x-n.w*0.52, n.y+n.d*0.86, n.h*1.15);
-  const M=P(n.x-n.w*0.30, n.y+n.d*0.18, n.h*0.62);
-  g.appendChild(el("line",{x1:A[0].toFixed(1),y1:A[1].toFixed(1),
-    x2:M[0].toFixed(1),y2:M[1].toFixed(1),stroke:"var(--fg2)",
-    "stroke-width":(1.7*SC).toFixed(2),"stroke-opacity":".45",
-    "stroke-linecap":"round"}));
-
-  /* ---- THE CYCLER ---------------------------------------------------------
-     The charcoal the magnetic rack next door is drawn in, so the two objects
-     on this stretch of bench that are lumps of metal read as the same kind of
-     thing. The lid is a second box standing on the chassis and drawn in the
-     works skin: lighter than the body, which is what says it is a part that
-     moves, without it having to move.
-
-     ASKED FOR A THIRD TIME, from "Edit visual", and the third request is about
-     recognition: make it look more like a PCR machine. What a bench cycler has
-     that a shut box does not is a HEATED LID hinged at the back and clamped by
-     a bar at the front, a slanted console off the front edge, and a grille in
-     its flank. All three are furniture. They change what the object can be
-     named as from across the map and they assert nothing about the run, which
-     is what the header above forbids — the console's screen is dark for the
-     same reason B8's spare pips are hollow: no programme was ever recorded, so
-     there is nothing honest to put on it. */
-  const CASE={top:V("t-top"),left:V("t-left"),right:V("t-right"),sw:1.4,so:.9};
-  paint(g,n.x,n.y,n.w,n.d,n.h,CASE);
-
-  /* the grille, on the flank this projection actually shows, a hair proud of
-     the face so the face cannot swallow it. Three louvres and no more: at this
-     size a fourth is a smudge rather than a slot. */
-  const gx=n.x+n.w/2+0.002;
-  for(let i=0;i<3;i++){
-    const gz=n.h*(0.24+i*0.17);
-    const a=P(gx,n.y-n.d*0.28,gz), b=P(gx,n.y+n.d*0.28,gz);
-    g.appendChild(el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
-      x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--stroke)",
-      "stroke-width":(0.9*SC).toFixed(2),"stroke-opacity":".4"}));
-  }
-
-  /* faces() draws from z 0 and the projection is a pure translation in z, so a
-     box that stands on something else is a transform on a group rather than a
-     second set of face maths beside the first. B8's cycler does the same. */
-  const LZ=n.h, LT=n.h+n.h*0.34;
-  const lid=el("g",{transform:`translate(0,${(-LZ*S*CZ).toFixed(2)})`});
-  g.appendChild(lid);
-  /* back to front inside the lid group, because paint order is depth here as
-     much as anywhere: the hinge block stands behind the lid it carries, in the
-     chassis's own charcoal so it reads as the body's fitting rather than the
-     lid's, and the clamp bar stands in front of it. */
-  paint(lid,n.x,n.y-n.d*0.48,n.w*0.46,n.d*0.12,(LT-LZ)*0.90,CASE);
-  paint(lid,n.x,n.y,n.w*0.88,n.d*0.88,LT-LZ,SKIN.works);
-  /* the clamp bar STANDS ON the lid rather than lying on it. A flat patch on
-     the top face at this size reads as a stain; a short prism catches the
-     three-face shading the rest of the machine has and reads as the thing your
-     hand goes on to screw the heated lid down. */
-  const bar=el("g",{transform:`translate(0,${(-(LT-LZ)*S*CZ).toFixed(2)})`});
-  lid.appendChild(bar);
-  paint(bar,n.x,n.y+n.d*0.26,n.w*0.44,n.d*0.11,n.h*0.15,SKIN.sB);
-
-  /* ---- THE ONE INDICATOR --------------------------------------------------
-     A hair proud of the front face, so the face cannot swallow it. It is lit
-     and it stays lit: the request asked for one indicator on, and a lamp that
-     pulsed or stepped would be reporting a programme nobody has described. */
-  const fy=n.y+n.d/2+0.002;
-  const quad=(x0,x1,z0,z1)=>pts([P(x0,fy,z1),P(x1,fy,z1),P(x1,fy,z0),P(x0,fy,z0)]);
-  const lx0=n.x-n.w*0.34, lx1=lx0+n.w*0.09, lz0=n.h*0.40, lz1=n.h*0.62;
-  g.appendChild(el("polygon",{points:quad(lx0,lx1,lz0,lz1),fill:"var(--signal)",
-    "fill-opacity":".85",stroke:"var(--stroke)","stroke-width":".7",
-    "stroke-opacity":".6"}));
-
-  /* ---- THE CONSOLE --------------------------------------------------------
-     The slanted panel hanging off the top front edge, which is the part of a
-     benchtop cycler you can name the machine by at a glance. It is one plane,
-     so it is stated in its own frame — u across it, v from the hinge out to
-     the lip — and everything on it is a fraction of that frame and of the
-     node, which is what carries it through a resize. The panel sits to the
-     right of the lamp because that is the half of the front face the lamp
-     leaves free; they are one control panel between them, not two things.
-     The screen is dark and stays dark.
-
-     HOW FAR IT HANGS IS NOT FREE. The panel is hinged at the top front edge and
-     everything it reaches — forward, and down its own slope — is a walk down
-     the face it is mounted on; too much of either and the lip crosses the
-     machine's own foot line and the console reads as lying on the bench in
-     front of the cycler rather than bolted to it. These three fractions put
-     the lip about a pixel inside that edge at the proportions this node is
-     authored at, so the panel stays on the machine. */
-  const cx0=n.x, cx1=n.x+n.w*0.42, cd=n.d*0.24;
-  const cat=(u,v,dz)=>P(cx0+(cx1-cx0)*u, fy+cd*v, n.h-n.h*0.26*v+(dz||0));
-  g.appendChild(el("polygon",{points:pts([cat(0,0),cat(1,0),cat(1,1),cat(0,1)]),
-    fill:"var(--k-top)","fill-opacity":".95",stroke:"var(--stroke)",
-    "stroke-width":".8","stroke-opacity":".7"}));
-  g.appendChild(el("polygon",{
-    points:pts([cat(0.14,0.20),cat(0.86,0.20),cat(0.86,0.82),cat(0.14,0.82)]),
-    fill:"var(--bg)","fill-opacity":".85",stroke:"var(--fg2)",
-    "stroke-width":".6","stroke-opacity":".45"}));
-  /* the lip under the front edge: without it the console is a decal on the air
-     in front of the machine rather than a panel with a thickness */
-  g.appendChild(el("polygon",{points:pts([cat(0,1),cat(1,1),
-      cat(1,1,-n.h*0.09),cat(0,1,-n.h*0.09)]),
-    fill:"var(--k-right)","fill-opacity":".95",stroke:"var(--stroke)",
-    "stroke-width":".8","stroke-opacity":".7"}));
-
-  /* ---- THE MAGNIFICATION --------------------------------------------------
-     A thin solid ellipse with two leaders back to the machine: the idiom this
-     map uses everywhere for a view drawn larger than life, and a solid ring is
-     the only thing on this tile allowed to be one.
+  /* ---- THE MAGNIFICATION, WHICH IS NOW THE WHOLE STATION ------------------
+     A thin solid ellipse with two leaders back to the tile: the idiom this map
+     uses everywhere for a view drawn larger than life, and a solid ring is the
+     only thing on this tile allowed to be one — which is easier to hold to now
+     that it is the only thing on this tile at all.
 
      WHAT IS INSIDE IT IS SIZED IN SCREEN PIXELS AND SCALED BY BEING SCALED. A
      molecule has no world size to be authored in, so it goes in a group
@@ -6348,9 +6257,9 @@ function drawPcrAmplify(g,n){
      size this node happens to be authored at. A resize moves the glass, grows
      it, and takes everything in it along.
 
-     THE SAME REQUEST ASKED FOR IT BIGGER, and bigger means the whole glass and
-     everything under it — a wider ring around the same small strands would be
-     a bigger empty frame, not a bigger view. So the enlargement is one factor
+     THE THIRD REQUEST ASKED FOR IT BIGGER, and bigger means the whole glass
+     and everything under it — a wider ring around the same small strands would
+     be a bigger empty frame, not a bigger view. So the enlargement is one factor
      on the group's scale and nothing inside is touched. IT GROWS UPWARD. What
      forces this glass's height is what is BELOW it — the station names striping
      the sky at −30°, described above — so the bottom of the ring stays exactly
@@ -6358,14 +6267,20 @@ function drawPcrAmplify(g,n){
      that way round, the clearance that was tuned against those names survives
      both the enlargement and a resize. */
   const LX=52, LY=40, ZOOM=1.32, GS=SC*ZOOM;
+  /* still measured from the top of the node's own box rather than from the
+     ground, even with nothing standing in it: n.h is what a resize changes
+     along with w and d, and hanging the glass off it is what keeps all three
+     of them moving the drawing together. */
   const TOP=P(n.x,n.y,n.h);
   const KX=TOP[0]+10*SC, KY=TOP[1]-145*SC-LY*GS;
 
-  /* the leaders name the lid rather than the chassis — the reaction is in the
-     block under it — and they start ON the boundary, aimed at two corners of
-     the lid's top face, so glass that has moved or grown still points at metal */
-  [[-0.22,-0.22],[0.22,-0.22]].forEach(([fx,fy2])=>{
-    const t=P(n.x+n.w*fx, n.y+n.d*fy2, LT);
+  /* the leaders name this node's own footprint, which is the only thing left
+     to name: two of its back corners rather than one point, so the pair reads
+     as a patch of bench and not as a V pinched onto a dot. They start ON the
+     boundary and both ends are fractions of w and d, so glass that has moved
+     or grown still lands on the tile the track and the name arrive at. */
+  [[-0.32,-0.32],[0.32,-0.32]].forEach(([fx,fy2])=>{
+    const t=P(n.x+n.w*fx, n.y+n.d*fy2, 0);
     const vx=t[0]-KX, vy=t[1]-KY, u=1/Math.hypot(vx/(LX*GS), vy/(LY*GS));
     g.appendChild(el("line",{x1:(KX+vx*u).toFixed(1),y1:(KY+vy*u).toFixed(1),
       x2:t[0].toFixed(1),y2:t[1].toFixed(1),stroke:"var(--fg2)",
