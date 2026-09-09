@@ -65,14 +65,15 @@ SOURCES = [
          href="https://doi.org/10.1038/s41586-023-06720-2",
          silver="zscape/", frm="silver zscape/README.md; counts read from the h5ad this pass"),
 
-    dict(key="zmap", name="ZMAP", band="vocabulary", status="held",
+    dict(key="zmap", name="ZMAP", band="vocabulary", status="wired",
          modality="harmonised meta-atlas of eight published studies",
          window=[3, 120], evidence="inferred",
          scale="754,386 cells · 292,969 in the window · 8 studies",
-         uses="Nothing yet. It is the intended referee: it carries each cell's label from "
-              "every study at once, so a cell with both a DanioCell and a Farnsworth label "
-              "IS a crosswalk observation. It contains neither ZSCAPE nor Platt, which is "
-              "what would make it an independent one.",
+         uses="The ZMAP block in every state panel: an independent identity call, matched by "
+              "expression profile because ZMAP shares NO cells with Platt, plus a predicted "
+              "developmental age carried from its own time_id. On germ layer the two routes "
+              "agree for 160 of 185 graph states. It contains neither ZSCAPE nor Platt, which "
+              "is exactly what makes it an independent check rather than an echo.",
          cite="Wagner lab, UCSF — Zebrafish Multi-study Atlas Project.",
          href="https://wagnerlabucsf.github.io/zmap/",
          silver="zmap/", frm="silver zmap/README.md; obs columns read this pass"),

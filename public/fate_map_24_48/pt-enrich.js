@@ -22,6 +22,18 @@
     return n;
   };
 
+  /* ZMAP's confidence scale is NOT ZSCAPE's and must not read as if it were.
+   * ZSCAPE's is a fraction of shared cells; ZMAP's is how far the best profile
+   * correlation sits above that state's own null. Different evidence, different
+   * words. */
+  const ZCONF = {
+    strong:    { label: 'strong',    note: 'best match stands 4+ SD above this state\u2019s own null' },
+    clear:     { label: 'clear',     note: 'best match stands 2.5+ SD above the null' },
+    ambiguous: { label: 'ambiguous', note: 'the top two ZMAP states are within 0.01 of each other' },
+    weak:      { label: 'weak',      note: 'no ZMAP state stands out from the rest' },
+    thin:      { label: 'thin',      note: 'fewer than 25 Platt cells behind the profile' },
+  };
+
   const CONF = {
     unique:   { label: 'unique',   note: 'one ZSCAPE label takes 80%+ of the cells' },
     dominant: { label: 'dominant', note: 'one label takes 50–80%; the rest are listed' },
@@ -146,10 +158,133 @@
     return t;
   }
 
+  /* The predicted-age strip. Same 18-72 ruler as the developmental-time box so
+   * the two can be compared by eye — but it is a DIFFERENT quantity: ZMAP's own
+   * time distribution for a state matched by correlation, not this state's cells. */
+  function hpfStrip(pr, observedPeak) {
+    const W = 288, H = 34, PADX = 4, LO = 18, HI = 72;
+    const x = (v) => PADX + ((Math.max(LO, Math.min(HI, v)) - LO) / (HI - LO)) * (W - 2 * PADX);
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%'); svg.setAttribute('height', H);
+    const band = document.createElementNS(NS, 'rect');
+    band.setAttribute('x', x(24)); band.setAttribute('y', 2);
+    band.setAttribute('width', x(48) - x(24)); band.setAttribute('height', 18);
+    band.setAttribute('fill', '#eae2d2');
+    svg.appendChild(band);
+    if (pr.q25 != null && pr.q75 != null) {
+      const box = document.createElementNS(NS, 'rect');
+      box.setAttribute('x', x(pr.q25)); box.setAttribute('y', 6);
+      box.setAttribute('width', Math.max(1, x(pr.q75) - x(pr.q25)));
+      box.setAttribute('height', 10);
+      box.setAttribute('fill', 'none'); box.setAttribute('stroke', '#8b7d69');
+      box.setAttribute('stroke-width', '1'); box.setAttribute('stroke-dasharray', '3 2');
+      svg.appendChild(box);
+    }
+    if (pr.q50 != null) {
+      const med = document.createElementNS(NS, 'line');
+      med.setAttribute('x1', x(pr.q50)); med.setAttribute('x2', x(pr.q50));
+      med.setAttribute('y1', 4); med.setAttribute('y2', 18);
+      med.setAttribute('stroke', '#8b7d69'); med.setAttribute('stroke-width', '1.6');
+      svg.appendChild(med);
+    }
+    if (observedPeak != null) {           /* the observation, for contrast */
+      const o = document.createElementNS(NS, 'line');
+      o.setAttribute('x1', x(observedPeak)); o.setAttribute('x2', x(observedPeak));
+      o.setAttribute('y1', 2); o.setAttribute('y2', 20);
+      o.setAttribute('stroke', '#8f2d16'); o.setAttribute('stroke-width', '1.6');
+      svg.appendChild(o);
+    }
+    [18, 24, 36, 48, 60, 72].forEach((t) => {
+      const lab = document.createElementNS(NS, 'text');
+      lab.setAttribute('x', x(t)); lab.setAttribute('y', H - 2);
+      lab.setAttribute('text-anchor', 'middle'); lab.setAttribute('font-size', '8');
+      lab.setAttribute('font-family', 'ui-sans-serif, system-ui, sans-serif');
+      lab.setAttribute('fill', '#8b7d69');
+      lab.textContent = t;
+      svg.appendChild(lab);
+    });
+    return svg;
+  }
+
+  /* The ZMAP block. Deliberately compact, and deliberately hedged: no cell is
+   * shared between ZMAP and Platt, so nothing here is a join. */
+  function renderZmap(wrap, name, Z, observedPeak) {
+    const e = Z && Z[name];
+    if (!e) return;
+    const fine = e.levels.ZMAP_CellTypeFine;
+    const c = ZCONF[fine.confidence] || ZCONF.weak;
+
+    const h = el('div', 'e-head');
+    h.append(el('span', null, 'ZMAP'), el('span', 'conf ' + fine.confidence, c.label));
+    wrap.appendChild(h);
+    wrap.appendChild(el('div', 'e-note',
+      'No shared cells \u2014 matched by expression profile over 2,251 genes. ' + c.note + '.'));
+
+    fine.matches.slice(0, 3).forEach((m) => {
+      const row = el('div', 'xw-row');
+      const head = el('div', 'xw-head');
+      head.append(el('span', 'xw-name', m.zmap_state),
+                  el('span', 'xw-pct', '\u03c1 ' + m.rho.toFixed(2)));
+      const bar = el('div', 'xw-bar');
+      const fill = el('i');
+      /* the bar shows rho relative to this state's own null, not 0-1: an
+       * absolute-scaled bar would make every match look feeble */
+      const lo = fine.null_mean_rho, hi = Math.max(fine.top_rho, lo + 1e-6);
+      fill.style.width = Math.max(2, ((m.rho - lo) / (hi - lo)) * 100) + '%';
+      fill.style.background = '#5f5344';
+      bar.appendChild(fill);
+      row.append(head, bar,
+                 el('div', 'xw-back', m.zmap_cells.toLocaleString() + ' ZMAP cells'));
+      wrap.appendChild(row);
+    });
+
+    const coarse = ['ZMAP_Tissue', 'ZMAP_GermLayer']
+      .map((k) => (e.levels[k].matches[0] || {}).zmap_state).filter(Boolean);
+    wrap.appendChild(el('div', 'e-foot',
+      `top match ${fine.z_top} SD above this state\u2019s null (mean \u03c1 ` +
+      `${fine.null_mean_rho}) \u00b7 tissue ${coarse[0] || '\u2014'} \u00b7 germ layer ` +
+      `${coarse[1] || '\u2014'}`));
+
+    if (e.predicted_hpf && e.predicted_hpf.q50 != null) {
+      const h2 = el('div', 'e-head');
+      h2.append(el('span', null, 'ZMAP predicted age'), tag('model'));
+      wrap.appendChild(h2);
+      wrap.appendChild(hpfStrip(e.predicted_hpf, observedPeak));
+      const v = e.vs_observed_peak;
+      wrap.appendChild(el('div', 'e-foot',
+        `median ${e.predicted_hpf.q50} hpf, IQR ${e.predicted_hpf.q25}\u2013` +
+        `${e.predicted_hpf.q75}, from ZMAP\u2019s own cells in ` +
+        `${e.predicted_hpf.from_zmap_state}. ` +
+        (v ? `The madder rule is this state\u2019s observed peak, ${v.observed_peak_hpf} hpf ` +
+             `\u2014 a difference of ${v.delta_hpf > 0 ? '+' : ''}${v.delta_hpf} h. ` : '') +
+        `Indirect twice over: ZMAP\u2019s timing, carried across a correlation.`));
+    }
+
+    const vz = e.vs_zscape;
+    if (vz && vz.germ_layer_agreement) {
+      const h3 = el('div', 'e-head');
+      h3.append(el('span', null, 'ZMAP against ZSCAPE'),
+                el('span', 'conf ' + (vz.germ_layer_agreement === 'agree' ? 'unique' : 'split'),
+                   vz.germ_layer_agreement));
+      wrap.appendChild(h3);
+      wrap.appendChild(el('div', 'e-foot',
+        `Germ layer is the only axis both vocabularies carry. ZSCAPE says ` +
+        `<b>${vz.zscape_germ_layer}</b>, observed from shared cells; ZMAP says ` +
+        `<b>${vz.zmap_germ_layer}</b>, inferred from the profile. ` +
+        (vz.germ_layer_agreement === 'agree'
+          ? 'Two routes with no cell in common land in the same place.'
+          : 'They do not agree. Neither is automatically right \u2014 look at both.')));
+      wrap.lastChild.innerHTML = wrap.lastChild.textContent
+        .replace(vz.zscape_germ_layer, '<b>' + vz.zscape_germ_layer + '</b>')
+        .replace(vz.zmap_germ_layer, '<b>' + vz.zmap_germ_layer + '</b>');
+    }
+  }
+
   /* Append the whole quantitative block to an already-built panel. Returns
    * silently if the state has no enrichment record, so the page still works
    * with enrich.json absent. */
-  function render(container, name, E) {
+  function render(container, name, E, Z) {
     const e = E && E[name];
     if (!e) return;
     const wrap = el('div', 'enrich');
@@ -237,6 +372,7 @@
         `cells; Platt's own column is populated for 550 cells in 1.2M and is unusable.`));
     }
 
+    renderZmap(wrap, name, Z, e.observed ? e.observed.peak_hpf_in_window : null);
     container.appendChild(wrap);
   }
 

@@ -75,12 +75,20 @@
     return 'emerging — crests after the window, at ' + peak + ' ' + TIMEPOINTS_LABEL;
   }
 
-  PT.load().then(({ graph, meta, enrich, sources }) => {
+  PT.load().then(({ graph, meta, enrich, sources, zmap }) => {
     const c = meta.counts;
     const S = PTGraph.STYLE;
     /* mapping-confidence tallies, counted from the enrichment rather than typed */
     const conf = { unique: 0, dominant: 0, split: 0, thin: 0, unmapped: 0 };
     if (enrich) Object.values(enrich).forEach((e) => { conf[e.zscape.confidence] += 1; });
+    const gl = { agree: 0, disagree: 0 };
+    let zdelta = 0, zdeltaN = 0;
+    if (zmap) Object.values(zmap).forEach((e) => {
+      const a = e.vs_zscape && e.vs_zscape.germ_layer_agreement;
+      if (a) gl[a] += 1;
+      const v = e.vs_observed_peak;
+      if (v && v.delta_hpf != null) { zdeltaN += 1; if (Math.abs(v.delta_hpf) <= 6) zdelta += 1; }
+    });
 
     /* ---- written matter, all from meta.json ---------------------------- */
     $('srcLine').textContent =
@@ -228,7 +236,7 @@
        * the fields there describe the GRAPH, and everything below describes
        * MEASUREMENTS of the state. Keeping them in two blocks is the cheapest
        * way to stop a reader reading a model output as a count. */
-      if (window.PTEnrich) PTEnrich.render(body, n.name, enrich);
+      if (window.PTEnrich) PTEnrich.render(body, n.name, enrich, zmap);
     }
 
     /* ---- filter: states that crest inside the window -------------------- */
@@ -342,6 +350,14 @@
       `states collapse onto only 82 distinct top-matching ZSCAPE labels — ten of them share one. ` +
       `The relationship is many-to-many and no join key fixes it; the two annotations subdivide the ` +
       `same cells along different axes. Treating it as a rename would silently merge states.`,
+
+      `<b>ZMAP corroborates most of the graph's identities by an independent route.</b> ` +
+      `ZMAP shares <i>no cells</i> with Platt — it integrates eight other studies — so its states ` +
+      `are matched by expression profile over 2,251 genes rather than by a join, which is weaker ` +
+      `evidence and is labelled as such everywhere. On germ layer, the one axis both vocabularies ` +
+      `carry, the two routes <b>agree for ${gl.agree} of ${gl.agree + gl.disagree}</b> graph ` +
+      `states. Its predicted ages are unbiased but wide: the median difference from the observed ` +
+      `peak is 0 hours and only ${zdelta} of ${zdeltaN} states land within six.`,
 
       `<b>What is deliberately absent, and Plate II is the audit of it.</b> ZMAP, DanioCell, ` +
       `Zebrahub, the spatial layers and the anatomy are acquired, verified and sitting in the ` +

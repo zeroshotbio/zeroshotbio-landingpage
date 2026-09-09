@@ -159,6 +159,12 @@ const nextConfig = {
       // here plus reusable crosswalk tables to /data/fate_map/ on the analysis
       // instance. enrich.json is OPTIONAL at runtime: without it the page degrades
       // to the first-pass panel rather than failing.
+      // A THIRD pass, scripts/build_fate_map_24_48_zmap.py, adds the ZMAP block to
+      // the panel. ZMAP shares NO cells with Platt, so unlike the ZSCAPE crosswalk
+      // it is matched by expression profile (Spearman over 2,251 HVGs) and is
+      // weaker evidence — the panel and the tables say so on every row. Its
+      // prerequisites are two pseudobulk passes whose scripts ship beside the page
+      // (pseudobulk_platt.py, pseudobulk_zmap.py). zmap.json is optional too.
       // Plate II is the PROVENANCE stack — fourteen sources on one developmental
       // axis, with only the two that actually feed the page drawn filled. Its
       // record is sources.json, written by scripts/build_fate_map_24_48_sources.py,

@@ -237,6 +237,84 @@ no DOI given"* rather than inventing one.
   against the viewBox edge, and the unit label at `plotR + 6` collided with the 120 tick, which sits
   at `plotR` exactly by construction. Both were invisible in the code and obvious in a screenshot.
 
+## ZMAP (fourth pass, 2026-09-09) — corroboration, not a join
+
+**ZMAP shares no cells with Platt.** It integrates eight studies — Farnsworth2020, Farrell2018,
+Kamimoto2023, Kukreja2024, Lange2023, Spanjaard2018, Sur2023, Wagner2018 — and neither ZSCAPE nor
+Platt is among them. Its barcodes are a different grammar (`ZFOBLONG_WT_DS5_AGAAGGTCAGCG-3`). The
+cell-level join that made the ZSCAPE crosswalk exact is unavailable, and no amount of care recovers
+it.
+
+So states are matched by **expression profile**: mean log1p(CP10K) per Platt state against mean of
+ZMAP's own log-normalised X, over the 2,251 of ZMAP's 2,411 highly variable genes that survive the
+gene-identifier bridge, scored by Spearman. **This is weaker evidence than the ZSCAPE crosswalk and
+is labelled as such on every row and in the panel.** A ZSCAPE match says *these are the same cells,
+labelled twice*. A ZMAP match says *these two populations look alike*.
+
+### Three identifier systems, and a bridge that had to be built
+
+Platt's genes are ENSDARG. **ZMAP's `gene_ids` are Lawson ids** (`LL0000000001`) — it was built on
+the Lawson annotation, not Ensembl — so the ENSDARG intersection is **zero**. The join runs through
+gene *symbols* instead, using the ZSCAPE symbol map: 27,923 of Platt's 32,031 genes reach a ZMAP
+symbol, and 2,251 of the 2,411 HVGs are covered. Anyone integrating ZMAP with an Ensembl-based
+dataset will hit this first.
+
+### The thresholds were wrong before the mapping was
+
+The first scoring pass thresholded raw Spearman at 0.55 and called **180 of 185 states weak** —
+while mapping cardiomyocyte→cardiac_muscle, notochord→notochord and hatching gland→hatching_gland.
+The mapping was right and the threshold was arbitrary. Cross-dataset pseudobulk over 2,251 sparse
+genes is full of near-ties, which compresses Spearman: the whole top-match distribution sits around
+ρ 0.43, so 0.51 is a strong match.
+
+The fix is self-calibrating. A match is scored by **how far it stands above that state's own null** —
+its correlations against every ZMAP state — in standard deviations. Raw ρ is still reported so a
+z-score is never mistaken for a correlation. Rescored: **24 strong, 80 clear, 55 ambiguous, 26
+weak** across the 185 graph states with a profile.
+
+### Does ZMAP support, refine, or contradict?
+
+**Mostly support.** On germ layer — the one axis both vocabularies carry — the two routes
+**agree for 160 of 185 graph states**, with no cell in common. The strongest matches are clean
+three-way agreements: `proximal straight tubule` → ZMAP `pronephros` / ZSCAPE `pronephros proximal
+tubule`; `neutrophil` → `neutrophil` → `neutrophil`; `endothelium, dorsal aorta` → `aorta` →
+`endothelium (dorsal aorta)`.
+
+**It contradicts in 25 cases, and the contradictions go both ways.** `intestine, cloaca` — ZSCAPE
+endoderm (right), ZMAP ectoderm (wrong). `early distal tubule` — ZSCAPE mesoderm (right), ZMAP
+ectoderm (wrong). The page adjudicates none of them and says so.
+
+### The one contradiction that is a real error, and it is ZSCAPE's
+
+**Four notochord states disagree the same way, and ZMAP is right.** `early notochord`,
+`early notochord progenitor`, `early notochord sheath` and `early vacuolated notochord` all map to
+ZSCAPE `notochord (early)`/`(late)` at 87–100% of shared cells — the identity is not in doubt — and
+all four come back ZSCAPE **ectoderm** against ZMAP **mesoderm**.
+
+Notochord is axial mesoderm. Checking ZSCAPE directly: both of its notochord labels carry
+`germ_layer = ectoderm`, and **all 57,931 ZSCAPE cells labelled notochord are assigned to ectoderm**,
+42,059 of them inside the 24–48 hpf window. ZSCAPE's `cell_type_sub` is correct and its `germ_layer`
+for those two labels is not. Anything grouping ZSCAPE by germ layer mis-assigns the entire
+notochord, and that is 1.8% of its cells landing in the wrong layer.
+
+This is what an independent source is *for*, and it was found by two annotations that share no cell
+disagreeing about one.
+
+### Predicted age: unbiased and too wide to use per state
+
+Every ZMAP state carries its own `time_id` distribution, which is genuinely hpf. Carried across the
+match, that gives each Platt state a predicted age — **indirect twice over**, and the panel says so.
+Against the observed peak the median difference is **0 hours**, so there is no systematic bias, but
+the spread is −18 h at the 10th percentile to +29 h at the 90th and **only 70 of 185 land within six
+hours**. Read it as a sanity check on a state's rough era, never as a timing measurement.
+
+### The ZMAP confidence scale is not the ZSCAPE one
+
+Deliberately different words — `strong`/`clear`/`ambiguous`/`weak`/`thin` against ZSCAPE's
+`unique`/`dominant`/`split`/`unmapped` — because they measure different things. Reusing the
+vocabulary would invite the two to be read as comparable, and a fraction of shared cells and a
+z-score against a null are not.
+
 ## Reusable tables
 
 Written to `/data/fate_map/`, outside the web repo, for the ZMAP and DanioCell layers:
@@ -246,8 +324,11 @@ Written to `/data/fate_map/`, outside the web repo, for the ZMAP and DanioCell l
 | `crosswalk_platt_zscape.tsv` / `.parquet` | 3,870 | every (Platt state, ZSCAPE state) pair with cell count and the fraction **in both directions** |
 | `platt_state_enrichment.tsv` / `.parquet` | 358 | one flat row per state: counts at 24–48, both peaks, dev-time median, mapping confidence |
 | `platt_state_enrichment.json` | 358 | the same, nested, with per-field provenance strings and all matches |
+| `crosswalk_platt_zmap.tsv` / `.parquet` | 8,592 | every (Platt state, ZMAP state) match at four ZMAP levels, with ρ, the z against the state's null, and `method` on every row |
+| `platt_zmap_enrichment.tsv` / `.parquet` / `.json` | 358 | per state: ZMAP fine/tissue/germ-layer calls, confidence, predicted hpf, and the ZSCAPE comparison |
 
-The web page loads only `enrich.json` — the 186 graph states, same records, 402 KB.
+The web page loads `enrich.json` (402 KB) and `zmap.json` (840 KB) — the 186 graph states only.
+Both are optional at runtime; the panel degrades block by block if either is absent.
 
 ## Next layers, in dependency order
 
