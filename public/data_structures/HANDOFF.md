@@ -440,6 +440,76 @@ a reason to open. The pins are now a `pins` command in two repos — ask the
 machine — but the prose has no such check, and `check-fit.mjs` cannot read.
 
 
+## The state of the data — 2026-09-09. Nothing moved in S3. The GitHub column had a wall behind it.
+
+```
+buckets    aws s3 ls --recursive --summarize on all three
+repos      fresh clones at /data/scratch/zsb-repos/ + gh api
+             zsb-bronze dfaf9df   zsb-silver da1d04d
+             zsb-gold   31c381a   zsb-medallion 7ef6198
+```
+
+**The S3 column is exactly where the previous read left it, to the object.** Bronze
+136,246 / 9.56 TiB, silver 925 / 222.44 GiB, gold 14 / 93.85 GiB, and all
+twenty-five silver prefixes match the panel tile for tile. Nothing on the left
+half of this map changed, and re-reading it to find that out is the point of
+re-reading it.
+
+**`main` did not move on any of the four repos either.** Same four commits, same
+commit counts, same v0.13.0 on all three taps. Five reads in a row this map has
+found movement on one side or the other; this is the first that found none on
+either.
+
+**And that is the finding, because of what is behind it.** `zsb-bronze` now
+carries **21 branches and 19 open pull requests** — `#103`–`#121`, one per
+acquired dataset, four opened 2026-09-08 and fifteen on 2026-09-09, **none
+merged**. The other three repos have none. So the bytes are in silver, the
+custody modules that would pin them are all written, and every one of them is
+sitting in review. The DanioCell and Zebrahub warehouse READMEs each end with
+the same sentence — *this upload is the bytes; the custody record that pins them
+is the pull request that follows it*. Nineteen of those pull requests now exist
+and not one has landed.
+
+**The "no gh CLI" claim was wrong and is retired.** For two reads `zsb-silver`
+and `zsb-gold` carried *not re-checked — no gh CLI on this instance*. There is a
+`gh` here and it is authenticated; both now read **none open**, checked. This is
+the second time this map has recorded an instance limitation that had quietly
+stopped being true — the first was `uv`. **Re-test the tool before repeating the
+excuse.**
+
+| Was on the map | Now |
+| --- | --- |
+| `16 branches`, `16 acquired proposed` | **19** branches, 19 proposed |
+| `16 of 19 acquired prefixes have a module` | **19 of 22** — the denominator was wrong too |
+| `Three of the nineteen acquired prefixes` | **twenty-two**; the three are still keller, zfap, tomoseq |
+| `307 rows across 16 modules` | **544 across 19** (counted by AST over each branch's manifest) |
+| bronze `Open PRs #103–#118` | **#103–#121 — 19 open** |
+| silver/gold `not re-checked — no gh CLI` | **none open**, gh present and authenticated |
+
+**The denominator was wrong before the numerator was.** `16 of 19` implied
+nineteen acquired prefixes. Silver holds twenty-five, three of which this account
+produced — minifin, megafin, megafin-1 — so twenty-two are acquired. The page had
+been carrying a nineteen since before the last three prefixes landed. Both halves
+of that ratio are now derived from the same read.
+
+**One row is deliberately not updated.** *Authors' digests: 25 of 307* now reads
+*was 25 of 307 — not re-counted across the three new modules*. The row counts
+origins that publish their own checksum, and that is a per-module prose question:
+a `md5` field is present on 514 of the 544 rows, but most of those are ours,
+computed at acquisition. Counting the field would have produced a confident wrong
+number. **A stale figure marked stale beats a fresh figure that is invented.**
+
+**Checks.** `check-clicks` passes, 17 stations. `check-fit` **1 failure, down
+from 8** — `"132 keys · 947 MiB"` straddling the S3 zone boundary, the last of the
+known set. `check-overlaps` reports **1 pair**, `"Acquired (Open Source)"` against
+`"scRNA-seq"` at 116.3 x 1.2 px; it reproduces on the previous commit, so it
+arrived with the silver band work and is not from this read. Both are layout debt.
+
+**Note for the next reader.** `check-*.mjs` need node's own playwright and its own
+browser build — `npm install --no-save playwright && npx playwright install
+chromium`. The python playwright already on this instance is a different install
+and its browsers do not satisfy them.
+
 ## The state of the data — 2026-09-07. The gold door opened, and the answer was six reads old.
 
 ```
