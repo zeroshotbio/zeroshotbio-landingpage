@@ -6179,11 +6179,14 @@ DRAW.capture = drawCapture;
    step. Two objects on one tile where one of them says nothing is one object
    too many, and the one that goes is the one that says nothing.
 
-   WHAT IS LEFT ON THE BENCH IS THE TETHER. The two leaders now land on this
-   node's own footprint instead of on a lid, because a glass naming no place is
-   a picture floating over the map rather than a view of one station on it —
-   and the track, the dot and the name all arrive at that footprint. The bench
-   is bare under them on purpose: this step is free DNA in a closed tube, and
+   NOTHING IS LEFT ON THE BENCH. The two leaders that used to run from the ring
+   down to this node's back corners are gone at the fifth request: with the
+   block already taken away there was no object under them to point at, so all
+   they tethered the glass to was bare ground, and two lines to nothing read as
+   clutter rather than as an address. What still names the station is the track,
+   the dot and the name, which all arrive at that footprint anyway — the glass
+   sits over its own tile and the reader is not being asked to find it twice.
+   The bench is bare on purpose: this step is free DNA in a closed tube, and
    there was never anything about it to see at bench scale.
 
    IT IS NOT A PLATE AND IT IS NOT ONE OF THE HEATED BLOCKS. Rounds one to
@@ -6281,18 +6284,9 @@ function drawPcrAmplify(g,n){
   const TOP=P(n.x,n.y,n.h);
   const KX=TOP[0]+10*SC, KY=TOP[1]-145*SC-LY*GS;
 
-  /* the leaders name this node's own footprint, which is the only thing left
-     to name: two of its back corners rather than one point, so the pair reads
-     as a patch of bench and not as a V pinched onto a dot. They start ON the
-     boundary and both ends are fractions of w and d, so glass that has moved
-     or grown still lands on the tile the track and the name arrive at. */
-  [[-0.32,-0.32],[0.32,-0.32]].forEach(([fx,fy2])=>{
-    const t=P(n.x+n.w*fx, n.y+n.d*fy2, 0);
-    const vx=t[0]-KX, vy=t[1]-KY, u=1/Math.hypot(vx/(LX*GS), vy/(LY*GS));
-    g.appendChild(el("line",{x1:(KX+vx*u).toFixed(1),y1:(KY+vy*u).toFixed(1),
-      x2:t[0].toFixed(1),y2:t[1].toFixed(1),stroke:"var(--fg2)",
-      "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".4"}));
-  });
+  /* No leaders. They pointed at a patch of empty ground once the block went, and
+     the glass is still hung off this node's own top corner in KX/KY, so it moves
+     and grows with the tile whether or not anything is drawn between them. */
 
   const lens=el("g",{transform:
     `translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${GS.toFixed(4)})`});
