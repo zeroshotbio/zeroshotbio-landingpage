@@ -276,6 +276,37 @@ for name,acc,sub,head,rows_ in SIMPLE:
         if hit: b.append(row(leaf,hit[0][0],'ok',note,2))
     B[name]=block(name,acc,n,s_,''.join(b))
 
+# ---- the three that landed 2026-09-09, each with more than one origin folder, so they
+# take a table of their own rather than the single-subdir one above.
+MULTI=[
+ ("zcl2/","#BF7E69","the widest time span here — 24 hpf to 22 months, 1,088,106 cells",
+   [("figshare_20363190/","the authors' objects; canonical + five pre-QC per-stage"),
+    ("GSE178150/","24 hpf, 72 hpf, 3 mo — 106 samples"),
+    ("GSE198571/","21 d, 22 mo — 93 samples"),
+    ("analysis/","ours: the annotation reconciliation, 5,426 rows short"),
+    ("code/","the authors' downstream code")],
+   [("figshare_20363190/MD5SUMS.figshare","figshare's own digests — 7 of 7 agree")]),
+ ("celloracle/","#69BFBC","five TF crispants and a mutant — and NO cell-type labels exist",
+   [("GSE145298/","30 of the series' 31 samples; the 31st is mouse"),
+    ("Paper/","the article, supplements, figures"),
+    ("code/","the CellOracle package as released")],
+   [("GSE145298/GSE145298_family.soft.gz","the series record, describing all 31")]),
+ ("zcl1/","#D9B98A","17 adult tissues plus 24 and 72 hpf — anatomy, not time",
+   [("GSE130487/","59 Microwell-seq DGE matrices"),
+    ("Paper/","the article and five workbooks, none of which names the accession")],
+   [("GSE130487/GSE130487_RAW.tar","620,059 barcodes pre-QC; the paper reports >250,000 cells")]),
+]
+for name,acc,head,subs,leaves in MULTI:
+    n,s_=agg(name)
+    b=[row('README.md',get(name+'README.md')[0][0],'ok',head)]
+    for sub,note in subs:
+        sn,ss=agg(name+sub)
+        b.append(row(sub,ss,'ok',f'{sn} objects - {note}'))
+    for leaf,note in leaves:
+        hit=get(name+leaf)
+        if hit: b.append(row(leaf.split('/')[-1],hit[0][0],'ok',note,2))
+    B[name]=block(name,acc,n,s_,''.join(b))
+
 # ---- megafin-1/
 n,s=agg('megafin-1/')
 g=collections.Counter(); c=collections.Counter()
@@ -318,8 +349,9 @@ for k in ('minifin/','megafin/','megafin-1/'):
 out.append(sec("Acquired (Open Source) \u00b7 scRNA-seq",
                "taken verbatim from a public origin; a disagreement is their revision, not ours. "
                "\u00b7 pinned means a manifest in zsb-bronze names these bytes; NO RECORD means nothing does"))
-for k in ('chemfish/','zmap/','micdropseq/','platt/','zscape/','zebrahub/','daniocell/',
-          'wagner/','raj/','linnaeus/','trunk30hpf/','farrell/'):
+for k in ('chemfish/','zmap/','micdropseq/','platt/','zscape/','zebrahub/','zcl2/',
+          'daniocell/','celloracle/','wagner/','raj/','linnaeus/','trunk30hpf/','zcl1/',
+          'farrell/'):
     out.append(B[k])
 
 # The three modalities that are not single-cell transcriptomes. Together they are 7.1% of
