@@ -212,7 +212,13 @@ DRAW.vault = (g, n) => {
         return Math.min(k, availH / rows.reduce((a, b) => a + lineH(b.z), 0));
       };
       let k = fit(base);
-      if (base[0].z * k < 6 && base.length > 2) { base.length = 2; k = fit(base); }
+      /* Shed one row at a time until what is left clears the legibility floor.
+         Three rows down to two covers a tile at 1% of a bucket; at 0.06% —
+         tomoseq/ is 641 KiB against 211 GiB — even two rows overlap, and the
+         honest end of the ladder is the key alone. A one-line tile is a swatch
+         saying "something is here, and the panel will tell you what", which is
+         a better answer than two unreadable lines on top of each other. */
+      while (base[0].z * k < 6 && base.length > 1) { base.length -= 1; k = fit(base); }
       const rows = base.map(r => ({ t: r.t, z: r.z * k, c: r.c }));
 
       const total = rows.reduce((a, b) => a + lineH(b.z), 0);
