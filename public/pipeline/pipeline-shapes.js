@@ -7003,155 +7003,217 @@ function drawSizeCheck(g,n){
 DRAW.sizecheck = drawSizeCheck;
 
 /* ------------------------------------------------------------------
-   C4 · BASECALL AND DEMULTIPLEX — one run folder, eight pairs of files.
+   C4 · BASECALL AND DEMULTIPLEX — signal off the instrument, resolving into
+   a cloud of reads.
 
-   THIS IS THE ONE STATION ON THE ROW WITH NOTHING IN A TUBE, and the drawing
-   has to say so before it says anything else. Every box to the left of it is
-   material being moved, cut or copied; this one is a directory of per-cycle
-   base calls being read and written back out under eight names. So it stands
-   on --works rather than on the C row's bench tile, and nothing on it is a
-   vessel: the only round thing in the whole figure would be a lie about where
-   the reads are.
+   ASKED FOR FROM THE PAGE, from the map's own "Edit visual" button, and what
+   it asked for is the END OF THE ROW rather than the mechanics of the step.
+   Everything to the left of here is material somebody could pipette; from
+   here on it is a file. So this is the last object on the row that is drawn
+   as a thing happening, and what it has to leave the reader with is the
+   output — hundreds of reads, and nothing you can do with a pipette.
 
-   THE SHEETS ARE THE RUN FOLDER AND THEY ARE DELIBERATELY UNCOLOURED. What the
-   instrument leaves behind is one undifferentiated pile — every sublibrary's
-   reads interleaved, cycle by cycle, with the index read sitting in it unread.
-   Colouring the stack would put the eight apart before the step that tells them
-   apart, which is the whole content of this station. They are fanned rather
-   than squared up because a squared stack at this size is one thick sheet.
+   THE SEQUENCER IS NOT REDRAWN. It stands one gap back at 2.2 across and it
+   is already the biggest object on the row; a second one here would be the
+   same instrument twice. What crosses into this frame is a connector out of
+   its right face, and the line starts a hair clear of that face rather than
+   inside it — this node is drawn after the machine, so anything overlapping
+   it is painted on top of it and reads as part of it.
 
-   THE FAN RUNS OUTWARD, AND IT IS B5's FAN. Everywhere else on this row that
-   figure collects many into one; here it is the exact reverse, one into eight,
-   which is what the same curve drawn the other way is for. Each line carries
-   B7's hue for its sublibrary — the same colour C2 indexed it into three boxes
-   back — because the i5/i7 pair C2 attached is precisely what this step reads
-   to decide which file a read goes in. A ninth line for the reads whose index
-   matched nothing is NOT drawn: no conversion report survives, so how big that
-   pile was is not something this map can show, and drawing it at any size at
-   all would be picking a number.
+   THE RESOLUTION IS THE WHOLE MOTION. A read leaves the instrument as a pale
+   flash with no shape to it — raw fluorescence, scattered off the line it
+   will end up on — and becomes a discrete grey bar somewhere over the
+   connector. The flash is --signal, which is the token the machine's own lamp
+   and camera pass are drawn in, so what comes out of it is the same light it
+   images with; the bar it becomes is grey, and that is where colour stops.
+   The jitter each flash is born with decays to nothing by the end of the
+   connector, so the scatter TIGHTENS into the line rather than being replaced
+   by it.
 
-   EIGHT SLOTS ARE DRAWN EMPTY FROM THE FIRST FRAME. Eight files is the shape of
-   the output rather than an event in the loop, so the outlines are there before
-   anything lands in them — the same reason C2 draws ninety-six wells and fills
-   eight.
+   THE READS ARE ANONYMOUS, AND THAT IS THE CLAIM. This station used to draw
+   the run folder splitting into eight coloured files, which put the
+   sublibraries apart in the picture at the moment a FASTQ carries nothing
+   that tells them apart: a read here is sequence and quality scores, and what
+   is in it is read out rows away from here. So every fragment is the same
+   neutral grey, the same length, with no detail on it — only the opacity
+   varies, and that is depth in a cloud rather than anything about a read. The
+   eight are still what the record says came out; the drawing stops short of
+   the point where a picture would have to say which read went into which.
 
-   Reuses flowLine / setFanLine from the bench fan and SUBHUE from B7. Spends
-   --ch1..12, which are declared on /molecular_pipe — the only page carrying a
-   node wearing this.
+   IT ENDS ON THE CLOUD. The build is the longest beat by a distance and the
+   hold is the second longest, and nothing leaves the frame: no files written,
+   no handoff, no next object. The fade at the end is the loop's seam and not
+   an event — the reads do not go anywhere, the figure simply starts again.
+
+   THE CLOUD LIES ALONG THE MAP'S OWN AXIS, and that is not a taste decision
+   either. The free sky here is a CORRIDOR: the sequencer's name leaves its
+   back edge running up and to the right at −30°, this station's name leaves
+   its own back edge on exactly the same bearing, and between the two — and
+   clear of the machine's right face at the bottom of it — is a band about a
+   hundred and thirty pixels wide and parallel to both. A round cloud big
+   enough to hold hundreds of reads does not fit in it and lands on one name
+   or the other, so this one is an ellipse lying ALONG the corridor. Every
+   offset that keeps it there is a screen length times SC, so the clearances
+   survive a resize.
+
+   The shape key is still `demux` — it is the node's, and this node wears it
+   alone. Spends no hue: --fg2 for a read, one faint --signal for the flash.
    ------------------------------------------------------------------ */
 function drawDemux(g,n){
-  /* EVERY OFFSET IS A FRACTION OF THE NODE. w, d and h are read at draw time
-     because a resize is the only reason this function runs again. Composed at
-     w .95, d .95, h .40 — C3's tile, so the two ends of the handoff match. */
-  const NSUB=8, SHEETS=6, COLS=4, SC=n.w/0.95;
-  const clamp=x=>Math.max(0,Math.min(1,x));
-  const topAt=(x,y,w,d,z)=>pts([[x-w/2,y-d/2],[x+w/2,y-d/2],[x+w/2,y+d/2],[x-w/2,y+d/2]]
-    .map(p=>P(p[0],p[1],z)));
+  /* EVERY OFFSET IS EITHER A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC,
+     and w, d and h are read at draw time because a resize is the only reason
+     this function runs again. Composed at w .95, d .95, h .40 — C5's and C6's
+     tile, so the three stations at the end of this row keep one size. */
+  const SC=n.w/0.95;
+  const clamp=x=>x<0?0:x>1?1:x;
+  const NREAD=260;
+  const r=rng(48211);
 
   paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
 
-  /* ---- THE RUN FOLDER ----------------------------------------------------
-     Each sheet gets a base in the neutral the map draws data in and a second
-     copy in --signal held at zero, so the read-through beat animates one
-     opacity per sheet and never has to decide what colour a sheet is.
+  /* ---- THE CONNECTOR ------------------------------------------------------
+     A stub from the machine's right face to a point over this tile, and it
+     holds well above the ground: the lane's own track already draws the run
+     from station to station, and a second line beside it on the floor would
+     say the reads came by two routes. A is 1.80 tiles back and up at the
+     sequencer's deck height, which puts it just outside the 2.2-wide body
+     rather than under it. */
+  const A=P(n.x-n.w*1.80, n.y-n.d*0.30, n.h*2.40);
+  const M=P(n.x-n.w*0.18, n.y-n.d*0.06, n.h*1.45);
+  g.appendChild(el("line",{x1:A[0].toFixed(1),y1:A[1].toFixed(1),
+    x2:M[0].toFixed(1),y2:M[1].toFixed(1),stroke:"var(--fg2)",
+    "stroke-width":(1.7*SC).toFixed(2),"stroke-opacity":".45",
+    "stroke-linecap":"round"}));
 
-     IT FANS FORWARD AND LEFT, which is not a taste decision. A step emits its
-     name from the middle of its back edge at the height it reaches, and a
-     stack fanned the other way puts its topmost sheet exactly under the first
-     letter of "C4 · Basecall and demultiplex". Leaning it into the open ground
-     the other way clears the name by the width of a sheet. */
-  const x0=n.x-n.w*0.06, y0=n.y+n.d*0.06;
-  const dx=-n.w*0.045, dy=n.d*0.045, dz=n.h*0.14, Z0=n.h*1.05;
-  const lit=[];
-  for(let k=0;k<SHEETS;k++){
-    const pt=topAt(x0+k*dx, y0+k*dy, n.w*0.50, n.d*0.50, Z0+k*dz);
-    g.appendChild(el("polygon",{points:pt,fill:"var(--fg2)","fill-opacity":".14",
-      stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".5"}));
-    const L=el("polygon",{points:pt,fill:"var(--signal)","fill-opacity":"0"});
-    g.appendChild(L); lit.push(L);
-  }
-  const mouth=P(x0+(SHEETS-1)*dx, y0+(SHEETS-1)*dy, Z0+(SHEETS-1)*dz+n.h*0.30);
+  /* ---- WHERE THE CLOUD HANGS ---------------------------------------------
+     In the corridor between the two names — see the note above — measured from
+     this tile's own top so it rides the box at any size, and lying along the
+     map's up-right axis rather than across it. The radius is filled with a
+     power under a half, which packs the middle harder than the rim: a cloud
+     uniform to its own edge reads as a shape somebody cut, and this one is
+     meant to read as weather. */
+  const TOP=P(n.x,n.y,n.h);
+  const CU=[C30,-0.5], CV=[0.5,C30];        // along the corridor, and across it
+  const CDX=34, CUP=91, RU=72, RV=38;
+  const C=[TOP[0]+CDX*SC, TOP[1]-CUP*SC];
 
-  /* ---- EIGHT FILES, IN FRONT ---------------------------------------------
-     Two rows of four on the near ground, which is the only clear screen this
-     station has: the row ends here, so there is nothing to the right, and the
-     name runs off the back edge the way every station's does. */
-  const file=[];
-  for(let k=0;k<NSUB;k++){
-    const i=k%COLS, j=(k/COLS)|0;
-    const c={x:n.x+(i-(COLS-1)/2)*n.w*0.44, y:n.y+n.d*(1.20+j*0.44),
-             w:n.w*0.30, d:n.d*0.24, h:n.h*0.22};
-    const f=faces(c.x,c.y,c.w,c.d,c.h);
-    g.appendChild(el("polygon",{points:f.top,fill:"none",stroke:"var(--stroke)",
-      "stroke-width":".7","stroke-opacity":".45"}));
-    /* born with the slot's own geometry and no colour: the ticker owns one
-       opacity per file and never has to work out where a file was */
-    const parts=["left","right","top"].map(kk=>{
-      const p=el("polygon",{points:f[kk],fill:SUBHUE(k,NSUB),"fill-opacity":"0",
-        stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":"0"});
-      g.appendChild(p); return p;
-    });
-    file.push({parts, top:P(c.x,c.y,c.h)});
+  /* one group for everything in the air, so the end of the cycle is a single
+     opacity rather than two hundred and sixty of them */
+  const sky=el("g",{}); g.appendChild(sky);
+
+  /* ---- THE READS ----------------------------------------------------------
+     One group per read, born at the mouth of the connector with real
+     coordinates, so the ticker only ever moves something that already knows
+     where it is. The bar is authored in screen pixels — a read at this size is
+     a glyph and cannot be cut from a world width — and it grows by being
+     scaled: every group carries scale(SC), which is n.w over the width it was
+     drawn for. */
+  const BW=7.0, BH=1.8, FR=2.2, JIT=13;
+  const at=(x,y,a)=>`translate(${x.toFixed(1)},${y.toFixed(1)}) `+
+    `rotate(${a.toFixed(1)}) scale(${SC.toFixed(4)})`;
+  const read=[];
+  for(let i=0;i<NREAD;i++){
+    const th=r()*Math.PI*2, rad=Math.pow(r(),0.62);
+    const cu=Math.cos(th)*RU*rad*SC, cv=Math.sin(th)*RV*rad*SC;
+    const T=[C[0]+cu*CU[0]+cv*CV[0], C[1]+cu*CU[1]+cv*CV[1]];
+    const J=[(r()*2-1)*JIT*SC, (r()*2-1)*JIT*SC];
+    const ang=(r()*2-1)*18;                    // no two lie the same way: a storm
+    const grp=el("g",{transform:at(A[0]+J[0],A[1]+J[1],ang)});
+    const flash=el("circle",{cx:"0",cy:"0",r:FR.toFixed(2),
+      fill:"var(--signal)","fill-opacity":"0"});
+    const bar=el("rect",{x:(-BW/2).toFixed(2),y:(-BH/2).toFixed(2),
+      width:BW.toFixed(2),height:BH.toFixed(2),rx:(BH/2).toFixed(2),
+      fill:"var(--fg2)","fill-opacity":"0"});
+    grp.appendChild(flash); grp.appendChild(bar); sky.appendChild(grp);
+    /* the control point sits over the mouth at the read's own height, so the
+       climb off the connector is steep and the drift out to a place in the
+       cloud is what is left — a read rises out of the machine's line before it
+       has anywhere in particular to be */
+    read.push({g:grp, flash, bar, T, J, ang, f:-1,
+      Q:[M[0]+(T[0]-M[0])*0.15, M[1]-(M[1]-T[1])*0.80],
+      dim:0.50+r()*0.35});
   }
-  const FAN=file.map((f,k)=>flowLine(g,mouth,f.top,SUBHUE(k,NSUB),SC));
+
+  /* ---- THE LABEL ----------------------------------------------------------
+     Authored in screen pixels and sized off SC, the way C7's is: type cut from
+     a world width shrinks with the tile and stops being legible long before
+     the drawing does.
+
+     IT SITS UNDER THE CLOUD RATHER THAN BESIDE IT. The corridor is full — a
+     caption at either end of the ellipse lands on a name or on the machine —
+     but the wedge between the cloud, the connector and this station's own
+     emission point is empty at every zoom, and it is directly under what it
+     names. */
+  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
+  const FS=7.0*SC;
+  const cap=el("text",{x:(TOP[0]-11*SC).toFixed(1),y:(TOP[1]-32*SC).toFixed(1),
+    "text-anchor":"middle","font-family":MONO,"font-size":FS.toFixed(2),
+    "letter-spacing":(FS*0.12).toFixed(2),fill:"var(--fg2)","fill-opacity":".8"});
+  cap.textContent="FASTQ"; sky.appendChild(cap);
 
   /* ---- TIMING -------------------------------------------------------------
-     Reading the folder is one long beat and writing the eight is a longer one;
-     WIN is how much of the write beat one file occupies, a little under half,
-     so several are in the air at once and eight writes read as one pass rather
-     than as eight things taking turns. */
-  const CONV=1.7, SPLIT=2.6, HOLD=1.9, CLEAR=0.9, WIN=0.40;
-  const t1=CONV, t2=t1+SPLIT, t3=t2+HOLD, t4=t3+CLEAR;
-  const DIM=0.05, LIVE=0.16;
-  const setFile=(k,v)=>file[k].parts.forEach(p=>{
-    p.setAttribute("fill-opacity",(0.92*v).toFixed(2));
-    p.setAttribute("stroke-opacity",(0.50*v).toFixed(2)); });
+     Slow, and the beats say which part of it is the figure: BUILD is the
+     resolution and the accumulation and it takes fifteen seconds, HOLD is the
+     finished cloud, FADE is the seam. AWIN is how much of the build one read
+     occupies — an eighth, so about thirty are in the air at once and hundreds
+     of them read as a storm coming rather than as hundreds of things taking
+     turns. */
+  const BUILD=15.0, HOLD=7.5, FADE=2.4, AWIN=0.13;
+  const t1=BUILD, t2=t1+HOLD, t3=t2+FADE;
+  const LEG=0.42;                              // of the flight, spent on the connector
+  /* A READ THAT HAS NOT MOVED IS NOT REWRITTEN. Two hundred and sixty groups
+     is a lot of DOM to touch sixty times a second, and for all but the beat
+     itself nearly every one of them is parked — so the flight fraction is
+     kept and a repeat is dropped here rather than in the caller. */
+  const put=(i,f)=>{
+    const R=read[i];
+    if(R.f===f) return; R.f=f;
+    let px,py;
+    if(f<LEG){
+      const u=f/LEG;
+      px=A[0]+(M[0]-A[0])*u + R.J[0]*(1-u);
+      py=A[1]+(M[1]-A[1])*u + R.J[1]*(1-u);
+    }else{
+      const p=fanBez(M,R.Q,R.T,(f-LEG)/(1-LEG)); px=p[0]; py=p[1];
+    }
+    R.g.setAttribute("transform",at(px,py,R.ang));
+    /* the flash is gone before the bar is fully up, and both changes happen
+       over the connector: the resolution is the event, so it is not allowed to
+       finish somewhere the reader is not looking */
+    R.flash.setAttribute("fill-opacity",
+      (0.50*clamp(f/0.05)*(1-clamp((f-0.16)/0.22))).toFixed(3));
+    R.bar.setAttribute("fill-opacity",(R.dim*clamp((f-0.26)/0.20)).toFixed(3));
+  };
 
   /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion never
      advances it, so whatever t begins at is the whole station for that reader —
-     and zero is a stack nobody has opened yet. Half way through the write beat
-     is the frame worth holding: four files down, four in the air, and one pile
-     visibly becoming eight in a single look. */
-  let t=CONV+SPLIT*0.55, mode=-1;
+     and for this one that has to be the finished cloud, which is the frame the
+     request asks the row to end on. Half way through the hold. */
+  let t=t1+HOLD*0.45, mode=-1;
   /* every entry states the whole world it is entering rather than the delta
      from the beat before, so a frame long enough to skip one — a tab coming
-     back, a step in trace mode — cannot leave the stack lit over empty slots. */
+     back, a step in trace mode — cannot leave the cloud half drawn. */
   const enter=m=>{
     mode=m;
-    lit.forEach(L=>L.setAttribute("fill-opacity",m===0?"0":".42"));
-    for(let k=0;k<NSUB;k++){ setFile(k, m===2?1:0); setFanLine(FAN[k], m===1?LIVE:DIM, 0); }
+    sky.setAttribute("opacity","1");
+    for(let i=0;i<NREAD;i++) put(i, m===0?0:1);
   };
   const run=dt=>{
-    t=(t+dt)%t4;
-    const m = t<t1?0 : t<t2?1 : t<t3?2 : 3;
+    t=(t+dt)%t3;
+    const m = t<t1?0 : t<t2?1 : 2;
     if(m!==mode) enter(m);
 
-    if(m===0){                          // READ — bottom sheet to top, in order
-      const u=t/CONV;
-      for(let k=0;k<SHEETS;k++)
-        lit[k].setAttribute("fill-opacity",
-          (0.42*clamp((u-k*0.90/(SHEETS-1))/0.34)).toFixed(2));
+    if(m===0){                          // the build: flashes out, reads in, more of them
+      const u=t/BUILD;
+      for(let i=0;i<NREAD;i++) put(i, clamp((u-i*(1-AWIN)/(NREAD-1))/AWIN));
       return;
     }
-    if(m===1){                          // WRITE — one line per index, staggered
-      const u=(t-t1)/SPLIT;
-      for(let k=0;k<NSUB;k++){
-        const f=clamp((u-k*(1-WIN)/(NSUB-1))/WIN);
-        setFanLine(FAN[k],LIVE,f);
-        /* the file appears as its line lands, not as it leaves: a slot filling
-           before anything has reached it says the split was decided elsewhere */
-        setFile(k, clamp((f-0.72)/0.28));
-      }
+    if(m===2){                          // the seam. Nothing leaves — it dims where it is
+      sky.setAttribute("opacity",(1-clamp((t-t2)/FADE)).toFixed(3));
       return;
     }
-    if(m===3){                          // CLEAR
-      const u=clamp((t-t3)/CLEAR);
-      for(let k=0;k<NSUB;k++) setFile(k,1-u);
-      lit.forEach(L=>L.setAttribute("fill-opacity",(0.42*(1-u)).toFixed(2)));
-      return;
-    }
-    /* held: one folder read, eight files written, and not one figure anywhere
-       on this instance saying how the reads divided between them */
+    /* held: hundreds of reads over the grid, and not one of them saying what
+       is in it or which of the eight it belongs to */
   };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
