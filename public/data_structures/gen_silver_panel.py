@@ -307,8 +307,9 @@ MULTI=[
     ("Paper/","the rendered article; PMC serves its PDF only to browsers")],
    [("zebrafish-dev/exprMatrix.tsv.gz","32,520 genes x 44,020 cells; the origin's own md5 agrees"),
     ("zebrafish-dev/meta.tsv","Cluster holds the NAMES, ClusterNames holds the numbers")]),
- ("zfin/","#5FA8A0","the vocabulary the rest gets read against — not an experiment",
+ ("zfin/","#4A4ABF","the vocabulary the rest gets read against — not an experiment",
    [("2026-09-08/","ZFA + ZFS ontologies, 243,055 wild-type expression records"),
+    ("2026-09-09/","185,366 records across ALL genotypes, plus the ZFA synonyms"),
     ("2026-02-02/","human and mouse orthologs — an older snapshot, kept as its own")],
    [("2026-09-08/wildtype-expression_fish.txt","gene x structure x stage, from decades of published in-situ")]),
 ]
