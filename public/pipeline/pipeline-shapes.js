@@ -5650,149 +5650,121 @@ DRAW.countsplitlyse = drawCountSplitLyse;
 /* ==================================================================
    B8 · CAPTURE, TEMPLATE SWITCH, AMPLIFY
    The biotin ligated in round three is finally used as a handle:
-   streptavidin beads take the barcoded cDNA, a magnet holds the beads
-   while the debris of eight lysates is washed off, an adapter is put on
-   the far end, and the whole thing is amplified.
+   streptavidin beads take hold of the barcoded cDNA by that biotin, a
+   magnet holds the beads against one wall, and everything that was
+   never on a bead is drained off.
 
-   TWO COMPONENTS ARRIVE HERE AND NEITHER OF THEM IS B8'S ALONE. A
-   magnetic rack and a thermal cycler are the two objects the rest of
-   this row is built out of — C2 is a cycler, and every bead cleanup
-   between here and the sequencer is a rack — so they are written as
-   components that take their own geometry and hand back handles, rather
-   than as parts of one station's drawing. That is the rule conicalTube
-   and flowFan are already here under, applied one station earlier,
-   because this time the second caller is visible from where it is
-   written and a copy would start drifting the moment it was made.
+   ONE OBJECT ON THE BENCH, AND THE ARGUMENT ONE SCALE UP. This station
+   used to draw a rack, a thermal cycler and two flows between them —
+   three beats laid out along y. None of the three is where the claim
+   lives. What matters here is which molecules a bead takes and which
+   it leaves, and that is invisible at tube scale no matter how many
+   tubes are drawn. So the bench is now the single instrument the step
+   is named for, and the selection is made in a magnification over it,
+   where it can actually be watched. The block still amplifies; it is
+   the sentence in the reader that says so, because a closed lid at
+   this size says nothing the reader does not already say better.
 
-   THE BEATS RUN ALONG y, the way B7's do and for the same reason: the
-   stations either side sit about 1.3 apart in x and there is no room
-   there, while y is empty. Capture is at the front and the cycler
-   stands behind it, so the sequence reads front-left to back-right,
-   which is the direction B7 next door already established for a bench
-   with more than one beat on it.
+   THE GLASS HANGS FORWARD AND DOWN RATHER THAN ABOVE, and that is
+   forced by the neighbours, not chosen. Everything over this tube is
+   spoken for: B7's counting plate stands directly above it, B7's own
+   name runs across the airspace to the upper left, and the diagonal up
+   and to the right is where this station's name runs. The one empty
+   quarter of the screen is the floor in front and to the right,
+   between B7's rack and B9's bench, so the glass hangs there and two
+   leaders run back up to the tube it magnifies. It is the idiom B7
+   next door already uses, for the same reason and in the same
+   direction.
 
-   THE MIDDLE WORD IS NOT DRAWN AS A MOLECULE, and that is a decision
-   about this neighbourhood rather than about the chemistry. A template
-   switch is an adapter arriving on the 3-prime end; at tube scale it is
-   a tube that does not change, so it wants the magnification idiom —
-   and the airspace a magnification needs here is already spoken for.
-   B7's haemocytometer sits directly over this tube, B7's own lysing
-   cell stands over the ground behind it, and the diagonal above and to
-   the right is where this station's name runs. A magnification put
-   anywhere that is left would land on one of the three. So the beat is
-   drawn as the two things that are true of it at the bench: the debris
-   has gone, and what the beads are released into is a fresh reaction
-   rather than the lysate they were captured out of. That is also the
-   honest limit of the record — nothing was archived from this step.
+   THE THERMAL CYCLER STAYS IN THIS FILE. C2 draws one and calls it as
+   a component, which is why it was written as one in the first place;
+   what has gone is this station's use of it, not the machine.
 
-   Reuses ellipseAt / arcPts from the clutch block and flowLine /
-   setFanLine from the fan. Spends --pool and --ch6, which are declared
-   on /molecular_pipe, the only page carrying a node that wears this
-   shape.
+   Reuses ellipseAt / arcPts from the clutch block. Spends --pool,
+   --ch3 and three of the --ch ramp, all declared on /molecular_pipe,
+   the only page carrying a node that wears this shape.
    ================================================================== */
 
-/* THE MAGNETIC RACK. A block with a row of sockets, a magnet bar down its far
-   flank, and one tube standing in the middle socket.
+/* THE MAGNETIC RACK. A charcoal block with a strip of 0.2 ml tubes standing in
+   it, and the magnets showing as pale insets in the near wall.
 
-   THE MAGNET IS ON THE FAR SIDE, and that placement is the only reason the
-   pellet can be seen at all: beads collect against the wall nearest the magnet,
-   and the far wall is the one you are looking THROUGH rather than the one you
-   are looking at. On the near side the pellet would sit behind the glass edge
-   and read as a smudge on the outside of the tube.
+   THE MAGNETS ARE IN THE WALL, NOT BESIDE IT. A rack's magnets are buried in
+   the block. Standing a bar next to the plastic makes the magnet a second
+   object on the bench and invites the reader to ask what holds it there; three
+   pale plates set into the face say the same thing about one object.
 
-   NOTHING HERE SWITCHES ON. A rack's magnet is a lump of neodymium; what
-   changes at the bench is that the tube is set down on it. But a tube hopping
-   in and out of a socket every few seconds reads as a glitch rather than as a
-   step, so the tube stays put and the field over the bar is what says which of
-   the two states it is in.
+   NOTHING HERE SWITCHES ON. A rack's magnet is a lump of neodymium, and what
+   changes at the bench is that the tubes are set down on it. But a strip
+   hopping in and out of a block every few seconds reads as a glitch rather than
+   as a step, so the plastic stays put and the wash over the magnets is what
+   says which of the two states the tube is in.
 
-   `r` is {x,y,w,d,h} for the block plus bore, rise, beads and seed for the tube
-   it carries. Returns the mouth a flow can be aimed at and the three things
-   only a magnet does to a tube: a level that can be drawn off, a bead cloud
-   that can be pulled to a wall, and the field that says which. */
+   `r` is {x,y,w,d,h} for the block plus `tubes` for the strip. Returns the rim
+   of every tube, so a caller can hang a magnification off one, and the field. */
 function magnetRack(g, r){
-  const SOCK=3, B=r.bore, ZT=r.h+r.rise, ZL=ZT-r.rise*0.20;
+  const N=r.tubes||8;
+  /* --t-* is this page's charcoal in the mode it opens in and its opposite in
+     the other, which is the bargain every skin on this map makes. What has to
+     survive the flip is that the magnets read as a different material from the
+     wall they are set in, and --t-* against --m-top does in both. */
+  paint(g, r.x, r.y, r.w, r.d, r.h,
+        {top:V("t-top"),left:V("t-left"),right:V("t-right"),sw:1.4,so:.9});
 
-  /* the magnet first, because it stands behind everything it acts on and the
-     order things are appended in is the order they occlude in */
-  const mw=r.w*0.86, md=r.d*0.28, mh=r.h*1.35, my=r.y-r.d*0.5-md*0.55;
-  paint(g, r.x, my, mw, md, mh, SKIN.monolith);
-  const field=el("polygon",{points:faces(r.x,my,mw,md,mh).top,
-    fill:"var(--signal)","fill-opacity":"0"});
-  g.appendChild(field);
-
-  paint(g, r.x, r.y, r.w, r.d, r.h, SKIN.works);
-
-  /* the sockets, so the block reads as a rack rather than as a plinth. Three,
-     and only the middle one is worked: the empty two are what say the object
-     is a stand and not a plug the tube grew out of. */
-  const socks=[];
-  for(let i=0;i<SOCK;i++){
-    const sx=r.x-r.w/2+(i+0.5)*r.w/SOCK, e=ellipseAt(sx,r.y,r.h,B*1.16);
-    socks.push(sx);
-    g.appendChild(el("ellipse",{cx:e.x.toFixed(1),cy:e.y.toFixed(1),
-      rx:e.rx.toFixed(2),ry:e.ry.toFixed(2),fill:"var(--bg)","fill-opacity":".45",
-      stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".5"}));
+  /* a hair proud of the near face, so the face cannot swallow its own inset */
+  const fy=r.y+r.d/2+0.002;
+  const quad=(x0,x1,z0,z1)=>pts([P(x0,fy,z1),P(x1,fy,z1),P(x1,fy,z0),P(x0,fy,z0)]);
+  const mags=[];
+  for(let i=0;i<3;i++){
+    const cx=r.x-r.w/2+(i+0.5)*r.w/3, hw=r.w*0.115, z0=r.h*0.22, z1=r.h*0.78;
+    g.appendChild(el("polygon",{points:quad(cx-hw,cx+hw,z0,z1),fill:"var(--m-top)",
+      "fill-opacity":".5",stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".55"}));
+    /* the field rides on its own copy of the plate rather than on the plate's
+       own fill, so lighting it never has to remember what colour it was */
+    const f=el("polygon",{points:quad(cx-hw,cx+hw,z0,z1),fill:"var(--signal)",
+      "fill-opacity":"0"});
+    g.appendChild(f); mags.push(f);
   }
 
-  /* the tube. A screw-cap 2 ml: straight wall, a flared collar, and the cone
-     below the rack top where it is inside the block and cannot be seen. */
-  const tx=socks[(SOCK-1)/2], ty=r.y;
-  const collar=ellipseAt(tx,ty,ZT,B*1.10), neck=ellipseAt(tx,ty,ZT-r.rise*0.07,B),
-        foot=ellipseAt(tx,ty,r.h,B*0.94), inner=ellipseAt(tx,ty,r.h,B*0.88);
-  const silh=pts([[collar.x+collar.rx,collar.y],[neck.x+neck.rx,neck.y],
-    ...arcPts(foot,0,Math.PI,10),[neck.x-neck.rx,neck.y],[collar.x-collar.rx,collar.y],
-    ...arcPts(collar,Math.PI,2*Math.PI,14)]);
-  g.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".38"}));
+  /* THE WEB IS WHAT MAKES EIGHT TUBES A STRIP. Without it this is eight loose
+     tubes standing in a block, which is a different consumable and a different
+     claim about how a sublibrary is handled. Near face then top, so the tubes
+     drawn after it stand in front of their own moulding. */
+  const RT=r.w*0.042, RH=r.h*1.60;
+  const wz1=r.h+RH*0.86, wz0=wz1-r.h*0.30;
+  const xA=r.x-r.w/2+0.5*r.w/N-RT, xB=r.x-r.w/2+(N-0.5)*r.w/N+RT;
+  g.appendChild(el("polygon",{points:pts([P(xA,r.y+RT,wz1),P(xB,r.y+RT,wz1),
+    P(xB,r.y+RT,wz0),P(xA,r.y+RT,wz0)]),fill:"var(--t-right)","fill-opacity":".9",
+    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
+  g.appendChild(el("polygon",{points:pts([P(xA,r.y-RT,wz1),P(xB,r.y-RT,wz1),
+    P(xB,r.y+RT,wz1),P(xA,r.y+RT,wz1)]),fill:"var(--t-top)","fill-opacity":".9",
+    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
 
-  /* born with a real floor rather than empty, so the ticker only ever restates
-     a surface — an element with no points sits at the origin and drags the
-     selection halo out across the map */
-  const liq=el("polygon",{points:pts(arcPts(inner,Math.PI,0,10)),
-    fill:"var(--pool)","fill-opacity":"0"});
-  g.appendChild(liq);
-
-  const rb=rng(r.seed||29), beads=[];
-  for(let i=0;i<(r.beads||16);i++){
-    const a=rb()*2*Math.PI, u=Math.sqrt(rb())*0.66;
-    const free=P(tx+Math.cos(a)*u*B, ty+Math.sin(a)*u*B, r.h+(0.10+rb()*0.72)*(ZL-r.h));
-    /* held: against the far wall, in a band rather than a dot — a pellet on a
-       rack is a streak up the side of the tube, not a bead at the bottom */
-    const held=P(tx+(rb()-0.5)*B*0.70, ty-B*0.62, r.h+(0.16+rb()*0.30)*(ZL-r.h));
-    const c=el("circle",{cx:free[0].toFixed(1),cy:free[1].toFixed(1),
-      r:(B*S*0.16).toFixed(2),fill:"var(--fg)","fill-opacity":".8"});
-    g.appendChild(c);
-    beads.push({c,free,held,ph:rb()*6.28});
+  const rims=[];
+  for(let i=0;i<N;i++){
+    const cx=r.x-r.w/2+(i+0.5)*r.w/N;
+    const rim  =ellipseAt(cx,r.y,r.h+RH,RT),
+          foot =ellipseAt(cx,r.y,r.h,RT*0.46),
+          inner=ellipseAt(cx,r.y,r.h,RT*0.40),
+          surf =ellipseAt(cx,r.y,r.h+RH*0.44,RT*0.70);
+    const silh=pts([[rim.x+rim.rx,rim.y],...arcPts(foot,0,Math.PI,8),
+                    [rim.x-rim.rx,rim.y],...arcPts(rim,Math.PI,2*Math.PI,12)]);
+    g.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".38"}));
+    /* every tube carries the same lysate at the same level and stays that way.
+       Eight tubes at this pitch are four pixels wide each: anything that
+       changed in one of them would be a flicker, not a reading. */
+    g.appendChild(el("polygon",{points:pts([...arcPts(surf,2*Math.PI,Math.PI,10),
+                                            ...arcPts(inner,Math.PI,0,8)]),
+      fill:"var(--pool)","fill-opacity":".45"}));
+    g.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
+      "stroke-width":".9","stroke-opacity":".7"}));
+    g.appendChild(el("ellipse",{cx:rim.x.toFixed(1),cy:rim.y.toFixed(1),
+      rx:rim.rx.toFixed(2),ry:rim.ry.toFixed(2),fill:"none",stroke:"var(--stroke)",
+      "stroke-width":"1","stroke-opacity":".8"}));
+    rims.push(rim);
   }
-
-  g.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
-    "stroke-width":"1","stroke-opacity":".8"}));
-  g.appendChild(el("ellipse",{cx:collar.x.toFixed(1),cy:collar.y.toFixed(1),
-    rx:collar.rx.toFixed(2),ry:collar.ry.toFixed(2),fill:"none",stroke:"var(--stroke)",
-    "stroke-width":"1.2","stroke-opacity":".85"}));
-
-  const T={mouth:P(tx,ty,ZT+r.rise*0.45)};
-  T.setLevel=(f,col,op)=>{
-    const k=Math.max(0.0006,Math.min(1,f));
-    const surf=ellipseAt(tx,ty,r.h+k*(ZL-r.h),B*0.88);
-    liq.setAttribute("points",pts([...arcPts(surf,2*Math.PI,Math.PI,12),
-                                   ...arcPts(inner,Math.PI,0,10)]));
-    if(col) liq.setAttribute("fill",col);
-    liq.setAttribute("fill-opacity",(f>0.004?(op||0.34):0).toFixed(2));
-  };
-  T.setLevel(0,null,0);
-  /* `ph` is a turn the caller keeps, so the wobble of a suspension is the
-     caller's clock and not a second one running in here */
-  T.pull=(f,ph,vis)=>{
-    const k=Math.max(0,Math.min(1,f)), wob=(1-k)*B*S*0.20;
-    beads.forEach(b=>{
-      b.c.setAttribute("cx",(b.free[0]+(b.held[0]-b.free[0])*k+Math.cos(ph+b.ph)*wob).toFixed(1));
-      b.c.setAttribute("cy",(b.free[1]+(b.held[1]-b.free[1])*k+Math.sin(ph*0.7+b.ph)*wob*0.6).toFixed(1));
-      b.c.setAttribute("fill-opacity",(0.8*(vis===undefined?1:vis)).toFixed(2));
-    });
-  };
-  T.setField=f=>field.setAttribute("fill-opacity",(0.5*Math.max(0,Math.min(1,f))).toFixed(2));
-  return T;
+  return {rims,
+    setField:f=>{ const v=(0.42*Math.max(0,Math.min(1,f))).toFixed(2);
+                  mags.forEach(m=>m.setAttribute("fill-opacity",v)); }};
 }
 
 /* THE THERMAL CYCLER. A chassis, a heated block with a well for every tube in
@@ -5918,127 +5890,208 @@ function thermalCycler(g, c){
 }
 
 function drawCapture(g,n){
-  const SC=n.w/0.72;
-  /* what arrives is the hue B7's rack held, so the material is recognisably
-     the thing the station before it made; what the beads are released into
-     after the wash is a fresh reaction rather than a lysate, so it changes
-     colour once — there — and never again on this bench */
-  const LYSATE="var(--pool)", MIX="var(--ch6)";
+  const SC=n.w/0.72, clamp=x=>Math.max(0,Math.min(1,x));
+  const ease=u=>u*u*(3-2*u);
+  const r=rng(83);
 
   /* ---- EVERY OFFSET IS A FRACTION OF THE NODE -----------------------------
      w, d and h are read at draw time because those are what a resize changes
      and a redraw is the only reason this function is running again. Composed
      at w .72, d .72, h .44.
 
-     NEITHER INSTRUMENT IS THROWN AS FAR AS B7 THROWS ITS FURNITURE, and that
-     is the constraint the whole layout is under. This box has 1.3 of clear x
-     either side and a very full screen: B7's source plate comes forward to
-     y +2.1 on the left, its own eight-tube rack stands behind at y -2.7, and
-     B9 is the next tile along. Going out as far as B7 does in y would put this
-     station's rack on that one's plate and this cycler under that one's tubes.
-     So the rack goes forward barely one node-depth and well to the right of
-     the tube it has to clear, and the cycler goes back under two — which puts
-     the whole of it in the wedge of empty screen between B7's rack above and
-     B9's tile below, with about ten pixels at each edge and no more. */
-  const rack={x:n.x+n.w*0.55, y:n.y+n.d*1.15, w:n.w*1.30, d:n.d*0.62, h:n.h*0.46,
-              bore:n.w*0.26, rise:n.h*2.35, beads:16, seed:29};
-  const cyc ={x:n.x+n.w*0.34, y:n.y-n.d*1.70, w:n.w*1.42, d:n.d*0.82, h:n.h*0.42,
-              cols:4, rows:2};
-
-  /* back to front, because on an isometric grid the order things are appended
-     in is the order they occlude in */
-  const M=thermalCycler(g, cyc);
+     THE RACK IS THROWN FORWARD AND RIGHT, not centred on its own node, and the
+     amount is the whole of the room this bench has. B7 next door is the widest
+     tile on the row and its body reaches to within six pixels of where this
+     block's back tube stands; B9's bench is ten pixels off its right corner.
+     Squaring the rack on the node puts it through one or the other. */
+  const rack={x:n.x+n.w*0.30, y:n.y+n.d*1.05,
+              w:n.w*1.55, d:n.d*0.56, h:n.h*0.50, tubes:8};
   const T=magnetRack(g, rack);
 
-  /* ---- THE TWO FLOWS, drawn last so no vessel can bury one ----------------
-     THE WASTE LINE ENDS IN NOTHING, and it is the only flow on this map that
-     does. What leaves is the debris of ninety-five thousand lysed cells and it
-     goes down the sink; giving it a vessel would put the sink on the bench and
-     invite the reader to ask what is in it. It leaves to the front-left rather
-     than straight down because the tube is in the way of straight down — this
-     curve bows, and a bowed line between two points either side of a tube
-     passes through the tube. */
-  const WASTE=flowLine(g, T.mouth,
-    P(n.x+n.w*0.77, n.y+n.d*3.35, 0), LYSATE, SC);
-  const TOPCR=flowLine(g, T.mouth, M.port, MIX, SC);
+  /* ---- THE MAGNIFICATION --------------------------------------------------
+     A thin solid ellipse with two leaders back to one tube: the idiom this map
+     uses everywhere for a view drawn larger than life. A solid ring means
+     "magnified"; nothing else on this bench is allowed to be one.
+
+     THE GLASS IS SIZED IN SCREEN PIXELS AND SCALED BY BEING SCALED. What is
+     inside it is a molecule, not a piece of the grid, so it has no world size
+     to be authored in — it goes in a group carrying scale(n.w / .72) and every
+     coordinate under it is written for the size this node happens to be
+     authored at. A resize moves the glass and grows it, and everything in it
+     travels with the transform rather than with a number somebody has to
+     remember to change. */
+  const LX=53, LY=42;
+  const [KX,KY]=P(n.x+n.w*2.80, n.y+n.d*4.10, n.h*0.50);
+  /* the leaders name ONE tube — the back-left one, nearest the glass — and
+     they start ON the boundary rather than inside it, aimed at that tube's own
+     rim, so glass that has moved or grown still points at the plastic */
+  const anchor=T.rims[0];
+  [-1,1].forEach(s=>{
+    const tx=anchor.x+s*anchor.rx, ty=anchor.y;
+    const vx=tx-KX, vy=ty-KY, u=1/Math.hypot(vx/(LX*SC), vy/(LY*SC));
+    g.appendChild(el("line",{x1:(KX+vx*u).toFixed(1),y1:(KY+vy*u).toFixed(1),
+      x2:tx.toFixed(1),y2:ty.toFixed(1),stroke:"var(--fg2)",
+      "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".4"}));
+  });
+
+  const lens=el("g",{transform:
+    `translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${SC.toFixed(4)})`});
+  g.appendChild(lens);
+  /* nearly opaque: glass you can read the ground grid through is a hole in the
+     drawing rather than a lens over it */
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,
+    fill:"var(--bg)","fill-opacity":".92"}));
+
+  /* THE WALL THE BEADS END UP ON. A magnification of a volume has no landmark
+     in it at all unless one is drawn, and the one that matters here is which
+     side the magnets are behind — the whole event is a sweep to that side. It
+     carries the same pale as the plates in the block, so the two read as one
+     fact seen at two scales rather than as two decorations. */
+  const wall=(a)=>[(LX*Math.cos(a)).toFixed(1),(LY*Math.sin(a)).toFixed(1)];
+  lens.appendChild(el("path",{d:`M ${wall(2.36).join(" ")} `+
+    `A ${LX} ${LY} 0 0 1 ${wall(3.93).join(" ")}`,fill:"none",
+    stroke:"var(--m-top)","stroke-width":"3.4","stroke-opacity":".45"}));
+
+  /* the debris leaves the field of view, which means it has to be able to go
+     past the boundary and stop existing there rather than at the edge of the
+     screen. Uniqued the way the tank clips are: a checker draws this shape
+     twice, at two sizes, into one document. */
+  const cid=`capglass${++UID}`;
+  const cp=el("clipPath",{id:cid});
+  cp.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY}));
+  lens.appendChild(cp);
+  const stage=el("g",{"clip-path":`url(#${cid})`,opacity:"0"});
+  lens.appendChild(stage);
+
+  /* ---- WHAT IS IN THE TUBE ------------------------------------------------
+     Three barcoded strands and four pieces of debris, and the difference
+     between them is the entire step. A strand carries three chips — the three
+     rounds of in-situ barcoding — and one gold drop at its tip, which is the
+     biotin round three put there. The debris carries neither. Nothing else in
+     this glass is gold, because gold is the only thing a bead can hold, and a
+     second use of it would make the selection look arbitrary.
+
+     THE DEBRIS IS FORMLESS ON PURPOSE. It is what is left of ninety-five
+     thousand lysed cells, and any shape given to it — a fragment, a coil, a
+     smaller strand — would be a claim about what it is. A blob with no
+     features says only that it is not the thing being kept. */
+  const HL=15, TIP=HL+5.4;
+  const CHIP=["var(--ch8)","var(--ch11)","var(--ch4)"];
+  const spine=k=>{ let d=`M ${-HL} 0`;
+    for(let s=1;s<=10;s++)
+      d+=` L ${(-HL+2*HL*(s/10)).toFixed(1)} ${(Math.sin(s*0.86+k)*2.1).toFixed(1)}`;
+    return d; };
+
+  const FREE=[[7,-18,-14],[15,4,17],[-3,20,-7]];
+  const HELD=[[-17,-14,188],[-15,1,178],[-18,13,194]];
+  const strands=FREE.map((f,i)=>{
+    const sg=el("g",{transform:`translate(${f[0]},${f[1]}) rotate(${f[2]})`});
+    stage.appendChild(sg);
+    sg.appendChild(el("path",{d:spine(i*1.9),fill:"none",stroke:"var(--c-top)",
+      "stroke-width":"1.5","stroke-opacity":".75","stroke-linecap":"round"}));
+    CHIP.forEach((c,k)=>sg.appendChild(el("rect",{x:(-8.4+k*6.2).toFixed(1),y:"-1.9",
+      width:"4.6",height:"3.8",rx:"1.1",fill:c,"fill-opacity":".9",
+      stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".5"})));
+    sg.appendChild(el("path",{d:`M ${HL-0.6} 0 C ${HL+1.4} -3.3 ${TIP} -2.2 ${TIP} 0 `+
+      `C ${TIP} 2.2 ${HL+1.4} 3.3 ${HL-0.6} 0 Z`,fill:"var(--ch3)","fill-opacity":".95",
+      stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".5"}));
+    return {g:sg, free:f, held:HELD[i], ph:r()*6.283};
+  });
+
+  const debris=[[-24,-9],[-9,17],[25,-23],[31,13]].map(p=>{
+    const dg=el("g",{transform:`translate(${p[0]},${p[1]})`});
+    stage.appendChild(dg);
+    const q=[];
+    for(let k=0;k<9;k++){ const a=k*6.283/9, rr=4.4+r()*3.4;
+      q.push(`${(Math.cos(a)*rr).toFixed(1)},${(Math.sin(a)*rr*0.8).toFixed(1)}`); }
+    dg.appendChild(el("polygon",{points:q.join(" "),fill:"var(--fg3)",
+      "fill-opacity":".3",stroke:"var(--fg3)","stroke-width":".8","stroke-opacity":".5"}));
+    return {g:dg, at:p, ph:r()*6.283};
+  });
+
+  /* A BEAD IS A FILLED CIRCLE WITH A HOOK CUT OUT OF IT. Streptavidin is a
+     pocket, and the one thing the drawing has to be able to say is that the
+     pocket shuts on something — so the hook is an arc whose gap closes rather
+     than a mark that fades in. Cut in --bg, so it is a hole in the bead and
+     not an ornament on it. */
+  const HR=3.9;
+  const setHook=(b,c)=>{ const a=(52-36*clamp(c))*Math.PI/180;
+    b.hook.setAttribute("d",
+      `M ${(HR*Math.cos(-a)).toFixed(1)} ${(HR*Math.sin(-a)).toFixed(1)} `+
+      `A ${HR} ${HR} 0 1 0 ${(HR*Math.cos(a)).toFixed(1)} ${(HR*Math.sin(a)).toFixed(1)}`);
+  };
+  [[57,-15],[60,3],[56,17]].forEach((e,i)=>{
+    const bg=el("g",{transform:`translate(${e[0]},${e[1]})`,opacity:"0"});
+    stage.appendChild(bg);
+    bg.appendChild(el("circle",{cx:"0",cy:"0",r:"5.2",fill:"var(--fg)",
+      "fill-opacity":".82",stroke:"var(--stroke)","stroke-width":".6",
+      "stroke-opacity":".5"}));
+    const hook=el("path",{d:"",fill:"none",stroke:"var(--bg)","stroke-width":"1.7",
+      "stroke-linecap":"round"});
+    bg.appendChild(hook);
+    strands[i].b={g:bg, hook, entry:e};
+    setHook(strands[i].b, 0);
+  });
+
+  /* the ring last, over everything, so nothing inside can soften its own edge */
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,fill:"none",
+    stroke:"var(--fg2)","stroke-width":"1.5","stroke-opacity":".85"}));
 
   /* ---- TIMING -------------------------------------------------------------
-     Capture is the long beat. It is twenty minutes of binding at the bench and
-     it is the step the station is named for; the wash after it is the quick
-     one, because that is also what it is. */
-  const CAPT=2.8, WASH=1.6, SWITCH=2.2, AMP=3.4, REST=1.2;
-  const t1=CAPT, t2=t1+WASH, t3=t2+SWITCH, t4=t3+AMP, t5=t4+REST;
-  const clamp=x=>Math.max(0,Math.min(1,x));
-  const CYCLES=6;
+     Capture is the long beat — twenty minutes of binding at the bench, and the
+     step the station is named for — so the beads take their time coming in and
+     arrive one after another rather than together. The pull is quick, because
+     a rack clears in under a minute and because three things moving the same
+     way at once is the only moment on this bench that reads as an event.
 
-  let t=0, mode=-1, ph=0;
-  /* every entry states the whole world it is entering rather than the delta
-     from the beat before, so a frame long enough to skip one — a tab coming
-     back, a step in trace mode — cannot leave the lid half open */
-  const enter=m=>{
-    mode=m;
-    T.setLevel(m===0?1:m===1?0.06:m<4?0.82:0, m>=2?MIX:LYSATE, 0.34);
-    T.pull(m===0?0:m>=2?0.15:1, ph, m===4?0.35:1);
-    T.setField(m===1?1:0);
-    M.setLid(m>=3?1:0);
-    M.setTemp(0,0);
-    M.setWells(m>=4?1:0);
-    M.setPips(m>=4?CYCLES:0);
-    setFanLine(WASTE, m===1?0.20:0.05, 0);
-    setFanLine(TOPCR, m===3?0.20:0.06, 0);
+     PLACEMENT IS A PURE FUNCTION OF THE CLOCK. Every element is stated from t
+     alone rather than nudged from where it was, so a frame long enough to skip
+     a whole beat — a tab coming back, a step in trace mode — cannot leave a
+     bead halfway to a strand it has already left. */
+  const T_IN=1.8, CAPD=1.1, STAG=0.26, T_PULL=3.7, PULLD=2.0, HOLD=1.5, CLEAR=0.7;
+  const TOT=T_PULL+PULLD+HOLD+CLEAR;
+  const rot=(a,x)=>[x*Math.cos(a), x*Math.sin(a)];
+
+  const place=(t,ph)=>{
+    const pull=ease(clamp((t-T_PULL)/PULLD));
+    stage.setAttribute("opacity",
+      Math.min(clamp(t/0.4), 1-clamp((t-(TOT-CLEAR))/CLEAR)).toFixed(2));
+    /* the jostle stops when the field comes on, which is the one thing a
+       magnet visibly does to a suspension */
+    const jig=(1-pull)*1.5;
+    strands.forEach((sd,i)=>{
+      const px=sd.free[0]+(sd.held[0]-sd.free[0])*pull+Math.cos(ph*0.8+sd.ph)*jig;
+      const py=sd.free[1]+(sd.held[1]-sd.free[1])*pull+Math.sin(ph*0.6+sd.ph)*jig;
+      const ang=sd.free[2]+(sd.held[2]-sd.free[2])*pull;
+      sd.g.setAttribute("transform",
+        `translate(${px.toFixed(1)},${py.toFixed(1)}) rotate(${ang.toFixed(1)})`);
+      /* the bead settles just past the gold rather than on top of it: a bead
+         parked over the biotin hides the reason it is there */
+      const c=ease(clamp((t-T_IN-i*STAG)/CAPD));
+      const tp=rot(ang*Math.PI/180, TIP+4.6);
+      const bx=sd.b.entry[0]+(px+tp[0]-sd.b.entry[0])*c;
+      const by=sd.b.entry[1]+(py+tp[1]-sd.b.entry[1])*c;
+      sd.b.g.setAttribute("transform",
+        `translate(${bx.toFixed(1)},${by.toFixed(1)}) rotate(${(ang+180).toFixed(1)})`);
+      sd.b.g.setAttribute("opacity",(0.95*clamp(c/0.22)).toFixed(2));
+      setHook(sd.b, (c-0.62)/0.38);
+    });
+    /* THE DEBRIS IS NEVER TOUCHED AND THEN IT IS GONE. No bead goes near it,
+       nothing about it changes while the beads work, and when the magnet comes
+       on it drains straight down and out of the glass. That sequence is the
+       claim the whole station rests on. */
+    const out=ease(clamp((pull-0.18)/0.72));
+    debris.forEach(d=>{
+      const dx=d.at[0]+Math.cos(ph*0.7+d.ph)*jig*1.2;
+      const dy=d.at[1]+Math.sin(ph*0.5+d.ph)*jig*1.2+out*(LY+26);
+      d.g.setAttribute("transform",`translate(${dx.toFixed(1)},${dy.toFixed(1)})`);
+      d.g.setAttribute("opacity",(1-clamp((out-0.35)/0.5)).toFixed(2));
+    });
+    T.setField(clamp((t-T_PULL+0.3)/0.5)*(1-clamp((t-(TOT-CLEAR))/CLEAR)));
   };
-  const run=dt=>{
-    t=(t+dt)%t5; ph+=dt*2.2;
-    const m = t<t1?0 : t<t2?1 : t<t3?2 : t<t4?3 : 4;
-    if(m!==mode) enter(m);
 
-    if(m===0){                                  // CAPTURE — the beads go to the wall
-      const u=t/CAPT;
-      T.setField(clamp((u-0.14)/0.18));
-      T.pull(clamp((u-0.22)/0.62), ph, 1);
-      return;
-    }
-
-    if(m===1){                                  // WASH — the debris leaves, the pellet holds
-      const u=(t-t1)/WASH;
-      setFanLine(WASTE,0.20,clamp(u/0.75));
-      T.setLevel(1-0.94*clamp((u-0.06)/0.62), LYSATE, 0.34);
-      T.pull(1, ph, 1);
-      return;
-    }
-
-    if(m===2){                                  // TEMPLATE SWITCH — released into a fresh reaction
-      const u=(t-t2)/SWITCH;
-      /* the mix goes in first and the magnet lets go after it: the beads have
-         to be back in suspension for anything to reach what is on them, and
-         letting go into an empty tube would drop the pellet onto the cone */
-      T.setLevel(0.06+0.76*clamp(u/0.34), MIX, 0.34);
-      T.setField(1-clamp((u-0.24)/0.26));
-      T.pull(1-0.85*clamp((u-0.28)/0.34), ph, 1);
-      return;
-    }
-
-    if(m===3){                                  // AMPLIFY — into the block, lid down, cycles
-      const u=(t-t3)/AMP, move=clamp(u/0.26);
-      setFanLine(TOPCR,0.20,move);
-      T.setLevel(0.82*(1-move), MIX, 0.34);
-      /* the beads dim with the level rather than staying behind on the wall.
-         Whether they ride into the reaction is a detail of the kit that the
-         record on this instance does not settle, and a pellet left standing in
-         an emptied tube would settle it. */
-      T.pull(0.15, ph, 1-0.65*move);
-      M.setWells(move);
-      M.setLid(clamp((u-0.20)/0.16));
-      const done=clamp((u-0.34)/0.60)*CYCLES;
-      M.setTemp(0.5+0.5*Math.sin(2*Math.PI*done-Math.PI/2), clamp((u-0.30)/0.10));
-      M.setPips(Math.min(CYCLES,Math.floor(done)));
-      return;
-    }
-
-    /* held: a loaded block under a closed lid, and six pips of a band that
-       goes to eight */
-    M.setTemp(0,0);
-  };
+  let t=0, ph=0;
+  const run=dt=>{ t=(t+dt)%TOT; ph+=dt*1.7; place(t,ph); };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
