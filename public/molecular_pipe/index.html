@@ -298,9 +298,10 @@
 
   /* ---- the prompt history ----
      Every request ever made against this map, newest first, read back from the
-     same queue the corner rows are read from. It is a record rather than a
-     tool: nothing in here re-sends, re-queues or edits anything, because the
-     one thing it has to be is trustworthy about what was actually asked.
+     same queue the corner rows are read from. It is a record first: the only
+     thing it does besides show you what was asked is offer a dropped request
+     back, and even that adds a row rather than changing one, so the account
+     stays true.
 
      A prompt is often several paragraphs, and forty of those stacked is a wall
      nobody reads. So a row shows its first lines and opens on click — the list
@@ -334,6 +335,19 @@
          border-left:1px solid var(--rule);padding-left:8px;white-space:pre-wrap;
          overflow-wrap:anywhere;display:none}
   .hrow.open .hnote{display:block}
+  /* RE-SEND SITS UNDER THE TEXT, not beside the status. A dropped row is the
+     one row in this list somebody is likely to act on, and the action belongs
+     next to the reason it was dropped — which is the note directly above it —
+     rather than out at the edge where the statuses are, which is a column for
+     reading and not for pressing. It is quiet by default: this is still a
+     record, and a list of buttons reads as a control panel. */
+  .hact{display:flex;align-items:center;gap:9px;margin-top:7px}
+  .hagain{font:inherit;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;
+          color:var(--fg2);background:transparent;border:1px solid var(--rule);
+          padding:3px 9px;cursor:pointer}
+  .hagain:hover{color:var(--bg);background:var(--signal);border-color:var(--signal)}
+  .hagain:disabled{opacity:.5;cursor:default}
+  .hsaid{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ok)}
   /* THE STATUS IS THE ONLY COLOUR IN THE LIST, and it carries the page's own
      meanings rather than new ones: --signal is "look here" (being drawn now),
      --ok is a thing that landed, --drop is a thing that will not. Queued is

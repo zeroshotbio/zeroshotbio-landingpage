@@ -2976,6 +2976,13 @@ feature("edit visual", function(){
     if(!watching.length) return;
     save(); render(); ensurePoll(); baseline();
   })();
+
+  /* The corner rows are this feature's, and the history panel is another one —
+     but a request re-sent from the history is a request like any other and has
+     to be waited on the same way, with the same clock, the same position in the
+     queue and the same deploy check. So the way in is published rather than
+     duplicated: anything that puts a row on the queue can hand it here. */
+  window.pipelineWatch=begin;
 });
 
 
@@ -2988,9 +2995,14 @@ feature("edit visual", function(){
    the map had no way to answer "what have I already asked for?", which is the
    question you ask before writing the next request.
 
-   READ-ONLY, ON PURPOSE. Nothing here re-sends, re-queues, edits or deletes.
-   Its whole value is being a truthful account of what was asked, and a record
-   you can change from the same window you read it in is not one.
+   THE RECORD IS STILL READ-ONLY. Re-send, added after nine requests were
+   thrown away by a daemon that could not start, does not touch the row it is
+   on: it posts the same text as a NEW request and leaves the dropped one
+   dropped. So the account of what was asked, and what came of it, stays true —
+   the list grows a second entry rather than quietly rewriting the first. That
+   is also why the button is only on dropped rows. A queued or drawing request
+   is already coming, and re-sending a finished one is asking for a redraw,
+   which is what the map's own Edit visual is for and says so plainly.
 
    This block is shared with /pipeline, like the rest of this file, and stands
    down where the markup is absent — /molecular_pipe carries the button and the
@@ -3043,8 +3055,18 @@ feature("prompt history", function(){
           `<div class="hmeta">${tgt} · ${esc(when(p.at))}</div>`+
           `<div class="htext">${esc((p.text||"").trim())}</div>`+
           (p.note?`<div class="hnote">${esc(p.note)}</div>`:"")+
+          (p.status==="dropped"
+            ? `<div class="hact"><button class="hagain">Re-send</button>`+
+              `<span class="hsaid"></span></div>` : "")+
         `</div>`;
       row.onclick=()=>row.classList.toggle("open");
+      const again=row.querySelector(".hagain");
+      if(again) again.onclick=ev=>{
+        /* the row itself opens on click, and pressing a button inside it must
+           not also fold the text out from under the person pressing it */
+        ev.stopPropagation();
+        resend(p, again, row.querySelector(".hsaid"));
+      };
       list.appendChild(row);
     });
     const done=rows.filter(p=>p.status==="done").length,
@@ -3053,6 +3075,45 @@ feature("prompt history", function(){
       `${rows.length} request${rows.length===1?"":"s"} · ${done} drawn`+
       (live?` · ${live} still to do`:"")+
       ` · newest first · click one to read it in full`;
+  }
+
+  /* THE SAME REQUEST, NOT A REFERENCE TO IT. The queue stores what was asked
+     whole — text, target, and for an insertion the gap it was aimed at — so a
+     re-send is that record posted back as a new row, and the instance cannot
+     tell it from something typed just now. Sending the id instead would make
+     the queue read its own archive to answer a request, and a dropped row that
+     has been spilled into an archive page is exactly the row somebody wants to
+     re-send. */
+  function resend(p, btn, said){
+    if(typeof fetch!=="function"){ toast("No connection — nothing was sent.",true,5000); return; }
+    btn.disabled=true; btn.textContent="Sending…";
+    const body={text:p.text, target:p.target||null};
+    if(p.kind==="insert" && p.insert){ body.kind="insert"; body.insert=p.insert; }
+    fetch(PROMPT_API,{method:"POST",
+        headers:{"content-type":"application/json"},
+        body:JSON.stringify(body)})
+      .then(r=>r.json())
+      .then(j=>{
+        if(!j||!j.ok){
+          btn.disabled=false; btn.textContent="Re-send";
+          toast("Could not send that — the queue did not take it.",true,6000);
+          return;
+        }
+        btn.remove();
+        if(said) said.textContent="sent again — on the queue now";
+        const label = p.kind==="insert" && p.insert
+            ? "new module · "+(p.insert.afterLabel||"")
+            : p.target ? (p.target.key||"")+(p.target.name?" · "+p.target.name:"") : "";
+        /* watched like anything else, so it gets a corner row with its place in
+           the queue — and so closing this panel does not lose track of it */
+        if(window.pipelineWatch) window.pipelineWatch(j.prompt.id, label);
+        toast("Sent again. It joins the back of the queue and appears in the corner "+
+              "with the others; this row stays as it was.",false,9000);
+      })
+      .catch(()=>{
+        btn.disabled=false; btn.textContent="Re-send";
+        toast("Could not reach the queue — nothing was sent.",true,6000);
+      });
   }
 
   function open(){

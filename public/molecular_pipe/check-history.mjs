@@ -9,8 +9,14 @@
      it reads the WHOLE record (?all=1), not the recent window the map polls
        for. Point it at the plain endpoint and it silently shows the newest
        forty, looking exactly like a complete history;
-     it is read-only. No POST may leave this panel, ever — a record you can
-       change from the window you read it in is not one;
+     it does not rewrite the record. Reading it — opening a row, folding it
+       back, scrolling — writes nothing at all; the ONE thing that leaves the
+       panel is Re-send, which posts a dropped request again as a NEW row and
+       leaves the dropped one exactly as it was. A record you can edit from the
+       window you read it in is not one; a record you can act on without
+       changing is;
+     Re-send is on dropped rows and nowhere else. A queued or drawing request is
+       already coming and a finished one is a redraw, which is Edit visual's job;
      every row that came back is on screen, in newest-first order;
      the long ones open rather than being cut off with no way to see the rest;
      and its keys do not reach the map behind it. Escape and the arrows are the
@@ -119,13 +125,53 @@ ok(await p.isVisible(row2 + ' .hnote'), 'and shows what was done about it');
 await p.click(row2);
 ok(await p.$eval(row2 + ' .htext', e => e.scrollHeight > e.clientHeight + 2), 'clicking again folds it back');
 
-// ---- READ ONLY ----
+// ---- READING IT WRITES NOTHING ----
 calls.length = 0;
 await p.click(row2); await p.click(row2);
 await p.click('#histList .hrow:first-child');
 await p.waitForTimeout(200);
 ok(calls.filter(c => c.startsWith('POST')).length === 0,
-   'nothing in the panel writes anything back  [' + (calls.join(', ') || 'no calls') + ']');
+   'reading the record writes nothing back  [' + (calls.join(', ') || 'no calls') + ']');
+
+// ---- RE-SEND, on the dropped row and nowhere else ----
+/* p3 is the dropped one and it is third in the fixture's newest-first order.
+   Found by status rather than by index, because the fixture is shuffled and a
+   row added to it later would silently move this test onto the wrong one. */
+const dropSel = await p.evaluate(() => {
+  const rows = [...document.querySelectorAll('#histList .hrow')];
+  const i = rows.findIndex(r => r.querySelector('.hstat').textContent.trim() === 'dropped');
+  return i < 0 ? null : `#histList .hrow:nth-child(${i + 1})`;
+});
+ok(!!dropSel, 'the dropped row is in the list');
+const withBtn = await p.$$eval('#histList .hrow', rows => rows.map(r =>
+  (r.querySelector('.hstat').textContent.trim()) + ':' + !!r.querySelector('.hagain'))
+  .filter(x => x.endsWith(':true')));
+ok(withBtn.every(x => x.startsWith('dropped:')) && withBtn.length === 1,
+   'only the dropped row offers Re-send  [' + (withBtn.join(', ') || 'none do') + ']');
+
+calls.length = 0;
+const posted = [];
+await p.route('**/api/molecular_prompts', async r => {
+  if (r.request().method() !== 'POST') return r.fallback();
+  posted.push(JSON.parse(r.request().postData()));
+  calls.push('POST /api/molecular_prompts');
+  return r.fulfill({ status:200, contentType:'application/json',
+                     body: JSON.stringify({ ok:true, prompt:{ id:'again1' } }) });
+});
+await p.click(dropSel + ' .hagain');
+await p.waitForTimeout(500);
+ok(posted.length === 1, 'pressing it sends exactly one request  [' + posted.length + ']');
+ok(posted[0] && posted[0].text === 'make it look likea cowboy hat',
+   'and it sends the SAME text, not a reference to the old row');
+/* the row it was pressed on is a record of what happened and must not move */
+ok(await p.textContent(dropSel + ' .hstat') === 'dropped',
+   'the row it came from stays dropped');
+ok(await p.isVisible(dropSel + ' .hsaid'), 'and says on the row that it went again');
+ok(await p.$(dropSel + ' .hagain') === null, 'the button is gone, so it cannot be sent twice');
+/* it has to be waited on like anything else, or closing the panel loses it */
+const pill = await p.$$eval('#works .work', e => e.map(x => x.textContent));
+ok(pill.length === 1, 'it joins the corner rows like any other request  [' + pill.length + ']');
+ok(/queued|waiting|drawing/i.test(pill[0] || ''), 'and the corner row says where it is  [' + (pill[0]||'') + ']');
 
 // ---- the keys do not reach the map behind it ----
 const where = () => p.evaluate(() => {
