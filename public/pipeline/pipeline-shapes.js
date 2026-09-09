@@ -6185,7 +6185,7 @@ DRAW.capture = drawCapture;
    they tethered the glass to was bare ground, and two lines to nothing read as
    clutter rather than as an address. What still names the station is the track,
    the dot and the name, which all arrive at that footprint anyway — the glass
-   sits over its own tile and the reader is not being asked to find it twice.
+   sits on its own tile and the reader is not being asked to find it twice.
    The bench is bare on purpose: this step is free DNA in a closed tube, and
    there was never anything about it to see at bench scale.
 
@@ -6224,22 +6224,28 @@ DRAW.capture = drawCapture;
    that is the one thing a PCR never does; so the state is a pure function of
    the clock and the wrap puts three strands back on the stage in one frame.
 
-   WHERE THE GLASS HANGS IS FORCED, the way it is for every station in this
-   stretch, and the thing that forces it is the NAMES. The ground is spoken for
-   — B7's magnification is down and left of its rack, B8's is on the floor
-   forward of this tile and C1's comes into the near ground two tiles along — so
-   the request's "above" is the only air there is. But every station's name
-   leaves its own back edge running up and to the right at −30°, which means the
-   sky over any tile is striped with the names of the stations to its LEFT, one
-   about every forty-five pixels, and a glass this size does not fit between two
-   of them. It fits above all of them: B7's name ends before it reaches this
-   tile's own airspace and B6's ends further left again, so the clear air starts
-   just over where B7's runs out. Hence the height below — measured from this
-   tile's top in screen lengths times SC, so the clearance survives a resize
-   rather than being true at one size. AND LOSING THE MACHINE DOES NOT FREE IT.
-   What pins the glass up there is the names, not the object that used to stand
-   under it, so the fourth request took the block away and left the height
-   exactly where three iterations against those names had put it.
+   ASKED FOR A SIXTH TIME, AND THE GLASS CAME DOWN ONTO THE TILE. "This is the
+   whole image. Move its position to where the module box is." For three
+   requests it hung high in the air, and the height was not arbitrary: a
+   magnification is a view OF something, the something was a cycler standing on
+   the ground below it, and the air it hung in was the only clear air there is —
+   every station's name leaves its own back edge running up and to the right at
+   −30°, so the sky over any tile is striped with the names of the stations to
+   its LEFT, about one every forty-five pixels, and a glass this size fits above
+   all of them or between none of them. That clearance survived the fourth
+   request and the fifth because what pinned it up there was the names, not the
+   object. It does not survive this one, and it should not: A VIEW OF NOTHING IS
+   NOT A VIEW. With the bench bare the glass is not a view of the station, it is
+   the station, and a station stands on its own box. So the ring is centred on
+   the middle of the node's own box and the sky argument leaves with it — the
+   names now cross the ring instead of fencing it out, which is what every other
+   object on this row already lives with.
+
+   WHAT IT COSTS IS DEPTH ORDER, and that is the price of standing on the
+   ground. B9's tile is drawn after this one, so B9's instrument paints over the
+   lower right of the glass exactly as it would over any object standing here.
+   Up in the air the glass overlapped nothing; on the tile it is in the scene,
+   and being in the scene is what was asked for.
 
    Borrows nothing but the idioms. Spends --ch4, --ch8 and --ch11 for the chips
    and --c-top for a strand, all declared on /molecular_pipe — the only page
@@ -6270,23 +6276,24 @@ function drawPcrAmplify(g,n){
      THE THIRD REQUEST ASKED FOR IT BIGGER, and bigger means the whole glass
      and everything under it — a wider ring around the same small strands would
      be a bigger empty frame, not a bigger view. So the enlargement is one factor
-     on the group's scale and nothing inside is touched. IT GROWS UPWARD. What
-     forces this glass's height is what is BELOW it — the station names striping
-     the sky at −30°, described above — so the bottom of the ring stays exactly
-     where it was and the centre rises by what the extra radius adds. Stated
-     that way round, the clearance that was tuned against those names survives
-     both the enlargement and a resize. */
+     on the group's scale and nothing inside is touched. IT NOW GROWS ABOUT THE
+     CENTRE. While the glass hung in the sky the extra radius had to go upward,
+     because what was below it was the station names it had to clear; centred on
+     the tile there is nothing to clear, and a ring that stays centred on the
+     box at any ZOOM is the one that keeps saying which box it belongs to. */
   const LX=52, LY=40, ZOOM=1.32, GS=SC*ZOOM;
-  /* still measured from the top of the node's own box rather than from the
-     ground, even with nothing standing in it: n.h is what a resize changes
-     along with w and d, and hanging the glass off it is what keeps all three
-     of them moving the drawing together. */
-  const TOP=P(n.x,n.y,n.h);
-  const KX=TOP[0]+10*SC, KY=TOP[1]-145*SC-LY*GS;
+  /* ON THE TILE, NOT OVER IT. The clearance this glass used to hang at was
+     tuned against the station names striping the sky, back when a machine
+     stood on the tile and the glass was a view of it; with the machine gone
+     the glass IS the station, and a station stands on its own box. So the
+     centre is the middle of the node's own box — through n.x, n.y and n.h, so
+     the three dimensions a resize changes still move the drawing together. */
+  const MID=P(n.x,n.y,n.h/2);
+  const KX=MID[0], KY=MID[1];
 
-  /* No leaders. They pointed at a patch of empty ground once the block went, and
-     the glass is still hung off this node's own top corner in KX/KY, so it moves
-     and grows with the tile whether or not anything is drawn between them. */
+  /* No leaders, and now nothing for them to span either: they pointed at empty
+     ground once the block went, and the ring has since come down onto that
+     ground. A line from a thing to itself is not an address. */
 
   const lens=el("g",{transform:
     `translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${GS.toFixed(4)})`});
