@@ -198,9 +198,21 @@ DRAW.vault = (g, n) => {
         { t: fmtBytes(it.value), z: 9, c: wholly ? "var(--fg3)" : "var(--fg2)" },
         { t: (wholly ? "legacy · " : "") + fmtCount(it.objs) + " obj", z: 8.2, c: "var(--fg3)" }
       ];
-      let k = 1;
-      for (const r of base) k = Math.min(k, availPx / textW(r.t, r.z));
-      k = Math.min(k, availH / base.reduce((a, b) => a + lineH(b.z), 0));
+      /* SHRINK, THEN SHED ONE ROW — and only one. The rule above is that a
+         caption shrinks rather than sheds, because a tile with a key and no
+         figure answers nothing. That holds until the tile is small enough that
+         three rows land at four pixels, where the glyph box is taller than the
+         line pitch and the rows genuinely overlap: wagner/ is 0.9% of this
+         bucket and put "1.59 GiB" 11px into "6 obj". Below the legibility
+         floor the object count goes and the SIZE STAYS, so the tile still says
+         what it is and how big — which was the whole point of not shedding. */
+      const fit = rows => {
+        let k = 1;
+        for (const r of rows) k = Math.min(k, availPx / textW(r.t, r.z));
+        return Math.min(k, availH / rows.reduce((a, b) => a + lineH(b.z), 0));
+      };
+      let k = fit(base);
+      if (base[0].z * k < 6 && base.length > 2) { base.length = 2; k = fit(base); }
       const rows = base.map(r => ({ t: r.t, z: r.z * k, c: r.c }));
 
       const total = rows.reduce((a, b) => a + lineH(b.z), 0);

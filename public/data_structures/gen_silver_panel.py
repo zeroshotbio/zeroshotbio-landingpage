@@ -166,6 +166,70 @@ b.append(row('cluster_annotations.csv',get('daniocell/portal/2024_08_release/clu
              '521 clusters, ZFA ids on 358 - in no other origin',2))
 B['daniocell/']=block('daniocell/','#C4708A',n,s_,''.join(b))
 
+# ---- micdropseq/
+# The completest GEO release in the bucket: 111 of 111 supplementary files. An earlier pass held
+# nine - the two Seurat objects - and called the other hundred a documented gap. The raw per-pool
+# matrices are what make re-calling cells possible at all, which is the whole reason this warehouse
+# keeps three MiniFin releases, so "the objects are enough" was the wrong call.
+n,s_=agg('micdropseq/')
+b=[row('README.md',get('micdropseq/README.md')[0][0],'ok','two experiments, and why their objects differ')]
+pn,ps=agg('micdropseq/Paper/')
+b.append(row('Paper/',ps,'ok',f'{pn} objects - the article, ten supplements, the preprint'))
+cn,cs=agg('micdropseq/code/')
+b.append(row('code/',cs,'ok',f'{cn} objects - Zenodo v1.0.2 (md5-attested) + GitHub'))
+gn,gs=agg('micdropseq/GSE315445/')
+b.append(row('GSE315445/',gs,'ok',f'{gn} objects - the COMPLETE GEO release, all 111 files'))
+b.append(row('..._micdrop_50_gene.rds',get('micdropseq/GSE315445/GSE315445_micdrop_50_gene.rds')[0][0],'ok',
+             'flagship, 226,492 cells, Seurat v4.1.3 - CRISPR assay carries per-cell guide',2))
+b.append(row('..._x1..x16_raw_matrix.mtx.gz',
+             sum(sz for sz,k in get('micdropseq/GSE315445/') if '_raw_matrix' in k),'ok',
+             'every droplet incl. empties - the input to any re-call of cells',2))
+b.append(row('..._family.soft.txt',get('micdropseq/GSE315445/GSE315445_family.soft.txt')[0][0],'del',
+             'our decompression, not GEO\'s - uploaded before the release was completed',2))
+B['micdropseq/']=block('micdropseq/','#B5A04A',n,s_,''.join(b))
+
+# ---- platt/
+# The only prefix here whose origin vouches for EVERY byte: served from S3, and an S3 ETag is an md5
+# for a single-part object and a reproducible multipart hash for the two tarballs. Six of six agree.
+n,s_=agg('platt/')
+b=[row('README.md',get('platt/README.md')[0][0],'ok','why the folder is a build version, and what BPCells means here')]
+vn,vs=agg('platt/v2.2.1/')
+b.append(row('v2.2.1/',vs,'ok',f'{vn} objects - the version is inside the artifacts, not on the page'))
+b.append(row('reference_cds.tar',get('platt/v2.2.1/reference_cds.tar')[0][0],'ok',
+             'the reference atlas - BPCells-backed Monocle3 cds',2))
+b.append(row('LMX1B_projected_cds.tar',get('platt/v2.2.1/LMX1B_projected_cds.tar')[0][0],'ok',
+             'lmx1ba/lmx1bb projected into that reference',2))
+b.append(row('combined_state_graphs.rds',get('platt/v2.2.1/combined_state_graphs.rds')[0][0],'ok',
+             '3,226 B - the inferred state graph. The claim, not the evidence',2))
+b.append(row('ETAGS.origin',get('platt/v2.2.1/ETAGS.origin')[0][0],'ok',
+             "the origin's own etags - 6 of 6 reproduce from these bytes",2))
+B['platt/']=block('platt/','#6FAE72',n,s_,''.join(b))
+
+# ---- zesta/
+# The spatial modality. Both halves arrived in one directory because CNGB nests the accession under
+# a platform directory also called stomics; splitting on the string rather than the position put all
+# thirteen in the spatial folder. Caught before upload, and written into the prefix's own README.
+n,s_=agg('zesta/')
+b=[row('README.md',get('zesta/README.md')[0][0],'ok','six stages, two modalities, and how to tell them apart')]
+an,asz=agg('zesta/STDS0000057/')
+b.append(row('STDS0000057/',asz,'ok',f'{an} objects - the complete STOmics study release'))
+tn,ts=agg('zesta/STDS0000057/stomics/')
+b.append(row('stomics/',ts,'ok',f'{tn} Stereo-seq objects - observations are spatial bins',2))
+cn2,cs2=agg('zesta/STDS0000057/scrna/')
+b.append(row('scrna/',cs2,'ok',f'{cn2} dissociated objects, same six stages 3-24 hpf',2))
+B['zesta/']=block('zesta/','#4FA8BC',n,s_,''.join(b))
+
+# ---- wagner/
+# The only dataset in the corpus carrying transcriptome and PHYSICAL lineage in the same cells.
+# Everything else infers lineage from expression; TracerSeq measured it.
+n,s_=agg('wagner/')
+b=[row('README.md',get('wagner/README.md')[0][0],'ok','the time course, TracerSeq, and the CRISPR arms')]
+gn2,gs2=agg('wagner/GSE112294/')
+b.append(row('GSE112294/',gs2,'ok',f'{gn2} objects - the complete GEO release'))
+b.append(row('GSE112294_RAW.tar',get('wagner/GSE112294/GSE112294_RAW.tar')[0][0],'ok',
+             '59 members: 7 stages, 5 TracerSeq libraries, chd vs tyr',2))
+B['wagner/']=block('wagner/','#8A7FC4',n,s_,''.join(b))
+
 # ---- megafin-1/
 n,s=agg('megafin-1/')
 g=collections.Counter(); c=collections.Counter()
@@ -207,7 +271,8 @@ for k in ('minifin/','megafin/','megafin-1/'):
     out.append(B[k])
 out.append(sec("Acquired · published by others",
                "taken verbatim from a public origin; a disagreement is their revision, not ours"))
-for k in ('chemfish/','zscape/','zebrahub/','daniocell/'):
+for k in ('chemfish/','zscape/','zebrahub/','daniocell/',
+          'micdropseq/','platt/','zesta/','wagner/'):
     out.append(B[k])
 
 style=open('/tmp/claude-1001/-data/1a934452-8c41-4975-b302-6d9d32c09db2/scratchpad/panel_style.txt').read()
