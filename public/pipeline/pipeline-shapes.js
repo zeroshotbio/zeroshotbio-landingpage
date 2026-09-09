@@ -6675,18 +6675,26 @@ DRAW.quantify = drawQuantify;
    magnification hung off it. So the bench is deliberately the smaller half of
    the drawing. Everything C1 does happens as one programmed incubation —
    nothing is loaded, nothing leaves, there is no vessel to move — and a station
-   with no traffic on it has nothing to animate at bench scale. What is on the
-   ground is a benchtop cycler at about a third of the tile: a pale rounded
-   case, one angled screen and a low lid, and no lit anything. It is furniture,
-   drawn to anchor the frame rather than to be read, because the chemistry is
-   the subject and the chemistry is up in the glass.
+   with no traffic on it has nothing to animate at bench scale.
 
-   AND IT IS UNLIT ON PURPOSE. What stood here before was a strip of eight
-   tubes glowing at cDNA colour, which drew the reaction twice — once six times
-   larger under the glass, where the argument is, and once on the bench in the
-   brighter of the two. A cased instrument with its lid down says everything
-   that needed saying (the reaction is in there, it is running) and gives the
-   eye nothing to stop on on the way to the lens.
+   ASKED FOR AGAIN, from "Edit visual", and the second request takes the
+   machine off the bench: it is not needed, the inset stays as it is on the
+   stations before this one, and the fragmenting stays the point of the step.
+   So the cased cycler — its rounded body, its low lid and its angled screen —
+   is out, and what is on the ground is the block it stood on. That subtraction
+   only removes furniture. A shut case cannot show a fragmentation any more
+   than B8a's could show an amplification, which is why the earlier notes here
+   had to argue the case DOWN, unlit and small and worth stopping on for as
+   little time as possible; the argument was always under the glass, and now
+   the only thing on the tile is the thing carrying it.
+
+   THE BLOCK STAYS, BECAUSE THE STATION HAS TO HAVE A PLACE. The track, the dot
+   and the name all arrive at this footprint and the leaders name it, so the
+   works skin is left holding the ground the way the dull end of this row does
+   everywhere else. It has nothing standing on it on purpose: what stood here
+   before the cycler was a strip of eight tubes glowing at cDNA colour, which
+   drew the reaction twice — once six times larger under the glass, where the
+   argument is, and once on the bench in the brighter of the two.
 
    WHERE THE LENS HANGS IS FORCED, AND IT IS NOT STRAIGHT UP. The request asked
    for it above the block, and above is the one direction this tile does not
@@ -6696,8 +6704,12 @@ DRAW.quantify = drawQuantify;
    clear of the near front corner instead — raised off the bench on two grey
    leaders, into the one piece of airspace on this bench nothing else reaches.
    Grey because a magnification is not a track: nothing travels down those
-   lines. It is the biggest thing on the tile, which is what it means for the
-   inset to be the subject.
+   lines. AND TAKING THE MACHINE AWAY DOES NOT FREE THAT AIRSPACE. What the
+   lens has to keep clear of is B9's display and this station's own name, not
+   the object that used to stand under it, so the second request left the lens
+   exactly where it was. It is the biggest thing on the tile and now the only
+   thing on it with anything to say, which is what it means for the inset to be
+   the subject.
 
    SCORE, PART, ROUND — ONE MOTION AND NOT THREE. Fragmentation, end repair and
    A-tailing are a single enzymatic reaction in section 3.1, so the drawing
@@ -6753,111 +6765,28 @@ function drawFragmentLigate(g,n){
   const clamp=x=>x<0?0:x>1?1:x;
   const ease =x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
 
-  /* ---- THE BENCH: a low charcoal block with one small machine on it --------
-     The works skin, which is what the dull end of this row is built out of. */
+  /* ---- THE BENCH: a low charcoal block, and nothing standing on it --------
+     The works skin, which is what the dull end of this row is built out of.
+     The cased cycler that used to stand here came off at the second request
+     from the page; the block stays because the station still has to have a
+     place — the track, the dot and the name all arrive at this footprint. */
   paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
 
-  /* A ROUNDED BOX, BECAUSE faces() ONLY MAKES BRICKS AND A BRICK THIS SIZE
-     READS AS A BRICK. The plan corners are taken off and the walls are rebuilt
-     off that outline: an edge is a wall when its outward normal points at the
-     viewer, which on a convex plan is exactly the lower half of the silhouette,
-     so the top face can be laid over the lot without any ordering to get wrong.
-     The hem is stroked once as a polyline and each wall carries a hairline of
-     its OWN fill, because a case moulded in one piece must not show eleven
-     seams up its side — and eleven abutting polygons antialias to eleven pale
-     lines whether or not you stroke them. K is 3 on purpose: this thing is
-     twenty pixels across and every further segment is a node the map pays for
-     at every redraw. */
-  const roundBox=(gg,cx,cy,bw,bd,z0,z1,sk)=>{
-    const rr=Math.min(bw,bd)*0.26, K=3;
-    const hw=Math.max(0,bw/2-rr), hd=Math.max(0,bd/2-rr), plan=[];
-    [[hw,hd],[-hw,hd],[-hw,-hd],[hw,-hd]].forEach(([ox,oy],q)=>{
-      for(let i=0;i<=K;i++){ const a=(q+i/K)*Math.PI/2;
-        plan.push([cx+ox+rr*Math.cos(a), cy+oy+rr*Math.sin(a)]); }
-    });
-    const NP=plan.length, drop=(z1-z0)*S*CZ, top=plan.map(p=>P(p[0],p[1],z1));
-    /* outward normal of a counter-clockwise edge is (dy,-dx); the viewer is out
-       along +x +y, so nx+ny>0 is the test for a face that can be seen at all */
-    const vis=[], right=[];
-    for(let i=0;i<NP;i++){
-      const p=plan[i], q=plan[(i+1)%NP], nx=q[1]-p[1], ny=p[0]-q[0];
-      vis.push(nx+ny>0); right.push(nx>ny);
-    }
-    let s0=0;
-    for(let i=0;i<NP;i++) if(vis[i]&&!vis[(i+NP-1)%NP]){ s0=i; break; }
-    const chain=[];
-    for(let k=0;k<NP&&vis[(s0+k)%NP];k++){
-      const i=(s0+k)%NP, a=top[i], b=top[(i+1)%NP], tone=right[i]?sk.right:sk.left;
-      gg.appendChild(el("polygon",{points:pts([a,b,[b[0],b[1]+drop],
-        [a[0],a[1]+drop]]),fill:tone,"fill-opacity":sk.fo||1,stroke:tone,
-        "stroke-width":".7","stroke-opacity":sk.fo||1}));
-      if(!k) chain.push(a);
-      chain.push(b);
-    }
-    gg.appendChild(el("path",{d:"M "+chain[0].join(" ")+" L "+
-      chain.map(p=>p[0]+" "+(p[1]+drop)).join(" L ")+" L "+
-      chain[chain.length-1].join(" "),fill:"none",stroke:"var(--stroke)",
-      "stroke-width":sk.sw||1,"stroke-opacity":sk.so||1,"stroke-linejoin":"round"}));
-    gg.appendChild(el("polygon",{points:pts(top),fill:sk.top,"fill-opacity":sk.fo||1,
-      stroke:"var(--stroke)","stroke-width":sk.sw||1,"stroke-opacity":sk.so||1,
-      "stroke-linejoin":"round"}));
-    return top;
-  };
-
-  /* ---- THE CYCLER ---------------------------------------------------------
-     Case, screen, lid, and nothing else — no wells, no pips, no tint. C2 next
-     door wears the full thermalCycler() with its block open and its readout
-     counting, because there the machine IS the station. Here it is the room the
-     reaction happens in, so it gets the outside of the same object and none of
-     the inside, and it is small enough that the eye reaches the glass first. */
-  const MX=n.x-n.w*0.08, MY=n.y-n.d*0.10;
-  const MW=n.w*0.42, MD=n.d*0.32, MZ0=n.h, MZ1=n.h+n.h*0.40;
-  const body=roundBox(g,MX,MY,MW,MD,MZ0,MZ1,SKIN.monolith);
-
-  /* THE LID SITS BACK, WHICH IS THE WHOLE REASON THERE IS ROOM FOR A SCREEN.
-     A lid centred on the case covers the front third of its own top face in
-     this projection, and the screen leaning back into that third came out
-     sliced off along the lid's hem. Set back over the block — where a heated
-     lid actually is — it clears the chamfer and the case reads front-to-back
-     instead of as a lump. Low, and down: a slab standing proud would read as a
-     machine waiting to be loaded, which is the one thing this station is not
-     doing. */
-  roundBox(g,MX,MY-MD*0.17,MW*0.78,MD*0.56,MZ1,MZ1+n.h*0.13,SKIN.sB);
-
-  /* the screen is a chamfer and not a decal: it starts low on the front wall
-     and leans back to the top edge, which is the silhouette that says benchtop
-     instrument rather than box. It is wide because it was asked to be — most of
-     the flat run the rounded corners leave — and dark rather than lit, because
-     an instrument reporting a temperature is an instrument you stop and read,
-     and this one is furniture. */
-  const SFY=MY+MD*0.5, SHX=MW*0.27, SZ0=MZ0+(MZ1-MZ0)*0.10;
-  const scr=[P(MX-SHX,SFY,SZ0),P(MX+SHX,SFY,SZ0),
-             P(MX+SHX,SFY-MD*0.30,MZ1),P(MX-SHX,SFY-MD*0.30,MZ1)];
-  g.appendChild(el("polygon",{points:pts(scr),fill:"var(--bg)","fill-opacity":".85",
-    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
-  /* one rule across it, at the width a line of type would be. Two would mush at
-     six pixels of screen and none reads as a hole cut in the case. */
-  g.appendChild(el("line",{
-    x1:((scr[0][0]+scr[3][0])/2).toFixed(1),y1:((scr[0][1]+scr[3][1])/2).toFixed(1),
-    x2:((scr[1][0]+scr[2][0])/2).toFixed(1),y2:((scr[1][1]+scr[2][1])/2).toFixed(1),
-    stroke:"var(--fg2)","stroke-width":".8","stroke-opacity":".45"}));
-
-  /* THE LEADERS TOUCH THE MACHINE, THEY DO NOT CROSS IT. Aimed at the two ends
-     of a diameter, the far one has to be reached by drawing a line over the
-     case — which was survivable when the thing at the end of them was one 4 mm
-     tube and is not now there is a solid there. So they land on the two corners
-     of the near silhouette instead: the left corner and the foot of the front
-     one, the same pair a callout drawn by hand would pick. */
-  const bxs=body.map(p=>p[0]), bys=body.map(p=>p[1]);
-  const front=body[bys.indexOf(Math.max(...bys))];
-  const tips=[body[bxs.indexOf(Math.min(...bxs))],
-              [front[0],front[1]+(MZ1-MZ0)*S*CZ]];
+  /* THE LEADERS LAND ON THE BLOCK ITSELF now that there is no case for them to
+     touch: the near left corner at the top, and the foot of the front one —
+     the same pair they took off the machine, which is the pair a callout drawn
+     by hand would pick, and the pair that names a patch of bench rather than a
+     dot. Both ends are fractions of w, d and h, so a resize takes them with
+     the block. */
+  const tips=[P(n.x-n.w*0.5, n.y+n.d*0.5, n.h),
+              P(n.x+n.w*0.5, n.y+n.d*0.5, 0)];
 
   /* ---- THE MAGNIFICATION -------------------------------------------------
-     A thin solid ellipse with two leaders running back to the machine the
-     reaction is in: B7's idiom on this row, and /FASTQ_pipe's before it. The
-     leaders are drawn BEFORE the glass so its own backing covers where they
-     would otherwise run in across the drawing, and both start ON the boundary
+     A thin solid ellipse with two leaders running back to the bench the
+     reaction is on: B7's idiom on this row, B8a's next door where the same
+     request left the same glass standing alone, and /FASTQ_pipe's before
+     either. The leaders are drawn BEFORE the glass so its own backing covers
+     where they would otherwise run in across the drawing, and both start ON the boundary
      rather than inside it — a leader that begins under the glass crosses its
      own line. */
   const LRX=Q*1.80, LRY=Q*0.78;
