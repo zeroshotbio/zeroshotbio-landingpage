@@ -241,9 +241,10 @@ DRAW.vault = (g, n) => {
   };
 
   if (n.groups && n.groups.length) {
-    const all = n.groups.flatMap(gr => gr.tiles);
+    const tilesOf = gr => gr.sub ? gr.sub.flatMap(sg => sg.tiles) : gr.tiles;
+    const all = n.groups.flatMap(tilesOf);
     const max = Math.max(...all.map(t => t.value));
-    const totals = n.groups.map(gr => gr.tiles.reduce((a, t) => a + t.value, 0));
+    const totals = n.groups.map(gr => tilesOf(gr).reduce((a, t) => a + t.value, 0));
     const sum = totals.reduce((a, b) => a + b, 0);
     const capH = 1.0;
     /* A GUTTER, NOT JUST AN EDGE. The two columns met at a single tile border,
@@ -262,7 +263,39 @@ DRAW.vault = (g, n) => {
       const capZ = Math.min(8.2, 8.2 * ((gw - 0.6) * S) / Math.max(textW(gr.label.toUpperCase(), 8.2), 1));
       label(g, gx + gw / 2, fy + capH / 2, gr.label,
         { size: capZ, fill: "var(--fg3)", ls: 0.1, upper: true });
-      drawTiles(gr.tiles, gx, fy + capH, gw, fh - capH, max);
+      if (gr.sub) {
+        /* SUB-SECTIONS, STACKED. A column whose contents are several kinds of
+           data splits into bands, one per kind, captioned. Band heights are
+           proportional to bytes EXCEPT that each gets a floor: anatomy volumes
+           are 0.28% of this bucket and a truthfully-scaled band for them would
+           be a tenth of a grid unit — invisible, and a section nobody can see
+           is not a section. The floor is declared rather than hidden: a band
+           sitting on it is captioned "(not to scale)". Within every band the
+           tiles are exact, and the two top-level columns are exact. */
+        const FLOOR = 2.1, SUBCAP = 0.85;
+        const inner = fh - capH;
+        const subT = gr.sub.map(sg => sg.tiles.reduce((a, t) => a + t.value, 0));
+        const subSum = subT.reduce((a, b) => a + b, 0);
+        const wanted = subT.map(v => inner * v / subSum);
+        const floored = wanted.map(v => v < FLOOR);
+        const slack = inner - floored.reduce((a, f, i) => a + (f ? FLOOR : 0), 0);
+        const freeSum = subT.reduce((a, v, i) => a + (floored[i] ? 0 : v), 0);
+        let sy = fy + capH;
+        gr.sub.forEach((sg, si) => {
+          const sh = floored[si] ? FLOOR : slack * subT[si] / freeSum;
+          /* Scale a band caption to its band, exactly as the column captions and
+             the tile captions are. Left unscaled, the longer ones hung a grid
+             unit off the side of the vault. */
+          const stxt = sg.label + (floored[si] ? " ~" : "");
+          const sz = Math.min(7.2, 7.2 * ((gw - 0.5) * S) / Math.max(textW(stxt.toUpperCase(), 7.2), 1));
+          label(g, gx + gw / 2, sy + SUBCAP / 2, stxt,
+            { size: sz, fill: "var(--fg3)", ls: 0.06, upper: true });
+          drawTiles(sg.tiles, gx, sy + SUBCAP, gw, sh - SUBCAP, max);
+          sy += sh;
+        });
+      } else {
+        drawTiles(gr.tiles, gx, fy + capH, gw, fh - capH, max);
+      }
       gx += gw + GUTTER;
     });
   } else if (n.tiles && n.tiles.length) {

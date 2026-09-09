@@ -315,12 +315,30 @@ out.append(sec("Parse (Our Data)",
                "produced here from a Parse delivery; a disagreement with the source is our bug"))
 for k in ('minifin/','megafin/','megafin-1/'):
     out.append(B[k])
-out.append(sec("Acquired (Open Source)",
-               "taken verbatim from a public origin; a disagreement is their revision, not ours. \u00b7 pinned means a manifest in zsb-bronze names these bytes; NO RECORD means nothing does"))
-for k in ('chemfish/','zmap/','micdropseq/','platt/','zscape/','zebrahub/','keller/',
-          'zesta/','daniocell/','wagner/','raj/','linnaeus/','zfap/','trunk30hpf/',
-          'farrell/','tomoseq/'):
+out.append(sec("Acquired (Open Source) \u00b7 scRNA-seq",
+               "taken verbatim from a public origin; a disagreement is their revision, not ours. "
+               "\u00b7 pinned means a manifest in zsb-bronze names these bytes; NO RECORD means nothing does"))
+for k in ('chemfish/','zmap/','micdropseq/','platt/','zscape/','zebrahub/','daniocell/',
+          'wagner/','raj/','linnaeus/','trunk30hpf/','farrell/'):
     out.append(B[k])
+
+# The three modalities that are not single-cell transcriptomes. Together they are 7.1% of
+# the bucket, which is why the map floors their bands and marks them "~": a truthful band
+# for anatomy alone would be a tenth of a grid unit.
+out.append(sec("Acquired \u00b7 Imaging / physical tracking",
+               "no transcriptome at all \u2014 light-sheet imaging tracked to per-nucleus positions, "
+               "divisions and lineage links. Nothing in the single-cell toolchain opens it"))
+out.append(B['keller/'])
+out.append(sec("Acquired \u00b7 Spatial transcriptomics",
+               "where a transcript is, measured rather than inferred. zesta/ is mixed \u2014 it carries a "
+               "dissociated scRNA half too; tomoseq/ is RNA-seq but NOT single-cell, one observation "
+               "per cryosection"))
+for k in ('zesta/','tomoseq/'):
+    out.append(B[k])
+out.append(sec("Acquired \u00b7 Anatomy volumes",
+               "segmented 3D embryo volumes as image stacks. No sequencing of any kind \u2014 the frame "
+               "a cell-type label gets placed against"))
+out.append(B['zfap/'])
 
 style=open('/tmp/claude-1001/-data/1a934452-8c41-4975-b302-6d9d32c09db2/scratchpad/panel_style.txt').read()
 panel=style+''.join(out)
