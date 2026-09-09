@@ -5707,7 +5707,7 @@ DRAW.countsplitlyse = drawCountSplitLyse;
    the only page carrying a node that wears this shape.
    ================================================================== */
 
-/* THE MAGNETIC RACK. A charcoal block with a strip of 0.2 ml tubes standing in
+/* THE MAGNETIC RACK. A charcoal block with strips of 0.2 ml tubes standing in
    it, and the magnets showing as pale insets in the near wall.
 
    THE MAGNETS ARE IN THE WALL, NOT BESIDE IT. A rack's magnets are buried in
@@ -5721,10 +5721,13 @@ DRAW.countsplitlyse = drawCountSplitLyse;
    as a step, so the plastic stays put and the wash over the magnets is what
    says which of the two states the tube is in.
 
-   `r` is {x,y,w,d,h} for the block plus `tubes` for the strip. Returns the rim
-   of every tube, so a caller can hang a magnification off one, and the field. */
+   `r` is {x,y,w,d,h} for the block plus `tubes` per strip and `strips` across
+   its depth — laid out that way rather than as a flat total so the moulded web
+   that makes eight tubes one strip has a row to span, and so a kit with a
+   different strip length is a change of one number. Returns the rim of every
+   tube, the index of the near strip's first, and the field. */
 function magnetRack(g, r){
-  const N=r.tubes||8;
+  const N=r.tubes||8, STRIPS=r.strips||1;
   /* --t-* is this page's charcoal in the mode it opens in and its opposite in
      the other, which is the bargain every skin on this map makes. What has to
      survive the flip is that the magnets read as a different material from the
@@ -5747,44 +5750,51 @@ function magnetRack(g, r){
     g.appendChild(f); mags.push(f);
   }
 
-  /* THE WEB IS WHAT MAKES EIGHT TUBES A STRIP. Without it this is eight loose
-     tubes standing in a block, which is a different consumable and a different
-     claim about how a sublibrary is handled. Near face then top, so the tubes
-     drawn after it stand in front of their own moulding. */
   const RT=r.w*0.042, RH=r.h*1.60;
   const wz1=r.h+RH*0.86, wz0=wz1-r.h*0.30;
   const xA=r.x-r.w/2+0.5*r.w/N-RT, xB=r.x-r.w/2+(N-0.5)*r.w/N+RT;
-  g.appendChild(el("polygon",{points:pts([P(xA,r.y+RT,wz1),P(xB,r.y+RT,wz1),
-    P(xB,r.y+RT,wz0),P(xA,r.y+RT,wz0)]),fill:"var(--t-right)","fill-opacity":".9",
-    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
-  g.appendChild(el("polygon",{points:pts([P(xA,r.y-RT,wz1),P(xB,r.y-RT,wz1),
-    P(xB,r.y+RT,wz1),P(xA,r.y+RT,wz1)]),fill:"var(--t-top)","fill-opacity":".9",
-    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
 
   const rims=[];
-  for(let i=0;i<N;i++){
-    const cx=r.x-r.w/2+(i+0.5)*r.w/N;
-    const rim  =ellipseAt(cx,r.y,r.h+RH,RT),
-          foot =ellipseAt(cx,r.y,r.h,RT*0.46),
-          inner=ellipseAt(cx,r.y,r.h,RT*0.40),
-          surf =ellipseAt(cx,r.y,r.h+RH*0.44,RT*0.70);
-    const silh=pts([[rim.x+rim.rx,rim.y],...arcPts(foot,0,Math.PI,8),
-                    [rim.x-rim.rx,rim.y],...arcPts(rim,Math.PI,2*Math.PI,12)]);
-    g.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".38"}));
-    /* every tube carries the same lysate at the same level and stays that way.
-       Eight tubes at this pitch are four pixels wide each: anything that
-       changed in one of them would be a flicker, not a reading. */
-    g.appendChild(el("polygon",{points:pts([...arcPts(surf,2*Math.PI,Math.PI,10),
-                                            ...arcPts(inner,Math.PI,0,8)]),
-      fill:"var(--pool)","fill-opacity":".45"}));
-    g.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
-      "stroke-width":".9","stroke-opacity":".7"}));
-    g.appendChild(el("ellipse",{cx:rim.x.toFixed(1),cy:rim.y.toFixed(1),
-      rx:rim.rx.toFixed(2),ry:rim.ry.toFixed(2),fill:"none",stroke:"var(--stroke)",
-      "stroke-width":"1","stroke-opacity":".8"}));
-    rims.push(rim);
+  /* BACK STRIP FIRST. On this grid the order things are appended in is the
+     order they occlude in, and a near strip standing behind the one it is in
+     front of is the one way two rows of identical plastic read as wrong. */
+  for(let j=0;j<STRIPS;j++){
+    const cy=r.y-r.d/2+(j+0.5)*r.d/STRIPS;
+    /* THE WEB IS WHAT MAKES EIGHT TUBES A STRIP. Without it this is sixteen
+       loose tubes standing in a block, which is a different consumable and a
+       different claim about how a sublibrary is handled. Near face then top, so
+       the tubes drawn after it stand in front of their own moulding. */
+    g.appendChild(el("polygon",{points:pts([P(xA,cy+RT,wz1),P(xB,cy+RT,wz1),
+      P(xB,cy+RT,wz0),P(xA,cy+RT,wz0)]),fill:"var(--t-right)","fill-opacity":".9",
+      stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
+    g.appendChild(el("polygon",{points:pts([P(xA,cy-RT,wz1),P(xB,cy-RT,wz1),
+      P(xB,cy+RT,wz1),P(xA,cy+RT,wz1)]),fill:"var(--t-top)","fill-opacity":".9",
+      stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
+
+    for(let i=0;i<N;i++){
+      const cx=r.x-r.w/2+(i+0.5)*r.w/N;
+      const rim  =ellipseAt(cx,cy,r.h+RH,RT),
+            foot =ellipseAt(cx,cy,r.h,RT*0.46),
+            inner=ellipseAt(cx,cy,r.h,RT*0.40),
+            surf =ellipseAt(cx,cy,r.h+RH*0.44,RT*0.70);
+      const silh=pts([[rim.x+rim.rx,rim.y],...arcPts(foot,0,Math.PI,8),
+                      [rim.x-rim.rx,rim.y],...arcPts(rim,Math.PI,2*Math.PI,12)]);
+      g.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".38"}));
+      /* every tube carries the same lysate at the same level and stays that way.
+         Eight tubes at this pitch are four pixels wide each: anything that
+         changed in one of them would be a flicker, not a reading. */
+      g.appendChild(el("polygon",{points:pts([...arcPts(surf,2*Math.PI,Math.PI,10),
+                                              ...arcPts(inner,Math.PI,0,8)]),
+        fill:"var(--pool)","fill-opacity":".45"}));
+      g.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
+        "stroke-width":".9","stroke-opacity":".7"}));
+      g.appendChild(el("ellipse",{cx:rim.x.toFixed(1),cy:rim.y.toFixed(1),
+        rx:rim.rx.toFixed(2),ry:rim.ry.toFixed(2),fill:"none",stroke:"var(--stroke)",
+        "stroke-width":"1","stroke-opacity":".8"}));
+      rims.push(rim);
+    }
   }
-  return {rims,
+  return {rims, near:(STRIPS-1)*N,
     setField:f=>{ const v=(0.42*Math.max(0,Math.min(1,f))).toFixed(2);
                   mags.forEach(m=>m.setAttribute("fill-opacity",v)); }};
 }
@@ -5925,9 +5935,17 @@ function drawCapture(g,n){
      amount is the whole of the room this bench has. B7 next door is the widest
      tile on the row and its body reaches to within six pixels of where this
      block's back tube stands; B9's bench is ten pixels off its right corner.
-     Squaring the rack on the node puts it through one or the other. */
+     Squaring the rack on the node puts it through one or the other.
+
+     TWO STRIPS OF EIGHT, WHICH IS WHAT B7 NEXT DOOR SET DOWN. The eight
+     sublibraries are split into sixteen tubes there and nothing between the
+     two stations recombines them, so a single strip here quietly halved the
+     plastic on its way across the tile. The two rows straddle where the one
+     row stood — the block keeps its own footprint, and the near row is still
+     well inside the near face — so the composition against B7 and B9 that the
+     throw above buys is untouched. */
   const rack={x:n.x+n.w*0.30, y:n.y+n.d*1.05,
-              w:n.w*1.55, d:n.d*0.56, h:n.h*0.50, tubes:8};
+              w:n.w*1.55, d:n.d*0.56, h:n.h*0.50, tubes:8, strips:2};
   const T=magnetRack(g, rack);
 
   /* ---- THE MAGNIFICATION --------------------------------------------------
@@ -5944,10 +5962,12 @@ function drawCapture(g,n){
      remember to change. */
   const LX=53, LY=42;
   const [KX,KY]=P(n.x+n.w*2.80, n.y+n.d*4.10, n.h*0.50);
-  /* the leaders name ONE tube — the back-left one, nearest the glass — and
-     they start ON the boundary rather than inside it, aimed at that tube's own
-     rim, so glass that has moved or grown still points at the plastic */
-  const anchor=T.rims[0];
+  /* the leaders name ONE tube — the near strip's left-hand one, which is the
+     tube closest to the glass and the only end of the rack a leader can reach
+     without crossing plastic standing in front of it — and they start ON the
+     boundary rather than inside it, aimed at that tube's own rim, so glass
+     that has moved or grown still points at the plastic */
+  const anchor=T.rims[T.near];
   [-1,1].forEach(s=>{
     const tx=anchor.x+s*anchor.rx, ty=anchor.y;
     const vx=tx-KX, vy=ty-KY, u=1/Math.hypot(vx/(LX*SC), vy/(LY*SC));
