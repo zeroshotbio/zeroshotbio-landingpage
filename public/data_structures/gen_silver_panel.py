@@ -26,7 +26,11 @@ def row(path,size,kind,note,depth=1):
 # unmerged branches; the rest are bytes in a bucket with their custody written down
 # nowhere. It is the one thing a reader deciding what to work on next needs, so it is
 # on the header rather than three paragraphs into the panel.
-PINNED={'chemfish/','zscape/','zebrahub/','daniocell/'}
+# A manifest in zsb-bronze names these bytes. All sixteen sit on unmerged branches — the
+# four originals and the twelve opened 2026-09-09 — which is the same state the first four
+# were in when this marker was introduced, so they read the same way.
+PINNED={'chemfish/','zscape/','zebrahub/','daniocell/','platt/','zmap/','wagner/','raj/',
+        'linnaeus/','trunk30hpf/','micdropseq/','zesta/','farrell/','zcl2/','celloracle/','zcl1/'}
 OURS={'megafin/','minifin/','megafin-1/'}
 def custody(name):
     if name in OURS: return ''
