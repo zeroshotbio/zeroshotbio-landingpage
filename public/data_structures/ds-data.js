@@ -341,9 +341,9 @@ const COL_BUCKET = 13, COL_REPO = 63, COL_RAIL = 83.5, CORRIDOR = 38;
    ============================================================ */
 const ZONES = [
   { name: "AWS S3", sub: "account 423623857952 · buckets",
-    x0: -1.5, y0: -3.6, x1: 27.5, y1: 75.5 },
+    x0: -1.5, y0: -3.6, x1: 27.5, y1: 83.5 },
   { name: "GitHub", sub: "github.com/zeroshotbio · repositories",
-    x0: 50.5, y0: 6.6, x1: 89, y1: 79.5 },
+    x0: 50.5, y0: 6.6, x1: 89, y1: 83.5 },
 ];
 
 const NODES = [
@@ -472,7 +472,7 @@ const NODES = [
 {id:"SILVER", key:"3", group:"③ Silver", groupMark:true, anchor:true,
  shape:"vault", tier:"silver", doors:["r"],
  name:"Silver", bucket:"SILVER", right:"925 obj · 222.44 GiB",
- x:COL_BUCKET, y:38, w:24, h:30,
+ x:COL_BUCKET, y:40.5, w:24, h:30,
  sub:"s3://zsb-silver-warehouse · written by zsb-bronze",
  /* TWO COLUMNS, AND THE RIGHT ONE IS FOUR BANDS. Left is what this account produced
      from a Parse delivery; right is what somebody else published, split by what kind of
@@ -592,7 +592,7 @@ const NODES = [
 {id:"GREPO", key:"6", group:"⑥ Gold — the reader", groupMark:true, anchor:true,
  shape:"floor", tier:"gold", state:"stub",
  name:"zsb-gold", repo:"zsb-gold", right:"59 commits · 2,871 LOC",
- x:COL_REPO, y:72, w:22, h:10.7,
+ x:COL_REPO, y:76.5, w:22, h:10.7,
  sub:"reads gold · publishes nothing · the terminal repo",
  panel:"<style>.rkw{margin:.3rem 0 0;font-family:var(--mono,ui-monospace,monospace);font-size:clamp(9px,calc(var(--reader-w,360px)*0.0145),12px)}.rkl{display:flex;flex-direction:column;gap:.2rem;margin:.1rem 0 .55rem;font-size:clamp(9px,calc(var(--reader-w,360px)*0.014),11.5px);color:var(--fg2)}.rkl b{display:flex;align-items:center;gap:.45rem;font-weight:400}.rkl i{width:1.9em;height:.8em;border-radius:2px;flex:0 0 auto}.rkds{border:2px solid var(--acc);border-radius:5px;overflow:hidden;margin-bottom:1rem}.rkds h5{margin:0;padding:.4em .6em;font-family:var(--sans,system-ui);font-size:1.15em;font-weight:700;color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,transparent);display:flex;justify-content:space-between;align-items:baseline;gap:.5em}.rkds h5 s{text-decoration:none;font-size:.62em;font-weight:600;opacity:.75}.rk{display:grid;grid-template-columns:minmax(0,1.25fr) 4.2em minmax(0,1.25fr);gap:0 .7em;padding:.16em .5em;line-height:1.5;border-left:3px solid var(--c);align-items:baseline;background:color-mix(in srgb,var(--c) 13%,transparent);color:var(--c)}.rk .p{white-space:pre;overflow:hidden;text-overflow:ellipsis}.rk .n{text-align:right;font-variant-numeric:tabular-nums;opacity:.85}.rk .t{font-family:var(--sans,system-ui);font-size:.88em;opacity:.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rk.d1 .p{font-size:1.12em;font-weight:700}.rk.d2{opacity:.85}.rk.d2 .p{font-size:.94em}.rk.rkh{font-size:.76em;letter-spacing:.09em;text-transform:uppercase;opacity:.5;border-left-color:transparent;background:none;color:var(--fg2,#9a9a94);border-bottom:1px solid var(--rule,#2a2a2e);padding:.3em .6em}</style><div class=\"rkds\" style=\"--acc:#199e70\"><h5>zsb-gold<s>reads gold · writes nothing</s></h5><div class=\"rkw\"><div class=\"rk rkh\" style=\"--c:transparent;background:none\"><span>module</span><span class=\"n\">LOC</span><span>what it is</span></div><div class=\"rk d1\" style=\"--c:var(--k-live)\"><span class=\"p\">minifin/</span><span class=\"n\">493</span><span class=\"t\" title=\"release keys and the reader\">release keys and the reader</span></div><div class=\"rk d1\" style=\"--c:var(--k-live)\"><span class=\"p\">megafin/</span><span class=\"n\">483</span><span class=\"t\" title=\"release keys and the reader\">release keys and the reader</span></div></div></div>",
  thread:true,
@@ -604,7 +604,7 @@ const NODES = [
 
 {id:"GFETCH", key:"6a", group:"⑥ Gold — the reader", shape:"cell", tier:"gold", state:"stub",
  name:"fetch (gold)", cellName:"fetch", note:"key settled · waiting on an artifact",
- x:COL_REPO, y:70.95, w:19, h:3.4,
+ x:COL_REPO, y:75.45, w:19, h:3.4,
  sub:"fetch_release() → implemented, megafin + minifin",
  thread:true,
  brief:"Would download one released MiniFin gold artifact. Docstring only — but the docstring now names the key it would build: <mark>&lt;dataset&gt;/&lt;recipe&gt;/&lt;version&gt;/</mark>, with the caller naming both. Its old blocker is retired. The reasoning behind it survives and is the good part: prefix-listing does not survive immutable versioned keys, so a pull must name one release. <mark>This is the one place on the map that reads without pinning</mark> — which release to open is the reader's question, not a fact fixed upstream.",
@@ -615,7 +615,7 @@ const NODES = [
 
 {id:"GNB", key:"6b", group:"⑥ Gold — the reader", shape:"cell", tier:"gold", state:"stub",
  name:"the starter notebooks", cellName:"notebooks", note:"1 README · 0 notebooks",
- x:COL_REPO, y:74.85, w:19, h:3.4,
+ x:COL_REPO, y:79.35, w:19, h:3.4,
  sub:"notebooks/minifin/README.md",
  thread:true,
  brief:"Where the analysis that consumes a MiniFin gold release is meant to live. One README, describing an 01_eda.ipynb that has not landed. The README specifies it well: load the artifact, show its provenance, validate shape, layers, required metadata and embeddings, then summarise QC distributions and perturbation, replicate and cell-type balance. Generated files go to a gitignored path or the sandbox, never back under a gold key. <mark>It is the far end of the steel thread</mark> — everything above it has to work before one line of it can run.",
@@ -628,7 +628,7 @@ const NODES = [
 {id:"MED", key:"7", group:"⑦ The contract", groupMark:true, anchor:true,
  shape:"spine", tier:"code",
  name:"zsb-medallion", repo:"zsb-medallion", right:"v0.13.0",
- x:COL_RAIL, y:49, w:8, h:72, tapLen:5.5,
+ x:COL_RAIL, y:47.5, w:8, h:69, tapLen:5.5,
  /* One tap per transform repo, carrying the version that repo actually pins.
     A pin behind the rail's own version is stroked in --drop. All three agreed
     on the first read, diverged on the second, and agree again on the third —
@@ -681,7 +681,7 @@ const EDGES = [
 
 /* one carry: the map runs out at the bottom, into everything gold feeds */
 const CARRIES = [
-  {x0:COL_REPO, y0:77.35, x1:COL_REPO, y1:82, fade:"out",
+  {x0:COL_REPO, y0:81.85, x1:COL_REPO, y1:86.5, fade:"out",
    from:"zsb-gold", to:"PRISM · the models · everything trained downstream"},
 ];
 
