@@ -75,9 +75,12 @@
     return 'emerging — crests after the window, at ' + peak + ' ' + TIMEPOINTS_LABEL;
   }
 
-  PT.load().then(({ graph, meta }) => {
+  PT.load().then(({ graph, meta, enrich }) => {
     const c = meta.counts;
     const S = PTGraph.STYLE;
+    /* mapping-confidence tallies, counted from the enrichment rather than typed */
+    const conf = { unique: 0, dominant: 0, split: 0, thin: 0, unmapped: 0 };
+    if (enrich) Object.values(enrich).forEach((e) => { conf[e.zscape.confidence] += 1; });
 
     /* ---- written matter, all from meta.json ---------------------------- */
     $('srcLine').textContent =
@@ -157,13 +160,26 @@
         dl.append(dt, dd);
       };
 
-      add('Timing', band(n.peak, graph.window));
-      if (n.abund) {
+      const hasEnrich = !!(enrich && enrich[n.name]);
+      const timing = document.createElement('div');
+      timing.append(document.createTextNode(band(n.peak, graph.window) + ' '));
+      const tg = document.createElement('span');
+      tg.className = 'prov model';
+      tg.textContent = 'model-derived';
+      tg.title = 'from the fitted abundance table, not a count';
+      timing.appendChild(tg);
+      add('Timing', timing);
+
+      /* The model sparkline is the only timing view when the enrichment is
+       * absent, and a duplicate of it when it is present — the block below
+       * draws the same series beside its observed counterpart, tagged. So it is
+       * drawn here only as a fallback. */
+      if (n.abund && !hasEnrich) {
         const wrap = document.createElement('div');
         wrap.appendChild(sparkline(n.abund, graph.timepoints, graph.window));
         const cap = document.createElement('div');
         cap.className = 'cite';
-        cap.textContent = 'wild-type log abundance; shaded band is 24–48 hpf';
+        cap.textContent = 'wild-type log abundance, model-derived; shaded band is 24–48 hpf';
         wrap.appendChild(cap);
         add('Abundance trajectory', wrap);
       }
@@ -207,6 +223,12 @@
         add('Cited for these transitions', d);
       }
       body.appendChild(dl);
+
+      /* The quantitative block is appended, never merged into the list above:
+       * the fields there describe the GRAPH, and everything below describes
+       * MEASUREMENTS of the state. Keeping them in two blocks is the cheapest
+       * way to stop a reader reading a model output as a count. */
+      if (window.PTEnrich) PTEnrich.render(body, n.name, enrich);
     }
 
     /* ---- filter: states that crest inside the window -------------------- */
@@ -258,10 +280,32 @@
       `experiment and is used here only for timing. The larger perturbation panel is not on this ` +
       `page yet.`,
 
-      `<b>What is deliberately absent.</b> ZSCAPE, ZMAP, DanioCell, Zebrahub and the spatial and ` +
-      `anatomical layers are not integrated. This is the skeleton they will hang on. The first ` +
-      `obstacle is a vocabulary one: this release names ${c.states} states, and only 27 of them ` +
-      `match a ZSCAPE label exactly.`,
+      `<b>The panel's numbers come from the reference itself.</b> Clicking a state opens the ` +
+      `1,220,178-cell v2.2.1 reference: how many of its cells carry that state at each of the ` +
+      `thirteen timepoints from 24 to 48 hpf, which ZSCAPE labels the same cells carry, and how ` +
+      `confidently. Sampling depth varies sixteenfold across the window, so every abundance figure ` +
+      `is a <i>fraction of that timepoint</i>, never a raw count.`,
+
+      `<b>Observed and model-derived are tagged, and never added together.</b> A count of cells ` +
+      `that exist is one kind of number; the output of a fitted abundance model is another. They ` +
+      `disagree about where a state peaks for <b>42 of the 184</b> states where both can be ` +
+      `computed on the three timepoints their grids share.`,
+
+      `<b>The ZSCAPE crosswalk is a join, not a name match.</b> The reference carries the same cell ` +
+      `barcodes ZSCAPE does, so 89% of its cells are ZSCAPE cells re-annotated and the mapping is ` +
+      `counted rather than guessed. It is reported with its ambiguity: ${conf.unique} states map to ` +
+      `one ZSCAPE label, ${conf.dominant} to a dominant one, <b>${conf.split} are split across ` +
+      `several</b>, and 1 has no ZSCAPE cells at all. Uncertain mappings are shown as they are, not ` +
+      `resolved.`,
+
+      `<b>Platt is finer than ZSCAPE, and that is the integration problem.</b> These ${c.states} ` +
+      `states collapse onto only 82 distinct top-matching ZSCAPE labels — ten of them share one. ` +
+      `The relationship is many-to-many and no join key fixes it; the two annotations subdivide the ` +
+      `same cells along different axes. Treating it as a rename would silently merge states.`,
+
+      `<b>What is deliberately absent.</b> ZMAP, DanioCell, Zebrahub and the spatial and anatomical ` +
+      `layers are not integrated. This is the skeleton they hang on, and the crosswalk tables ` +
+      `written for them live outside this page.`,
     ];
     $('notes').innerHTML = notes.map((t) => `<li>${t}</li>`).join('');
 

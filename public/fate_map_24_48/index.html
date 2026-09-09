@@ -143,6 +143,39 @@ canvas{display:block;width:100%;touch-action:none}
 #spark{display:block;margin:4px 0 0}
 #panel .cite{font-size:12.5px;font-style:italic;color:var(--ink-3);margin-top:4px;line-height:1.45}
 
+/* The quantitative block in the panel. Its whole job is to keep two kinds of
+   number apart, so provenance gets a tag on every heading that carries one and
+   the two tags are set in different weights, not different hues — colour is
+   already spent on selection here. */
+.enrich{margin-top:20px;padding-top:14px;border-top:1px solid var(--rule)}
+.e-head{display:flex;align-items:baseline;gap:8px;font-family:var(--sans);font-size:9.5px;
+        letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin:16px 0 4px}
+.e-head:first-child{margin-top:0}
+.prov{font-family:var(--sans);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;
+      padding:1px 5px;border-radius:2px;white-space:nowrap}
+.prov.obs{background:var(--ink);color:var(--paper)}
+.prov.model{background:transparent;color:var(--ink-3);border:1px solid var(--rule)}
+.conf{font-family:var(--sans);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;
+      padding:1px 5px;border:1px solid var(--rule);border-radius:2px;color:var(--ink-2)}
+.conf.unique{border-color:var(--ink);color:var(--ink)}
+.conf.split,.conf.unmapped,.conf.thin{border-color:var(--select);color:var(--select)}
+.e-note{font-size:12px;font-style:italic;color:var(--ink-3);margin:0 0 8px;line-height:1.4}
+.e-foot{font-size:11.5px;font-style:italic;color:var(--ink-3);margin:5px 0 0;line-height:1.45}
+.e-empty{font-size:13px;font-style:italic;color:var(--ink-3);margin:2px 0 0}
+.e-kv{display:flex;gap:26px;margin:2px 0 0}
+.e-kv{gap:20px}
+.e-kv .e-peak{display:flex;flex-direction:column;align-items:flex-start;gap:3px;font-size:15px}
+.e-kv .e-peak b{font-weight:600}
+.e-grid{font-family:var(--sans);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
+        color:var(--ink-3)}
+.xw-row{margin:0 0 9px}
+.xw-head{display:flex;align-items:baseline;gap:8px;font-size:13.5px;line-height:1.35}
+.xw-name{flex:1}
+.xw-pct{font-family:var(--sans);font-size:11px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.xw-bar{height:3px;background:var(--paper-deep);margin:3px 0 2px}
+.xw-bar i{display:block;height:3px;background:var(--ink)}
+.xw-back{font-size:11px;color:var(--ink-3);font-style:italic}
+
 section.notes{margin:104px auto 0;max-width:660px}
 section.notes h2{font-size:13px;font-family:var(--sans);letter-spacing:.24em;text-transform:uppercase;
                  color:var(--ink-3);font-weight:400;margin:0 0 18px;
@@ -242,6 +275,7 @@ section.notes li b{color:var(--ink);font-weight:600}
 
 <script src="/fate_map_24_48/pt-data.js"></script>
 <script src="/fate_map_24_48/pt-graph.js"></script>
+<script src="/fate_map_24_48/pt-enrich.js"></script>
 <script src="/fate_map_24_48/pt-main.js"></script>
 </body>
 </html>

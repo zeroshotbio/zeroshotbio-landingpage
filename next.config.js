@@ -152,6 +152,13 @@ const nextConfig = {
       // SOURCE + rebuild: scripts/build_fate_map_24_48.py, reading
       // combined_state_graphs.rds, edge_lit_evidence.tsv and the control arm of the
       // lmx1b contrast table from s3://zsb-silver-warehouse/platt/v2.2.1/.
+      // The click panel's quantitative half comes from a SECOND pass,
+      // scripts/build_fate_map_24_48_enrich.py, which opens the 1,220,178-cell
+      // reference CDS and joins it to ZSCAPE on the shared cell barcodes. That
+      // script has a heavy prerequisite (the CDS extraction) and writes enrich.json
+      // here plus reusable crosswalk tables to /data/fate_map/ on the analysis
+      // instance. enrich.json is OPTIONAL at runtime: without it the page degrades
+      // to the first-pass panel rather than failing.
       // Read public/fate_map_24_48/NOTES.md before changing the encoding of an
       // edge — the literature verdict in the stroke is the whole argument.
       { source: '/fate_map_24_48', destination: '/fate_map_24_48/index.html' },

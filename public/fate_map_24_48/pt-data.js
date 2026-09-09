@@ -144,6 +144,11 @@
 
   async function load() {
     const [graph, meta] = await Promise.all([getJSON('graph.json'), getJSON('meta.json')]);
+    /* The enrichment is a separate pass with a heavy prerequisite (the 1.2M-cell
+     * CDS). The page draws without it, so a missing or stale enrich.json degrades
+     * to the first-pass panel rather than failing the plate. */
+    let enrich = null;
+    try { enrich = await getJSON('enrich.json'); } catch (err) { console.warn('no enrich.json:', err.message); }
 
     /* Cross-check the two files against each other rather than trusting either.
      * A half-deployed asset set should fail loudly, not draw something
@@ -151,7 +156,7 @@
     if (graph.nodes.length !== meta.counts.states || graph.edges.length !== meta.counts.edges) {
       throw new Error('graph.json disagrees with meta.json — a stale file is cached');
     }
-    return { graph: layout(graph), meta };
+    return { graph: layout(graph), meta, enrich };
   }
 
   global.PT = { load, BASE };
