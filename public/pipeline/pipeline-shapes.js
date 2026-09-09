@@ -5823,7 +5823,14 @@ function magnetRack(g, r){
 
    `c` is {x,y,w,d,h} plus cols/rows for the block and, optionally, pips/lit for
    the readout. Returns the port a flow can be aimed at, one aiming point per
-   well, and the things the machine does. */
+   well, and the things the machine does.
+
+   NOBODY WEARS IT AT THE MOMENT. B8a, C1 and C2 were each asked from the page
+   to take their machine off the bench and leave the magnification, and C2 was
+   the last of the three. It is kept whole rather than deleted because what
+   those requests rejected was a shut instrument standing on a tile with
+   nothing to show, not the component — a station that ever has to draw a
+   cycler being loaded still wants this one. */
 function thermalCycler(g, c){
   const COLS=c.cols||4, ROWS=c.rows||2;
   const PIPS=c.pips||8, LIT=c.lit===undefined?6:c.lit;
@@ -7020,7 +7027,7 @@ DRAW.fragmentligate = drawFragmentLigate;
    growing-chain motif is deliberately absent, and so is any figure that
    would put this step inside the 48 x 96 x 96 that makes a cell identity.
    What is drawn instead is the plastic a bench actually has for it — an
-   index plate, a strip, a cycler — and, over it, the finished construct.
+   index plate and a strip — and, over it, the finished construct.
 
    THE PLATE IS 48 INDEXES ON 96 WELLS AND THE DRAWING SAYS SO BY SHAPE. Six
    columns hold liquid and six are drawn empty, which is what a half-filled
@@ -7040,17 +7047,22 @@ DRAW.fragmentligate = drawFragmentLigate;
    ONE WELL, ONE TUBE, AND THAT IS THE WHOLE REACTION. The fan of eight this
    station used to draw said "eight sublibraries, eight indexes", which is
    true and is on the record; but it also put eight lines over a plate and
-   made the step look like a deal. Eight reactions stand in the block and
-   eight tubes stand on the rack. The drawing follows ONE of them, because
-   the glass above holds ONE molecule and a reader who cannot say which tube
-   it came out of cannot read the glass.
+   made the step look like a deal. Eight tubes stand on the rack and eight
+   reactions get made up. The drawing follows ONE of them, because the glass
+   above holds ONE molecule and a reader who cannot say which tube it came
+   out of cannot read the glass.
 
-   THE CYCLER IS B8's, AS A COMPONENT, and it is simply running. Same chassis,
-   same block, same lid, same refusal on the readout: thirteen pips are drawn
-   and seven fill, which is the floor of the band section 3.5 sets off the
-   cDNA concentration B9 measured and did not archive. It is laid out as one
-   row of eight rather than four by two, so the plastic on the bench and the
-   plastic in the block are the same consumable.
+   THE CYCLER CAME OFF AT A REQUEST FROM THE PAGE, and the request is the
+   third of its kind on this row: B8a's machine went, C1's went, and this one
+   was asked for the same way — remove it, and keep the barcoding in the black
+   inset. What stood here was B8's chassis running B8's readout, thirteen pips
+   drawn and seven filled off the concentration section 3.5 branches on. It
+   was the one object on the tile that could not show its own step: an
+   indexing PCR is invisible from outside a shut lid, and the index it adds is
+   drawn twice over — once as the well that empties into the tube, once as the
+   two violet blocks the construct grows above. The plate and the strip stay
+   because they are what the reader can count; the machine they went into was
+   only the room they went into.
 
    THE GLASS IS THE POINT. Every other lens on this row shows a piece of the
    molecule — the chips, a fragment, an adapter arriving. This is the first
@@ -7088,10 +7100,10 @@ DRAW.fragmentligate = drawFragmentLigate;
    runs out, and to the right of B8a's own glass, which is the only other
    thing hanging in this stretch of sky.
 
-   Reuses thermalCycler from B8, skirtSlab / plateGrid / drawWell from the
-   plate set, flowLine / setFanLine from the fan, and ellipseAt from the A2
-   clutch block. Spends --ch4, --ch6, --ch8, --ch10 and --ch11, which are
-   declared on /molecular_pipe — the only page carrying a node wearing this.
+   Reuses skirtSlab / plateGrid / drawWell from the plate set, flowLine /
+   setFanLine from the fan, and ellipseAt from the A2 clutch block. Spends
+   --ch4, --ch6, --ch8, --ch10 and --ch11, which are declared on
+   /molecular_pipe — the only page carrying a node wearing this.
    ------------------------------------------------------------------ */
 function drawIndexPcr(g,n){
   /* EVERY OFFSET IS EITHER A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC,
@@ -7102,7 +7114,7 @@ function drawIndexPcr(g,n){
   const clamp=x=>x<0?0:x>1?1:x;
   const ease=u=>u*u*(3-2*u);
 
-  const COLS=12, ROWS=8, WET=6, PER=8, CYCLES=7;
+  const COLS=12, ROWS=8, WET=6, PER=8;
   const CDNA ="var(--ch6)";                 // what B8 made, B9 measured, C1 cut
   const UDI  ="var(--ch10)";                // the index, on the plate and at both ends
   const MIXED="color-mix(in oklab, var(--ch10) 55%, var(--ch6))";
@@ -7111,19 +7123,14 @@ function drawIndexPcr(g,n){
   /* back to front, because on an isometric grid the order things are appended
      in is the order they occlude in */
 
-  /* ---- THE CYCLER, FURTHEST BACK ------------------------------------------ */
-  const cyc={x:n.x+n.w*0.64, y:n.y-n.d*2.20, w:n.w*1.42, d:n.d*0.82,
-             h:n.h*0.44, cols:PER, rows:1, pips:13, lit:CYCLES};
-  const M=thermalCycler(g,cyc);
-  M.setLid(1);                              // it is running, and it stays shut
-  M.setWells(1);                            // eight reactions, all of them cDNA
-
   /* ---- THE STRIP, ON ITS OWN LOW RACK -------------------------------------
      Behind the tile and thrown left, which is the only clear ground this
-     station has: the plate takes the near right, the cycler the far right,
-     and the tile itself is barely wider than two tubes. The rack is what a
-     strip stands on — eight tubes floating over a tile they are three times
-     the width of would be a strip nobody had put down anywhere. */
+     station has: the plate takes the near right and the tile itself is barely
+     wider than two tubes. The rack is what a strip stands on — eight tubes
+     floating over a tile they are three times the width of would be a strip
+     nobody had put down anywhere. It keeps the ground it was given when a
+     cycler stood behind it, because what set this position was the plate and
+     the tile, not the machine. */
   const rack={x:n.x-n.w*0.55, y:n.y-n.d*1.15, w:n.w*1.60, d:n.d*0.42, h:n.h*0.30};
   paint(g,rack.x,rack.y,rack.w,rack.d,rack.h,SKIN.works);
   const RT=n.w*0.070, RH=n.h*0.62, WZ1=rack.h+RH*0.88, WZ0=WZ1-n.h*0.16;
@@ -7359,11 +7366,6 @@ function drawIndexPcr(g,n){
     const tk=take*(1-gone);
     setTube(tubes[0], 0.52+0.16*ease(tk), 0.66+0.14*tk);
     tubes[0].liq.setAttribute("fill", tk>0.7?MIXED:CDNA);
-    /* the cycler runs the whole loop at its own rate, seven cycles to the
-       band's thirteen, because that floor is all the record supports */
-    const cyk=t/T*CYCLES;
-    M.setTemp(0.5+0.5*Math.sin(2*Math.PI*cyk-Math.PI/2), 1);
-    M.setPips(Math.min(CYCLES,Math.floor(cyk)));
 
     parts.forEach(p=>{
       const u=ease(clamp((t-p.at)/(STEP*1.6)));

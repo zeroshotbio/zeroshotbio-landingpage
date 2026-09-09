@@ -206,7 +206,15 @@ const NODES = [
    UDI · P7. Nothing in that contradicts anything here; the read structure the
    bar spells out is S's, off Appendix B, and it is S's record that carries it.
    What the bar adds to this page is arrangement, not a claim: it is the only
-   place on the map where the whole molecule is drawn at once. */
+   place on the map where the whole molecule is drawn at once.
+
+   THE DRAWING THEN LOST ITS MACHINE, from the same button and by the same
+   rule: the request took the cycler off the bench and kept the barcoding in
+   the black inset, which is what B8a and C1 were asked for one after the
+   other. The record does not move for it. It never cited an instrument — the
+   cycle band below is section 3.5's table and not a readout — and the plate,
+   the spent well and the transfer that carry the rest of the drawing are all
+   still there to be counted against it. */
 {id:"R4p", key:"C2", group:"Sequencing library prep", shape:"indexpcr", name:"Round 4 — indexing PCR", x:17.1, y:R2, lane:"r2", w:0.72, d:0.72, h:0.42,
  sub:"UDI plate · applied by PCR, not in-cell",
  does:"The fourth barcode. It identifies the sublibrary rather than the sample, it is added by PCR long after the cells were lysed, and it arrives as a standard Illumina index — which is why the read appears to carry only three barcodes when the cell identity is really four.",
