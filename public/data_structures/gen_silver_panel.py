@@ -26,14 +26,13 @@ def row(path,size,kind,note,depth=1):
 # unmerged branches; the rest are bytes in a bucket with their custody written down
 # nowhere. It is the one thing a reader deciding what to work on next needs, so it is
 # on the header rather than three paragraphs into the panel.
-# A manifest in zsb-bronze names these bytes. All eighteen sit on unmerged branches — the
-# four originals and the fourteen opened 2026-09-09 — which is the same state the first four
-# were in when this marker was introduced, so they read the same way. The three without one
-# are the three that are not single-cell transcriptomes, which is not a coincidence: a custody
-# module for imaging or anatomy would be the first of its kind.
+# A manifest in zsb-bronze names these bytes. All nineteen sit on unmerged branches — the
+# four originals and the fifteen opened 2026-09-09 — which is the same state the first four
+# were in when this marker was introduced, so they read the same way. The three still without
+# one are keller/, zfap/ and tomoseq/.
 PINNED={'chemfish/','zscape/','zebrahub/','daniocell/','platt/','zmap/','wagner/','raj/',
         'linnaeus/','trunk30hpf/','micdropseq/','zesta/','farrell/','zcl2/','celloracle/','zcl1/',
-        'farnsworth/','zfin/'}
+        'farnsworth/','zfin/','itec/'}
 OURS={'megafin/','minifin/','megafin-1/'}
 def custody(name):
     if name in OURS: return ''
@@ -257,6 +256,8 @@ SIMPLE=[
  ("keller/","#97BF69","bdml/","nuclear positions, divisions and tracks — the physical embryo",
    [("zebrafish_in_toto_wt_bdml3.0.zip","whole embryo, wild type"),
     ("SHA256SUMS.published","SSBD's own digests — 7 of 7 agree with these bytes")]),
+ ("itec/","#D96C2C","mendeley_tg55phtk4r_v1/","XYZ + parent→child links, 1,000 frames of one embryo",
+   [("Evaluation results of ITEC.zip","90 CSVs — 4 trackers, 4 movies, and the curated ground truth")]),
  ("raj/","#BF69A6","GSE158142/","brain development + scGESTALT lineage recording",
    [("GSE158142_RAW.tar","213 members"),
     ("GSE158142_URD_hypoND.rds.gz","the authors' own URD trajectory")]),
@@ -376,8 +377,10 @@ for k in ('chemfish/','zmap/','micdropseq/','platt/','zscape/','zebrahub/','zcl2
 # for anatomy alone would be a tenth of a grid unit.
 out.append(sec("Acquired \u00b7 Imaging / physical tracking",
                "no transcriptome at all \u2014 light-sheet imaging tracked to per-nucleus positions, "
-               "divisions and lineage links. Nothing in the single-cell toolchain opens it"))
-out.append(B['keller/'])
+               "divisions and lineage links. Nothing in the single-cell toolchain opens it. keller/ is "
+               "the measurement; itec/ is four reconstructions OF a measurement, scored against a human"))
+for k in ('keller/','itec/'):
+    out.append(B[k])
 out.append(sec("Acquired \u00b7 Spatial transcriptomics",
                "where a transcript is, measured rather than inferred. zesta/ is mixed \u2014 it carries a "
                "dissociated scRNA half too; tomoseq/ is RNA-seq but NOT single-cell, one observation "
