@@ -6128,6 +6128,14 @@ DRAW.capture = drawCapture;
    barcoded molecule becomes two and then four. That is the whole of the
    request, so it is the whole of the drawing.
 
+   ASKED FOR A SECOND TIME, from "Edit visual", and the second request replaces
+   what is in the glass. It said three things: draw the strands the way B8 next
+   door draws them; start with two or three of them and show the polymerase
+   binding and copying; and end on a cloud, because the thing the reader is
+   meant to come away with is that there is now an enormous amount of this
+   molecule. So the glass now runs three strands, three enzymes and three
+   copies, and then fills.
+
    THE BLOCK IS DELIBERATELY SHUT AND DELIBERATELY DULL. B8's own header says
    why a closed lid at this size says nothing, and it is still true — nothing
    about an amplification is visible from outside a machine. What is different
@@ -6150,16 +6158,28 @@ DRAW.capture = drawCapture;
    is under this glass is recognisably the molecule the beads let go one
    station back rather than a new one — and what copies here copies WITH them,
    which is the only reason an amplified library still knows which cell it came
-   from. Nothing else in the glass carries colour; the biotin B8 drew in gold is
-   not redrawn, because the request named three chips and nothing else.
+   from. THE STRAND IS B8's ENTIRE, gold tip included, because that is what the
+   second request asked for and because two neighbouring glasses that draw the
+   same molecule two ways make the reader ask which one it is. The gold marks
+   the molecule; it is not a claim that a tag survives into every copy, and the
+   record says so.
 
-   FOUR STRANDS STAND IN FOR THE WHOLE REACTION. Each generation appears behind
-   the last, a little smaller and a good deal fainter, so the newest is at the
-   back of a stack that plainly carries on past it — which is how the picture
-   says exponential without drawing the copies. AND THE RETURN TO ONE IS A CUT.
-   Playing the doubling backwards would show copies merging, and that is the one
-   thing a PCR never does; so the state is a pure function of the clock and the
-   wrap puts a single strand back on the stage in one frame.
+   THE ENZYME IS DRAWN THE WAY B8 DRAWS ITS BEAD — a solid pale body in --fg
+   with a hole cut in it in --bg — because a protein that grips something is
+   already an idiom on this bench and a second one would read as a second kind
+   of object. Where the bead's hole is a pocket that shuts, this one is a
+   channel the strand runs through, and it is the channel travelling the length
+   of the template that is the copying.
+
+   THE CLOUD IS THE POINT AND IT ARRIVES IN THREE WAVES, each larger, smaller
+   and fainter than the last, each blooming outward past the ring where it is
+   clipped. Three waves rather than thirty strands fading one by one, because a
+   wave is three attribute writes a frame instead of thirty and the reader
+   cannot count either one. What it says is the only number this station is
+   allowed: not eight, not four, more than can be drawn. AND THE RETURN TO
+   THREE IS A CUT. Playing an amplification backwards shows copies merging and
+   that is the one thing a PCR never does; so the state is a pure function of
+   the clock and the wrap puts three strands back on the stage in one frame.
 
    WHERE THE GLASS HANGS IS FORCED, the way it is for every station in this
    stretch, and the thing that forces it is the NAMES. The ground is spoken for
@@ -6186,6 +6206,8 @@ function drawPcrAmplify(g,n){
      B8's but for the height. */
   const SC=n.w/0.72;
   const clamp=x=>x<0?0:x>1?1:x;
+  const ease=u=>u*u*(3-2*u);
+  const r=rng(97);
 
   /* ---- THE CONNECTOR ------------------------------------------------------
      A stub in from B8's magnetic rack, which stands forward and left of this
@@ -6267,67 +6289,157 @@ function drawPcrAmplify(g,n){
   lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,
     fill:"var(--bg)","fill-opacity":".92"}));
 
-  /* ---- ONE MOLECULE, AND THEN FOUR ----------------------------------------
-     The strand is B8's: a pale wavy spine with three chips in a row near one
-     end. GEN is the generations — one strand, then one more behind it, then two
-     more behind that — and each entry is where that copy lies, so every group
-     is born with its own transform and the ticker owns nothing but an opacity. */
-  const HL=17, TIPX=-HL+2.4, CHIP=["var(--ch8)","var(--ch11)","var(--ch4)"];
+  /* the cloud grows out past the ring and has to stop existing there rather
+     than at the edge of the screen. Uniqued the way B8's glass is: a checker
+     draws this shape twice, at two sizes, into one document. */
+  const cid=`ampglass${++UID}`;
+  const cp=el("clipPath",{id:cid});
+  cp.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY}));
+  lens.appendChild(cp);
+  const stage=el("g",{"clip-path":`url(#${cid})`});
+  lens.appendChild(stage);
+
+  /* ---- THE STRAND IS B8's, BUILT B8's WAY ---------------------------------
+     Same half-length, same wobble, same three chips in the middle, same gold
+     drop at the tip — see the header. One builder, used for the templates, for
+     the copies and for every strand in the cloud, because the moment there are
+     two ways of drawing this molecule on this bench the reader has to work out
+     whether the difference means anything. */
+  const HL=15, TIP=HL+5.4, CHIP=["var(--ch8)","var(--ch11)","var(--ch4)"];
   const spine=k=>{ let d=`M ${-HL} 0`;
     for(let s=1;s<=10;s++)
-      d+=` L ${(-HL+2*HL*(s/10)).toFixed(1)} ${(Math.sin(s*0.86+k)*2.2).toFixed(1)}`;
+      d+=` L ${(-HL+2*HL*(s/10)).toFixed(1)} ${(Math.sin(s*0.86+k)*2.1).toFixed(1)}`;
     return d; };
-  const GEN=[[[5,13,-7]],
-             [[-7,-1,8]],
-             [[-18,-15,-11],[9,-17,5]]];
-  /* back to front, because paint order is depth here as much as it is on the
-     grid: the newest generation is drawn first and everything since lands over
-     it. Smaller and fainter each time, so the fourth strand sits at the back of
-     a stack the reader can see carries on past it. */
-  const born=[];
-  for(let gi=GEN.length-1;gi>=0;gi--){
-    const sc=1-gi*0.09, op=[0.95,0.60,0.36][gi];
-    GEN[gi].forEach((p,i)=>{
-      const sg=el("g",{opacity:gi?"0":op.toFixed(2),transform:
-        `translate(${p[0]},${p[1]}) rotate(${p[2]}) scale(${sc.toFixed(2)})`});
-      lens.appendChild(sg);
-      sg.appendChild(el("path",{d:spine(gi*1.7+i*0.9),fill:"none",
-        stroke:"var(--c-top)","stroke-width":"1.5","stroke-opacity":".75",
-        "stroke-linecap":"round"}));
-      CHIP.forEach((c,k)=>sg.appendChild(el("rect",{x:(TIPX+k*6.2).toFixed(1),
-        y:"-1.9",width:"4.6",height:"3.8",rx:"1.1",fill:c,"fill-opacity":".9",
-        stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".5"})));
-      born.push({g:sg, gen:gi, op});
-    });
+  const strand=(parent,k,tr,op)=>{
+    const sg=el("g",{transform:tr,opacity:op});
+    parent.appendChild(sg);
+    sg.appendChild(el("path",{d:spine(k),fill:"none",stroke:"var(--c-top)",
+      "stroke-width":"1.5","stroke-opacity":".75","stroke-linecap":"round"}));
+    CHIP.forEach((c,i)=>sg.appendChild(el("rect",{x:(-8.4+i*6.2).toFixed(1),
+      y:"-1.9",width:"4.6",height:"3.8",rx:"1.1",fill:c,"fill-opacity":".9",
+      stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".5"})));
+    sg.appendChild(el("path",{d:`M ${HL-0.6} 0 C ${HL+1.4} -3.3 ${TIP} -2.2 ${TIP} 0 `+
+      `C ${TIP} 2.2 ${HL+1.4} 3.3 ${HL-0.6} 0 Z`,fill:"var(--ch3)",
+      "fill-opacity":".95",stroke:"var(--stroke)","stroke-width":".5",
+      "stroke-opacity":".5"}));
+    return sg;
+  };
+
+  /* ---- THE CLOUD, BORN WHERE IT WILL END UP -------------------------------
+     Every strand in it gets its real place at build time and the waves carry
+     nothing but an opacity and a bloom, which is what keeps a group of thirty
+     invisible strands from dragging the selection halo across the map. Seeded,
+     so the scatter is the same drawing every time it is drawn. Sorted by
+     radius so the wave that arrives first is the one nearest the middle: an
+     amplification fills outwards from what is already there. */
+  const CLOUD=[];
+  for(let i=0;i<36;i++){
+    const a=r()*6.283, rad=0.16+1.20*Math.sqrt(r());
+    CLOUD.push({x:Math.cos(a)*LX*1.30*rad, y:Math.sin(a)*LY*1.30*rad,
+                rot:r()*360, rad, k:r()*6});
   }
+  CLOUD.sort((p,q)=>p.rad-q.rad);
+  const waves=[]; let ci=0;
+  [{n:12,sc:0.62,op:0.55},{n:12,sc:0.52,op:0.42},{n:12,sc:0.44,op:0.30}]
+    .forEach(w=>{
+      const wg=el("g",{transform:"scale(0.74)",opacity:"0"});
+      stage.appendChild(wg);
+      for(let j=0;j<w.n;j++,ci++){ const c=CLOUD[ci];
+        strand(wg,c.k,`translate(${c.x.toFixed(1)},${c.y.toFixed(1)}) `+
+          `rotate(${c.rot.toFixed(0)}) scale(${w.sc})`,w.op.toFixed(2)); }
+      waves.push(wg);
+    });
+
+  /* ---- THREE TEMPLATES, THREE ENZYMES, THREE COPIES ------------------------
+     The cloud is drawn first and everything countable lands over it, because
+     paint order is depth in a glass as much as it is on the grid: the three a
+     reader is meant to be able to follow must never end up behind the mass
+     they explain. The copy is born beside its template at full geometry and
+     invisible, so the ticker states an opacity and a place rather than
+     building anything mid-flight. */
+  const TPL=[[-6,-22,-13],[-9,-2,11],[-3,18,-6]];
+  const mol=TPL.map((p,i)=>({
+    t:strand(stage,i*1.9,`translate(${p[0]},${p[1]}) rotate(${p[2]})`,"1"),
+    c:strand(stage,i*1.9+0.7,
+        `translate(${p[0]},${p[1]+10}) rotate(${p[2]})`,"0"),
+    at:p, ph:r()*6.283
+  }));
+
+  /* the enzyme: B8's bead grammar — solid pale body, hole cut in --bg — but
+     the hole is a channel rather than a pocket, and the two feet either side of
+     it are what makes it sit ON the strand instead of beside it */
+  const POLY=`M -5.4 -1.4 C -5.4 -7.2 5.4 -7.2 5.4 -1.4 L 5.4 1.6 `+
+             `C 5.4 3.6 3.0 4.0 2.4 2.2 C 1.5 -0.4 -1.5 -0.4 -2.4 2.2 `+
+             `C -3.0 4.0 -5.4 3.6 -5.4 1.6 Z`;
+  const pol=[[-70,-46],[74,-8],[-72,44]].map(e=>{
+    const pg=el("g",{transform:`translate(${e[0]},${e[1]})`,opacity:"0"});
+    stage.appendChild(pg);
+    pg.appendChild(el("path",{d:POLY,fill:"var(--fg)","fill-opacity":".82",
+      stroke:"var(--stroke)","stroke-width":".6","stroke-opacity":".5"}));
+    return {g:pg, from:e};
+  });
 
   /* the ring last, over everything, so nothing inside can soften its own edge */
   lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,fill:"none",
     stroke:"var(--fg2)","stroke-width":"1.5","stroke-opacity":".85"}));
 
   /* ---- TIMING -------------------------------------------------------------
-     Slow, because the figure is a count and a reader has to be able to make it:
-     one strand alone long enough to be one, a beat to double, the same again,
-     and then the longest beat of all on four. The wrap is the cut back to one —
-     see the header — and nothing fades out on the way.
+     Four beats, and each one has to be legible before the next starts: three
+     strands adrift long enough to be counted, the enzymes in from outside the
+     field, one pass down each template with a copy appearing as it goes, and
+     then the fill. The three stagger by a fraction of a beat so the pass reads
+     as three enzymes working rather than one event in triplicate.
 
-     PLACEMENT IS A PURE FUNCTION OF THE CLOCK, so a frame long enough to skip a
-     whole beat — a tab coming back, a step in trace mode — cannot leave a
-     generation half arrived. */
-  const ALONE=2.2, FADE=0.7, GAP=1.7, HOLD=3.6;
-  const t1=ALONE, t2=t1+FADE+GAP, TOT=t2+FADE+HOLD;
-  /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion never
-     advances it, so whatever t begins at is the whole station for that reader,
-     and for this one it has to be the four — the frame the request asks the
-     figure to hold on. */
-  let t=t2+FADE+HOLD*0.5;
-  const run=dt=>{
-    t=(t+dt)%TOT;
-    born.forEach(b=>{
-      const f=b.gen===0?1:clamp((t-(b.gen===1?t1:t2))/FADE);
-      b.g.setAttribute("opacity",(b.op*f).toFixed(2));
+     PLACEMENT IS A PURE FUNCTION OF THE CLOCK. Everything is stated from t
+     alone rather than nudged from where it was, so a frame long enough to skip
+     a whole beat — a tab coming back, a step in trace mode — cannot leave an
+     enzyme halfway down a template it has already finished. */
+  const T_BIND=1.5, BINDD=1.0, STAG=0.22, T_SYN=2.7, SYND=1.7,
+        T_CLOUD=5.0, CWAVE=0.45, CFADE=0.9, HOLD=3.4;
+  const TOT=T_CLOUD+2*CWAVE+CFADE+HOLD;
+  const rot=(a,x,y)=>[x*Math.cos(a)-y*Math.sin(a), x*Math.sin(a)+y*Math.cos(a)];
+
+  const place=(t,ph)=>{
+    mol.forEach((m,i)=>{
+      const ang=m.at[2], A=ang*Math.PI/180;
+      const px=m.at[0]+Math.cos(ph*0.8+m.ph)*1.2,
+            py=m.at[1]+Math.sin(ph*0.6+m.ph)*1.2;
+      m.t.setAttribute("transform",
+        `translate(${px.toFixed(1)},${py.toFixed(1)}) rotate(${ang})`);
+      /* the copy comes off the template as the channel passes, and drifts a
+         little clear of it — a copy left lying exactly alongside its template
+         reads as one thick strand rather than two */
+      const s=ease(clamp((t-T_SYN-i*STAG)/SYND));
+      const off=rot(A, -2+4*s, 6+5*s);
+      m.c.setAttribute("transform",
+        `translate(${(px+off[0]).toFixed(1)},${(py+off[1]).toFixed(1)}) `+
+        `rotate(${(ang+6*s).toFixed(1)})`);
+      m.c.setAttribute("opacity",s.toFixed(2));
+      /* the enzyme rides the template's own frame, so it stays on the strand
+         while the strand is drifting, and it leaves once the cloud is the
+         thing being looked at */
+      const b=ease(clamp((t-T_BIND-i*STAG)/BINDD));
+      const on=rot(A, -HL+2+(2*HL-2)*s, -1.6);
+      const bx=pol[i].from[0]+(px+on[0]-pol[i].from[0])*b;
+      const by=pol[i].from[1]+(py+on[1]-pol[i].from[1])*b;
+      pol[i].g.setAttribute("transform",
+        `translate(${bx.toFixed(1)},${by.toFixed(1)}) rotate(${ang})`);
+      pol[i].g.setAttribute("opacity",
+        (0.9*clamp(b/0.25)*(1-clamp((t-T_CLOUD)/CFADE))).toFixed(2));
+    });
+    waves.forEach((wg,wi)=>{
+      const f=ease(clamp((t-T_CLOUD-wi*CWAVE)/CFADE));
+      wg.setAttribute("opacity",f.toFixed(2));
+      wg.setAttribute("transform",`scale(${(0.74+0.26*f).toFixed(3)})`);
     });
   };
+
+  /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion never
+     advances it, so whatever t begins at is the whole station for that reader,
+     and for this one it has to be the full glass — the frame the request asks
+     the figure to end on. */
+  let t=T_CLOUD+2*CWAVE+CFADE+HOLD*0.5, ph=0;
+  const run=dt=>{ t=(t+dt)%TOT; ph+=dt*1.7; place(t,ph); };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }

@@ -156,12 +156,20 @@ const NODES = [
 
    THE KEY IS A SUFFIX. It lands between B8 and B9 and thirteen of this row's
    keys are lifted from pipeline-data.js with the prose that cross-references
-   them, so B9 onwards keep their numbers. */
+   them, so B9 onwards keep their numbers.
+
+   ASKED FOR AGAIN, from "Edit visual", and the second request changed what is
+   in the glass without touching what the record claims: draw the strand the
+   way B8 draws it, start with two or three, show the polymerase binding and
+   copying, and end on a cloud rather than on a count. So the count has come
+   out of `sub` and `cond` — a cloud is the honest figure for a reaction whose
+   product is billions, and a number on the glass was always the part of this
+   drawing that said more than the request did. It still names no protocol. */
 {id:"AMP", key:"B8a", group:"cDNA capture and amplification", shape:"pcramplify", name:"PCR amplification", x:13.35, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
- sub:"free DNA in a tube · one becomes two becomes four",
- does:"One barcoded molecule in a closed block becomes two, then four, and keeps going. The three chips it carries are copied with it, which is why an amplified library still knows which cell each molecule came from. This is bulk PCR on free DNA in a tube — the cells were lysed at B7 and there is nothing in here holding anything — so it is not the in-cell chemistry the three barcoding rounds draw, and the machine is deliberately not one of their plates or heated blocks.",
- built:"Nothing to cite. The request that asked for this station described an object and a motion — a thermal cycler with the lid down and one indicator lit, a connector in from the magnetic rack, and a magnified strand doubling twice — and named no manual section, no cycle count, no polymerase, no volume and no instrument, so this record names none either. The amplification this row does carry is B8's, off sections 2.1 to 2.4, and the cycle table that governs it is on that record.",
- cond:"Asked for from the page rather than read off an artefact, so what it carries is a figure and not a measurement. The four strands are the drawing's convenience: an amplification is billions of molecules and a picture of eight would be a picture of eight, so each generation stands behind the last and the count on the glass says nothing about the reaction. What the request does not settle is whether this is a step of its own or a second view of the word amplify already in B8's name — B8's built line is where the amplification is described, this record makes no protocol claim, and nothing downstream depends on which it is."},
+ sub:"free DNA in a tube · a few strands become a cloud",
+ does:"A polymerase binds each barcoded molecule in a closed block, runs the length of it and leaves a copy behind, and the glass fills. The three chips each strand carries are copied with it, which is why an amplified library still knows which cell each molecule came from. This is bulk PCR on free DNA in a tube — the cells were lysed at B7 and there is nothing in here holding anything — so it is not the in-cell chemistry the three barcoding rounds draw, and the machine is deliberately not one of their plates or heated blocks.",
+ built:"Nothing to cite. The request that asked for this station described an object and a motion — a thermal cycler with the lid down and one indicator lit, a connector in from the magnetic rack, and a magnified strand doubling twice — and named no manual section, no cycle count, no polymerase, no volume and no instrument, so this record names none either. A second request from the page later replaced what is under the glass with three strands, an enzyme on each and a cloud, and it named no protocol either. The amplification this row does carry is B8's, off sections 2.1 to 2.4, and the cycle table that governs it is on that record.",
+ cond:"Asked for from the page rather than read off an artefact, so what it carries is a figure and not a measurement. Three strands start the picture and a cloud ends it, and neither number is a number: an amplification is billions of molecules, so the three are there to be followed and the cloud is there to say more than can be drawn. The gold drop at each tip is B8's biotin, drawn on every strand because this glass and the one next door draw the same molecule the same way — it marks the molecule, not a claim about which end-tags survive into a copy. What the request does not settle is whether this is a step of its own or a second view of the word amplify already in B8's name — B8's built line is where the amplification is described, this record makes no protocol claim, and nothing downstream depends on which it is."},
 
 {id:"QCD", key:"B9", group:"cDNA capture and amplification", shape:"quantify", name:"Quantify the cDNA", x:14.1, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
  sub:"Qubit + TapeStation · sets the cycle count",
