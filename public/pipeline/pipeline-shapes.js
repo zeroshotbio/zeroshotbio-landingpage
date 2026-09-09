@@ -7120,9 +7120,9 @@ DRAW.fragmentligate = drawFragmentLigate;
    THE GLASS IS THE POINT. Every other lens on this row shows a piece of the
    molecule — the chips, a fragment, an adapter arriving. This is the first
    and only place the whole thing is visible, so it is drawn as a construct
-   map and not as a strand: a horizontal labelled bar assembling left to
-   right, in READ ORDER, which is what makes thirteen blocks legible as one
-   sentence rather than as thirteen decorations. The three barcode chips keep
+   map and not as a strand: a horizontal labelled bar laid out in READ ORDER,
+   which is what makes thirteen blocks legible as one sentence rather than as
+   thirteen decorations. The three barcode chips keep
    --ch8, --ch11 and --ch4, the three this row gives the in-situ rounds
    wherever it draws a strand; the two UDI blocks share the plate's violet
    and are the same index read from both ends; everything structural — P5,
@@ -7132,6 +7132,17 @@ DRAW.fragmentligate = drawFragmentLigate;
    duplex drawn while the top strand is still being assembled would say the
    second strand was being built alongside the first, which is not what a
    PCR does.
+
+   IT DOES NOT ARRIVE IN READ ORDER, BECAUSE IT IS NOT BUILT HERE. What is in
+   the tube when this station starts is the seven middle blocks — the insert
+   and the three barcodes the in-situ rounds already put on it — so they are
+   under the glass BEFORE the index is pipetted in, and the tube is drawn
+   holding them. The six that flank them arrive after the transfer, growing
+   outward from the junction a pair at a time, each half from its own end of
+   the field: P5-UDI-R1 on one side and R2-UDI-P7 on the other, which is the
+   two indexed primers and nothing else. A bar that assembled left to right
+   said this station made the whole molecule. It inherits most of it and adds
+   the ends.
 
    WHERE THE GLASS HANGS IS FORCED. The ground either side is spoken for —
    C1 throws its own magnification into the near ground to the left, C3 is
@@ -7288,8 +7299,8 @@ function drawIndexPcr(g,n){
      drawing rather than a lens over it */
   lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,
     fill:"var(--bg)","fill-opacity":".92"}));
-  /* a block slides in from off the right of the field and has to stop existing
-     at the ring rather than at the edge of the screen. Uniqued the way the tank
+  /* a block slides in from off one end of the field or the other and has to stop
+     existing at the ring rather than at the edge of the screen. Uniqued as the tank
      clips are: a checker draws this shape twice, at two sizes, into one page. */
   const cid=`udiglass${++UID}`;
   const cp=el("clipPath",{id:cid});
@@ -7298,17 +7309,22 @@ function drawIndexPcr(g,n){
   const stage=el("g",{"clip-path":`url(#${cid})`});
   lens.appendChild(stage);
 
-  /* ---- THE CONSTRUCT, IN READ ORDER --------------------------------------
-     Thirteen blocks, each a width and a colour, laid out from one running
-     total so the bar is described once and every coordinate in it — block,
-     label, tick, complement — is read off the same ruler. */
-  const SEG=[["P5",7,ADPT],           ["UDI",6.5,UDI],
-             ["R1",7,ADPT],           ["cDNA insert",18,CDNA],
-             ["BC1",6,"var(--ch8)"],  ["linker",4,SPCR],
-             ["BC2",6,"var(--ch11)"], ["linker",4,SPCR],
-             ["BC3",6,"var(--ch4)"],  ["polyN",6.5,SPCR],
-             ["R2",7,ADPT],           ["UDI",6.5,UDI],
-             ["P7",7,ADPT]];
+  /* ---- THE CONSTRUCT, LAID OUT IN READ ORDER AND BUILT IN REACTION ORDER ---
+     Thirteen blocks, each a width, a colour and an ARRIVAL RANK, laid out from
+     one running total so the bar is described once and every coordinate in it
+     — block, label, tick, complement — is read off the same ruler. Rank 0 is
+     what came in the tube; a signed rank is a piece the primers bring on, its
+     magnitude counting outward from the insert and its sign saying which end.
+     The rank rides on the block rather than on the clock because which pieces
+     were already there is a fact about the molecule, and an index into SEG
+     stated somewhere else goes stale the first time somebody edits this list. */
+  const SEG=[["P5",7,ADPT,-3],        ["UDI",6.5,UDI,-2],
+             ["R1",7,ADPT,-1],        ["cDNA insert",18,CDNA,0],
+             ["BC1",6,"var(--ch8)",0],["linker",4,SPCR,0],
+             ["BC2",6,"var(--ch11)",0],["linker",4,SPCR,0],
+             ["BC3",6,"var(--ch4)",0],["polyN",6.5,SPCR,0],
+             ["R2",7,ADPT,1],         ["UDI",6.5,UDI,2],
+             ["P7",7,ADPT,3]];
   const SPAN=SEG.reduce((a,s)=>a+s[1],0);
   const BW=164, U=BW/SPAN, BY=-2.5, BH=10, SLIDE=14;
   /* THE LABELS ALTERNATE BETWEEN TWO ROWS. "cDNA insert" is four times the
@@ -7316,11 +7332,28 @@ function drawIndexPcr(g,n){
      row of thirteen names is a row of overlapping names. Two rows give every
      label its neighbour's width as well as its own, and each carries a tick
      down to the block so the pairing survives the stagger. */
+
+  /* THE BEATS ARE DECLARED BEFORE THE BAR, and the first two are resolved here,
+     because when a block arrives is written into the block below: the starting
+     product is under the glass from the top of the loop and the ends cannot be
+     placed without knowing when the pipetting finished. The rest of the clock,
+     and the reasoning for all of it, is at TIMING. */
+  const SCAN=1.9, TAKE=1.2, STEP=0.42, LAG=0.06, PAUSE=0.45,
+        COMP=0.7, HOLD=2.6, CLEAR=0.7;
+  const t1=SCAN, t2=t1+TAKE, COL=SCAN/WET;
+
   const comp=el("g",{opacity:"0"}); stage.appendChild(comp);
-  const parts=[]; let run0=0;
-  SEG.forEach(([name,wid,fill],k)=>{
+  const parts=[]; let run0=0, core=0;
+  SEG.forEach(([name,wid,fill,arm],k)=>{
     const x0=run0*U-BW/2, ww=wid*U; run0+=wid;
-    const p=el("g",{transform:`translate(${SLIDE},0)`,opacity:"0"});
+    /* what came in the tube does not travel — it is already assembled, and a
+       slide would say it was being delivered — so it fades up where it lies,
+       just far enough apart to read as a molecule and not as a stamp. What the
+       primers add comes in from its own end of the field, after the index has
+       landed in the tube. */
+    const sl=Math.sign(arm)*SLIDE;
+    const at=arm ? t2+PAUSE+(Math.abs(arm)-1)*STEP : core++*LAG;
+    const p=el("g",{transform:`translate(${sl},0)`,opacity:"0"});
     stage.appendChild(p);
     p.appendChild(el("rect",{x:x0.toFixed(2),y:BY.toFixed(1),
       width:ww.toFixed(2),height:BH,rx:"1.2",fill,"fill-opacity":".9",
@@ -7338,7 +7371,7 @@ function drawIndexPcr(g,n){
     comp.appendChild(el("rect",{x:x0.toFixed(2),y:(BY+BH+2.5).toFixed(1),
       width:ww.toFixed(2),height:"6.5",rx:"1",fill,"fill-opacity":".45",
       stroke:"var(--stroke)","stroke-width":".4","stroke-opacity":".3"}));
-    parts.push({g:p, lab:t});
+    parts.push({g:p, lab:t, sl, at});
   });
 
   /* the ring last, over everything, so nothing inside can soften its own edge */
@@ -7346,20 +7379,26 @@ function drawIndexPcr(g,n){
     stroke:"var(--fg2)","stroke-width":"1.5","stroke-opacity":".85"}));
 
   /* ---- TIMING -------------------------------------------------------------
-     Six beats. The sweep has to be slow enough that a reader sees six columns
-     and not one wipe; the transfer is one pipetting; the build is the whole
-     figure and takes half the loop, a block at a time, because thirteen names
-     arriving at once is a diagram and thirteen arriving in order is a sentence;
-     the complement is a beat of its own so that "and it is double-stranded"
-     lands after "and this is what it is" rather than with it.
+     Six beats, and the first of them is two things at once. The sweep has to be
+     slow enough that a reader sees six columns and not one wipe, and while it
+     runs the starting product is already settling under the glass — that
+     overlap is the claim: the insert and its three barcodes are what the tube
+     held before this station touched it. Then the transfer, which is one
+     pipetting; then the ends, a pair at a time growing outward, so the reader
+     sees the index arrive and then sees what it arrived as; then the complement,
+     a beat of its own so that "and it is double-stranded" lands after "and this
+     is what it is" rather than with it.
 
      PLACEMENT IS A PURE FUNCTION OF THE CLOCK. Everything is stated from t
      alone rather than nudged from where it was, so a frame long enough to skip
      a whole beat — a tab coming back, a step in trace mode — cannot leave a
-     block halfway into a bar it has already joined. */
-  const SCAN=1.9, TAKE=1.2, STEP=0.26, COMP=0.7, HOLD=2.6, CLEAR=0.7;
-  const t1=SCAN, t2=t1+TAKE, t3=t2+SEG.length*STEP, t4=t3+COMP, t5=t4+HOLD,
-        T=t5+CLEAR, COL=SCAN/WET;
+     block halfway into a bar it has already joined.
+
+     The end of the build is read back off the blocks rather than counted out
+     again here: the arrival ranks decide how many steps there are, so a block
+     added to or taken out of SEG moves the complement with it. */
+  const t3=parts.reduce((m,p)=>Math.max(m,p.at),0)+STEP*1.6,
+        t4=t3+COMP, t5=t4+HOLD, T=t5+CLEAR;
 
   const place=t=>{
     const gone=clamp((t-t5)/CLEAR);
@@ -7391,9 +7430,9 @@ function drawIndexPcr(g,n){
     M.setTemp(0.5+0.5*Math.sin(2*Math.PI*cyk-Math.PI/2), 1);
     M.setPips(Math.min(CYCLES,Math.floor(cyk)));
 
-    parts.forEach((p,k)=>{
-      const u=ease(clamp((t-t2-k*STEP)/(STEP*1.6)));
-      p.g.setAttribute("transform",`translate(${(SLIDE*(1-u)).toFixed(2)},0)`);
+    parts.forEach(p=>{
+      const u=ease(clamp((t-p.at)/(STEP*1.6)));
+      p.g.setAttribute("transform",`translate(${(p.sl*(1-u)).toFixed(2)},0)`);
       p.g.setAttribute("opacity",(u*(1-gone)).toFixed(2));
       p.lab.setAttribute("opacity",clamp((u-0.55)/0.4).toFixed(2));
     });
