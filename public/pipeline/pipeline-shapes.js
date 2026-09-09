@@ -6119,6 +6119,220 @@ function drawCapture(g,n){
 }
 DRAW.capture = drawCapture;
 
+/* ------------------------------------------------------------------
+   B8a · PCR AMPLIFICATION — a shut block, and the doubling under glass.
+
+   ASKED FOR FROM THE PAGE, from the map's own "Add a module" button, and what
+   it asked for is one object and one event: a thermal cycler with its lid down
+   and one lamp lit, and tethered over it a magnification in which a single
+   barcoded molecule becomes two and then four. That is the whole of the
+   request, so it is the whole of the drawing.
+
+   THE BLOCK IS DELIBERATELY SHUT AND DELIBERATELY DULL. B8's own header says
+   why a closed lid at this size says nothing, and it is still true — nothing
+   about an amplification is visible from outside a machine. What is different
+   here is that the claim has somewhere else to live: it lives in the glass,
+   and the block's job is to be the object the glass is tethered to. A lid that
+   opened, a block that swung between anneal and denature, a row of pips
+   counting cycles — each would be a second event competing with the only one
+   this station has, and each would assert a cycle count, a programme or a
+   protocol the request never named.
+
+   IT IS NOT A PLATE AND IT IS NOT ONE OF THE HEATED BLOCKS. Rounds one to
+   three are chemistry inside an intact cell and this row draws them as plates
+   with a lens over one well. This is bulk PCR on free DNA in a tube, ninety-five
+   thousand cells after the last of them was lysed, so there is no plastic in
+   the glass, no well, no cell outline and nothing holding the strands: they
+   float in a volume, which is the difference the request asked to be kept.
+
+   THE THREE CHIPS ARE B8's THREE, AND THAT IS THE CLAIM. --ch8, --ch11 and
+   --ch4 are the three in-situ rounds wherever this row draws a strand, so what
+   is under this glass is recognisably the molecule the beads let go one
+   station back rather than a new one — and what copies here copies WITH them,
+   which is the only reason an amplified library still knows which cell it came
+   from. Nothing else in the glass carries colour; the biotin B8 drew in gold is
+   not redrawn, because the request named three chips and nothing else.
+
+   FOUR STRANDS STAND IN FOR THE WHOLE REACTION. Each generation appears behind
+   the last, a little smaller and a good deal fainter, so the newest is at the
+   back of a stack that plainly carries on past it — which is how the picture
+   says exponential without drawing the copies. AND THE RETURN TO ONE IS A CUT.
+   Playing the doubling backwards would show copies merging, and that is the one
+   thing a PCR never does; so the state is a pure function of the clock and the
+   wrap puts a single strand back on the stage in one frame.
+
+   WHERE THE GLASS HANGS IS FORCED, the way it is for every station in this
+   stretch, and the thing that forces it is the NAMES. The ground is spoken for
+   — B7's magnification is down and left of its rack, B8's is on the floor
+   forward of this tile and C1's comes into the near ground two tiles along — so
+   the request's "above" is the only air there is. But every station's name
+   leaves its own back edge running up and to the right at −30°, which means the
+   sky over any tile is striped with the names of the stations to its LEFT, one
+   about every forty-five pixels, and a glass this size does not fit between two
+   of them. It fits above all of them: B7's name ends before it reaches this
+   tile's own airspace and B6's ends further left again, so the clear air starts
+   just over where B7's runs out. Hence the height below — measured from this
+   tile's top in screen lengths times SC, so the clearance survives a resize
+   rather than being true at one size.
+
+   Borrows nothing but the idioms. Spends --ch4, --ch8 and --ch11 for the chips
+   and --c-top for a strand, all declared on /molecular_pipe — the only page
+   carrying a node that wears this shape.
+   ------------------------------------------------------------------ */
+function drawPcrAmplify(g,n){
+  /* EVERY OFFSET IS EITHER A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC,
+     and w, d and h are read at draw time because a resize is the only reason
+     this function runs again. Composed at w .72, d .72, h .40 — B9's tile, and
+     B8's but for the height. */
+  const SC=n.w/0.72;
+  const clamp=x=>x<0?0:x>1?1:x;
+
+  /* ---- THE CONNECTOR ------------------------------------------------------
+     A stub in from B8's magnetic rack, which stands forward and left of this
+     tile. It starts clear of the nearest tube rather than on it — this node is
+     drawn after B8, so anything overlapping that rack is painted on top of it
+     and reads as part of it — and it ENDS INSIDE this chassis, which is painted
+     over it a few lines below. A cable that stops at a wall reads as unplugged. */
+  const A=P(n.x-n.w*0.52, n.y+n.d*0.86, n.h*1.15);
+  const M=P(n.x-n.w*0.30, n.y+n.d*0.18, n.h*0.62);
+  g.appendChild(el("line",{x1:A[0].toFixed(1),y1:A[1].toFixed(1),
+    x2:M[0].toFixed(1),y2:M[1].toFixed(1),stroke:"var(--fg2)",
+    "stroke-width":(1.7*SC).toFixed(2),"stroke-opacity":".45",
+    "stroke-linecap":"round"}));
+
+  /* ---- THE CYCLER ---------------------------------------------------------
+     The charcoal the magnetic rack next door is drawn in, so the two objects
+     on this stretch of bench that are lumps of metal read as the same kind of
+     thing. The lid is a second box standing on the chassis and drawn in the
+     works skin: lighter than the body, which is what says it is a part that
+     moves, without it having to move. */
+  paint(g,n.x,n.y,n.w,n.d,n.h,
+        {top:V("t-top"),left:V("t-left"),right:V("t-right"),sw:1.4,so:.9});
+
+  /* faces() draws from z 0 and the projection is a pure translation in z, so a
+     box that stands on something else is a transform on a group rather than a
+     second set of face maths beside the first. B8's cycler does the same. */
+  const LZ=n.h, LT=n.h+n.h*0.34;
+  const lid=el("g",{transform:`translate(0,${(-LZ*S*CZ).toFixed(2)})`});
+  g.appendChild(lid);
+  paint(lid,n.x,n.y,n.w*0.88,n.d*0.88,LT-LZ,SKIN.works);
+  /* the clamp handle, flat on the lid, so the closed lid reads as clamped down
+     rather than as a slab somebody left there */
+  lid.appendChild(el("polygon",{
+    points:faces(n.x,n.y+n.d*0.24,n.w*0.40,n.d*0.10,LT-LZ).top,
+    fill:"var(--fg)","fill-opacity":".18",stroke:"var(--stroke)",
+    "stroke-width":".7","stroke-opacity":".6"}));
+
+  /* ---- THE ONE INDICATOR --------------------------------------------------
+     A hair proud of the front face, so the face cannot swallow it. It is lit
+     and it stays lit: the request asked for one indicator on, and a lamp that
+     pulsed or stepped would be reporting a programme nobody has described. */
+  const fy=n.y+n.d/2+0.002;
+  const quad=(x0,x1,z0,z1)=>pts([P(x0,fy,z1),P(x1,fy,z1),P(x1,fy,z0),P(x0,fy,z0)]);
+  const lx0=n.x-n.w*0.34, lx1=lx0+n.w*0.09, lz0=n.h*0.40, lz1=n.h*0.62;
+  g.appendChild(el("polygon",{points:quad(lx0,lx1,lz0,lz1),fill:"var(--signal)",
+    "fill-opacity":".85",stroke:"var(--stroke)","stroke-width":".7",
+    "stroke-opacity":".6"}));
+
+  /* ---- THE MAGNIFICATION --------------------------------------------------
+     A thin solid ellipse with two leaders back to the machine: the idiom this
+     map uses everywhere for a view drawn larger than life, and a solid ring is
+     the only thing on this tile allowed to be one.
+
+     WHAT IS INSIDE IT IS SIZED IN SCREEN PIXELS AND SCALED BY BEING SCALED. A
+     molecule has no world size to be authored in, so it goes in a group
+     carrying scale(n.w / .72) and every coordinate under it is written for the
+     size this node happens to be authored at. A resize moves the glass, grows
+     it, and takes everything in it along. */
+  const LX=52, LY=40;
+  const TOP=P(n.x,n.y,n.h);
+  const KX=TOP[0]+10*SC, KY=TOP[1]-185*SC;
+
+  /* the leaders name the lid rather than the chassis — the reaction is in the
+     block under it — and they start ON the boundary, aimed at two corners of
+     the lid's top face, so glass that has moved or grown still points at metal */
+  [[-0.22,-0.22],[0.22,-0.22]].forEach(([fx,fy2])=>{
+    const t=P(n.x+n.w*fx, n.y+n.d*fy2, LT);
+    const vx=t[0]-KX, vy=t[1]-KY, u=1/Math.hypot(vx/(LX*SC), vy/(LY*SC));
+    g.appendChild(el("line",{x1:(KX+vx*u).toFixed(1),y1:(KY+vy*u).toFixed(1),
+      x2:t[0].toFixed(1),y2:t[1].toFixed(1),stroke:"var(--fg2)",
+      "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".4"}));
+  });
+
+  const lens=el("g",{transform:
+    `translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${SC.toFixed(4)})`});
+  g.appendChild(lens);
+  /* nearly opaque: glass you can read the ground grid through is a hole in the
+     drawing rather than a lens over it */
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,
+    fill:"var(--bg)","fill-opacity":".92"}));
+
+  /* ---- ONE MOLECULE, AND THEN FOUR ----------------------------------------
+     The strand is B8's: a pale wavy spine with three chips in a row near one
+     end. GEN is the generations — one strand, then one more behind it, then two
+     more behind that — and each entry is where that copy lies, so every group
+     is born with its own transform and the ticker owns nothing but an opacity. */
+  const HL=17, TIPX=-HL+2.4, CHIP=["var(--ch8)","var(--ch11)","var(--ch4)"];
+  const spine=k=>{ let d=`M ${-HL} 0`;
+    for(let s=1;s<=10;s++)
+      d+=` L ${(-HL+2*HL*(s/10)).toFixed(1)} ${(Math.sin(s*0.86+k)*2.2).toFixed(1)}`;
+    return d; };
+  const GEN=[[[5,13,-7]],
+             [[-7,-1,8]],
+             [[-18,-15,-11],[9,-17,5]]];
+  /* back to front, because paint order is depth here as much as it is on the
+     grid: the newest generation is drawn first and everything since lands over
+     it. Smaller and fainter each time, so the fourth strand sits at the back of
+     a stack the reader can see carries on past it. */
+  const born=[];
+  for(let gi=GEN.length-1;gi>=0;gi--){
+    const sc=1-gi*0.09, op=[0.95,0.60,0.36][gi];
+    GEN[gi].forEach((p,i)=>{
+      const sg=el("g",{opacity:gi?"0":op.toFixed(2),transform:
+        `translate(${p[0]},${p[1]}) rotate(${p[2]}) scale(${sc.toFixed(2)})`});
+      lens.appendChild(sg);
+      sg.appendChild(el("path",{d:spine(gi*1.7+i*0.9),fill:"none",
+        stroke:"var(--c-top)","stroke-width":"1.5","stroke-opacity":".75",
+        "stroke-linecap":"round"}));
+      CHIP.forEach((c,k)=>sg.appendChild(el("rect",{x:(TIPX+k*6.2).toFixed(1),
+        y:"-1.9",width:"4.6",height:"3.8",rx:"1.1",fill:c,"fill-opacity":".9",
+        stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".5"})));
+      born.push({g:sg, gen:gi, op});
+    });
+  }
+
+  /* the ring last, over everything, so nothing inside can soften its own edge */
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,fill:"none",
+    stroke:"var(--fg2)","stroke-width":"1.5","stroke-opacity":".85"}));
+
+  /* ---- TIMING -------------------------------------------------------------
+     Slow, because the figure is a count and a reader has to be able to make it:
+     one strand alone long enough to be one, a beat to double, the same again,
+     and then the longest beat of all on four. The wrap is the cut back to one —
+     see the header — and nothing fades out on the way.
+
+     PLACEMENT IS A PURE FUNCTION OF THE CLOCK, so a frame long enough to skip a
+     whole beat — a tab coming back, a step in trace mode — cannot leave a
+     generation half arrived. */
+  const ALONE=2.2, FADE=0.7, GAP=1.7, HOLD=3.6;
+  const t1=ALONE, t2=t1+FADE+GAP, TOT=t2+FADE+HOLD;
+  /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion never
+     advances it, so whatever t begins at is the whole station for that reader,
+     and for this one it has to be the four — the frame the request asks the
+     figure to hold on. */
+  let t=t2+FADE+HOLD*0.5;
+  const run=dt=>{
+    t=(t+dt)%TOT;
+    born.forEach(b=>{
+      const f=b.gen===0?1:clamp((t-(b.gen===1?t1:t2))/FADE);
+      b.g.setAttribute("opacity",(b.op*f).toFixed(2));
+    });
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.pcramplify = drawPcrAmplify;
+
 /* ==================================================================
    THE QC BENCH, AS TWO COMPONENTS — because two stations run it.
 

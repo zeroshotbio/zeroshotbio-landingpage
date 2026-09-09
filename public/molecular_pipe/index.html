@@ -740,7 +740,10 @@
              past the last station: check-rows asserts the sheet against
              everything drawn on it, and a row that has been grown at the far
              end takes its mat with it. x1 went 30 -> 32 when C7 was added and
-             the mat went to 31.4.
+             the mat went to 31.4, and 32 -> 34 when B8a was put in between B8
+             and B9 — a station inserted in the MIDDLE still lengthens the row,
+             because the lane grows to make room rather than the gaps shrinking,
+             and the mat went to 32.7 with it.
 
      The culls files are not loaded: nothing on row 2 carries a roof chart, and
      pipeline-view.js guards every reference to MODEL, ANNOTATIONS and FIGURES
@@ -751,7 +754,7 @@
     ns     : "molpipe",
     api    : "/api/molecular_edits",
     prompts: "/api/molecular_prompts",
-    grid   : {x0:-4, x1:32, y0:-6, y1:6},
+    grid   : {x0:-4, x1:34, y0:-6, y1:6},
   };
 </script>
 <script src="/pipeline/pipeline-iso.js?v=mol1"></script>
