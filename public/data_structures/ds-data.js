@@ -480,12 +480,12 @@ const NODES = [
      the split is free. megafin-1/ is on the left because it is ours - legacy, which is a
      different state from acquired, and it wears the legacy one. */
  groups:[
-   {label:"Parse · ours", tiles:[
+   {label:"Parse (Our Data)", tiles:[
      {key:"megafin/",    value:60304280896, objs:5, accent:"#C08552"},
      {key:"minifin/",    value:4803436795, objs:13, accent:"#9C7BA0"},
      {key:"megafin-1/", value:5367910950, objs:61, legacy:5367910950},
    ]},
-   {label:"Acquired · others", tiles:[
+   {label:"Acquired (Open Source)", tiles:[
      {key:"chemfish/",   value:38781117028, objs:20, accent:"#7FB5A8"},
      {key:"micdropseq/", value:16909707818, objs:143, accent:"#B5A04A"},
      {key:"platt/",      value:15533647435, objs:10, accent:"#6FAE72"},

@@ -240,9 +240,16 @@ DRAW.vault = (g, n) => {
     const totals = n.groups.map(gr => gr.tiles.reduce((a, t) => a + t.value, 0));
     const sum = totals.reduce((a, b) => a + b, 0);
     const capH = 1.0;
+    /* A GUTTER, NOT JUST AN EDGE. The two columns met at a single tile border,
+       which reads as one treemap with an accident in the middle rather than as
+       two kinds of thing. The gap is taken off the top and the remainder split
+       by bytes, so each column is still proportional to what it holds and
+       cross-column area comparison still means what it did. */
+    const GUTTER = 1.1;
+    const usable = fw - GUTTER * (n.groups.length - 1);
     let gx = fx;
     n.groups.forEach((gr, gi) => {
-      const gw = fw * totals[gi] / sum;
+      const gw = usable * totals[gi] / sum;
       /* FIT THE CAPTION TO ITS COLUMN. The first pair of these ran into each
          other across the divide, which reads as one long broken word. Same
          treatment the tile captions get: shrink until it fits, no floor. */
@@ -250,7 +257,7 @@ DRAW.vault = (g, n) => {
       label(g, gx + gw / 2, fy + capH / 2, gr.label,
         { size: capZ, fill: "var(--fg3)", ls: 0.1, upper: true });
       drawTiles(gr.tiles, gx, fy + capH, gw, fh - capH, max);
-      gx += gw;
+      gx += gw + GUTTER;
     });
   } else if (n.tiles && n.tiles.length) {
     drawTiles(n.tiles, fx, fy, fw, fh, Math.max(...n.tiles.map(t => t.value)));
