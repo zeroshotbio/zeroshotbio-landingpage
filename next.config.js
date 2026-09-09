@@ -159,6 +159,12 @@ const nextConfig = {
       // here plus reusable crosswalk tables to /data/fate_map/ on the analysis
       // instance. enrich.json is OPTIONAL at runtime: without it the page degrades
       // to the first-pass panel rather than failing.
+      // Plate II is the PROVENANCE stack — fourteen sources on one developmental
+      // axis, with only the two that actually feed the page drawn filled. Its
+      // record is sources.json, written by scripts/build_fate_map_24_48_sources.py,
+      // and it is optional at runtime too. Citations there are verbatim from the
+      // silver READMEs; do not "improve" one without checking the README it came
+      // from — Platt genuinely has no DOI and the page says so.
       // Read public/fate_map_24_48/NOTES.md before changing the encoding of an
       // edge — the literature verdict in the stroke is the whole argument.
       { source: '/fate_map_24_48', destination: '/fate_map_24_48/index.html' },
