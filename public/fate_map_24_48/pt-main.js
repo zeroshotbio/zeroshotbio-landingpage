@@ -75,7 +75,7 @@
     return 'emerging — crests after the window, at ' + peak + ' ' + TIMEPOINTS_LABEL;
   }
 
-  PT.load().then(({ graph, meta, enrich }) => {
+  PT.load().then(({ graph, meta, enrich, sources }) => {
     const c = meta.counts;
     const S = PTGraph.STYLE;
     /* mapping-confidence tallies, counted from the enrichment rather than typed */
@@ -243,6 +243,46 @@
     $('fWin').addEventListener('click', () => { winOnly = true; applyFilter(); });
     $('reset').addEventListener('click', () => { view.reset(); });
 
+    /* ---- Plate II: provenance ------------------------------------------- */
+    if (sources) {
+      const nW = sources.sources.filter((s2) => s2.status === 'wired').length;
+      const nL = sources.sources.filter((s2) => s2.band === 'lineage').length;
+      $('srcWhen').textContent =
+        `${sources.sources.length} sources · ${nW} wired · ${sources.bands.length} bands`;
+      $('cap2').innerHTML =
+        `<b>Fourteen sources, two of them load-bearing.</b> Every bar is a real holding in ` +
+        `the silver warehouse, drawn across the developmental window it covers. Filled bars ` +
+        `feed this page — Platt supplies all ${sources.live.graph_edges} arrows on Plate I, ` +
+        `ZSCAPE supplies the crosswalk and timing in ` +
+        `${(sources.live.crosswalked_states || 0)} of ${sources.live.enriched_states} state ` +
+        `panels. The other twelve are held and unwired. <b>Read down the shaded column:</b> ` +
+        `six bars cross 24–48 hpf with transcriptomes and none of the ${nL} lineage sources ` +
+        `does — two stop at 24 hpf, one is unplaceable on this axis, and one is probably a ` +
+        `different stage altogether. That absence is the argument of this page, drawn.`;
+
+      const cardHost = $('srcCard');
+      let view2 = null;
+      const pick = (key) => {
+        const s2 = sources.sources.find((q) => q.key === key);
+        if (!s2) return;
+        PTSources.card(cardHost, s2, sources.bands);
+        if (view2) view2.highlight(key);
+      };
+      const render2 = () => {
+        view2 = PTSources.draw($('srcHold'), sources, pick);
+      };
+      render2();
+      pick('platt');
+      let rz2;
+      window.addEventListener('resize', () => {
+        clearTimeout(rz2);
+        rz2 = setTimeout(() => { const cur = sources.sources.find(
+          (q) => cardHost.querySelector('h3') &&
+                 q.name === cardHost.querySelector('h3').textContent);
+          render2(); if (cur) view2.highlight(cur.key); }, 140);
+      });
+    }
+
     /* ---- notes on the plate -------------------------------------------- */
     const notes = [
       `<b>These are inferred transitions, not observed lineage.</b> The graph was built from ` +
@@ -303,9 +343,12 @@
       `The relationship is many-to-many and no join key fixes it; the two annotations subdivide the ` +
       `same cells along different axes. Treating it as a rename would silently merge states.`,
 
-      `<b>What is deliberately absent.</b> ZMAP, DanioCell, Zebrahub and the spatial and anatomical ` +
-      `layers are not integrated. This is the skeleton they hang on, and the crosswalk tables ` +
-      `written for them live outside this page.`,
+      `<b>What is deliberately absent, and Plate II is the audit of it.</b> ZMAP, DanioCell, ` +
+      `Zebrahub, the spatial layers and the anatomy are acquired, verified and sitting in the ` +
+      `warehouse <i>unwired</i>. Plate II draws all fourteen sources on one developmental axis and ` +
+      `fills in only the two that feed this page, so a held source cannot be misread as an ` +
+      `integrated one. It is also where the window's real hole is visible: nothing in the ` +
+      `observed-lineage band crosses 24–48 hpf.`,
     ];
     $('notes').innerHTML = notes.map((t) => `<li>${t}</li>`).join('');
 

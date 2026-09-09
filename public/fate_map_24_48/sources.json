@@ -1,0 +1,317 @@
+{
+ "axis": {
+  "lo": 0,
+  "hi": 120,
+  "window": [
+   24,
+   48
+  ],
+  "ticks": [
+   0,
+   24,
+   48,
+   72,
+   96,
+   120
+  ]
+ },
+ "bands": [
+  {
+   "key": "transitions",
+   "label": "Inferred transitions",
+   "note": "the arrows themselves"
+  },
+  {
+   "key": "abundance",
+   "label": "Abundance and timing",
+   "note": "how much of a state exists, and when"
+  },
+  {
+   "key": "vocabulary",
+   "label": "Harmonised vocabulary",
+   "note": "what to call a state across studies"
+  },
+  {
+   "key": "states",
+   "label": "Transcriptomic states",
+   "note": "independent atlases of the same window"
+  },
+  {
+   "key": "spatial",
+   "label": "Spatial transcriptomics",
+   "note": "where a transcript is, measured"
+  },
+  {
+   "key": "anatomy",
+   "label": "Anatomy and ontology",
+   "note": "the frame a label is placed against"
+  },
+  {
+   "key": "lineage",
+   "label": "Observed lineage and tracking",
+   "note": "a cell actually followed"
+  }
+ ],
+ "sources": [
+  {
+   "key": "platt",
+   "name": "Platt",
+   "band": "transitions",
+   "status": "wired",
+   "modality": "scRNA-seq (sci-RNA-seq3) + inferred state graph",
+   "window": [
+    18,
+    96
+   ],
+   "evidence": "inferred",
+   "scale": "1,220,178 cells \u00b7 186 states \u00b7 173 edges",
+   "uses": "Every arrow on Plate I, and its literature verdict. The state names are this release's. The abundance model is its control arm.",
+   "cite": "Trapnell lab, University of Washington \u2014 reference v2.2.1. Cited on the project site as Duran et al., with no DOI given.",
+   "href": "https://cole-trapnell-lab.github.io/lmx1b/",
+   "silver": "platt/v2.2.1/",
+   "frm": "silver platt/README.md; counts read from the CDS this pass"
+  },
+  {
+   "key": "zscape",
+   "name": "ZSCAPE",
+   "band": "abundance",
+   "status": "wired",
+   "modality": "scRNA-seq, 1,860 individually barcoded embryos, 34 gene targets",
+   "window": [
+    18,
+    96
+   ],
+   "evidence": "observed",
+   "scale": "3,231,733 cells \u00b7 2,374,633 in the window",
+   "uses": "The crosswalk in every state's panel, joined on shared cell barcodes, and the developmental-time distribution. 89.1% of Platt's cells are ZSCAPE cells.",
+   "cite": "Saunders, Srivatsan, Duran, Dorrity, Ewing, Linbo, Shendure, Raible, Moens, Kimelman & Trapnell. Embryo-scale reverse genetics at single-cell resolution. Nature 623 (2023).",
+   "href": "https://doi.org/10.1038/s41586-023-06720-2",
+   "silver": "zscape/",
+   "frm": "silver zscape/README.md; counts read from the h5ad this pass"
+  },
+  {
+   "key": "zmap",
+   "name": "ZMAP",
+   "band": "vocabulary",
+   "status": "held",
+   "modality": "harmonised meta-atlas of eight published studies",
+   "window": [
+    3,
+    120
+   ],
+   "evidence": "inferred",
+   "scale": "754,386 cells \u00b7 292,969 in the window \u00b7 8 studies",
+   "uses": "Nothing yet. It is the intended referee: it carries each cell's label from every study at once, so a cell with both a DanioCell and a Farnsworth label IS a crosswalk observation. It contains neither ZSCAPE nor Platt, which is what would make it an independent one.",
+   "cite": "Wagner lab, UCSF \u2014 Zebrafish Multi-study Atlas Project.",
+   "href": "https://wagnerlabucsf.github.io/zmap/",
+   "silver": "zmap/",
+   "frm": "silver zmap/README.md; obs columns read this pass"
+  },
+  {
+   "key": "daniocell",
+   "name": "DanioCell",
+   "band": "states",
+   "status": "held",
+   "modality": "scRNA-seq, 62 stages",
+   "window": [
+    3,
+    120
+   ],
+   "evidence": "observed",
+   "scale": "489,686 cells \u00b7 149,105 in the window at 2-hour spacing",
+   "uses": "Nothing yet. Second independent 2-hour series across the window, and the only source carrying state persistence (how long a state lasts).",
+   "cite": "Sur, Wang, Capar, Margolin, Prochaska & Farrell. Single-cell analysis of shared signatures and transcriptional diversity during zebrafish development. Developmental Cell 58, 3028\u20133047.e12 (2023).",
+   "href": "https://doi.org/10.1016/j.devcel.2023.11.001",
+   "silver": "daniocell/",
+   "frm": "silver daniocell/README.md; obs read this pass"
+  },
+  {
+   "key": "zebrahub",
+   "name": "Zebrahub",
+   "band": "states",
+   "status": "held",
+   "modality": "scRNA-seq, single-embryo resolution, plus light-sheet tracking",
+   "window": [
+    10,
+    120
+   ],
+   "hi_open": true,
+   "evidence": "observed",
+   "scale": "120,444 cells \u00b7 12,914 at 24 hpf and 15,483 at 2 dpf",
+   "uses": "Nothing yet. Independent validation at both endpoints, and the only transcriptomic source already carrying ZFA ontology ids \u2014 154 of them.",
+   "cite": "Lange et al. \u2014 Royer lab, CZ Biohub. A multimodal zebrafish developmental atlas reveals the state-transition dynamics of late-vertebrate pluripotent axial progenitors. Cell (2024).",
+   "href": "https://doi.org/10.1016/j.cell.2024.09.047",
+   "silver": "zebrahub/",
+   "frm": "silver zebrahub/README.md; obs read this pass"
+  },
+  {
+   "key": "farnsworth",
+   "name": "Farnsworth",
+   "band": "states",
+   "status": "held",
+   "modality": "scRNA-seq, 10x v2",
+   "window": [
+    24,
+    120
+   ],
+   "evidence": "observed",
+   "scale": "44,020 cells \u00b7 220 annotated clusters",
+   "uses": "Nothing yet. Covers both endpoints, and its Table S2 carries a germ layer \u2192 tissue \u2192 cell type \u2192 subtype hierarchy for all 221 clusters.",
+   "cite": "Farnsworth, Saunders & Miller. A single-cell transcriptome atlas for zebrafish development. Developmental Biology 459(2), 100\u2013108 (2020).",
+   "href": "https://doi.org/10.1016/j.ydbio.2019.11.008",
+   "silver": "farnsworth/",
+   "frm": "silver farnsworth/README.md; UCSC release read this pass"
+  },
+  {
+   "key": "zesta",
+   "name": "ZESTA",
+   "band": "spatial",
+   "status": "held",
+   "modality": "Stereo-seq sections + matched dissociated scRNA",
+   "window": [
+    3,
+    24
+   ],
+   "evidence": "observed",
+   "scale": "72,175 spatial bins at 24 hpf \u00b7 6 stages",
+   "uses": "Nothing yet. The only spatial transcriptomics in the corpus \u2014 and it stops at 24 hpf. There is no 48 hpf spatial half to pair it with.",
+   "cite": "Liu, Li, Li, Lin, Zhao, Liu et al. Spatiotemporal mapping of gene expression landscapes and developmental trajectories during zebrafish embryogenesis. Developmental Cell (2022).",
+   "href": "https://doi.org/10.1016/j.devcel.2022.04.009",
+   "silver": "zesta/STDS0000057/",
+   "frm": "silver zesta/README.md; h5ads read this pass"
+  },
+  {
+   "key": "tomoseq",
+   "name": "Tomo-seq",
+   "band": "spatial",
+   "status": "held",
+   "modality": "cryosection RNA-seq \u2014 spatial, but NOT single-cell",
+   "window": [
+    48,
+    48
+   ],
+   "evidence": "observed",
+   "scale": "3 hearts, ~40 sections each, at 2 dpf",
+   "uses": "Nothing yet. The only spatial evidence at 48 hpf, and it is one organ.",
+   "cite": "Burkhard & Bakkers. Spatially resolved RNA-sequencing of the embryonic heart identifies a role for Wnt/\u03b2-catenin signaling in autonomic control of heart rate. eLife (2018). GEO GSE104057.",
+   "href": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE104057",
+   "silver": "tomoseq/GSE104057/",
+   "frm": "silver tomoseq/README.md; tar read this pass"
+  },
+  {
+   "key": "zfap",
+   "name": "ZFAP",
+   "band": "anatomy",
+   "status": "held",
+   "modality": "segmented 3D anatomy volumes, TIFF stacks",
+   "window": [
+    24,
+    120
+   ],
+   "evidence": "observed",
+   "scale": "5 stages \u00b7 24 and 48 hpf both present",
+   "uses": "Nothing yet. The geometric frame \u2014 and the only source covering both endpoints of the window in three dimensions.",
+   "cite": "Zebrafish Anatomy Portal, Monash University.",
+   "href": "https://www.zfap.org/",
+   "silver": "zfap/volumes/",
+   "frm": "silver zfap/README.md"
+  },
+  {
+   "key": "zfin",
+   "name": "ZFIN",
+   "band": "anatomy",
+   "status": "held",
+   "modality": "ontology and curated literature records \u2014 no cells, no images",
+   "window": [
+    0,
+    120
+   ],
+   "hi_open": true,
+   "evidence": "curated",
+   "scale": "3,113 ZFA terms \u00b7 2,578 overlap the window \u00b7 243,055 WT expression records",
+   "uses": "Nothing yet, but it defines the window: the four ZFS stages Prim-5, Prim-15, Prim-25 and High-pec ARE 24\u201348 hpf. It is the vocabulary every other layer would be reconciled against.",
+   "cite": "Zebrafish Information Network, University of Oregon.",
+   "href": "https://zfin.org/downloads",
+   "silver": "zfin/",
+   "frm": "silver zfin/README.md; stage_ontology.txt read this pass"
+  },
+  {
+   "key": "wagner",
+   "name": "Wagner + TracerSeq",
+   "band": "lineage",
+   "status": "held",
+   "modality": "scRNA-seq with clonal lineage barcodes",
+   "window": [
+    4,
+    24
+   ],
+   "evidence": "observed",
+   "scale": "~92,000 cells \u00b7 7 timepoints, ending at 24 hpf",
+   "uses": "Nothing yet. Real clonal lineage, in the same cells as the transcriptome \u2014 and it stops exactly where this window starts.",
+   "cite": "Wagner, Weinreb, Collins, Briggs, Megason & Klein. Single-cell mapping of gene expression landscapes and lineage in the zebrafish embryo. Science (2018). PMID 29700229. GEO GSE112294.",
+   "href": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE112294",
+   "silver": "wagner/GSE112294/",
+   "frm": "silver wagner/README.md; tar read this pass"
+  },
+  {
+   "key": "linnaeus",
+   "name": "LINNAEUS",
+   "band": "lineage",
+   "status": "outside",
+   "modality": "scRNA-seq with CRISPR/Cas9 genetic scars",
+   "window": null,
+   "evidence": "observed",
+   "scale": "45 archive members \u00b7 larval and adult organs",
+   "uses": "Nothing, and probably nothing here. Its libraries are organ codes from larval and adult regeneration; the stage needs confirming before anyone counts it as covering this window.",
+   "cite": "Spanjaard, Hu, Mitic, Olivares-Chauvet, Janjuha, Ninov & Junker. Simultaneous lineage tracing and cell type identification using CRISPR/Cas9 induced genetic scars. Nature Biotechnology (2018). PMID 29644996. GEO GSE106121.",
+   "href": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE106121",
+   "silver": "linnaeus/GSE106121/",
+   "frm": "silver linnaeus/README.md; tar listing this pass"
+  },
+  {
+   "key": "itec",
+   "name": "ITEC",
+   "band": "lineage",
+   "status": "unregistered",
+   "modality": "nuclear XYZ positions and parent\u2192child links from light-sheet tracking",
+   "window": null,
+   "evidence": "observed",
+   "scale": "18,497,012 detections \u00b7 18,447,520 links \u00b7 1,000 frames",
+   "uses": "Nothing yet, and it cannot be joined on time: the release carries FRAMES and no frame-to-hpf registration. It is the only source in the corpus that observes a division at all, which makes the missing registration the single most valuable thing to recover.",
+   "cite": "Wang, Zhang, Chi & Yu. Evaluation results of ITEC. Mendeley Data V1 (2025).",
+   "href": "https://doi.org/10.17632/tg55phtk4r.1",
+   "silver": "itec/mendeley_tg55phtk4r_v1/",
+   "frm": "the archive itself, read this pass"
+  },
+  {
+   "key": "keller",
+   "name": "Keller",
+   "band": "lineage",
+   "status": "held",
+   "modality": "light-sheet nuclear positions and tracks \u2014 no transcriptome",
+   "window": [
+    0,
+    24
+   ],
+   "evidence": "observed",
+   "scale": "7 BDML archives \u00b7 9.11 GiB",
+   "uses": "Nothing yet. The physical embryo through the first day; like Wagner, it ends where this window begins.",
+   "cite": "Keller, Schmidt, Wittbrodt & Stelzer. Reconstruction of zebrafish early embryonic development by scanned light sheet microscopy. Science 322, 1065\u20131069 (2008). PMID 18845710. SSBD ssbd-repos-000005.",
+   "href": "https://ssbd.riken.jp/repository/ssbd-repos-000005/",
+   "silver": "keller/bdml/",
+   "frm": "silver keller/README.md; the BDML XML read this pass"
+  }
+ ],
+ "live": {
+  "graph_states": 186,
+  "graph_edges": 173,
+  "enriched_states": 186,
+  "crosswalked_states": 185
+ },
+ "status_legend": {
+  "wired": "feeds the page today",
+  "held": "acquired and verified, not yet wired in",
+  "outside": "held, but its window is probably not this one",
+  "unregistered": "held, but cannot be placed on this axis at all"
+ }
+}

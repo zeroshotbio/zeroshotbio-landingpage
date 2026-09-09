@@ -197,6 +197,46 @@ fast muscle finely; neither split is a refinement of the other.
     state, but **15 states have fewer than 100** and one has none. A 13-bar chart over 40 cells is
     a picture of noise; the panel prints the n beneath every chart for that reason.
 
+## Plate II — the provenance stack (third pass, 2026-09-09)
+
+Fourteen sources on one 0–120 hpf axis, banded by what each contributes, ordered from the most
+interpreted evidence at the top to the most directly observed at the bottom. It is provenance, not
+analysis: nothing on it was computed this pass beyond two figures read from `meta.json` and
+`enrich.json`.
+
+**A filled bar feeds the page; an open bar does not.** Two of fourteen are filled. Drawing a held
+source the same way as a wired one would be the page claiming an integration it has not performed,
+and the distinction has to survive someone landing on Plate II without reading a word.
+
+**The plate's real job is the empty column.** Read down the shaded 24–48 hpf band: six bars cross
+it with transcriptomes and **none of the four observed-lineage sources does**. Wagner and Keller
+both stop at 24 hpf — at the window's left edge, which the axis makes literal. LINNAEUS is drawn
+without a bar because its stage is not established for this window, and ITEC without one because
+its release carries frames and no registration to hours. Two rows of madder italic where a bar
+should be is the whole argument of the page, as a shape.
+
+Sources that cannot be placed get a written reason in the plot area rather than a blank row. A
+blank row reads as *missing data*; these are *unplaceable data*, which is a different problem with a
+different fix.
+
+### Where the figures come from
+
+`sources.json` carries a `from` field on every source naming where its numbers were checked —
+usually the silver README, sometimes the object itself as read during this session's recon. Two
+figures are read live at build time from the page's own artefacts (`graph_edges`, and how many state
+panels carry a crosswalk) so the caption cannot go stale. Citations are taken verbatim from the
+silver READMEs, which is also why Platt's reads *"cited on the project site as Duran et al., with
+no DOI given"* rather than inventing one.
+
+### Two design decisions worth keeping
+
+- **SVG, not canvas**, unlike Plate I. Fourteen rows is not a data mass, every row carries a
+  citation that should be a real link, and the rows should be keyboard-reachable. The canvas
+  practice in PLATE_STYLE.md §3 is for the case Plate I actually has.
+- **The status column and the axis unit both had to move.** `x: W` with `text-anchor: end` clipped
+  against the viewBox edge, and the unit label at `plotR + 6` collided with the 120 tick, which sits
+  at `plotR` exactly by construction. Both were invisible in the code and obvious in a screenshot.
+
 ## Reusable tables
 
 Written to `/data/fate_map/`, outside the web repo, for the ZMAP and DanioCell layers:
