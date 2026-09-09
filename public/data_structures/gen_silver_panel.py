@@ -26,11 +26,14 @@ def row(path,size,kind,note,depth=1):
 # unmerged branches; the rest are bytes in a bucket with their custody written down
 # nowhere. It is the one thing a reader deciding what to work on next needs, so it is
 # on the header rather than three paragraphs into the panel.
-# A manifest in zsb-bronze names these bytes. All sixteen sit on unmerged branches — the
-# four originals and the twelve opened 2026-09-09 — which is the same state the first four
-# were in when this marker was introduced, so they read the same way.
+# A manifest in zsb-bronze names these bytes. All eighteen sit on unmerged branches — the
+# four originals and the fourteen opened 2026-09-09 — which is the same state the first four
+# were in when this marker was introduced, so they read the same way. The three without one
+# are the three that are not single-cell transcriptomes, which is not a coincidence: a custody
+# module for imaging or anatomy would be the first of its kind.
 PINNED={'chemfish/','zscape/','zebrahub/','daniocell/','platt/','zmap/','wagner/','raj/',
-        'linnaeus/','trunk30hpf/','micdropseq/','zesta/','farrell/','zcl2/','celloracle/','zcl1/'}
+        'linnaeus/','trunk30hpf/','micdropseq/','zesta/','farrell/','zcl2/','celloracle/','zcl1/',
+        'farnsworth/','zfin/'}
 OURS={'megafin/','minifin/','megafin-1/'}
 def custody(name):
     if name in OURS: return ''
@@ -299,6 +302,15 @@ MULTI=[
    [("GSE130487/","59 Microwell-seq DGE matrices"),
     ("Paper/","the article and five workbooks, none of which names the accession")],
    [("GSE130487/GSE130487_RAW.tar","620,059 barcodes pre-QC; the paper reports >250,000 cells")]),
+ ("farnsworth/","#C4B04A","44,020 cells at 1, 2 and 5 dpf under 220 named clusters",
+   [("zebrafish-dev/","the UCSC Cell Browser release — the paper deposits raw reads only"),
+    ("Paper/","the rendered article; PMC serves its PDF only to browsers")],
+   [("zebrafish-dev/exprMatrix.tsv.gz","32,520 genes x 44,020 cells; the origin's own md5 agrees"),
+    ("zebrafish-dev/meta.tsv","Cluster holds the NAMES, ClusterNames holds the numbers")]),
+ ("zfin/","#5FA8A0","the vocabulary the rest gets read against — not an experiment",
+   [("2026-09-08/","ZFA + ZFS ontologies, 243,055 wild-type expression records"),
+    ("2026-02-02/","human and mouse orthologs — an older snapshot, kept as its own")],
+   [("2026-09-08/wildtype-expression_fish.txt","gene x structure x stage, from decades of published in-situ")]),
 ]
 for name,acc,head,subs,leaves in MULTI:
     n,s_=agg(name)
@@ -355,7 +367,7 @@ out.append(sec("Acquired (Open Source) \u00b7 scRNA-seq",
                "\u00b7 pinned means a manifest in zsb-bronze names these bytes; NO RECORD means nothing does"))
 for k in ('chemfish/','zmap/','micdropseq/','platt/','zscape/','zebrahub/','zcl2/',
           'daniocell/','celloracle/','wagner/','raj/','linnaeus/','trunk30hpf/','zcl1/',
-          'farrell/'):
+          'farrell/','farnsworth/'):
     out.append(B[k])
 
 # The three modalities that are not single-cell transcriptomes. Together they are 7.1% of
@@ -375,6 +387,14 @@ out.append(sec("Acquired \u00b7 Anatomy volumes",
                "segmented 3D embryo volumes as image stacks. No sequencing of any kind \u2014 the frame "
                "a cell-type label gets placed against"))
 out.append(B['zfap/'])
+
+# The curation layer, not a study. It is the only prefix here whose origin has no version at
+# all, so its releases are named for the day they were taken and every row is marked superseded
+# on purpose — the file at zfin.org today is a different file by construction.
+out.append(sec("Acquired \u00b7 Reference tables",
+               "no cells and no images \u2014 the ZFA anatomy ontology, the ZFS stage ontology and "
+               "243,055 curated expression records. What a cluster label gets checked against"))
+out.append(B['zfin/'])
 
 style=open('/tmp/claude-1001/-data/1a934452-8c41-4975-b302-6d9d32c09db2/scratchpad/panel_style.txt').read()
 panel=style+''.join(out)

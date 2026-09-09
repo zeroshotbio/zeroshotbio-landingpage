@@ -761,11 +761,30 @@ Two things that bit while adding it. The "no objects observed" branch tested
 tests both now. And two group captions ran into each other across the divide,
 so a caption is scaled to its own column the way tile captions are.
 
+The right column is itself `sub:[{label, tiles}]` — five modality bands, one
+per kind of measurement: scRNA-seq, imaging, spatial, anatomy, reference. Small
+bands sit on a floor (`FLOOR = 2.1`) and say `~` where they do, because a
+truthful band for anatomy alone would be a tenth of a grid unit. A band's
+captions shed rows down to one before shrinking below 6px, which is what keeps
+a 0.0003% tile like `tomoseq/` from writing over its neighbour.
+
 `legacy` on a tile is a byte count. Less than `value` splits the tile and
 captions both halves; equal to `value` means the whole prefix is legacy, which
 takes the dashed grey rule instead of a dataset accent. The same dash is on the
 legacy half of a split tile, and on `.fkds.leg` in the reader panel — one
 vocabulary for "retained, not what to build on" in all three places.
+
+### The silver panel is generated, the tiles are not
+
+`gen_silver_panel.py` builds the whole SILVER reader panel from a live
+`aws s3 ls --recursive` of the warehouse, written to
+`scratchpad/silver.tsv`. Run it, then splice its output into the SILVER node's
+`panel:` string — **target that node, not the first `panel:` in the file**: the
+BRONZE panel opens with the same `<style>.fkw{` block and a naive search-replace
+lands on it. Adding a prefix means four edits: `PINNED`, a row in `SIMPLE` or
+`MULTI`, its name in the section list at the bottom of the generator, and a tile
+in `ds-data.js` `groups`. The tiles are still hand-maintained literals, and that
+is where this page has drifted from the bucket every time it has drifted.
 
 ### `panelOnly` stations, and the box vocabulary
 
