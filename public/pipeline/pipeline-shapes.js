@@ -6316,15 +6316,23 @@ DRAW.quantify = drawQuantify;
 /* ------------------------------------------------------------------
    C1 · FRAGMENT, END-PREP, LIGATE ADAPTERS — one gesture, and then the forks.
 
-   ASKED FOR FROM THE PAGE, in detail, and the detail is the composition: a
-   strip of tubes standing quiet on the grid, and the whole of the reading in a
+   ASKED FOR FROM THE PAGE, in detail, and the detail is the composition: one
+   small machine standing quiet on the grid, and the whole of the reading in a
    magnification hung off it. So the bench is deliberately the smaller half of
-   the drawing. Everything C1 does happens in one strip of 0.2 ml tubes in a
-   block — nothing is loaded, nothing leaves, there is no vessel to move — and a
-   station with no traffic on it has nothing to animate at bench scale. The
-   block is the low charcoal solid the end of this row already stands in, the
-   strip on top of it carries the reaction at cDNA colour, and neither of them
-   moves. The chemistry is the subject and it is drawn where it can be read.
+   the drawing. Everything C1 does happens as one programmed incubation —
+   nothing is loaded, nothing leaves, there is no vessel to move — and a station
+   with no traffic on it has nothing to animate at bench scale. What is on the
+   ground is a benchtop cycler at about a third of the tile: a pale rounded
+   case, one angled screen and a low lid, and no lit anything. It is furniture,
+   drawn to anchor the frame rather than to be read, because the chemistry is
+   the subject and the chemistry is up in the glass.
+
+   AND IT IS UNLIT ON PURPOSE. What stood here before was a strip of eight
+   tubes glowing at cDNA colour, which drew the reaction twice — once six times
+   larger under the glass, where the argument is, and once on the bench in the
+   brighter of the two. A cased instrument with its lid down says everything
+   that needed saying (the reaction is in there, it is running) and gives the
+   eye nothing to stop on on the way to the lens.
 
    WHERE THE LENS HANGS IS FORCED, AND IT IS NOT STRAIGHT UP. The request asked
    for it above the block, and above is the one direction this tile does not
@@ -6376,9 +6384,8 @@ DRAW.quantify = drawQuantify;
    second and comes back whole — a cut, not a rewind. What repeats is the lens
    showing the reaction, not the chemistry running backwards.
 
-   Requires ellipseAt / arcPts from the A2 clutch block and rampHue from round
-   one. Spends --ch1..12, which are declared on /molecular_pipe; this shape is
-   worn by that page's C1 alone.
+   Requires rampHue from round one. Spends --ch1..12, which are declared on
+   /molecular_pipe; this shape is worn by that page's C1 alone.
    ------------------------------------------------------------------ */
 function drawFragmentLigate(g,n){
   /* EVERY OFFSET IS A FRACTION OF THE NODE. w, d and h are read at draw time
@@ -6392,59 +6399,116 @@ function drawFragmentLigate(g,n){
   const clamp=x=>x<0?0:x>1?1:x;
   const ease =x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
 
-  /* ---- THE BENCH: a low charcoal block with one strip standing in it -------
-     The works skin, which is what the dull end of this row is built out of.
-     What this station has on the ground is a consumable and not an instrument,
-     and the strip is drawn as a strip — eight tubes on one moulded web — rather
-     than as eight loose tubes, because that is the plastic a library prep is
-     actually run in. */
+  /* ---- THE BENCH: a low charcoal block with one small machine on it --------
+     The works skin, which is what the dull end of this row is built out of. */
   paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
 
-  const PER=8, RT=n.w*0.044, RH=n.h*0.50;
-  const sy=n.y+n.d*0.06, sx0=n.x-n.w*0.42, PITCH=n.w*0.84/PER;
-  const CZ1=n.h+RH*0.86, CZ0=CZ1-n.h*0.12;
-  const xA=sx0+PITCH*0.5-RT, xB=sx0+PITCH*(PER-0.5)+RT;
-  /* the web first, near face then top, so the eight tubes drawn after it stand
-     in front of their own moulding */
-  g.appendChild(el("polygon",{points:pts([P(xA,sy+RT,CZ1),P(xB,sy+RT,CZ1),
-    P(xB,sy+RT,CZ0),P(xA,sy+RT,CZ0)]),fill:"var(--t-right)","fill-opacity":".9",
-    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".6"}));
-  g.appendChild(el("polygon",{points:pts([P(xA,sy-RT,CZ1),P(xB,sy-RT,CZ1),
-    P(xB,sy+RT,CZ1),P(xA,sy+RT,CZ1)]),fill:"var(--t-top)","fill-opacity":".9",
-    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".6"}));
-  let anchor=null;
-  for(let i=0;i<PER;i++){
-    const cx=sx0+PITCH*(i+0.5);
-    const rim  =ellipseAt(cx,sy,n.h+RH,RT),
-          foot =ellipseAt(cx,sy,n.h,RT*0.50),
-          inner=ellipseAt(cx,sy,n.h,RT*0.42);
-    const silh=pts([[rim.x+rim.rx,rim.y],...arcPts(foot,0,Math.PI,8),
-                    [rim.x-rim.rx,rim.y],...arcPts(rim,Math.PI,2*Math.PI,12)]);
-    g.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".34"}));
-    /* the reaction, at a fixed level and in B8's colour: what is in these tubes
-       is the amplified cDNA B9 measured, and it is the same material the lens
-       is a magnification of. It does not move — a level that rose or fell would
-       be a transfer, and nothing is transferred here. */
-    const surf=ellipseAt(cx,sy,n.h+RH*0.40,RT*0.62);
-    g.appendChild(el("polygon",{points:pts([...arcPts(surf,2*Math.PI,Math.PI,10),
-      ...arcPts(inner,Math.PI,0,8)]),fill:CDNA,"fill-opacity":".5"}));
-    g.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
-      "stroke-width":".8","stroke-opacity":".6"}));
-    g.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,fill:"none",
-      stroke:"var(--stroke)","stroke-width":".9","stroke-opacity":".7"}));
-    if(i===0) anchor=rim;                 // the tube the lens is a lens ON
-  }
+  /* A ROUNDED BOX, BECAUSE faces() ONLY MAKES BRICKS AND A BRICK THIS SIZE
+     READS AS A BRICK. The plan corners are taken off and the walls are rebuilt
+     off that outline: an edge is a wall when its outward normal points at the
+     viewer, which on a convex plan is exactly the lower half of the silhouette,
+     so the top face can be laid over the lot without any ordering to get wrong.
+     The hem is stroked once as a polyline and each wall carries a hairline of
+     its OWN fill, because a case moulded in one piece must not show eleven
+     seams up its side — and eleven abutting polygons antialias to eleven pale
+     lines whether or not you stroke them. K is 3 on purpose: this thing is
+     twenty pixels across and every further segment is a node the map pays for
+     at every redraw. */
+  const roundBox=(gg,cx,cy,bw,bd,z0,z1,sk)=>{
+    const rr=Math.min(bw,bd)*0.26, K=3;
+    const hw=Math.max(0,bw/2-rr), hd=Math.max(0,bd/2-rr), plan=[];
+    [[hw,hd],[-hw,hd],[-hw,-hd],[hw,-hd]].forEach(([ox,oy],q)=>{
+      for(let i=0;i<=K;i++){ const a=(q+i/K)*Math.PI/2;
+        plan.push([cx+ox+rr*Math.cos(a), cy+oy+rr*Math.sin(a)]); }
+    });
+    const NP=plan.length, drop=(z1-z0)*S*CZ, top=plan.map(p=>P(p[0],p[1],z1));
+    /* outward normal of a counter-clockwise edge is (dy,-dx); the viewer is out
+       along +x +y, so nx+ny>0 is the test for a face that can be seen at all */
+    const vis=[], right=[];
+    for(let i=0;i<NP;i++){
+      const p=plan[i], q=plan[(i+1)%NP], nx=q[1]-p[1], ny=p[0]-q[0];
+      vis.push(nx+ny>0); right.push(nx>ny);
+    }
+    let s0=0;
+    for(let i=0;i<NP;i++) if(vis[i]&&!vis[(i+NP-1)%NP]){ s0=i; break; }
+    const chain=[];
+    for(let k=0;k<NP&&vis[(s0+k)%NP];k++){
+      const i=(s0+k)%NP, a=top[i], b=top[(i+1)%NP], tone=right[i]?sk.right:sk.left;
+      gg.appendChild(el("polygon",{points:pts([a,b,[b[0],b[1]+drop],
+        [a[0],a[1]+drop]]),fill:tone,"fill-opacity":sk.fo||1,stroke:tone,
+        "stroke-width":".7","stroke-opacity":sk.fo||1}));
+      if(!k) chain.push(a);
+      chain.push(b);
+    }
+    gg.appendChild(el("path",{d:"M "+chain[0].join(" ")+" L "+
+      chain.map(p=>p[0]+" "+(p[1]+drop)).join(" L ")+" L "+
+      chain[chain.length-1].join(" "),fill:"none",stroke:"var(--stroke)",
+      "stroke-width":sk.sw||1,"stroke-opacity":sk.so||1,"stroke-linejoin":"round"}));
+    gg.appendChild(el("polygon",{points:pts(top),fill:sk.top,"fill-opacity":sk.fo||1,
+      stroke:"var(--stroke)","stroke-width":sk.sw||1,"stroke-opacity":sk.so||1,
+      "stroke-linejoin":"round"}));
+    return top;
+  };
+
+  /* ---- THE CYCLER ---------------------------------------------------------
+     Case, screen, lid, and nothing else — no wells, no pips, no tint. C2 next
+     door wears the full thermalCycler() with its block open and its readout
+     counting, because there the machine IS the station. Here it is the room the
+     reaction happens in, so it gets the outside of the same object and none of
+     the inside, and it is small enough that the eye reaches the glass first. */
+  const MX=n.x-n.w*0.08, MY=n.y-n.d*0.10;
+  const MW=n.w*0.42, MD=n.d*0.32, MZ0=n.h, MZ1=n.h+n.h*0.40;
+  const body=roundBox(g,MX,MY,MW,MD,MZ0,MZ1,SKIN.monolith);
+
+  /* THE LID SITS BACK, WHICH IS THE WHOLE REASON THERE IS ROOM FOR A SCREEN.
+     A lid centred on the case covers the front third of its own top face in
+     this projection, and the screen leaning back into that third came out
+     sliced off along the lid's hem. Set back over the block — where a heated
+     lid actually is — it clears the chamfer and the case reads front-to-back
+     instead of as a lump. Low, and down: a slab standing proud would read as a
+     machine waiting to be loaded, which is the one thing this station is not
+     doing. */
+  roundBox(g,MX,MY-MD*0.17,MW*0.78,MD*0.56,MZ1,MZ1+n.h*0.13,SKIN.sB);
+
+  /* the screen is a chamfer and not a decal: it starts low on the front wall
+     and leans back to the top edge, which is the silhouette that says benchtop
+     instrument rather than box. It is wide because it was asked to be — most of
+     the flat run the rounded corners leave — and dark rather than lit, because
+     an instrument reporting a temperature is an instrument you stop and read,
+     and this one is furniture. */
+  const SFY=MY+MD*0.5, SHX=MW*0.27, SZ0=MZ0+(MZ1-MZ0)*0.10;
+  const scr=[P(MX-SHX,SFY,SZ0),P(MX+SHX,SFY,SZ0),
+             P(MX+SHX,SFY-MD*0.30,MZ1),P(MX-SHX,SFY-MD*0.30,MZ1)];
+  g.appendChild(el("polygon",{points:pts(scr),fill:"var(--bg)","fill-opacity":".85",
+    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
+  /* one rule across it, at the width a line of type would be. Two would mush at
+     six pixels of screen and none reads as a hole cut in the case. */
+  g.appendChild(el("line",{
+    x1:((scr[0][0]+scr[3][0])/2).toFixed(1),y1:((scr[0][1]+scr[3][1])/2).toFixed(1),
+    x2:((scr[1][0]+scr[2][0])/2).toFixed(1),y2:((scr[1][1]+scr[2][1])/2).toFixed(1),
+    stroke:"var(--fg2)","stroke-width":".8","stroke-opacity":".45"}));
+
+  /* THE LEADERS TOUCH THE MACHINE, THEY DO NOT CROSS IT. Aimed at the two ends
+     of a diameter, the far one has to be reached by drawing a line over the
+     case — which was survivable when the thing at the end of them was one 4 mm
+     tube and is not now there is a solid there. So they land on the two corners
+     of the near silhouette instead: the left corner and the foot of the front
+     one, the same pair a callout drawn by hand would pick. */
+  const bxs=body.map(p=>p[0]), bys=body.map(p=>p[1]);
+  const front=body[bys.indexOf(Math.max(...bys))];
+  const tips=[body[bxs.indexOf(Math.min(...bxs))],
+              [front[0],front[1]+(MZ1-MZ0)*S*CZ]];
 
   /* ---- THE MAGNIFICATION -------------------------------------------------
-     A thin solid ellipse with two leaders running back to one tube of the
-     strip: B7's idiom on this row, and /FASTQ_pipe's before it. The leaders are
-     drawn BEFORE the glass so its own backing covers where they would otherwise
-     run in across the drawing, and both start ON the boundary rather than
-     inside it — a leader that begins under the glass crosses its own line. */
+     A thin solid ellipse with two leaders running back to the machine the
+     reaction is in: B7's idiom on this row, and /FASTQ_pipe's before it. The
+     leaders are drawn BEFORE the glass so its own backing covers where they
+     would otherwise run in across the drawing, and both start ON the boundary
+     rather than inside it — a leader that begins under the glass crosses its
+     own line. */
   const LRX=Q*1.80, LRY=Q*0.78;
   const [KX,KY]=P(n.x-n.w*0.30, n.y+n.d*2.85, n.h*0.90);
-  [-1,1].forEach(s=>{
-    const tx=anchor.x+s*anchor.rx, ty=anchor.y;
+  tips.forEach(([tx,ty])=>{
     const vx=tx-KX, vy=ty-KY, k=1/Math.hypot(vx/LRX, vy/LRY);
     g.appendChild(el("line",{x1:(KX+vx*k).toFixed(1),y1:(KY+vy*k).toFixed(1),
       x2:tx.toFixed(1),y2:ty.toFixed(1),stroke:"var(--fg2)",
@@ -6464,8 +6528,16 @@ function drawFragmentLigate(g,n){
      through the rim: the pieces open symmetrically about the molecule, but
      every adapter hangs off a LEFT end, so the drawing grows a fork's length
      further left than it does right and the whole thing has to sit that much
-     right of the lens centre to keep both ends in the glass. */
-  const HL=1.10, SHIFT=0.15, AXIS=-0.09;
+     right of the lens centre to keep both ends in the glass.
+
+     MSC IS WHAT THE GAPS COST. Opening real space between four pieces makes the
+     drawing wider than the glass it has to live in, and the glass cannot grow —
+     it is already the biggest thing on this tile. So the figure is drawn at its
+     authored proportions and then stood back from: one factor on the group,
+     rather than forty lengths retuned. Stroke weights and the caption divide it
+     back out, because a line that thinned with the figure would have bought the
+     gaps by making everything either side of them harder to see. */
+  const HL=1.10, SHIFT=0.14, AXIS=-0.09, MSC=0.84;
   const CHW=0.085, CHP=0.185, C0=0.44;    // chip half-width, pitch, first centre
   const BAR0=0.925, BAR1=1.06, BARH=0.055;
   const XLEV=C0-CHW;                      // where the backbone goes level
@@ -6473,7 +6545,9 @@ function drawFragmentLigate(g,n){
   const waveY=v=>v>=XLEV?0:(Math.sin((v-XLEV)*WK+PH)-Math.sin(PH))*AMP;
   const EX=v=>(v*Q).toFixed(2), EY=v=>(v*Q).toFixed(2);
 
-  const mol=el("g",{transform:`translate(${(SHIFT*Q).toFixed(1)},${(AXIS*Q).toFixed(1)})`});
+  const LW=px=>(px*SC/MSC).toFixed(2);      // a screen weight, undone by MSC
+  const mol=el("g",{transform:`translate(${(SHIFT*Q).toFixed(1)},`+
+    `${(AXIS*Q).toFixed(1)}) scale(${MSC})`});
   lens.appendChild(mol);
 
   /* THE CUTS ARE NOT THREE EVEN QUARTERS — a nuclease cuts where it lands, and
@@ -6492,8 +6566,17 @@ function drawFragmentLigate(g,n){
      to end, the frays are at full length behind an opacity of zero, and every
      fork is already out in the wings with real coordinates. The ticker owns
      four transforms, six frays, six caps and four forks and creates nothing. */
-  const GAPO=0.26, FRAY=0.09, CAPR=0.042;
-  const ST=0.14, AX=0.15, AY=0.14, GAPA=0.070;
+  /* GAPO IS A GAP AND NOT A NUDGE. It was a quarter, which is less than the
+     length an adapter hangs off the end it is ligated to, so every fork landed
+     across the piece behind it and four cut fragments read as one strand with
+     hardware inserted along it. It now has to clear the fork AND the blunted
+     cap AND leave daylight after both — those three are what the number is, and
+     shortening the fork is the only reason the figure still fits the glass.
+     CAPR is the rounding-off itself and it was smaller than the strand it was
+     supposed to be rounding: a bead has to be several times the half-width of
+     a line before anyone can see that the line ended in a curve. */
+  const GAPO=0.46, FRAY=0.09, CAPR=0.074;
+  const ST=0.125, AX=0.13, AY=0.14, GAPA=0.070;
   const BC=["var(--ch5)","var(--ch7)",rampHue(72,96)];
   const frags=edge.slice(0,NF).map((a,k)=>{
     const b=edge[k+1];
@@ -6508,7 +6591,7 @@ function drawFragmentLigate(g,n){
     for(let i=0;i<=N;i++){ const v=a+(b-a)*i/N;
       d+=(i?" L ":"M ")+EX(v)+" "+EY(waveY(v)); }
     grp.appendChild(el("path",{d,fill:"none",stroke:CDNA,
-      "stroke-width":(1.5*SC).toFixed(2),"stroke-opacity":".55",
+      "stroke-width":LW(1.5),"stroke-opacity":".55",
       "stroke-linecap":"round","stroke-linejoin":"round"}));
 
     /* the barcodes and the Read 2 handle, on the one piece that ends up with
@@ -6527,13 +6610,20 @@ function drawFragmentLigate(g,n){
     /* A CUT END, TWICE OVER: the fray that says the enzyme left it ragged, and
        the blunt cap end repair and A-tailing leave behind. Only ends the score
        marks made get them — the two original termini of the molecule were never
-       cut, and rounding them off would say this reaction had touched them. */
+       cut, and rounding them off would say this reaction had touched them.
+
+       THE CAP IS THE WHOLE OF END-PREP AND IT HAS TO BE SEEN. It sits on the
+       last point of the backbone and it is drawn opaque against a strand at
+       .55, because a bead at the strand's own weight is a strand with a slight
+       thickening on it, which is what a chemist would call a rendering artefact
+       and not a repaired end. The knob is what the rest of the drawing is
+       claiming happened here. */
     const ends=[];
     [[a,-1,k>0],[b,1,k<NF-1]].forEach(([v,dir,cut])=>{
       if(!cut) return;
       const y=waveY(v);
       const fr=el("path",{d:"",fill:"none",stroke:CDNA,
-        "stroke-width":(1.1*SC).toFixed(2),"stroke-opacity":"0",
+        "stroke-width":LW(1.1),"stroke-opacity":"0",
         "stroke-linecap":"butt"});
       const cap=el("circle",{cx:EX(v),cy:EY(y),r:(CAPR*Q).toFixed(2),
         fill:CDNA,"fill-opacity":"0"});
@@ -6545,8 +6635,10 @@ function drawFragmentLigate(g,n){
           d2+=` M ${EX(tx)} ${EY(y)} L ${EX(tx)} ${EY(y+(i?1:-1)*L*0.85)}`; }
         fr.setAttribute("d",d2);
         fr.setAttribute("stroke-opacity",(0.8*(1-f)*clamp(f/0.08)).toFixed(2));
-        cap.setAttribute("r",(CAPR*Q*(0.45+0.55*f)).toFixed(2));
-        cap.setAttribute("fill-opacity",(0.75*f).toFixed(2));
+        /* it grows from the strand's own half-width to the knob, so the round
+           end arrives with the retraction rather than being switched on */
+        cap.setAttribute("r",(CAPR*Q*(0.22+0.78*f)).toFixed(2));
+        cap.setAttribute("fill-opacity",(0.92*f).toFixed(2));
       };
       setEnd(0); ends.push(setEnd);
     });
@@ -6562,17 +6654,18 @@ function drawFragmentLigate(g,n){
       "stroke-width":".5","stroke-opacity":".8"}));
     ad.appendChild(el("path",{d:`M ${EX(-ST)} ${EY(-0.028)} L ${EX(-ST-AX)} ${EY(-AY)}`+
       ` M ${EX(-ST)} ${EY(0.028)} L ${EX(-ST-AX)} ${EY(AY)}`,fill:"none",
-      stroke:ADPT,"stroke-width":(1.3*SC).toFixed(2),"stroke-opacity":".95",
+      stroke:ADPT,"stroke-width":LW(1.3),"stroke-opacity":".95",
       "stroke-linecap":"butt","stroke-linejoin":"miter"}));
     const lb=el("text",{x:EX(-ST-AX*0.55),y:EY(AY+0.19),"text-anchor":"middle",
-      "font-size":(0.115*Q).toFixed(2),"letter-spacing":".2",fill:ADPT});
+      "font-size":(0.115*Q/MSC).toFixed(2),"letter-spacing":".2",fill:ADPT});
     lb.textContent="R1"; ad.appendChild(lb);
     grp.appendChild(ad);
 
     return {grp, ad, a, ends,
             /* the pieces drift apart ALONG the molecule, because they came off
                one strand and the break is the news; the sideways nudge is what
-               stops four collinear segments reading as one dashed line */
+               stops four pieces on one axis reading as a dashed line rather
+               than as four things that are no longer joined */
             open:(k-(NF-1)/2)*GAPO, rise:(r()-0.5)*0.18};
   });
 
@@ -6581,7 +6674,7 @@ function drawFragmentLigate(g,n){
   const ticks=cuts.map(v=>{
     const y=waveY(v);
     const e=el("line",{x1:EX(v),y1:EY(y-0.16),x2:EX(v),y2:EY(y+0.16),
-      stroke:"var(--fg2)","stroke-width":(1.2*SC).toFixed(2),"stroke-opacity":"0",
+      stroke:"var(--fg2)","stroke-width":LW(1.2),"stroke-opacity":"0",
       "stroke-linecap":"butt"});
     mol.appendChild(e); return e;
   });
