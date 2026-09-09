@@ -183,6 +183,15 @@ const NODES = [
  built:"Sections 3.1 to 3.4. Fragmentation, end repair and A-tailing happen in a single reaction; a double-sided SPRI cleanup selects the size window; the TruSeq R1 adapter is ligated and the product purified again.",
  cond:"Protocol, not transcript. Nothing run-specific was archived and nothing here can be checked after the fact — the size window is enforced by bead chemistry, and the only evidence it worked is the library trace two boxes along."},
 
+/* THE DRAWING WAS REPLACED FROM "EDIT VISUAL" AND THE RECORD WAS NOT, which is
+   the rule for a lifted station: /pipeline owns this prose. The request asked
+   for a UDI plate half full of indexes, one transfer into a strip tube, and —
+   over it — the finished construct as a labelled bar assembling in read order,
+   P5 · UDI · R1 · insert · BC1 · linker · BC2 · linker · BC3 · polyN · R2 ·
+   UDI · P7. Nothing in that contradicts anything here; the read structure the
+   bar spells out is S's, off Appendix B, and it is S's record that carries it.
+   What the bar adds to this page is arrangement, not a claim: it is the only
+   place on the map where the whole molecule is drawn at once. */
 {id:"R4p", key:"C2", group:"Sequencing library prep", shape:"indexpcr", name:"Round 4 — indexing PCR", x:17.1, y:R2, lane:"r2", w:0.72, d:0.72, h:0.42,
  sub:"UDI plate · applied by PCR, not in-cell",
  does:"The fourth barcode. It identifies the sublibrary rather than the sample, it is added by PCR long after the cells were lysed, and it arrives as a standard Illumina index — which is why the read appears to carry only three barcodes when the cell identity is really four.",

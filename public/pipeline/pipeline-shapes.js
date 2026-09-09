@@ -7072,175 +7072,341 @@ function drawFragmentLigate(g,n){
 DRAW.fragmentligate = drawFragmentLigate;
 
 /* ------------------------------------------------------------------
-   C2 · ROUND 4 — INDEXING PCR — a plate of indexes and the machine that
-   attaches them.
+   C2 · ROUND 4 — INDEXING PCR — an index plate, one reaction, and the
+   only look this map ever gets at the whole molecule.
 
    THE NAME IS THE TRAP AND THE DRAWING HAS TO DISARM IT. "Round 4" echoes
    rounds one to three, and those are drawn on this row as barcodes written
-   INSIDE a cell — a chain of coloured ticks on a strand, built up by surviving
-   three plates in a known order. This round is none of that. It is bulk PCR on
-   a tube, ninety-five thousand cells after the last of them was lysed, and the
-   thing it identifies is the sublibrary rather than the sample. So the barcode
-   chain that says "combinatorial" is deliberately absent here: borrowing it
-   would put this step inside the 48 x 96 x 96 that makes a cell identity, and
-   the whole difficulty of this station is that it is NOT in that arithmetic.
-   What is drawn instead is the two objects a bench actually has for it — an
-   index plate and a thermal cycler.
+   INSIDE a cell — a plate, a lens over one well, a chain of coloured chips
+   growing on a strand as the cell survives another deal. This round is none
+   of that. It is bulk PCR on free DNA in a tube, ninety-five thousand cells
+   after the last of them was lysed, and what it names is the SUBLIBRARY
+   rather than the sample: one index per tube, not one well per cell. So the
+   growing-chain motif is deliberately absent, and so is any figure that
+   would put this step inside the 48 x 96 x 96 that makes a cell identity.
+   What is drawn instead is the plastic a bench actually has for it — an
+   index plate, a strip, a cycler — and, over it, the finished construct.
 
-   THE CYCLER IS B8's, AS A COMPONENT. B8's own header names C2 as the second
-   caller it was written as a component for, so this is that call: same chassis,
-   same block, same lid, and the same refusal on the readout. What differs is
-   the band — B8 runs six cycles to eight, this one seven to thirteen off the
-   cDNA concentration B9 measured and did not archive — so thirteen pips are
-   drawn and seven fill. The floor of the band is all the record supports.
+   THE PLATE IS 48 INDEXES ON 96 WELLS AND THE DRAWING SAYS SO BY SHAPE. Six
+   columns hold liquid and six are drawn empty, which is what a half-filled
+   UDI plate looks like on a bench and is the one fact about it a reader can
+   check by counting. Its lip is --ch10, a violet none of the three barcoding
+   plates wears — those are --ch5, --ch8 and --ch3 — because a fourth plate in
+   a third round's colour is the misreading this whole station exists to
+   avoid. The same violet comes back at both ends of the construct above,
+   which is the drawing's way of saying where those two blocks came from.
 
-   THE EIGHT HUES ARE B7's AND THAT IS THE CLAIM. Eight libraries go into the
-   block wearing B8's cDNA colour, because until this moment they ARE
-   interchangeable — same chemistry, same adapters, nothing to tell them apart
-   in a tube. One index lands in each and they come out as eight distinguishable
-   things in the eight colours the sublibrary has worn since B7 made it. That is
-   the __s1..__s8 suffix on every cell id, and it is the one part of this whole
-   library prep that can be checked after the fact.
+   THE COLUMNS ILLUMINATE LEFT TO RIGHT, EIGHT AT A TIME, because that is the
+   order section 3.5 chooses indexes in: down a column, then the next column,
+   and a well is never reused. The sweep is also how the plate fills at the
+   top of the loop, so the wrap never shows a used well quietly refilling —
+   the well that gives up its contents stays empty for the rest of the cycle.
 
-   NOTHING ON THE PLATE IS DRAWN SPENT. The wells are never reused, so a real
-   plate accumulates a history — but which wells this run took is not on this
-   instance, and shading in a block of used ones would be inventing how much of
-   the plate had already gone. Eight are taken out of ninety-six and the other
-   eighty-eight are left alone: the rule, not a history. They are taken as one
-   column because eight sublibraries and eight rows is what the plastic offers,
-   and it is the column nearest the machine so that no line has to cross the
-   plate it comes from — B7's rule for a fan, and the same reason.
+   ONE WELL, ONE TUBE, AND THAT IS THE WHOLE REACTION. The fan of eight this
+   station used to draw said "eight sublibraries, eight indexes", which is
+   true and is on the record; but it also put eight lines over a plate and
+   made the step look like a deal. Eight reactions stand in the block and
+   eight tubes stand on the rack. The drawing follows ONE of them, because
+   the glass above holds ONE molecule and a reader who cannot say which tube
+   it came out of cannot read the glass.
 
-   WHERE THE TWO OBJECTS STAND IS FORCED, the way it is for every station in
-   this stretch. C1 throws its magnification into the near ground to the left,
-   C3 is the next tile along, and this station's own name runs up and to the
-   right off its back edge. The plate goes forward and right of C1's stage; the
-   cycler tucks in just under the diagonal the name runs on, which is where B8
-   puts its own and is the only clear screen back there.
+   THE CYCLER IS B8's, AS A COMPONENT, and it is simply running. Same chassis,
+   same block, same lid, same refusal on the readout: thirteen pips are drawn
+   and seven fill, which is the floor of the band section 3.5 sets off the
+   cDNA concentration B9 measured and did not archive. It is laid out as one
+   row of eight rather than four by two, so the plastic on the bench and the
+   plastic in the block are the same consumable.
 
-   Reuses thermalCycler from B8, plateSlab / plateGrid / drawWell from the plate
-   set and flowLine / setFanLine from the fan. Spends --ch1..12, which are
+   THE GLASS IS THE POINT. Every other lens on this row shows a piece of the
+   molecule — the chips, a fragment, an adapter arriving. This is the first
+   and only place the whole thing is visible, so it is drawn as a construct
+   map and not as a strand: a horizontal labelled bar assembling left to
+   right, in READ ORDER, which is what makes thirteen blocks legible as one
+   sentence rather than as thirteen decorations. The three barcode chips keep
+   --ch8, --ch11 and --ch4, the three this row gives the in-situ rounds
+   wherever it draws a strand; the two UDI blocks share the plate's violet
+   and are the same index read from both ends; everything structural — P5,
+   P7, the two TruSeq reads, the linkers and the polyN — is grey, because
+   none of it identifies anything and colour on this row means identity.
+   The complementary strand arrives only once the top one is complete: a
+   duplex drawn while the top strand is still being assembled would say the
+   second strand was being built alongside the first, which is not what a
+   PCR does.
+
+   WHERE THE GLASS HANGS IS FORCED. The ground either side is spoken for —
+   C1 throws its own magnification into the near ground to the left, C3 is
+   the next tile along — so "above" is the only air there is, and the sky
+   over any tile on this row is striped with the names of the stations to its
+   LEFT, running up and to the right at −30°. A bar this wide does not fit
+   between two of them; it fits above all of them, clear of where B7's name
+   runs out, and to the right of B8a's own glass, which is the only other
+   thing hanging in this stretch of sky.
+
+   Reuses thermalCycler from B8, skirtSlab / plateGrid / drawWell from the
+   plate set, flowLine / setFanLine from the fan, and ellipseAt from the A2
+   clutch block. Spends --ch4, --ch6, --ch8, --ch10 and --ch11, which are
    declared on /molecular_pipe — the only page carrying a node wearing this.
    ------------------------------------------------------------------ */
 function drawIndexPcr(g,n){
-  /* EVERY OFFSET IS A FRACTION OF THE NODE. w, d and h are read at draw time
-     because a resize is the only reason this function runs again. Composed at
-     w .72, d .72, h .42 — the same tile C1 and C3 stand on. */
+  /* EVERY OFFSET IS EITHER A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC,
+     and w, d and h are read at draw time because a resize is the only reason
+     this function runs again. Composed at w .72, d .72, h .42 — the same tile
+     C1 and C3 stand on. */
   const SC=n.w/0.72;
-  const CDNA="var(--ch6)";                  // what B8 made, B9 measured, C1 cut
-  const clamp=x=>Math.max(0,Math.min(1,x));
-  const NSUB=8, COLS=12, ROWS=8, CYCLES=7;
+  const clamp=x=>x<0?0:x>1?1:x;
+  const ease=u=>u*u*(3-2*u);
 
-  const plate={x:n.x+n.w*0.60, y:n.y+n.d*1.45, w:n.w*1.25, d:n.d*0.85};
-  const th=n.h*0.55;
-  const cyc  ={x:n.x+n.w*0.64, y:n.y-n.d*2.20, w:n.w*1.42, d:n.d*0.82,
-               h:n.h*0.44, cols:4, rows:2, pips:13, lit:CYCLES};
+  const COLS=12, ROWS=8, WET=6, PER=8, CYCLES=7;
+  const CDNA ="var(--ch6)";                 // what B8 made, B9 measured, C1 cut
+  const UDI  ="var(--ch10)";                // the index, on the plate and at both ends
+  const MIXED="color-mix(in oklab, var(--ch10) 55%, var(--ch6))";
+  const ADPT ="var(--fg2)", SPCR="var(--fg3)";
 
   /* back to front, because on an isometric grid the order things are appended
      in is the order they occlude in */
-  const M=thermalCycler(g, cyc);
 
-  /* the bench itself stays the plain tile the rest of the C row stands on.
-     Everything this station does happens in the block, so there is nothing on
-     the ground to draw and a prop invented to fill it would be a claim. */
+  /* ---- THE CYCLER, FURTHEST BACK ------------------------------------------ */
+  const cyc={x:n.x+n.w*0.64, y:n.y-n.d*2.20, w:n.w*1.42, d:n.d*0.82,
+             h:n.h*0.44, cols:PER, rows:1, pips:13, lit:CYCLES};
+  const M=thermalCycler(g,cyc);
+  M.setLid(1);                              // it is running, and it stays shut
+  M.setWells(1);                            // eight reactions, all of them cDNA
+
+  /* ---- THE STRIP, ON ITS OWN LOW RACK -------------------------------------
+     Behind the tile and thrown left, which is the only clear ground this
+     station has: the plate takes the near right, the cycler the far right,
+     and the tile itself is barely wider than two tubes. The rack is what a
+     strip stands on — eight tubes floating over a tile they are three times
+     the width of would be a strip nobody had put down anywhere. */
+  const rack={x:n.x-n.w*0.55, y:n.y-n.d*1.15, w:n.w*1.60, d:n.d*0.42, h:n.h*0.30};
+  paint(g,rack.x,rack.y,rack.w,rack.d,rack.h,SKIN.works);
+  const RT=n.w*0.070, RH=n.h*0.62, WZ1=rack.h+RH*0.88, WZ0=WZ1-n.h*0.16;
+  /* THE WEB IS WHAT MAKES EIGHT TUBES A STRIP. Without it this is eight loose
+     tubes standing in a block, which is a different consumable. Near face then
+     top, so the tubes drawn after it stand in front of their own moulding. */
+  const xA=rack.x-rack.w/2+0.5*rack.w/PER-RT,
+        xB=rack.x+rack.w/2-0.5*rack.w/PER+RT, ry=rack.y;
+  g.appendChild(el("polygon",{points:pts([P(xA,ry+RT,WZ1),P(xB,ry+RT,WZ1),
+    P(xB,ry+RT,WZ0),P(xA,ry+RT,WZ0)]),fill:"var(--t-right)","fill-opacity":".9",
+    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
+  g.appendChild(el("polygon",{points:pts([P(xA,ry-RT,WZ1),P(xB,ry-RT,WZ1),
+    P(xB,ry+RT,WZ1),P(xA,ry+RT,WZ1)]),fill:"var(--t-top)","fill-opacity":".9",
+    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
+  const tubes=[];
+  for(let i=0;i<PER;i++){
+    const cx=rack.x-rack.w/2+(i+0.5)*rack.w/PER;
+    const rim  =ellipseAt(cx,ry,rack.h+RH,RT),
+          foot =ellipseAt(cx,ry,rack.h,RT*0.50),
+          inner=ellipseAt(cx,ry,rack.h,RT*0.42);
+    const silh=pts([[rim.x+rim.rx,rim.y],...arcPts(foot,0,Math.PI,8),
+                    [rim.x-rim.rx,rim.y],...arcPts(rim,Math.PI,2*Math.PI,12)]);
+    g.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".38"}));
+    /* born with its own surface at the level it rests at: the ticker restates
+       a surface it never has to invent, and an element with no points sits at
+       the origin and drags the selection halo out across the map */
+    const liq=el("polygon",{points:pts(arcPts(inner,Math.PI,0,8)),
+      fill:CDNA,"fill-opacity":"0"});
+    g.appendChild(liq);
+    g.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
+      "stroke-width":".9","stroke-opacity":".7"}));
+    g.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,fill:"none",
+      stroke:"var(--stroke)","stroke-width":"1","stroke-opacity":".8"}));
+    tubes.push({liq, cx, inner, rim, mouth:[rim.x, rim.y-1.4*SC]});
+  }
+  /* it fills to a shoulder, not to the rim, and the bore widens on the way up,
+     so the surface has to walk the taper or it draws outside the wall */
+  const setTube=(t,f,op)=>{
+    const fr=Math.max(0.0008,Math.min(1,f))*0.86;
+    const surf=ellipseAt(t.cx,ry,rack.h+fr*RH,RT*(0.42+0.52*fr));
+    t.liq.setAttribute("points",pts([...arcPts(surf,2*Math.PI,Math.PI,10),
+                                     ...arcPts(t.inner,Math.PI,0,8)]));
+    t.liq.setAttribute("fill-opacity",(f>0.004?op:0).toFixed(2));
+  };
+  /* seven of them are already made up and never change: they are the other
+     seven sublibraries, each getting an index of its own out of shot */
+  for(let i=1;i<PER;i++) setTube(tubes[i],0.52,0.66);
+
+  /* the bench itself stays the plain tile the rest of the C row stands on */
   paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.tile);
 
   /* ---- THE UDI PLATE ------------------------------------------------------ */
-  plateSlab(g,plate,th,SKIN.tile,1);
-  const TAKEN=COLS-1;                       // the column nearest the machine
-  const idx=[];
-  plateGrid(plate,th,COLS,ROWS).forEach(w=>{
+  const plate={x:n.x+n.w*0.52, y:n.y+n.d*1.45, w:n.w*1.45, d:n.d*0.967};
+  const pth=n.h*0.55;
+  const deck=skirtSlab(g,plate,pth,UDI);
+  /* ONE GROUP PER WET COLUMN, because what the sweep lights is a column, and
+     eight opacity writes a frame for one thing that moved is eight too many.
+     The groups go on AFTER every well is drawn: drawWell lays a --bg disc in
+     each socket, so a fill appended as its well is built ends up under the
+     next well's plastic and the plate reads as empty. */
+  const cols=[], wet=[];
+  let taken=null;
+  plateGrid(deck,pth,COLS,ROWS).forEach(w=>{
     drawWell(g,w,false);
-    if(w.i!==TAKEN) return;
-    /* born with the well's own geometry and no colour: the ticker owns one
-       opacity per well and never has to work out where a well was */
+    if(w.i>=WET) return;                    // the right six are drawn empty
     const f=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
-      ry:(w.e.ry*0.86).toFixed(2),fill:SUBHUE(idx.length,NSUB),"fill-opacity":"0"});
-    g.appendChild(f);
-    idx.push({fill:f, mouth:[w.e.x, w.e.y-1.5*SC]});
+      ry:(w.e.ry*0.86).toFixed(2),fill:UDI,"fill-opacity":".92"});
+    wet.push([w.i,f]);
+    /* A1 — first in the order the sweep has just spelled out, and therefore
+       the well this run takes. Nothing else on the plate is drawn spent: which
+       wells a real plate has already lost is not on this instance. */
+    if(w.i===0 && w.j===0) taken={fill:f, mouth:[w.e.x, w.e.y-1.6*SC]};
+  });
+  for(let i=0;i<WET;i++) cols.push(g.appendChild(el("g",{opacity:"0"})));
+  wet.forEach(([i,f])=>cols[i].appendChild(f));
+
+  /* ---- ONE TRANSFER, AND IT ENDS IN THE NEAREST TUBE ----------------------
+     The fan idiom is deliberately not used: a fan says many things become one,
+     or one becomes many, and this is neither. It is a single line from a single
+     well to the tube standing closest to it, which is the whole of what one
+     indexing reaction is at the bench. */
+  const LINE=flowLine(g, taken.mouth, tubes[0].mouth, UDI, SC);
+
+  /* ---- THE MAGNIFICATION --------------------------------------------------
+     A thin solid ellipse with two leaders back to the tube the reaction is in:
+     the idiom this map uses everywhere for a view drawn larger than life, and a
+     solid ring is the only thing on this tile allowed to be one.
+
+     WHAT IS INSIDE IT IS SIZED IN SCREEN PIXELS AND SCALED BY BEING SCALED. A
+     molecule has no world size to be authored in, so it goes in a group
+     carrying scale(n.w / .72) and every coordinate under it is written for the
+     size this node happens to be authored at. A resize moves the glass, grows
+     it, and takes the whole construct along. */
+  const LX=106, LY=33;
+  const TOP=P(n.x,n.y,n.h);
+  const KX=TOP[0]+55*SC, KY=TOP[1]-275*SC;
+  [-1,1].forEach(s=>{
+    const tx=tubes[0].rim.x+s*tubes[0].rim.rx, ty=tubes[0].rim.y;
+    const vx=tx-KX, vy=ty-KY, u=1/Math.hypot(vx/(LX*SC), vy/(LY*SC));
+    g.appendChild(el("line",{x1:(KX+vx*u).toFixed(1),y1:(KY+vy*u).toFixed(1),
+      x2:tx.toFixed(1),y2:ty.toFixed(1),stroke:"var(--fg2)",
+      "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".4"}));
+  });
+  const lens=el("g",{transform:
+    `translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${SC.toFixed(4)})`});
+  g.appendChild(lens);
+  /* nearly opaque: glass you can read the ground grid through is a hole in the
+     drawing rather than a lens over it */
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,
+    fill:"var(--bg)","fill-opacity":".92"}));
+  /* a block slides in from off the right of the field and has to stop existing
+     at the ring rather than at the edge of the screen. Uniqued the way the tank
+     clips are: a checker draws this shape twice, at two sizes, into one page. */
+  const cid=`udiglass${++UID}`;
+  const cp=el("clipPath",{id:cid});
+  cp.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY}));
+  lens.appendChild(cp);
+  const stage=el("g",{"clip-path":`url(#${cid})`});
+  lens.appendChild(stage);
+
+  /* ---- THE CONSTRUCT, IN READ ORDER --------------------------------------
+     Thirteen blocks, each a width and a colour, laid out from one running
+     total so the bar is described once and every coordinate in it — block,
+     label, tick, complement — is read off the same ruler. */
+  const SEG=[["P5",7,ADPT],           ["UDI",6.5,UDI],
+             ["R1",7,ADPT],           ["cDNA insert",18,CDNA],
+             ["BC1",6,"var(--ch8)"],  ["linker",4,SPCR],
+             ["BC2",6,"var(--ch11)"], ["linker",4,SPCR],
+             ["BC3",6,"var(--ch4)"],  ["polyN",6.5,SPCR],
+             ["R2",7,ADPT],           ["UDI",6.5,UDI],
+             ["P7",7,ADPT]];
+  const SPAN=SEG.reduce((a,s)=>a+s[1],0);
+  const BW=164, U=BW/SPAN, BY=-2.5, BH=10, SLIDE=14;
+  /* THE LABELS ALTERNATE BETWEEN TWO ROWS. "cDNA insert" is four times the
+     width of the block it names and "linker" is three times its own, so one
+     row of thirteen names is a row of overlapping names. Two rows give every
+     label its neighbour's width as well as its own, and each carries a tick
+     down to the block so the pairing survives the stagger. */
+  const comp=el("g",{opacity:"0"}); stage.appendChild(comp);
+  const parts=[]; let run0=0;
+  SEG.forEach(([name,wid,fill],k)=>{
+    const x0=run0*U-BW/2, ww=wid*U; run0+=wid;
+    const p=el("g",{transform:`translate(${SLIDE},0)`,opacity:"0"});
+    stage.appendChild(p);
+    p.appendChild(el("rect",{x:x0.toFixed(2),y:BY.toFixed(1),
+      width:ww.toFixed(2),height:BH,rx:"1.2",fill,"fill-opacity":".9",
+      stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".55"}));
+    const cx=x0+ww/2, far=k%2===1, ly=BY-(far?12:4);
+    p.appendChild(el("line",{x1:cx.toFixed(2),y1:(ly+1.4).toFixed(1),
+      x2:cx.toFixed(2),y2:BY.toFixed(1),stroke:"var(--fg3)",
+      "stroke-width":".5","stroke-opacity":".55"}));
+    const t=el("text",{x:cx.toFixed(2),y:ly.toFixed(1),"text-anchor":"middle",
+      "font-size":"4.4","letter-spacing":".2",fill:"var(--fg2)",opacity:"0"});
+    t.textContent=name; p.appendChild(t);
+    /* the complement is the same duplex seen from the other strand, so it is
+       drawn block for block under the top one rather than as a second figure:
+       what it adds is that the molecule is double-stranded, and nothing else */
+    comp.appendChild(el("rect",{x:x0.toFixed(2),y:(BY+BH+2.5).toFixed(1),
+      width:ww.toFixed(2),height:"6.5",rx:"1",fill,"fill-opacity":".45",
+      stroke:"var(--stroke)","stroke-width":".4","stroke-opacity":".3"}));
+    parts.push({g:p, lab:t});
   });
 
-  /* ---- EIGHT LINES, AND THEY DO NOT MEET ---------------------------------
-     The fan figure this row uses elsewhere converges on one mouth, because
-     elsewhere many things become one thing. Here they emphatically do not: each
-     index goes to its own reaction and stays there, and eight lines drawn into
-     a single port would say the indexes were pooled — the exact misreading this
-     station spends the rest of its drawing avoiding. So they run in parallel,
-     well to well, and never touch. */
-  const IDX=idx.map((w,k)=>flowLine(g, w.mouth, M.slots[k], SUBHUE(k,NSUB), SC));
+  /* the ring last, over everything, so nothing inside can soften its own edge */
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,fill:"none",
+    stroke:"var(--fg2)","stroke-width":"1.5","stroke-opacity":".85"}));
 
   /* ---- TIMING -------------------------------------------------------------
-     The transfers are the long beat and the PCR is the longer one; the two
-     short ones are the lid, which is a second at the bench and should not read
-     as an event. WIN is how much of the take beat one transfer occupies — a
-     little under half, so several are in the air at once and eight pipettings
-     read as a task rather than as eight things taking turns. */
-  const TAKE=2.8, SEAL=0.8, RUN=3.6, HOLD=1.7, CLEAR=1.0, WIN=0.42;
-  const t1=TAKE, t2=t1+SEAL, t3=t2+RUN, t4=t3+HOLD, t5=t4+CLEAR;
-  const DIM=0.05, LIVE=0.16;
+     Six beats. The sweep has to be slow enough that a reader sees six columns
+     and not one wipe; the transfer is one pipetting; the build is the whole
+     figure and takes half the loop, a block at a time, because thirteen names
+     arriving at once is a diagram and thirteen arriving in order is a sentence;
+     the complement is a beat of its own so that "and it is double-stranded"
+     lands after "and this is what it is" rather than with it.
+
+     PLACEMENT IS A PURE FUNCTION OF THE CLOCK. Everything is stated from t
+     alone rather than nudged from where it was, so a frame long enough to skip
+     a whole beat — a tab coming back, a step in trace mode — cannot leave a
+     block halfway into a bar it has already joined. */
+  const SCAN=1.9, TAKE=1.2, STEP=0.26, COMP=0.7, HOLD=2.6, CLEAR=0.7;
+  const t1=SCAN, t2=t1+TAKE, t3=t2+SEG.length*STEP, t4=t3+COMP, t5=t4+HOLD,
+        T=t5+CLEAR, COL=SCAN/WET;
+
+  const place=t=>{
+    const gone=clamp((t-t5)/CLEAR);
+    /* each column ARRIVES lit and settles, which is both the illumination the
+       protocol's order deserves and the way the plate gets its liquid back
+       after the clear — so the wrap never shows a spent well refilling */
+    for(let k=0;k<WET;k++){
+      const u=(t-k*COL)/COL;
+      const on=clamp(u/0.34);
+      cols[k].setAttribute("opacity",
+        (on*(1-0.30*ease(clamp((u-0.55)/0.9)))*(1-gone)).toFixed(2));
+    }
+    const take=clamp((t-t1)/TAKE);
+    /* the well empties as its contents leave and stays empty: wells are never
+       reused, so nothing on this plate is allowed to fill twice in one loop */
+    taken.fill.setAttribute("fill-opacity",
+      (0.92*(1-clamp((take-0.15)/0.5))).toFixed(2));
+    setFanLine(LINE, 0.07*(1-gone), take);
+    /* the tube was not empty. The library has been in it since B7 and what
+       arrives is one index — so the level barely moves and the colour does.
+       It walks BACK over the clear rather than reverting at the wrap: the loop
+       is allowed one cut and it is spent on the plate. */
+    const tk=take*(1-gone);
+    setTube(tubes[0], 0.52+0.16*ease(tk), 0.66+0.14*tk);
+    tubes[0].liq.setAttribute("fill", tk>0.7?MIXED:CDNA);
+    /* the cycler runs the whole loop at its own rate, seven cycles to the
+       band's thirteen, because that floor is all the record supports */
+    const cyk=t/T*CYCLES;
+    M.setTemp(0.5+0.5*Math.sin(2*Math.PI*cyk-Math.PI/2), 1);
+    M.setPips(Math.min(CYCLES,Math.floor(cyk)));
+
+    parts.forEach((p,k)=>{
+      const u=ease(clamp((t-t2-k*STEP)/(STEP*1.6)));
+      p.g.setAttribute("transform",`translate(${(SLIDE*(1-u)).toFixed(2)},0)`);
+      p.g.setAttribute("opacity",(u*(1-gone)).toFixed(2));
+      p.lab.setAttribute("opacity",clamp((u-0.55)/0.4).toFixed(2));
+    });
+    comp.setAttribute("opacity",(ease(clamp((t-t3)/COMP))*(1-gone)).toFixed(2));
+  };
 
   /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion never
-     advances it, so whatever t begins at is the whole station for that reader —
-     and zero is the instant before the first transfer, which is a plate with
-     nothing on it. Two thirds of the way through the take beat is the frame
-     worth holding: three wells indexed, five in the air, and the difference
-     between an indexed reaction and a plain one legible in one look. */
-  let t=TAKE*0.62, mode=-1;
-  /* every entry states the whole world it is entering rather than the delta
-     from the beat before, so a frame long enough to skip one — a tab coming
-     back, a step in trace mode — cannot leave the lid half open. B8's rule,
-     and it is here for the reason it is there. */
-  const enter=m=>{
-    mode=m;
-    M.setLid(m>=2?1:0);
-    M.setTemp(0,0);
-    M.setPips(m>=3?CYCLES:0);
-    for(let k=0;k<NSUB;k++){
-      const done=m>=1;
-      M.setWell(k, done?SUBHUE(k,NSUB):CDNA, 1);
-      idx[k].fill.setAttribute("fill-opacity",done?".90":"0");
-      setFanLine(IDX[k], m===0?LIVE:DIM, done?1:0);
-    }
-  };
-  const run=dt=>{
-    t=(t+dt)%t5;
-    const m = t<t1?0 : t<t2?1 : t<t3?2 : t<t4?3 : 4;
-    if(m!==mode) enter(m);
-
-    if(m===0){                                // TAKE — eight wells, one at a time
-      const u=t/TAKE;
-      for(let k=0;k<NSUB;k++){
-        const f=clamp((u-k*(1-WIN)/(NSUB-1))/WIN);
-        setFanLine(IDX[k],LIVE,f);
-        idx[k].fill.setAttribute("fill-opacity",(0.90*clamp(f/0.18)).toFixed(2));
-        /* the well in the block was full before its index reached it. What
-           changes on arrival is WHICH of the eight it is, not that anything is
-           in it — the library was made three stations ago. */
-        M.setWell(k, f>0.86?SUBHUE(k,NSUB):CDNA, 1);
-      }
-      return;
-    }
-    if(m===1){ M.setLid(clamp((t-t1)/SEAL)); return; }
-
-    if(m===2){                                // RUN — the cycles, up to the floor
-      const u=(t-t2)/RUN;
-      const done=clamp((u-0.10)/0.78)*CYCLES;
-      M.setTemp(0.5+0.5*Math.sin(2*Math.PI*done-Math.PI/2), clamp(u/0.10));
-      M.setPips(Math.min(CYCLES,Math.floor(done)));
-      return;
-    }
-    if(m===4){                                // CLEAR — the plate goes away
-      const u=clamp((t-t4)/CLEAR);
-      M.setLid(1-clamp(u/0.5));
-      for(let k=0;k<NSUB;k++){
-        idx[k].fill.setAttribute("fill-opacity",(0.90*(1-u)).toFixed(2));
-        M.setWell(k,null,1-u);
-      }
-      return;
-    }
-    /* held: a sealed block, eight indexed reactions in it, and seven pips of a
-       band that goes to thirteen */
-  };
+     advances it, so whatever t begins at is the whole station for that reader,
+     and for this one it has to be the finished molecule: a plate half full, one
+     well spent, one tube indexed and thirteen labelled blocks under the glass
+     with the complement beneath them. */
+  let t=t4+HOLD*0.5;
+  const run=dt=>{ t=(t+dt)%T; place(t); };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
