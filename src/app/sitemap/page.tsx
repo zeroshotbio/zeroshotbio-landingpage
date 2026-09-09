@@ -35,6 +35,7 @@ const SECTIONS: Section[] = [
       { href: "/fate_map_wang_2026", label: "Fate map · Wang 2026 — 5.5–11.3 hpf zebrafish gastrula", note: "one embryo, every followable lineage; ITEC reconstruction" },
       { href: "/fate_map_daniocell", label: "Fate map · DanioCell — five days of becoming a fish", note: "489,686 cells, 3.3–120 hpf; transcriptional identity, not lineage" },
       { href: "/fate_map_zebrahub", label: "Fate map · Zebrahub — two maps of becoming", note: "120,444 cells from 40 individual embryos, plus 101,676 tracked nuclei" },
+      { href: "/fate_map_24_48", label: "Fate map · 24–48 hpf — the inferred skeleton", note: "186 states, 173 transitions, each with its literature verdict; inferred, not observed" },
       { href: "/danio_specimen_poster.html", label: "DANIO — interactive specimen poster" },
       { href: "/d3_complexity_heatmap.html", label: "Complexity heatmap" },
       { href: "/prospective_diseases_treemap.html", label: "Prospective diseases treemap" },

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fate map · 24–48 hpf — the inferred skeleton</title>
+<meta name="description" content="186 zebrafish cell states and 173 directed transitions from the Trapnell v2.2.1 reference, drawn with the literature verdict on every edge. Inferred developmental transitions, not observed lineage.">
+<style>
+/* ---------------------------------------------------------------------------
+   The plate style — PLATE_STYLE.md at the repo root. Fourth of the fate maps
+   and the same house as /fate_map_wang_2026, /fate_map_daniocell and
+   /fate_map_zebrahub, so that what differs between them reads as a difference
+   of subject.
+
+   This page differs in one way that matters. The siblings each draw ONE
+   published source's own picture of itself. This one draws a SKELETON that
+   later pages will hang other sources on, and every mark on it is INFERRED —
+   nothing here watched a cell divide. The single job of the design is to keep
+   that legible at every zoom level, which is why the literature verdict is
+   encoded in the stroke of every edge rather than in a footnote. See NOTES.md.
+--------------------------------------------------------------------------- */
+:root{
+  --paper:#f3ede1;
+  --paper-deep:#eae2d2;
+  --ink:#2b2219;
+  --ink-2:#5f5344;
+  --ink-3:#8b7d69;
+  --rule:#c3b6a0;
+  --rule-2:#d9cfbb;
+  --select:#8f2d16;      /* madder — the chosen thing, and nothing else */
+
+  --t0:#a8442a; --t1:#b0802c; --t2:#6d7a34; --t3:#3d6f68;
+  --t4:#57688a; --t5:#8a6c4e; --t6:#6d4665;
+
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--serif);font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(120,100,70,.030) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(0deg,  rgba(120,100,70,.022) 0 1px, transparent 1px 4px),
+    radial-gradient(120% 80% at 50% 0%, rgba(255,252,244,.65), transparent 60%);
+}
+.sheet{max-width:none;margin:0;padding:0 40px 120px}
+header.masthead,section.prose,#boot,#fail{max-width:1100px;margin-left:auto;margin-right:auto}
+#stage>figure.plate,#stage>section.notes{max-width:1100px;margin-left:auto;margin-right:auto}
+#stage>figure.plate.wide{max-width:1480px}
+
+header.masthead{padding:76px 0 0;text-align:center}
+.eyebrow{font-family:var(--sans);font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;
+         color:var(--ink-3);margin-bottom:26px}
+.eyebrow a{color:inherit;text-decoration:none;border-bottom:1px solid var(--rule)}
+.eyebrow a:hover{color:var(--ink)}
+h1{font-size:clamp(30px,4.4vw,50px);font-weight:400;line-height:1.12;margin:0 0 6px;letter-spacing:-.012em}
+h1 em{font-style:italic}
+.dek{font-style:italic;color:var(--ink-2);font-size:clamp(15px,1.7vw,18.5px);max-width:680px;
+     margin:14px auto 0;line-height:1.55}
+.byline{font-family:var(--sans);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+        color:var(--ink-3);margin-top:30px}
+.source-line{font-size:13.5px;font-style:italic;color:var(--ink-3);margin-top:7px}
+
+section.prose{max-width:660px}
+section.prose p{margin:0 0 1.05em}
+section.prose p.lead::first-letter{float:left;font-size:3.35em;line-height:.84;padding:.06em .1em 0 0}
+a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--rule)}
+a:hover{border-bottom-color:var(--ink)}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+     background:var(--paper-deep);padding:.08em .32em;border-radius:2px}
+.caution{border-left:2px solid var(--select);padding:2px 0 2px 16px;margin:26px 0;
+         font-style:italic;color:var(--ink-2);font-size:15px}
+
+figure.plate{margin:96px auto 0}
+.plate-head{display:flex;align-items:baseline;gap:16px;margin-bottom:6px;
+            border-bottom:1px solid var(--ink);padding-bottom:7px}
+.plate-num{font-family:var(--sans);font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;
+           color:var(--ink-3);white-space:nowrap}
+.plate-title{font-size:20px;font-style:italic;font-weight:400;margin:0}
+.plate-when{margin-left:auto;font-family:var(--sans);font-size:11px;letter-spacing:.13em;
+            color:var(--ink-3);white-space:nowrap}
+figcaption{font-size:14px;color:var(--ink-2);margin-top:14px;max-width:780px;line-height:1.6}
+figcaption b{font-weight:600;color:var(--ink)}
+
+.canvas-hold{position:relative;background:transparent}
+canvas{display:block;width:100%;touch-action:none}
+#graphHold{height:min(760px,88vh);border-top:1px solid var(--rule-2);
+           border-bottom:1px solid var(--rule-2);cursor:crosshair;overflow:hidden}
+
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 0 14px;
+         font-family:var(--sans);font-size:11px}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden}
+.seg button{font:inherit;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);
+            background:transparent;border:0;padding:6px 13px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.hint{color:var(--ink-3);font-style:italic;font-family:var(--serif);font-size:13px}
+.spacer{margin-left:auto}
+.btn{font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+     color:var(--ink-2);background:transparent;border:1px solid var(--rule);border-radius:2px;
+     padding:6px 13px;cursor:pointer}
+.btn:hover{border-color:var(--ink);color:var(--ink)}
+
+/* The legend is also the edge key. Entries ISOLATE, they do not hide — an edge
+   class switched off would change the shape of the graph, which is the one thing
+   this page must not do quietly. */
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:2px 22px;
+        margin:18px 0 0;padding:16px 0 0;border-top:1px solid var(--rule-2)}
+.legend .lhead{grid-column:1/-1;font-family:var(--sans);font-size:10px;letter-spacing:.22em;
+               text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+.leg{display:flex;gap:9px;align-items:center;font-size:13.5px;cursor:pointer;padding:3px 0;
+     border:0;background:none;text-align:left;font-family:inherit;color:inherit}
+.leg:hover .leg-name{border-bottom:1px solid var(--ink)}
+.leg[aria-pressed="true"] .leg-name{border-bottom:1px solid var(--select);color:var(--select)}
+.leg-swatch{flex:0 0 34px;height:0;border-top-width:2px;border-top-style:solid;margin-top:1px}
+.leg-n{margin-left:auto;font-family:var(--sans);font-size:11px;color:var(--ink-3);
+       font-variant-numeric:tabular-nums}
+
+/* The reading panel. Sits beside the plate on a wide screen and under it on a
+   narrow one, and is the only place a state's timing is quoted as numbers. */
+.plate-body{display:grid;grid-template-columns:minmax(0,1fr) 322px;gap:26px;align-items:start}
+@media (max-width:1080px){.plate-body{grid-template-columns:minmax(0,1fr)}}
+#panel{border:1px solid var(--rule-2);background:rgba(255,252,244,.55);padding:16px 17px 18px;
+       min-height:260px}
+#panel .p-eyebrow{font-family:var(--sans);font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+                  color:var(--ink-3);margin-bottom:9px}
+#panel h3{font-size:17px;font-weight:400;font-style:italic;margin:0 0 10px;line-height:1.3}
+#panel .p-empty{color:var(--ink-3);font-style:italic;font-size:14px}
+#panel dl{margin:0;font-size:13.5px}
+#panel dt{font-family:var(--sans);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;
+          color:var(--ink-3);margin:13px 0 3px}
+#panel dd{margin:0;color:var(--ink-2)}
+#panel dd b{color:var(--ink);font-weight:600}
+#panel ul{margin:2px 0 0;padding:0;list-style:none}
+#panel li{padding:1.5px 0;line-height:1.45}
+#panel li button{font:inherit;color:var(--ink);background:none;border:0;padding:0;cursor:pointer;
+                 text-align:left;border-bottom:1px solid var(--rule-2)}
+#panel li button:hover{border-bottom-color:var(--ink)}
+#panel li .lit{font-family:var(--sans);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+               color:var(--ink-3);margin-left:6px}
+#spark{display:block;margin:4px 0 0}
+#panel .cite{font-size:12.5px;font-style:italic;color:var(--ink-3);margin-top:4px;line-height:1.45}
+
+section.notes{margin:104px auto 0;max-width:660px}
+section.notes h2{font-size:13px;font-family:var(--sans);letter-spacing:.24em;text-transform:uppercase;
+                 color:var(--ink-3);font-weight:400;margin:0 0 18px;
+                 border-bottom:1px solid var(--rule);padding-bottom:8px}
+section.notes ol{margin:0;padding-left:1.3em}
+section.notes li{margin:0 0 .95em;font-size:14.5px;color:var(--ink-2)}
+section.notes li b{color:var(--ink);font-weight:600}
+.colophon{margin-top:34px;padding-top:16px;border-top:1px solid var(--rule-2);
+          font-size:12.5px;color:var(--ink-3);font-style:italic;line-height:1.6}
+.loading,.err{padding:60px 0;text-align:center;color:var(--ink-3);font-style:italic}
+.err{color:var(--select)}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="masthead">
+    <div class="eyebrow"><a href="/sitemap">zeroshot.bio</a> &middot; fate map &middot; plate iv</div>
+    <h1>24–48 hpf: <em>the inferred skeleton</em></h1>
+    <p class="dek">One hundred and eighty-six cell states, one hundred and seventy-three arrows
+      between them, and a published verdict on almost every arrow. Nothing on this page watched a
+      cell divide.</p>
+    <div class="byline">Trapnell lab reference v2.2.1</div>
+    <p class="source-line" id="srcLine">&nbsp;</p>
+  </header>
+
+  <section class="prose" style="margin-top:56px">
+    <p class="lead">A fate map is a claim about where cells go. This one is assembled from
+      transcriptional similarity over time — states that resemble each other at adjacent hours are
+      joined by an arrow — and that is a fundamentally different kind of evidence from watching a
+      nucleus split in two. The corpus behind this page contains no observation of a division
+      between 24 and 48 hpf. Every arrow here is a hypothesis.</p>
+
+    <p>What makes the graph worth drawing anyway is that its authors adjudicated it. Each edge was
+      checked against the published literature and given a verdict, and a quarter of them did not
+      survive. Drawing the graph without those verdicts would make it look far more settled than it
+      is; drawing it with them turns a skeleton into an argument you can inspect.</p>
+
+    <div class="caution">These are <b>inferred developmental transitions</b>, not observed lineage.
+      No cell on this page was tracked. Where an arrow is drawn, it means two transcriptional states
+      resemble each other across time — not that one was seen to become the other.</div>
+
+    <p>The horizontal axis is <b>depth in the graph</b>, not time. Depth is a property of the
+      structure, so every arrow points rightward and 173 of them stay legible without a physics
+      simulation. Time is carried separately, on each state, as a six-point wild-type abundance
+      trajectory — and it corroborates the structure rather than defining it: of the edges where both
+      ends are timed, <span id="fwdCount">most</span> run from an earlier-peaking state to a
+      later-peaking one.</p>
+  </section>
+
+  <div id="boot" class="loading">drawing the plate&hellip;</div>
+  <div id="fail" class="err" hidden></div>
+
+  <main id="stage" hidden>
+
+    <figure class="plate wide" id="plate1">
+      <div class="plate-head">
+        <span class="plate-num">Plate I</span>
+        <h2 class="plate-title">The state graph, with its own verdict on every arrow</h2>
+        <span class="plate-when" id="whenLine">&nbsp;</span>
+      </div>
+
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="which states to draw">
+          <button id="fAll" aria-pressed="true">all states</button>
+          <button id="fWin" aria-pressed="false">crest 24–48 hpf</button>
+        </div>
+        <span class="hint">drag to pan &middot; wheel to zoom &middot; click a state to read it</span>
+        <span class="spacer"></span>
+        <button class="btn" id="reset">reset view</button>
+      </div>
+
+      <div class="plate-body">
+        <div class="canvas-hold" id="graphHold"><canvas id="graph"></canvas></div>
+        <aside id="panel">
+          <div class="p-eyebrow">Selected state</div>
+          <div class="p-empty" id="panelEmpty">Nothing selected. Click a state in the plate.</div>
+          <div id="panelBody" hidden></div>
+        </aside>
+      </div>
+
+      <div class="legend" id="legend">
+        <div class="lhead">Literature verdict on the transition &mdash; click to isolate</div>
+      </div>
+
+      <figcaption id="cap1">&nbsp;</figcaption>
+    </figure>
+
+    <section class="notes">
+      <h2>Notes on the plate</h2>
+      <ol id="notes"></ol>
+      <div class="colophon" id="colophon">&nbsp;</div>
+    </section>
+
+  </main>
+</div>
+
+<script src="/fate_map_24_48/pt-data.js"></script>
+<script src="/fate_map_24_48/pt-graph.js"></script>
+<script src="/fate_map_24_48/pt-main.js"></script>
+</body>
+</html>

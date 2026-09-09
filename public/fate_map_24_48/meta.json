@@ -1,0 +1,42 @@
+{
+  "built": "2026-09-09",
+  "source": {
+    "release": "Trapnell lab reference v2.2.1",
+    "silver": "s3://zsb-silver-warehouse/platt/v2.2.1/",
+    "graph": "combined_state_graphs.rds",
+    "evidence": "edge_lit_evidence.tsv",
+    "abundance": "perturb_lmx1ba,lmx1bb_contrast_abundance.tsv"
+  },
+  "counts": {
+    "states": 186,
+    "edges": 173,
+    "roots": 43,
+    "leaves": 75,
+    "components": 26,
+    "maxDepth": 7,
+    "timedStates": 176,
+    "untimedStates": 10,
+    "retroEdges": 6
+  },
+  "support": {
+    "EXCLUDE": 0,
+    "FALSE": 24,
+    "UNKNOWN": 14,
+    "PLAUSIBLE": 60,
+    "TRUE": 73,
+    "(none)": 2
+  },
+  "peak": {
+    "18": 54,
+    "24": 1,
+    "36": 16,
+    "48": 49,
+    "60": 9,
+    "72": 47
+  },
+  "peakBands": {
+    "waning": 55,
+    "cresting": 65,
+    "emerging": 56
+  }
+}

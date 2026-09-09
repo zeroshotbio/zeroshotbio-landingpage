@@ -136,6 +136,25 @@ const nextConfig = {
       // public/fate_map_zebrahub/NOTES.md before touching any of that.
       // SOURCE + rebuild: scripts/build_fate_map_zebrahub.py
       { source: '/fate_map_zebrahub', destination: '/fate_map_zebrahub/index.html' },
+      // /fate_map_24_48 is the fourth, and the first NOT named for a source. The
+      // siblings each draw one published dataset's own picture of itself; this one
+      // draws a SKELETON for a time window — the Trapnell v2.2.1 inferred state
+      // graph over 24-48 hpf — that ZSCAPE, ZMAP, DanioCell and the spatial layers
+      // are meant to hang on next. Hence the window in the name rather than an
+      // author and a year.
+      // Everything on it is INFERRED: the corpus contains no observed cell division
+      // between 24 and 48 hpf, and the page says so in the dek, the caution, the
+      // caption and the notes, because a reader landing mid-page must not be able
+      // to acquire the wrong belief.
+      // Same shape as the siblings: index.html + three classic scripts, no build
+      // step at serve time, absolute <script src> because the route has no
+      // trailing slash.
+      // SOURCE + rebuild: scripts/build_fate_map_24_48.py, reading
+      // combined_state_graphs.rds, edge_lit_evidence.tsv and the control arm of the
+      // lmx1b contrast table from s3://zsb-silver-warehouse/platt/v2.2.1/.
+      // Read public/fate_map_24_48/NOTES.md before changing the encoding of an
+      // edge — the literature verdict in the stroke is the whole argument.
+      { source: '/fate_map_24_48', destination: '/fate_map_24_48/index.html' },
     ]
   },
 
@@ -214,6 +233,15 @@ const nextConfig = {
       },
       {
         source: '/fate_map_zebrahub',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      // same shell-and-scripts coupling, same reason, for the 24-48 hpf skeleton
+      {
+        source: '/fate_map_24_48/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/fate_map_24_48',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
       },
       // same shell-and-scripts coupling, same reason, for the sister page
