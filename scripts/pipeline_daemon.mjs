@@ -2,16 +2,32 @@
 /* The listener behind "Edit visual" on /pipeline.
  *
  * Polls the prompt queue. When something is waiting it marks it working, hands
- * the request to a headless Claude Code run inside this repo, and then judges
- * the result on one objective question: did a commit reach origin/main? If it
- * did, the prompt is marked done — every open copy of the page notices and the
- * one that asked reloads itself. If it did not, the prompt is marked dropped
+ * the request to a headless Claude Code run in a WORKTREE OF ITS OWN, and then
+ * judges the result on one objective question: did a commit reach origin/main?
+ * If it did, the prompt is marked done — every open copy of the page notices and
+ * the one that asked reloads itself. If it did not, the prompt is marked dropped
  * with the reason, which the page shows.
+ *
+ * EVERY RUN GETS ITS OWN CHECKOUT. `git worktree add --detach` off origin/main,
+ * thrown away when the run ends. This used to run in the shared repo, which made
+ * a human's uncommitted work and an agent's run the same tree: the daemon had to
+ * refuse to start while the tree was dirty, and a request that waited out that
+ * refusal was DROPPED with "somebody was working in the repo for twenty minutes;
+ * send it again". On 2026-09-08 one abandoned edit to pipeline-shapes.js threw
+ * away nine requests over seventeen hours, and it could just as easily have gone
+ * the other way — the agent sweeping somebody's half-written file into its own
+ * commit. Neither is possible now: the two trees are different directories, so
+ * there is no dirty-tree gate at all, and nothing a run does can reach the copy
+ * somebody is working in.
  *
  *   node scripts/pipeline_daemon.mjs                 poll forever
  *   node scripts/pipeline_daemon.mjs --once          drain what is waiting, exit
  *   node scripts/pipeline_daemon.mjs --dry           do everything except run Claude
  *   node scripts/pipeline_daemon.mjs --every 10      seconds between polls
+ *
+ * scripts/pipeline_test/daemon.js is the harness: a throwaway repo with its own
+ * origin, a fake queue in front and a fake `claude` behind, and the questions
+ * that matter asked of a real git.
  *
  * ANTHROPIC_API_KEY is stripped from the child: on this box it takes precedence
  * over the claude.ai login and has no credit, so the run would fail instantly.
@@ -20,13 +36,14 @@
  * anything posted to it into a commit on main. That is the point — it is what
  * closes the loop from the page — but it is only reasonable because the site is
  * an unlisted preview. The guards here are blast radius, not authentication:
- * one prompt at a time, a cap per hour, a hard timeout, and the agent is told
- * to touch nothing outside public/pipeline. Anyone who finds the endpoint can
- * still spend tokens and land a commit. Put a key on the POST before this maps
- * to anything real.
+ * one prompt at a time, a cap per hour, a hard timeout, a throwaway checkout,
+ * and a commit that touches anything outside the map's directories is refused
+ * rather than pushed. Anyone who finds the endpoint can still spend tokens and
+ * land a commit. Put a key on the POST before this maps to anything real.
  */
 import { spawn, execSync } from "node:child_process";
-import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, rmSync, symlinkSync,
+         lstatSync, unlinkSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -108,11 +125,102 @@ function log(...a) {
   try { appendFileSync(LOG, line + "\n"); } catch {}
 }
 
-const sh = (cmd) => execSync(cmd, { cwd: REPO, encoding: "utf8" }).trim();
-const head = () => sh("git rev-parse HEAD");
+/* Every git call names the tree it runs in, because there are now two: this
+   repo, which only ever reads, and the run's worktree, where all the work
+   happens. A missing argument here is how the isolation quietly stops being
+   isolation, so nothing defaults to REPO except the reads at startup. */
+/* maxBuffer, because a whole drawing comes back through `git diff` when a run
+   fails and the 1 MB default silently turns that into a throw. */
+/* stderr is CAPTURED, not inherited: the one git call that is allowed to fail
+   is the pre-clean in addWorktree, and letting it print "is not a working tree"
+   into the daemon's own output makes a normal start look like a fault. Anything
+   that matters comes back on the thrown error and is logged with its reason. */
+const sh = (cmd, cwd = REPO) =>
+  execSync(cmd, { cwd, encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
+                  stdio: ["ignore", "pipe", "pipe"] }).trim();
+const head = (cwd = REPO) => sh("git rev-parse HEAD", cwd);
 /* what this request is allowed to have touched — its own directories plus the
    test harness, which an agent may legitimately have had to extend */
-const SCOPE = (map) => map.dirs.concat(["scripts/pipeline_test"]).join(" ");
+const SCOPE = (map) => map.dirs.concat(["scripts/pipeline_test"]);
+const inScope = (map, f) =>
+  SCOPE(map).some((d) => f === d || f.startsWith(d + "/"));
+
+/* ---- A CHECKOUT PER RUN ---------------------------------------------------
+   Outside the repo on purpose: inside it, Next's watcher and anything that
+   walks the tree would find a second copy of the site, and one careless
+   `git add .` in the wrong directory would try to commit it. */
+const WORKROOT = process.env.PIPELINE_WORKROOT || path.join(REPO, "..", ".pipeline-work");
+
+function addWorktree(id) {
+  mkdirSync(WORKROOT, { recursive: true });
+  const dir = path.join(WORKROOT, id);
+  removeWorktree(dir);                       // a crashed run may have left one
+  sh("git fetch -q origin main");
+  /* DETACHED, not a branch. main is checked out in the repo itself and git
+     will not hand the same branch to a second worktree; a detached head at
+     origin/main is the same commit with none of the argument, and it is
+     pushed with HEAD:main at the end. */
+  sh(`git worktree add -q --detach "${dir}" origin/main`);
+  /* The harnesses need jsdom and playwright. 719 MB is not worth copying per
+     request and npm install per request is minutes of somebody's wait, so the
+     one install is shared. It is gitignored, so it cannot be committed. */
+  try { symlinkSync(path.join(REPO, "node_modules"), path.join(dir, "node_modules"), "dir"); }
+  catch (e) { log("    no node_modules link: " + e.message); }
+  return dir;
+}
+
+function removeWorktree(dir) {
+  if (!dir) return;
+  /* Unlink the symlink FIRST and by hand. Everything that deletes a directory
+     tree has a mode in which it follows a link, and the thing on the other end
+     of this one is the repo's own node_modules. */
+  try {
+    const l = path.join(dir, "node_modules");
+    if (lstatSync(l).isSymbolicLink()) unlinkSync(l);
+  } catch {}
+  try { sh(`git worktree remove --force "${dir}"`); return; } catch {}
+  try { rmSync(dir, { recursive: true, force: true }); sh("git worktree prune"); }
+  catch (e) { log("    could not remove worktree " + dir + ": " + e.message); }
+}
+
+const dirtyIn = (wt) => { try { return sh("git status --porcelain", wt); } catch { return ""; } };
+
+/* Everything a failed run leaves behind goes with its worktree, so whatever is
+   worth having later has to be written out before the worktree is removed. */
+function keepPatch(id, wt, cmd, kind) {
+  let body = "";
+  try { body = sh(cmd, wt); } catch (e) { log("    could not read the patch: " + e.message); return; }
+  if (!body.trim()) return;
+  const file = path.join(LOGDIR, kind ? `${id}-${kind}.patch` : `${id}.patch`);
+  try { appendFileSync(file, body + "\n"); log(`    kept the work at ${file}`); }
+  catch (e) { log("    could not keep the patch: " + e.message); }
+}
+
+/* The daemon pushes, not the agent — from a detached head only HEAD:main is
+   right, and `git push origin main` from in there silently pushes the branch
+   ref instead, which is the old commit. Doing it here also means the one place
+   that knows main may have moved is the one place that handles it. */
+function ship(wt) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      sh("git fetch -q origin main", wt);
+      if (sh("git rev-list --count HEAD..origin/main", wt) !== "0") {
+        log("    origin/main moved — rebasing onto it");
+        try { sh("git rebase origin/main", wt); }
+        catch (e) {
+          try { sh("git rebase --abort", wt); } catch {}
+          log("    rebase failed: " + e.message);
+          return false;
+        }
+      }
+      sh("git push -q origin HEAD:main", wt);
+      return true;
+    } catch (e) {
+      log(`    push attempt ${attempt} failed: ` + e.message.split("\n")[0]);
+    }
+  }
+  return false;
+}
 
 async function api(map, opt) {
   const u = qurl(map);
@@ -153,10 +261,13 @@ async function claim(map, id) {
    transcription. So the count is worked out first and the instruction changes
    with it. This was invisible while the only request that ever succeeded
    targeted the sequencer, whose shape is worn once. */
-function sharers(shape) {
+/* `root` is the run's worktree. This repo's main is now allowed to sit behind
+   origin/main — the daemon stopped committing here — so counting shape wearers
+   out of it would answer from whatever the last `git pull` left. */
+function sharers(shape, root) {
   const out = [];
   for (const m of MAPS_ALL) {
-    let src = ""; try { src = readFileSync(path.join(REPO, m.data), "utf8"); } catch { continue; }
+    let src = ""; try { src = readFileSync(path.join(root, m.data), "utf8"); } catch { continue; }
     /* ONE RECORD AT A TIME. A single regex over the whole file walks straight
        past the end of a record and pairs one node's id with the next node's
        shape — it reported the three rounds of barcoding as "R1p, B1, B2", which
@@ -271,7 +382,7 @@ station twice.
 `;
 }
 
-function task(p, map) {
+function task(p, map, root = REPO) {
   if (p.kind === "insert" && p.insert && p.insert.afterId)
     return insertTask(p, map) + tail(p, map);
   const t = p.target;
@@ -279,7 +390,7 @@ function task(p, map) {
      the bench's R1p are two different nodes wearing one shape, and an agent told
      to leave "R1p" alone would not know which. */
   const me = map.id + ":" + (t ? t.id : "");
-  const also = t ? sharers(t.shape).filter((x) => x !== me) : [];
+  const also = t ? sharers(t.shape, root).filter((x) => x !== me) : [];
   return `A request has come in from the ${"/" + map.id} map's own "Edit visual" button. Carry it out.
 
 THE REQUEST
@@ -374,8 +485,18 @@ You have a shell for exactly these — node, npx, git, cd, ls, cat, grep, sed an
 build.sh. Nothing else is available, so do not plan around anything else.
 
 THEN SHIP IT
-Commit only files under ${map.dirs.join(" and ")} and push to main. Vercel deploys from main. Do not touch anything
-else in the repo. Do not revert or amend other people's commits.
+YOU ARE IN A WORKTREE OF YOUR OWN, checked out from origin/main for this request
+alone and deleted when you are done. Nobody else's work is in this tree and
+nothing you do here can reach the copy somebody may be editing, so there is no
+need to check whether the tree is clean, stash anything, or work around another
+change in flight.
+
+Commit only files under ${map.dirs.join(" and ")}, and COMMIT ONLY — do not push.
+The daemon pushes to main for you once it has read the commit, and it rebases if
+main moved while you worked; a push from here pushes the wrong ref. A commit
+that touches a file outside those directories is refused rather than pushed and
+the work is thrown away, so if you believe you need one, stop and explain instead.
+Vercel deploys from main. Do not revert or amend other people's commits.
 
 Write the commit message in the style of the recent history: a short subject in the
 imperative, then a body explaining why, wrapped at about 74 columns.
@@ -384,7 +505,7 @@ If you decide the request cannot be done safely, do not commit — just explain 
 and say so clearly in your final message.`;
 }
 
-function runClaude(prompt) {
+function runClaude(prompt, cwd) {
   return new Promise((resolve) => {
     const env = { ...process.env };
     delete env.ANTHROPIC_API_KEY; // takes precedence over the claude.ai login, and is dry
@@ -401,7 +522,7 @@ function runClaude(prompt) {
     const child = spawn("claude",
       ["-p", prompt, "--permission-mode", "acceptEdits", "--model", MODEL,
        "--allowedTools", ...TOOLS],
-      { cwd: REPO, env, stdio: ["ignore", "pipe", "pipe"] });
+      { cwd, env, stdio: ["ignore", "pipe", "pipe"] });
     let out = "", err = "";
     child.stdout.on("data", (d) => (out += d));
     child.stderr.on("data", (d) => (err += d));
@@ -453,25 +574,10 @@ async function handle(map, p) {
     return "rate";
   }
   rateNoted.delete(p.id);
-  recent.push(Date.now());
 
-  // start clean, so "did anything ship" is an honest question
-  let dirty = "";
-  try { dirty = sh(`git status --porcelain -- ${SCOPE(map)}`); } catch {}
-  if (dirty) {
-    /* Somebody is working in the repo. That is not this request's fault and it
-       is usually over in minutes, so hold it in the queue rather than throwing
-       it away — the page keeps showing it as waiting. Only give up if the tree
-       has been busy for long enough that nobody is coming back to it. */
-    const held = Date.now() - p.at;
-    log(`    working tree is dirty — holding ${p.id} in the queue (${Math.round(held / 60000)}m)`);
-    if (held > 20 * 60_000) {
-      await move(map, p.id, "queued");   // clear "working" if we ever set it
-      await move(map, p.id, "dropped", "Somebody was working in the repo for twenty minutes; send it again.");
-    }
-    return;
-  }
-  const before = head();
+  /* CLAIM BEFORE SPENDING ANYTHING. Two daemons see the same row and the queue
+     lets exactly one of them through; doing it first means the loser has not
+     built a checkout or taken a slot out of the hour's budget to find out. */
   if (!(await claim(map, p.id))) {
     log(`    ${p.id} was claimed by somebody else — leaving it to them`);
     return;
@@ -483,55 +589,81 @@ async function handle(map, p) {
     return;
   }
 
-  const t0 = Date.now();
-  const { code, out, err } = await runClaude(task(p, map));
-  const secs = Math.round((Date.now() - t0) / 1000);
-  const tail = (out || err || "").trim().split("\n").slice(-6).join(" ").slice(0, 700);
-  log(`    claude exited ${code} after ${secs}s`);
+  let wt;
+  try { wt = addWorktree(p.id); }
+  catch (e) {
+    /* A checkout that could not be made is this instance's problem, and a
+       transient one, so the request goes BACK IN THE QUEUE rather than being
+       thrown away — the answer the old dirty-tree case should have given and
+       did not. */
+    log("    could not prepare a worktree: " + e.message.split("\n")[0]);
+    await move(map, p.id, "queued",
+      "The instance could not prepare a checkout for this request. It is still queued and will run; you do not need to send it again.");
+    return;
+  }
 
-  let after = before, pushed = false;
   try {
-    after = head();
-    sh("git fetch -q origin main");
-    pushed = sh("git rev-list --count origin/main..HEAD") === "0";
-  } catch (e) { log("    git check failed: " + e.message); }
+    const before = head(wt);
+    log(`    worktree ${wt} at ${before.slice(0, 8)}`);
+    /* THE SLOT IS SPENT WHEN A RUN STARTS, and not before. It used to be taken
+       on the way past the rate gate — ahead of the tree check and ahead of the
+       claim — so a poll that ran nothing still cost one. With the tree dirty,
+       thirty polls emptied the hour in about a minute and the queue sat
+       rate-limited behind it, which is why requests were being dropped an hour
+       after they arrived by a rule that says twenty minutes. */
+    recent.push(Date.now());
 
-  if (after === before) {
-    /* Nothing shipped — but the run may have left a half-written file behind,
-       and a dirty tree blocks every request after it. Keep the work as a patch
-       (the first timeout killed a finished drawing, which was worth having) and
-       put the tree back. */
-    let left = "";
-    try { left = sh(`git status --porcelain -- ${SCOPE(map)}`); } catch {}
-    if (left) {
-      const patch = path.join(LOGDIR, `${p.id}.patch`);
-      try {
-        appendFileSync(patch, sh(`git diff -- ${SCOPE(map)}`));
-        sh(`git checkout -- ${SCOPE(map)}`);
-        log(`    left the tree dirty — kept it at ${patch} and reset`);
-      } catch (e) { log("    could not clear the tree: " + e.message); }
+    const t0 = Date.now();
+    const { code, out, err } = await runClaude(task(p, map, wt), wt);
+    const secs = Math.round((Date.now() - t0) / 1000);
+    const said = (out || err || "").trim().split("\n").slice(-6).join(" ").slice(0, 700);
+    log(`    claude exited ${code} after ${secs}s`);
+
+    const after = head(wt);
+    if (after === before) {
+      /* Nothing shipped. The worktree is about to be deleted, so anything
+         half-written in it has to be kept NOW — the first timeout killed a
+         finished drawing, which was worth having. */
+      const left = dirtyIn(wt);
+      if (left) keepPatch(p.id, wt, "git diff");
+      const why = code === null
+        ? `It ran past the ${Math.round(TIMEOUT / 60000)}-minute limit and was stopped` +
+          (left ? ", with unfinished work kept on the instance" : "") + "."
+        : (said || "Nothing was changed. See the daemon log.");
+      log("    nothing committed");
+      await move(map, p.id, "dropped", why);
+      return;
     }
-    const why = code === null
-      ? `It ran past the ${Math.round(TIMEOUT / 60000)}-minute limit and was stopped` +
-        (left ? ", with unfinished work kept on the instance" : "") + "."
-      : (tail || "Nothing was changed. See the daemon log.");
-    log("    nothing committed");
-    await move(map, p.id, "dropped", why);
-    return;
-  }
-  if (!pushed) {
-    log("    committed but not pushed — pushing");
-    try { sh("git push -q origin main"); pushed = true; }
-    catch (e) { log("    push failed: " + e.message); }
-  }
-  if (!pushed) {
-    await move(map, p.id, "dropped", "The change was committed here but could not be pushed.");
-    return;
-  }
 
-  const subject = sh("git log -1 --pretty=%s");
-  log(`    shipped: ${subject}`);
-  await move(map, p.id, "done", subject);
+    /* WHAT THE COMMIT TOUCHED. A run can no longer disturb work in progress —
+       it is a different directory — but it can still commit outside the map it
+       was asked about, and the next thing that happens is a push to main. So
+       read the commit before shipping it, and refuse rather than push. */
+    let touched = [];
+    try { touched = sh(`git diff --name-only ${before}..HEAD`, wt).split("\n").filter(Boolean); } catch {}
+    const stray = touched.filter((f) => !inScope(map, f));
+    if (stray.length) {
+      keepPatch(p.id, wt, `git diff ${before}..HEAD`, "out-of-scope");
+      log(`    refusing to push — it also edited ${stray.join(" ")}`);
+      await move(map, p.id, "dropped",
+        `The change also edited ${stray.slice(0, 4).join(", ")}, outside ${map.dirs.join(" and ")}, so it was not pushed. It is kept on the instance.`);
+      return;
+    }
+
+    if (!ship(wt)) {
+      keepPatch(p.id, wt, `git diff ${before}..HEAD`, "unpushed");
+      await move(map, p.id, "dropped", "The change was committed here but could not be pushed.");
+      return;
+    }
+
+    const subject = sh("git log -1 --pretty=%s", wt);
+    log(`    shipped: ${subject}  ·  ${touched.length} file${touched.length === 1 ? "" : "s"}`);
+    await move(map, p.id, "done", subject);
+  } finally {
+    /* Always. A worktree left behind is a stale git record and a copy of the
+       site on disk, and the next run for this id would trip over it. */
+    removeWorktree(wt);
+  }
 }
 
 async function tick() {
@@ -571,6 +703,11 @@ async function tickOne(map) {
     if (outcome === "rate") break;
   }
 }
+
+/* A daemon killed mid-run leaves a worktree record pointing at a directory
+   that may or may not still be there. Pruning only drops records whose
+   directory is already gone, so it cannot disturb a run under another daemon. */
+try { sh("git worktree prune"); } catch {}
 
 log(`watching ${MAPS.map((m) => m.queue).join(" + ")} every ${EVERY / 1000}s  ·  model ${MODEL}  ·  repo ${REPO}` +
     (DRY ? "  ·  DRY" : "") + (ONCE ? "  ·  once" : ""));
