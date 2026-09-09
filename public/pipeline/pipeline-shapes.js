@@ -6227,9 +6227,31 @@ function drawPcrAmplify(g,n){
      on this stretch of bench that are lumps of metal read as the same kind of
      thing. The lid is a second box standing on the chassis and drawn in the
      works skin: lighter than the body, which is what says it is a part that
-     moves, without it having to move. */
-  paint(g,n.x,n.y,n.w,n.d,n.h,
-        {top:V("t-top"),left:V("t-left"),right:V("t-right"),sw:1.4,so:.9});
+     moves, without it having to move.
+
+     ASKED FOR A THIRD TIME, from "Edit visual", and the third request is about
+     recognition: make it look more like a PCR machine. What a bench cycler has
+     that a shut box does not is a HEATED LID hinged at the back and clamped by
+     a bar at the front, a slanted console off the front edge, and a grille in
+     its flank. All three are furniture. They change what the object can be
+     named as from across the map and they assert nothing about the run, which
+     is what the header above forbids — the console's screen is dark for the
+     same reason B8's spare pips are hollow: no programme was ever recorded, so
+     there is nothing honest to put on it. */
+  const CASE={top:V("t-top"),left:V("t-left"),right:V("t-right"),sw:1.4,so:.9};
+  paint(g,n.x,n.y,n.w,n.d,n.h,CASE);
+
+  /* the grille, on the flank this projection actually shows, a hair proud of
+     the face so the face cannot swallow it. Three louvres and no more: at this
+     size a fourth is a smudge rather than a slot. */
+  const gx=n.x+n.w/2+0.002;
+  for(let i=0;i<3;i++){
+    const gz=n.h*(0.24+i*0.17);
+    const a=P(gx,n.y-n.d*0.28,gz), b=P(gx,n.y+n.d*0.28,gz);
+    g.appendChild(el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
+      x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--stroke)",
+      "stroke-width":(0.9*SC).toFixed(2),"stroke-opacity":".4"}));
+  }
 
   /* faces() draws from z 0 and the projection is a pure translation in z, so a
      box that stands on something else is a transform on a group rather than a
@@ -6237,13 +6259,19 @@ function drawPcrAmplify(g,n){
   const LZ=n.h, LT=n.h+n.h*0.34;
   const lid=el("g",{transform:`translate(0,${(-LZ*S*CZ).toFixed(2)})`});
   g.appendChild(lid);
+  /* back to front inside the lid group, because paint order is depth here as
+     much as anywhere: the hinge block stands behind the lid it carries, in the
+     chassis's own charcoal so it reads as the body's fitting rather than the
+     lid's, and the clamp bar stands in front of it. */
+  paint(lid,n.x,n.y-n.d*0.48,n.w*0.46,n.d*0.12,(LT-LZ)*0.90,CASE);
   paint(lid,n.x,n.y,n.w*0.88,n.d*0.88,LT-LZ,SKIN.works);
-  /* the clamp handle, flat on the lid, so the closed lid reads as clamped down
-     rather than as a slab somebody left there */
-  lid.appendChild(el("polygon",{
-    points:faces(n.x,n.y+n.d*0.24,n.w*0.40,n.d*0.10,LT-LZ).top,
-    fill:"var(--fg)","fill-opacity":".18",stroke:"var(--stroke)",
-    "stroke-width":".7","stroke-opacity":".6"}));
+  /* the clamp bar STANDS ON the lid rather than lying on it. A flat patch on
+     the top face at this size reads as a stain; a short prism catches the
+     three-face shading the rest of the machine has and reads as the thing your
+     hand goes on to screw the heated lid down. */
+  const bar=el("g",{transform:`translate(0,${(-(LT-LZ)*S*CZ).toFixed(2)})`});
+  lid.appendChild(bar);
+  paint(bar,n.x,n.y+n.d*0.26,n.w*0.44,n.d*0.11,n.h*0.15,SKIN.sB);
 
   /* ---- THE ONE INDICATOR --------------------------------------------------
      A hair proud of the front face, so the face cannot swallow it. It is lit
@@ -6256,6 +6284,39 @@ function drawPcrAmplify(g,n){
     "fill-opacity":".85",stroke:"var(--stroke)","stroke-width":".7",
     "stroke-opacity":".6"}));
 
+  /* ---- THE CONSOLE --------------------------------------------------------
+     The slanted panel hanging off the top front edge, which is the part of a
+     benchtop cycler you can name the machine by at a glance. It is one plane,
+     so it is stated in its own frame — u across it, v from the hinge out to
+     the lip — and everything on it is a fraction of that frame and of the
+     node, which is what carries it through a resize. The panel sits to the
+     right of the lamp because that is the half of the front face the lamp
+     leaves free; they are one control panel between them, not two things.
+     The screen is dark and stays dark.
+
+     HOW FAR IT HANGS IS NOT FREE. The panel is hinged at the top front edge and
+     everything it reaches — forward, and down its own slope — is a walk down
+     the face it is mounted on; too much of either and the lip crosses the
+     machine's own foot line and the console reads as lying on the bench in
+     front of the cycler rather than bolted to it. These three fractions put
+     the lip about a pixel inside that edge at the proportions this node is
+     authored at, so the panel stays on the machine. */
+  const cx0=n.x, cx1=n.x+n.w*0.42, cd=n.d*0.24;
+  const cat=(u,v,dz)=>P(cx0+(cx1-cx0)*u, fy+cd*v, n.h-n.h*0.26*v+(dz||0));
+  g.appendChild(el("polygon",{points:pts([cat(0,0),cat(1,0),cat(1,1),cat(0,1)]),
+    fill:"var(--k-top)","fill-opacity":".95",stroke:"var(--stroke)",
+    "stroke-width":".8","stroke-opacity":".7"}));
+  g.appendChild(el("polygon",{
+    points:pts([cat(0.14,0.20),cat(0.86,0.20),cat(0.86,0.82),cat(0.14,0.82)]),
+    fill:"var(--bg)","fill-opacity":".85",stroke:"var(--fg2)",
+    "stroke-width":".6","stroke-opacity":".45"}));
+  /* the lip under the front edge: without it the console is a decal on the air
+     in front of the machine rather than a panel with a thickness */
+  g.appendChild(el("polygon",{points:pts([cat(0,1),cat(1,1),
+      cat(1,1,-n.h*0.09),cat(0,1,-n.h*0.09)]),
+    fill:"var(--k-right)","fill-opacity":".95",stroke:"var(--stroke)",
+    "stroke-width":".8","stroke-opacity":".7"}));
+
   /* ---- THE MAGNIFICATION --------------------------------------------------
      A thin solid ellipse with two leaders back to the machine: the idiom this
      map uses everywhere for a view drawn larger than life, and a solid ring is
@@ -6265,24 +6326,34 @@ function drawPcrAmplify(g,n){
      molecule has no world size to be authored in, so it goes in a group
      carrying scale(n.w / .72) and every coordinate under it is written for the
      size this node happens to be authored at. A resize moves the glass, grows
-     it, and takes everything in it along. */
-  const LX=52, LY=40;
+     it, and takes everything in it along.
+
+     THE SAME REQUEST ASKED FOR IT BIGGER, and bigger means the whole glass and
+     everything under it — a wider ring around the same small strands would be
+     a bigger empty frame, not a bigger view. So the enlargement is one factor
+     on the group's scale and nothing inside is touched. IT GROWS UPWARD. What
+     forces this glass's height is what is BELOW it — the station names striping
+     the sky at −30°, described above — so the bottom of the ring stays exactly
+     where it was and the centre rises by what the extra radius adds. Stated
+     that way round, the clearance that was tuned against those names survives
+     both the enlargement and a resize. */
+  const LX=52, LY=40, ZOOM=1.32, GS=SC*ZOOM;
   const TOP=P(n.x,n.y,n.h);
-  const KX=TOP[0]+10*SC, KY=TOP[1]-185*SC;
+  const KX=TOP[0]+10*SC, KY=TOP[1]-145*SC-LY*GS;
 
   /* the leaders name the lid rather than the chassis — the reaction is in the
      block under it — and they start ON the boundary, aimed at two corners of
      the lid's top face, so glass that has moved or grown still points at metal */
   [[-0.22,-0.22],[0.22,-0.22]].forEach(([fx,fy2])=>{
     const t=P(n.x+n.w*fx, n.y+n.d*fy2, LT);
-    const vx=t[0]-KX, vy=t[1]-KY, u=1/Math.hypot(vx/(LX*SC), vy/(LY*SC));
+    const vx=t[0]-KX, vy=t[1]-KY, u=1/Math.hypot(vx/(LX*GS), vy/(LY*GS));
     g.appendChild(el("line",{x1:(KX+vx*u).toFixed(1),y1:(KY+vy*u).toFixed(1),
       x2:t[0].toFixed(1),y2:t[1].toFixed(1),stroke:"var(--fg2)",
       "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".4"}));
   });
 
   const lens=el("g",{transform:
-    `translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${SC.toFixed(4)})`});
+    `translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${GS.toFixed(4)})`});
   g.appendChild(lens);
   /* nearly opaque: glass you can read the ground grid through is a hole in the
      drawing rather than a lens over it */
