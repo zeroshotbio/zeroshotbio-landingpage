@@ -5156,9 +5156,17 @@ function drawCountSplitLyse(g,n){
      both throws spend themselves across it, and each stays under three node
      depths so the head working the plate never comes down on somebody else's
      plastic. The rack spends its extra on WIDTH, because going from eight tubes
-     to sixteen is two strips laid side by side rather than a deeper block. */
-  const th=n.h*0.60;
-  const PW=n.w*1.45, PD=PW*ROWS/COLS;
+     to sixteen is two strips laid side by side rather than a deeper block.
+
+     THE PLATE IS B4'S PLATE, AS ASKED. It was cut a fifth wider and a tenth
+     thicker than the round-two plate two stations back, so the same 96-well
+     plastic read as two sizes along one row. B4 cuts 1.45 x 0.712 wide and
+     0.42 x 0.714 thick, and these two fractions are those lengths over this
+     tile's own .85 and .55 — B4's plate at B4's scale while this tile stays
+     authored at its own size, and still read off n, so a resize carries it.
+     It keeps its centre, so nothing else on the bench moves. */
+  const th=n.h*0.5452;
+  const PW=n.w*1.2146, PD=PW*ROWS/COLS;
   const src ={x:n.x+n.w*0.48, y:n.y-n.d*1.95, w:PW, d:PD};
   const rack={x:n.x-n.w*0.15, y:n.y+n.d*2.75, w:n.w*1.70, d:n.d*0.66, h:n.h*0.50};
   const TX=n.x+n.w*0.05, TY=n.y-n.d*0.10;
