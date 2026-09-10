@@ -3908,7 +3908,8 @@ DRAW.ligation = drawLigation;
    only here are there three of them to multiply.
 
    Requires skirtSlab / plateGrid / drawWell from the plate set, rampHue from
-   the round-one plate, and ellipseAt() from the A2 clutch block. It spends
+   the round-one plate, pooledMix from the pool-and-split bench, and
+   ellipseAt() from the A2 clutch block. It spends
    --ch1..12, which are declared on /molecular_pipe and nowhere else; this
    shape is worn by that page alone.
    ------------------------------------------------------------------ */
@@ -3930,28 +3931,52 @@ function drawLigation3(g0,n){
      B4'S TILE AND B4'S FRACTIONS. The two ligations were asked to read as
      one plate at one scale, so this tile is B4's size and the plate is cut
      from it with B4's 0.712 and 0.714 — the same plastic, at the same place
-     on the same box. */
+     on the same box.
+
+     THAT SEAT IS NOW AN ANCHOR AND NOT WHERE THE PLATE IS DRAWN. The
+     bench's slide, the lens row and the callout were all composed off it,
+     and the page asked for the plate alone to move — into the middle of the
+     node's own box, where it had sat in the bottom corner. So the seat keeps
+     fixing everything it fixed, and the plate is placed afterwards, once
+     the slide is known, as whatever world position puts its centre on the
+     box's centre on screen. IN and the lens radii come up here with it,
+     because the slide is cut from them. */
   const COLS=n.cols||12, ROWS=n.rows||8, NW=COLS*ROWS;
   const PW=n.w*0.712;
-  const plate={x:n.x, y:n.y+n.d*0.30, w:PW, d:PW*ROWS/COLS};
+  const seat={x:n.x, y:n.y+n.d*0.30, w:PW, d:PW*ROWS/COLS};
   const pth=n.h*0.714;
   const HUE=k=>rampHue(k,NW);
+  const IN=n.w*0.54;
+  const IRX=23*IN, IRY=20*IN, IDX=58*IN;
+  const c0=P(n.x,n.y,n.h), IY=c0[1]-60*IN;
+  const mid=P(n.x,n.y,n.h/2);
+  const TX=mid[0]-P(seat.x,seat.y,0)[0];
+  const TY=mid[1]-(IY-IRY+P(seat.x+seat.w/2,seat.y+seat.d/2,0)[1])/2;
+  g.setAttribute("transform",`translate(${TX.toFixed(2)},${TY.toFixed(2)})`);
+  /* the screen miss between the seat's centre and the box's, turned back
+     into world x and y by undoing P — sx is x-y, sy is x+y */
+  const pm=P(seat.x,seat.y,pth/2);
+  const su=(mid[0]-TX-pm[0])/(S*C30), sv=(mid[1]-TY-pm[1])/(S*0.5);
+  const plate={x:seat.x+(su+sv)/2, y:seat.y+(sv-su)/2, w:seat.w, d:seat.d};
   const deck=skirtSlab(g,plate,pth,"var(--ch3)");
 
   /* ---- THE WELLS ----------------------------------------------------
-     Two discs each, exactly as round one lays them: a grey that never moves
-     and the well's own colour over it at an opacity the ticker drives. Dull
-     to full is then one number per well per frame, and a well that has not
-     reacted yet reads as dim rather than as missing — there is liquid in all
-     96 from the start, and what changes is whether it has been spent. */
-  const DIM=.14;
+     Two discs each: B5's pooled mixture, which never moves, and the well's
+     own colour over it at an opacity the ticker drives. THE MIXTURE IS B5'S
+     PAINT AT B5'S STRENGTH, because this is the plate B5 dealt into and it
+     has to arrive looking the way B5 left it — every well the same blend,
+     none of them placed yet. Unreacted to ligated is then one number per
+     well per frame, starting from nothing: what changes is not whether a
+     well has liquid in it but whether that liquid has a third barcode. */
+  const DIM=0;
+  const MIX=pooledMix(g);
   const wells=plateGrid(deck,pth,COLS,ROWS);
   const dots=[], shown=[];
   wells.forEach((w,k)=>{
     drawWell(g,w,false);
     const rx=(w.e.rx*0.86).toFixed(2), ry=(w.e.ry*0.86).toFixed(2);
     g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx,ry,
-      fill:"var(--fg3)","fill-opacity":".3"}));
+      fill:MIX.fill,"fill-opacity":MIX.op}));
     const e=el("ellipse",{cx:w.e.x,cy:w.e.y,rx,ry,fill:HUE(k),"fill-opacity":DIM});
     g.appendChild(e); dots.push(e); shown.push("");
   });
@@ -4017,17 +4042,8 @@ function drawLigation3(g0,n){
      and row height, and a lens row left on the old numbers read as a
      smaller bench beside it. So those are B4's numbers exactly again, the
      molecule — authored in IN — just has a little more glass round it, and
-     the whole drawing is slid onto the middle of its box the way B4's is. */
-  const IN=n.w*0.54;
-  const IRX=23*IN, IRY=20*IN, IDX=58*IN;
-  const c0=P(n.x,n.y,n.h), IY=c0[1]-60*IN;
-  {
-    const pc=P(plate.x,plate.y,0);
-    const low=P(plate.x+plate.w/2,plate.y+plate.d/2,0)[1];
-    const mid=P(n.x,n.y,n.h/2);
-    g.setAttribute("transform",`translate(${(mid[0]-pc[0]).toFixed(2)},`+
-      `${(mid[1]-(IY-IRY+low)/2).toFixed(2)})`);
-  }
+     the whole drawing is slid onto the middle of its box the way B4's is.
+     Those numbers and the slide are set up with the plate's seat, above. */
   const RNA0=-15.6, CDNA0=-11.5, CHIP0=-7.0;
   const CHW=3.0, CHP=6.4, CHH=3.2;        // chip half-width, pitch, half-height
   const bcx=k=>CHIP0+CHW+k*CHP;           // the centre of chip k, k = 0,1,2
@@ -4108,7 +4124,7 @@ function drawLigation3(g0,n){
      the far end of the deck it magnifies. */
   const insets=SRC.map((sk,idx)=>{
     const src=wells[sk].e, col=HUE(sk);
-    const ix=P(plate.x,plate.y,pth)[0]+(idx-1)*IDX;
+    const ix=P(seat.x,seat.y,pth)[0]+(idx-1)*IDX;
 
     /* THE TETHER, in the well's own colour and stopping ON the ellipse
        rather than running under it: the lens is opaque and would hide an
@@ -4293,7 +4309,7 @@ function drawLigation3(g0,n){
      PLATE, in both position and size — the plate did not change when the
      lenses did, and a number cut from the lens unit would have shrunk with
      them for no reason a reader could see. */
-  const base=P(plate.x, plate.y+plate.d*1.35, 0), FS=6.6*IN;
+  const base=P(seat.x, seat.y+seat.d*1.35, 0), FS=6.6*IN;
   const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
   const say=(dy,txt,col,weight)=>{
     const t=el("text",{x:base[0].toFixed(1),y:(base[1]+dy).toFixed(1),
@@ -4765,6 +4781,16 @@ function setFanLine(L,dim,f){
    proportions against the node. The lips are what the two stations differ
    in chemically; the tube factors default to 1 so a caller that says
    nothing gets the conical this bench was composed with. */
+/* The pooled mixture's paint, shared with B6 because B6's plate IS the one
+   this bench deals into and has to arrive holding the same thing. One
+   definition rather than two, for the reason the bench itself is one. */
+function pooledMix(g){
+  const gid=`tiedye${++UID}`, grad=el("radialGradient",{id:gid});
+  for(let i=0;i<=12;i++) grad.appendChild(el("stop",{
+    offset:`${(i*100/12).toFixed(1)}%`,"stop-color":`var(--ch${i%12+1})`}));
+  g.appendChild(grad);
+  return {fill:`url(#${gid})`, op:0.7};
+}
 function poolSplitBench(g,n,OPT){
   const th=n.h;
   /* ---- EVERYTHING HERE IS A FRACTION OF THE NODE, NOT A WORLD CONSTANT -----
@@ -4785,11 +4811,7 @@ function poolSplitBench(g,n,OPT){
      Declared here rather than in installDefs because a gradient is legal
      wherever it sits, and the id is uniqued the way the tank clips are — the
      shape is drawn more than once whenever a checker sizes it twice. */
-  const gid=`tiedye${++UID}`, grad=el("radialGradient",{id:gid});
-  for(let i=0;i<=12;i++) grad.appendChild(el("stop",{
-    offset:`${(i*100/12).toFixed(1)}%`,"stop-color":`var(--ch${i%12+1})`}));
-  g.appendChild(grad);
-  const MIX={fill:`url(#${gid})`, op:0.7};
+  const MIX=pooledMix(g);
   /* THE GRID IS THE ROUND'S OWN FACT and it is read off the node, the way B5
      reads its own: twelve columns by eight rows is the 96-well plastic these
      rounds are run on, and not plateWells' 8 x 6, which belongs to the compound
