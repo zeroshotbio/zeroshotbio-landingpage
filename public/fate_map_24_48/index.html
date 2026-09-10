@@ -199,6 +199,23 @@ canvas{display:block;width:100%;touch-action:none}
 #embLegend .leg{font-size:13px}
 .trail-note{font-size:12px;font-style:italic;color:var(--ink-3);margin-top:10px;line-height:1.45}
 
+/* Plate IV, the terrain. Taller than the others because time is an axis here. */
+#trHold{height:min(820px,92vh);border-top:1px solid var(--rule-2);
+        border-bottom:1px solid var(--rule-2);cursor:crosshair;overflow:hidden}
+#trPanel{border:1px solid var(--rule-2);background:rgba(255,252,244,.55);padding:16px 17px 18px}
+#trPanel .p-eyebrow{font-family:var(--sans);font-size:10px;letter-spacing:.22em;
+                    text-transform:uppercase;color:var(--ink-3);margin-bottom:9px}
+#trPanel h3{font-size:16px;font-weight:400;font-style:italic;margin:0 0 8px;line-height:1.3}
+#trPanel p{margin:0 0 .8em;font-size:13.5px;color:var(--ink-2);line-height:1.55}
+#trPanel b{color:var(--ink);font-weight:600}
+#trPanel dl{margin:0;font-size:13.5px}
+#trPanel dt{font-family:var(--sans);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;
+            color:var(--ink-3);margin:12px 0 3px}
+#trPanel dd{margin:0;color:var(--ink-2);line-height:1.5}
+.tr-key{display:flex;gap:14px;align-items:center;margin:6px 0 0;font-size:12.5px;
+        color:var(--ink-3);font-style:italic}
+.tr-key svg{flex:0 0 auto}
+
 /* Plate II. The stack is SVG rather than canvas — fourteen rows is not a data
    mass, and every row carries a citation that ought to be a real link. */
 #srcHold{border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2);
@@ -365,6 +382,37 @@ section.notes li b{color:var(--ink);font-weight:600}
       <figcaption id="cap3">&nbsp;</figcaption>
     </figure>
 
+    <figure class="plate wide" id="plate4">
+      <div class="plate-head">
+        <span class="plate-num">Plate IV</span>
+        <h2 class="plate-title">The terrain, and what a drug does to it</h2>
+        <span class="plate-when">24 &ndash; 48 hpf</span>
+      </div>
+
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="horizontal axis">
+          <button id="trA1" aria-pressed="true">embedding axis 1</button>
+          <button id="trA2" aria-pressed="false">axis 2</button>
+        </div>
+        <span class="hint">time runs down the page &middot; the surface dips where cells
+          accumulate &middot; click a channel to follow it</span>
+        <span class="spacer"></span>
+        <label class="pert-lab"><input type="checkbox" id="trShared"> shared response</label>
+        <select id="trDrug" class="sel"></select>
+        <button class="btn" id="trClear">clear</button>
+      </div>
+
+      <div class="plate-body">
+        <div class="canvas-hold" id="trHold"><canvas id="terr"></canvas></div>
+        <aside id="trPanel">
+          <div class="p-eyebrow">Reading the terrain</div>
+          <div id="trBody"></div>
+        </aside>
+      </div>
+
+      <figcaption id="cap4">&nbsp;</figcaption>
+    </figure>
+
     <figure class="plate wide" id="plate2">
       <div class="plate-head">
         <span class="plate-num">Plate II</span>
@@ -405,6 +453,7 @@ section.notes li b{color:var(--ink);font-weight:600}
 <script src="/fate_map_24_48/pt-enrich.js"></script>
 <script src="/fate_map_24_48/pt-sources.js"></script>
 <script src="/fate_map_24_48/pt-embed.js"></script>
+<script src="/fate_map_24_48/pt-terrain.js"></script>
 <script src="/fate_map_24_48/pt-main.js"></script>
 </body>
 </html>

@@ -115,6 +115,20 @@ SOURCES = [
          href="https://doi.org/10.1016/j.ydbio.2019.11.008",
          silver="farnsworth/", frm="silver farnsworth/README.md; UCSC release read this pass"),
 
+    dict(key="chemfish", name="ChemFish", band="abundance", status="wired",
+         modality="scRNA-seq under seven single-pathway small-molecule blockades",
+         window=[36, 72], evidence="observed",
+         scale="2,068,668 cells · 7 drugs + 3 vehicle arms · 36, 48 and 72 hpf",
+         uses="The whole drug layer of Plate IV. Seven pathway blockades against their matched "
+              "vehicle, as compositional log fold-change per state — how a drug DEFORMS the "
+              "terrain rather than moving a cell across it. Only 36 and 48 hpf fall in this "
+              "window. Its cell_type vocabulary is Platt's, so it reaches the terrain through "
+              "the cell-level Platt-to-ZSCAPE crosswalk.",
+         cite="Barkan et al. — Trapnell lab. Held as its authors released it; this origin "
+              "overwrites in place, so two dated releases are kept.",
+         href="https://cole-trapnell-lab.github.io/lmx1b/",
+         silver="chemfish/2026_09_release/", frm="silver chemfish/README.md; obs read this pass"),
+
     dict(key="zesta", name="ZESTA", band="spatial", status="held",
          modality="Stereo-seq sections + matched dissociated scRNA",
          window=[3, 24], evidence="observed",

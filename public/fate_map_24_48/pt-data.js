@@ -171,6 +171,8 @@
     } catch (err) { console.warn('no embedding:', err.message); embed = null; }
     let perturb = null;
     try { perturb = await getJSON('perturb.json'); } catch (err) { console.warn('no perturb.json:', err.message); }
+    let terrain = null;
+    try { terrain = await getJSON('terrain.json'); } catch (err) { console.warn('no terrain.json:', err.message); }
 
     /* Cross-check the two files against each other rather than trusting either.
      * A half-deployed asset set should fail loudly, not draw something
@@ -178,7 +180,7 @@
     if (graph.nodes.length !== meta.counts.states || graph.edges.length !== meta.counts.edges) {
       throw new Error('graph.json disagrees with meta.json — a stale file is cached');
     }
-    return { graph: layout(graph), meta, enrich, sources, zmap, embed, perturb };
+    return { graph: layout(graph), meta, enrich, sources, zmap, embed, perturb, terrain };
   }
 
   global.PT = { load, BASE };

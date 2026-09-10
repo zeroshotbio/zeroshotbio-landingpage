@@ -75,7 +75,7 @@
     return 'emerging — crests after the window, at ' + peak + ' ' + TIMEPOINTS_LABEL;
   }
 
-  PT.load().then(({ graph, meta, enrich, sources, zmap, embed, perturb }) => {
+  PT.load().then(({ graph, meta, enrich, sources, zmap, embed, perturb, terrain }) => {
     const c = meta.counts;
     const S = PTGraph.STYLE;
     /* Anything that measures the DOM has to wait until #stage is visible.
@@ -393,6 +393,124 @@
       window.addEventListener('resize', () => { clearTimeout(rz3); rz3 = setTimeout(view3.resize, 140); });
     } else {
       const p3 = $('plate3'); if (p3) p3.hidden = true;
+    }
+
+    /* ---- Plate IV: the terrain -------------------------------------------- */
+    if (terrain) {
+      const CF = terrain.chemfish;
+      const view4 = PTTerrain.make($('terr'), $('trHold'), terrain, showChannel);
+
+      $('cap4').innerHTML =
+        `<b>Time runs down the page, 24 hpf at the top rule to 48 at the bottom.</b> The surface ` +
+        `is the within-hour rank of wild-type cell density along one axis of the same embedding ` +
+        `Plate III draws, inverted — so it <b>rises where few cells are and dips where many ` +
+        `are</b>. A rank rather than a count, because two attempts on the raw log density ` +
+        `rendered as ruled lines: the empty tails of each hour set the scale and the structure ` +
+        `vanished. The transform is monotone, so a lower point always holds more cells than a ` +
+        `higher one at the same hour, but depth is not proportional to number. Cells sit in the ` +
+        `valleys, and a channel is a valley that persists ` +
+        `down the page. The ${terrain.channels.length} dotted routes are state centroids, hour by ` +
+        `hour. <b>This is an interpretive rendering of transcriptomic state space, not anatomy ` +
+        `and not a tracked lineage.</b> Nothing rolls down it, no cell crosses a ridge, and a ` +
+        `ridge's height is not an energy, a barrier or a probability — underneath it is a count of ` +
+        `cells per bin per hour and nothing else. <b>The drug layer is ChemFish</b>, not ZSCAPE: ` +
+        `${Object.keys(CF.pathway).length} small molecules each blocking one named pathway, ` +
+        `against their matched vehicle, at ${CF.hours.join(' and ')} hpf — the only hours ChemFish ` +
+        `shares with this window. A drug does not move a cell across the terrain here; it changes ` +
+        `how many cells sit in each basin, so a filled wedge marks a state whose basin <b>deepens</b> ` +
+        `and an open one a basin that <b>fills in</b>.`;
+
+      const sel4 = $('trDrug');
+      const opt0 = document.createElement('option');
+      opt0.value = ''; opt0.textContent = 'no drug — wild type only';
+      sel4.appendChild(opt0);
+      Object.keys(CF.pathway).sort().forEach((d) => {
+        const o2 = document.createElement('option');
+        o2.value = d;
+        o2.textContent = `${d} — ${CF.pathway[d]} (vs ${CF.vehicle[d]})`;
+        sel4.appendChild(o2);
+      });
+
+      function drugBlurb(d) {
+        if (!d) return '';
+        const rows = CF.rows.filter((r) => r.drug === d);
+        const up = rows.filter((r) => r.lfc > 0.5), dn = rows.filter((r) => r.lfc < -0.5);
+        const top = rows.slice().sort((a, b) => b.lfc - a.lfc);
+        const bot = rows.slice().sort((a, b) => a.lfc - b.lfc);
+        return `<dl><dt>${d} — ${CF.pathway[d]} blockade</dt>` +
+          `<dd>against ${CF.vehicle[d]}, ${rows.length} state-hours scored at a floor of ` +
+          `${CF.min_cells} cells.</dd>` +
+          `<dt>Basins that deepen</dt><dd>${up.length} states enriched. Most: ` +
+          `<b>${top[0] ? top[0].state : '—'}</b>${top[0] ? ` (+${top[0].lfc.toFixed(2)} at ${top[0].hpf} hpf)` : ''}.</dd>` +
+          `<dt>Basins that fill in</dt><dd>${dn.length} states depleted. Most: ` +
+          `<b>${bot[0] ? bot[0].state : '—'}</b>${bot[0] ? ` (${bot[0].lfc.toFixed(2)} at ${bot[0].hpf} hpf)` : ''}.</dd>` +
+          `</dl>`;
+      }
+
+      function sharedBlurb() {
+        const parts = Object.entries(CF.shared || {}).map(([h, s]) => {
+          const ld = Object.entries(s.drug_loadings).sort((a, b) => b[1] - a[1]);
+          return `<dt>${h} hpf — PC1 takes ${(s.var_explained * 100).toFixed(0)}%</dt>` +
+            `<dd>over ${s.n_states} states and ${s.n_drugs} drugs. Loads hardest on ` +
+            `<b>${ld[0][0]}</b> (${CF.pathway[ld[0][0]]}, ${ld[0][1].toFixed(2)}), least on ` +
+            `${ld[ld.length - 1][0]} (${ld[ld.length - 1][1].toFixed(2)}).</dd>`;
+        });
+        return `<dl><dt>The shared response</dt><dd>First principal component of the ` +
+          `state-by-drug matrix of compositional log fold-change. A filled disc is a state that ` +
+          `moves <i>with</i> the shared direction, an open one against it; size is the score.</dd>` +
+          parts.join('') + `</dl>`;
+      }
+
+      const baseBlurb =
+        '<h3>What the surface is</h3>' +
+        '<p><b>Elevation is −log cell density</b>, normalised within each hour. High ground is ' +
+        'where few wild-type cells are; the valley floors are where they pile up.</p>' +
+        '<p><b>A channel</b> is a valley that persists down the page. The dotted lines are state ' +
+        'centroids at each hour — routes, not paths anything travelled.</p>' +
+        '<p><b>The metaphor is Waddington\u2019s and it stops there.</b> No cell rolls, nothing ' +
+        'crosses a ridge, and no height here is an energy or a probability.</p>';
+
+      function showChannel(i) {
+        const extra = (sel4.value ? drugBlurb(sel4.value) : '') +
+                      ($('trShared').checked ? sharedBlurb() : '');
+        if (i < 0) { $('trBody').innerHTML = baseBlurb + extra; return; }
+        const ch = terrain.channels[i];
+        const seen = ch.pts.map((p, ti) => (p ? terrain.stages[ti] : null)).filter((x) => x !== null);
+        $('trBody').innerHTML =
+          `<h3>${ch.state}</h3>` +
+          `<dl><dt>Tissue</dt><dd>${ch.tissue || '—'}</dd>` +
+          `<dt>Wild-type cells, 24–48 hpf</dt><dd><b>${ch.n.toLocaleString()}</b></dd>` +
+          `<dt>Hours it can be placed</dt><dd>${seen.length} of ${terrain.stages.length}` +
+          `${seen.length ? ` — ${seen[0]} to ${seen[seen.length - 1]} hpf` : ''}</dd></dl>` +
+          extra;
+      }
+
+      $('trA1').addEventListener('click', () => {
+        view4.setAxis('e1');
+        $('trA1').setAttribute('aria-pressed', 'true'); $('trA2').setAttribute('aria-pressed', 'false');
+      });
+      $('trA2').addEventListener('click', () => {
+        view4.setAxis('e2');
+        $('trA1').setAttribute('aria-pressed', 'false'); $('trA2').setAttribute('aria-pressed', 'true');
+      });
+      sel4.addEventListener('change', () => {
+        view4.setDrug(sel4.value || null);
+        showChannel(-1);
+      });
+      $('trShared').addEventListener('change', () => {
+        view4.setShared($('trShared').checked); showChannel(-1);
+      });
+      $('trClear').addEventListener('click', () => {
+        view4.select(-1); sel4.value = ''; view4.setDrug(null);
+        $('trShared').checked = false; view4.setShared(false); showChannel(-1);
+      });
+
+      showChannel(-1);
+      afterVisible.push(() => view4.resize());
+      let rz4;
+      window.addEventListener('resize', () => { clearTimeout(rz4); rz4 = setTimeout(view4.resize, 140); });
+    } else {
+      const p4 = $('plate4'); if (p4) p4.hidden = true;
     }
 
     /* ---- Plate II: provenance ------------------------------------------- */

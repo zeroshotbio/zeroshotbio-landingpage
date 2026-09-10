@@ -383,6 +383,92 @@ different job.
 - **The scale-bar block was placed at `H - 52` and its last two rows fell off the canvas.** It is
   four rows tall.
 
+## Plate IV (sixth pass, 2026-09-10) — the terrain, and ChemFish
+
+**Time is the y axis**, 24 hpf at the top rule and 48 at the bottom, after
+`/fate_map_wang_2026` Plate II. x is one axis of the same wild-type embedding Plate III draws,
+switchable between the projection's two axes exactly as that page switches between two spherical
+coordinates.
+
+**What the surface is.** Elevation is the **within-hour rank of wild-type cell density**, inverted:
+high ground where few cells are, valley floors where they pile up. Drawn as 130 interpolated
+profiles, each the real density curve at its own moment, filled with paper so a nearer row occludes
+the one behind it and the stack reads as relief — plus hachures down the steep faces, which is the
+whole texture budget of the plate.
+
+**Why a rank and not the density.** Two earlier attempts rendered as ruled lines, and both are worth
+recording because each looked like a code bug and was not:
+
+    -log10(density), min-max over the whole field   the empty tails of every hour set the
+                                                    maximum; all structure squeezed into a
+                                                    narrow band, relief invisible
+    1 - (density / row max) ** 0.45                 most columns sit near 1, so each profile
+                                                    was flat with a few narrow notches
+    1 - within-hour percentile rank   <- shipped    every hour uses the full amplitude
+
+The rank transform is **monotone in density**, so every ordering claim the plate makes still holds —
+a lower point always has more cells than a higher one at the same hour. What it is not is
+proportional: **a valley twice as deep does not hold twice as many cells**, and elevation is not
+comparable between hours. Both are said on the plate.
+
+**And it is a metaphor.** Waddington's, and it stops there. Not anatomy. Not a tracked lineage.
+Nothing rolls down it, nothing crosses a ridge, and no height is an energy, a barrier or a
+probability. What is underneath it is a count of cells per bin per hour, normalised within the hour.
+
+**Channels** are the 44 largest states' centroids at each hour, drawn dotted for the same reason
+Plate III's trail is: a route, not a path anything travelled.
+
+### The drug layer is ChemFish, not ZSCAPE
+
+Seven small molecules, each blocking one named signalling pathway, against their matched vehicle:
+
+| drug | pathway | vehicle |
+|---|---|---|
+| DEAB | retinoic acid | DMSO |
+| LY411575 | Notch | DMSO |
+| SB505124 | TGF-beta | DMSO |
+| WntC59 | Wnt | DMSO |
+| DMH1 | BMP | DMSO |
+| SU5402 | FGF | DMSO |
+| **Cyclopamine** | Shh | **ethanol, not DMSO** |
+
+Cyclopamine's vehicle is the one that would be silently wrong if the controls were pooled.
+
+ChemFish covers 36, 48 and **72** hpf, so only **36 and 48** fall inside this window. Its
+`cell_type` vocabulary is the Platt one, so states reach the terrain's x axis through the verified
+**cell-level** Platt-to-ZSCAPE crosswalk rather than by name — 355 Platt states placed, weighted
+across their ZSCAPE counterparts so many-to-many survives as a weighted mean rather than a winner.
+
+**A drug does not move a cell across this terrain.** It changes how many cells sit in each basin, so
+the layer is drawn as deformation: a filled wedge where a state is enriched (its basin deepens) and
+an open one where it is depleted (the basin fills in). 1,959 state-hours scored over
+224 states, at a floor of 60 cells on an arm.
+
+### The shared response, and it is interpretable
+
+First principal component of the state-by-drug matrix of compositional log fold-change, per hour:
+
+- **36 hpf — PC1 takes 45%** over 68 states and 7 drugs. It
+  loads overwhelmingly on **LY411575 (Notch, +0.87)**, and what it separates is textbook: the states
+  that gain are *differentiated neurons* — hindbrain glutamatergic, spinal cord GABAergic and
+  glutamatergic — and the states that lose are *progenitors*: spinal cord progenitor, lateral floor
+  plate, telencephalon. Blocking Notch drives premature neuronal differentiation at the expense of
+  the progenitor pool, and the axis recovered that without being told any of it.
+- **48 hpf — PC1 takes 37%** over 215 states. By then all seven loadings are
+  positive (0.07 to 0.50), so it has become a broad shared depletion-and-differentiation direction
+  rather than one drug's signature.
+
+### Traps
+
+- **The relief rises above its own row**, by up to seven row-spacings. A 30px top margin put the
+  24 hpf crest off the canvas entirely; it needs 104.
+- **`HDF5_USE_FILE_LOCKING` must be off to read `/data/chemfish/chemfish.h5ad`.** `minifin_query`
+  serves the same file, and h5py blocks indefinitely on the open — no error, no timeout, no output.
+  This cost about forty minutes of thinking the reads were merely slow.
+- **AnnData writes `-1` for an unlabelled categorical** and `np.bincount` refuses a negative. 573
+  ChemFish cells carry no `cell_type`; they are dropped, not folded into a bin, which would have
+  invented a state.
+
 ## Reusable tables
 
 Written to `/data/fate_map/`, outside the web repo, for the ZMAP and DanioCell layers:
@@ -396,6 +482,8 @@ Written to `/data/fate_map/`, outside the web repo, for the ZMAP and DanioCell l
 | `platt_zmap_enrichment.tsv` / `.parquet` / `.json` | 358 | per state: ZMAP fine/tissue/germ-layer calls, confidence, predicted hpf, and the ZSCAPE comparison |
 | `zscape_perturb_displacement.tsv` / `.parquet` | 5,011 | every control→perturbed centroid displacement, with its projection on the shared axis |
 | `zscape_response_axis_by_target.tsv` | 28 | per target: median projection, fraction aligned, fraction of its displacement variance along the shared axis |
+| `chemfish_state_composition_lfc.tsv` / `.parquet` | 1,959 | per drug, hour and state: cell counts on both arms, fractions, compositional log fold-change, and the state's terrain position |
+| `chemfish_shared_axis_loadings.tsv` | 14 | drug loadings on the shared response axis at each hour |
 
 The web page loads `enrich.json` (402 KB) and `zmap.json` (840 KB) — the 186 graph states only.
 Both are optional at runtime; the panel degrades block by block if either is absent.
