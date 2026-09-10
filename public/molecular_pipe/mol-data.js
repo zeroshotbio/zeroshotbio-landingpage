@@ -108,8 +108,12 @@ const NODES = [
 
 /* cols/rows are the round's own fact, not the drawing's: this pool and split
    sits between two 96-well ligations, and both split shapes are told their grid
-   outright rather than falling back on a default nobody can see. */
-{id:"B2", key:"B5", group:"In situ barcoding", shape:"poolsplit96", name:"Pool and split", x:7.4, y:R2, lane:"r2", w:0.6, d:0.6, h:0.3, cols:12, rows:8,
+   outright rather than falling back on a default nobody can see.
+   w and d are B3's as the shared record draws it — 0.6 x 0.6 plus its own
+   0.9 x 0.7 resize — because the two are one procedure repeated and were asked
+   to read at one size. The 0.9 is paid out of this station's own two gaps,
+   not the lane's end; see the note above LANES. */
+{id:"B2", key:"B5", group:"In situ barcoding", shape:"poolsplit96", name:"Pool and split", x:7.4, y:R2, lane:"r2", w:1.5, d:1.3, h:0.3, cols:12, rows:8, gap:0.05443,
  sub:"shuffle again",
  does:"Pooled and redistributed a second time.",
  built:"Section 1.4, opening steps.", cond:"Clean."},
@@ -121,7 +125,7 @@ const NODES = [
    landing, plus the 48 x 96 x 96 the built text below asserts, which is the
    one thing on this row no single plate can show. The prose stays lifted
    verbatim. */
-{id:"R3p", key:"B6", group:"In situ barcoding", shape:"ligation3", name:"Round 3 — ligation", x:9.0, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:8,
+{id:"R3p", key:"B6", group:"In situ barcoding", shape:"ligation3", name:"Round 3 — ligation", x:9.0, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:8, gap:0.05443,
  sub:"96 wells · R3_v3 · TruSeq R2 + biotin",
  does:"A third barcode is ligated, and it brings two passengers: the Illumina TruSeq Read 2 sequence, and a biotin. After this round a cell's path through three plates is almost certainly unique — that combination is what will be read as a cell identity, and no droplet was ever involved.",
  built:"Section 1.4. Ligation in a third 96-well plate, barcode set R3_v3. The biotin is why the next section works at all: it is the handle streptavidin beads will grab once the cells are gone. The three rounds give 48 x 96 x 96 = 442,368 addressable paths for roughly 95,000 cells. Microwell-seq builds its barcode the same way — three rounds of split-pool synthesis, 3 x 6 nt in an 18 nt barcode.",
@@ -509,7 +513,17 @@ const EDGES = [
    and cost the same 1.234 on the same terms — 0.72 of station plus one extra
    minor gap of 0.6 at k 0.8567, x1 31.906 -> 33.140 — priced by
    scripts/pipeline_lane.mjs, which reports k unmoved and all eighteen existing
-   gaps where they were. The ten stations from B8a on slide 1.234 along. */
+   gaps where they were. The ten stations from B8a on slide 1.234 along.
+
+   B5 GREW AND PAID IN ITS OWN GAPS, NOT AT THE END, and that is deliberate.
+   It went from 0.6 to B3's 1.5, and paying 0.9 on x1 would have slid B5 by
+   half of it and every station after it by all of it — which on the live page
+   moves the whole arrangement the shared record was tuned against, when the
+   request was to change this one station and nothing else. So each of its two
+   gaps gives up 0.45: a weight of 0.6 - 0.45/k with k = 11.63/14.1, which is
+   0.05443. Σw rises by 0.9 and k·Σgaps falls by 0.9, so k does not move, and
+   neither does any centre on the row, B5's included. The footprints end up
+   nearly touching; the bench was always drawn wider than its footprint. */
 const LANES = [
   {id:"r2", y:R2, x0:0.7, x1:33.140, dir:+1},
 ];
