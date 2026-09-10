@@ -244,6 +244,31 @@ const NODES = [
  built:"Section 2.5. Qubit dsDNA HS for concentration, Bioanalyzer High Sensitivity DNA or TapeStation HS D5000 for size. cDNA then keeps at 4C for 48 hours or -20C for three months. The recorded concentration is carried forward by hand into section 3.",
  cond:"The only step on this row where a measured number, rather than the protocol, decides what happens next — and the measurement was not archived. Which cycle branch the run took, anywhere from 13 cycles for a weak sublibrary down to 7 for a strong one, cannot be recovered. Over-amplification shows up as duplicate reads, which is why sequencing saturation two boxes downstream is the only surviving witness to this decision."},
 
+/* NOT LIFTED, AND ASKED FOR FROM THE PAGE — a readout, which none of the
+   others asked for this way were. What the "Add a module" request described
+   was a picture: a strip of PCR tubes, a flat cassette with a row of narrow
+   lanes and two electrode pins over one of them; a drop into one well, the
+   fragments running, small ones faster, and then a trace of intensity against
+   size drawing itself over the cassette. It also said what the step is not —
+   the DNA is not changed here, only measured — and that is what `sub` carries.
+
+   IT NAMED NO PROTOCOL. No section, no instrument, no kit, no ladder and no
+   size range, so `built` names none and points at the request, the way B8′'s
+   and B8a's do. `cond` says the obvious thing out loud: B9 one station back
+   already cites a fragment-size measurement of this same cDNA. In UNVERIFIED,
+   and the badge says so.
+
+   THE KEY IS A SUFFIX ON THE STATION IT FOLLOWS. It lands between B9 and C1,
+   so it is B9a, and nothing downstream is renumbered. It takes C3's .95 tile
+   rather than its neighbours' .72, because a strip, a cassette and a graph
+   over it do not share the smaller one; the room was paid for at the end of
+   the lane — see the note above LANES. */
+{id:"SZD", key:"B9a", group:"cDNA capture and amplification", shape:"sizerun", name:"Measure the size distribution", x:14.85, y:R2, lane:"r2", w:0.95, d:0.95, h:0.4,
+ sub:"a readout · measured, not changed",
+ does:"The amplified DNA is measured for how its fragment sizes are spread. A drop of it goes from a PCR tube into the well of one lane on a cassette, two electrodes come down onto that lane, and the fragments run along it, the small ones faster than the large; what comes off is intensity against size. Nothing is made here — the DNA is only measured, and leaves the station as it arrived.",
+ built:"Nothing to cite. The request that asked for this station described a picture — a strip of PCR tubes, a flat cassette with a row of narrow lanes, two electrode pins over one lane, and a trace with two or three narrow peaks drawn over it — and named no manual section, no instrument, no kit, no ladder and no size range, so this record names none either.",
+ cond:"Asked for from the page rather than read off an artefact, so what it carries is a figure and not a measurement: the peaks are drawn, not read, and the axes carry no units because the request gave none. What it does not settle is how it stands against B9 one station back, whose built line already cites section 2.5 for a fragment-size measurement of this same cDNA. This may be a second view of that measurement rather than a step of its own; the record makes no protocol claim, and nothing downstream depends on which it is."},
+
 /* THE DRAWING LOST ITS MACHINE FROM "EDIT VISUAL" AND THE RECORD DID NOT
    MOVE, which is the rule for a lifted station: /pipeline owns this prose. The
    request took the cycler off the bench, kept the black inset the stations
@@ -452,7 +477,10 @@ const EDGES = [
   {a:"LPR",b:"SEL",kind:"lib"},
   {a:"SEL",b:"AMP",kind:"lib"},
   {a:"AMP",b:"QCD",kind:"lib"},
-  {a:"QCD",b:"FRG",kind:"lib"},
+  /* and B9a between B9 and C1, so QCD -> FRG is two. Still `lib`: a readout
+     changes nothing about what runs down the track, which is the point of it. */
+  {a:"QCD",b:"SZD",kind:"lib"},
+  {a:"SZD",b:"FRG",kind:"lib"},
   {a:"FRG",b:"R4p",kind:"lib"},
   {a:"R4p",b:"LIB",kind:"lib"},
   {a:"LIB",b:"SEQ",kind:"lib"},
@@ -518,6 +546,12 @@ const EDGES = [
    scripts/pipeline_lane.mjs, which reports k unmoved and all eighteen existing
    gaps where they were. The ten stations from B8a on slide 1.234 along.
 
+   B9a, THE SIZE READOUT, went in between B9 and C1 and cost 1.445 — 0.95 of
+   station, C3's tile rather than its neighbours' .72, plus one extra minor
+   gap of 0.6 at k 0.8248, x1 33.140 -> 34.585 — priced by
+   scripts/pipeline_lane.mjs, which reports k unmoved and every existing gap
+   where it was. The eight stations from C1 on slide 1.445 along.
+
    B5 GREW AND PAID IN ITS OWN GAPS, NOT AT THE END, and that is deliberate.
    It went from 0.6 to B3's 1.5, and paying 0.9 on x1 would have slid B5 by
    half of it and every station after it by all of it — which on the live page
@@ -534,7 +568,7 @@ const EDGES = [
    centre on the row stays put; B6's own slides 0.225 right, because it grew
    rightwards into that gap. */
 const LANES = [
-  {id:"r2", y:R2, x0:0.7, x1:33.140, dir:+1},
+  {id:"r2", y:R2, x0:0.7, x1:34.585, dir:+1},
 ];
 
 const ROWS = [R2], MIRROR = 22.7;
@@ -543,7 +577,7 @@ const ROWS = [R2], MIRROR = 22.7;
    out at the far end with the lane — a band is as long as its row, so a mat
    left at 24 would have the last station standing off the edge of its floor. */
 const BANDS = [
-  {name:"Molecular biology", x0:-2, x1:35.140, y0:R2-3.8, y1:R2+3.8},
+  {name:"Molecular biology", x0:-2, x1:36.585, y0:R2-3.8, y1:R2+3.8},
 ];
 
 /* No carries: this page is one row and it runs out at the handoff, which is
@@ -642,8 +676,8 @@ const REAL_SUBLIBS = [
    checked with Patrick — C4 and C5 because they are new here and have never
    been on the big map to be checked against, and B8′, B8′a, B8a, C6 and C7
    because they were asked for from the page rather than read off an artefact
-   at all. */
-const UNVERIFIED = new Set(["B8′","B8′a","B8a","B9","C1","C2","C4","C5","C6","C7"]);
+   at all. B9a is one more of those. */
+const UNVERIFIED = new Set(["B8′","B8′a","B8a","B9","B9a","C1","C2","C4","C5","C6","C7"]);
 
 const SNIPPETS = {
   fish: () => { const c=pick(REAL_CELLS); return {label:"one well of embryos", flag:null,
