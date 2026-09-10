@@ -6546,10 +6546,26 @@ DRAW.libraryprep = drawLibraryPrep;
    and a bead does not let go on camera, so the state is a pure function of
    the clock and the wrap puts the free strands back in one frame.
 
+   ASKED FOR A SECOND TIME, from "Edit visual": once the beads are pulled to
+   the side, float them to the middle of the glass, smaller, and show the
+   polymerases binding and then copying. So the field drops when the hand-off
+   starts — a bead leaves the wall because the magnet let go, not because it
+   chose to — and the three held strands drift in together and shrink, which
+   is what clears the room for the copies. The enzyme is B8a's, glyph and
+   gait: it comes in from outside the field, lands on the free end, walks
+   toward the bead and the copy fills in beside it as it goes. One enzyme,
+   then two, because the second generation copies the copy too; still one,
+   two, four, and still the count the record's prose makes.
+
    Reuses magnetRack from B8's bench and flowLine / setFanLine from the fan.
    Spends --ch3, --ch4, --ch8, --ch11 and --c-top, all declared on
    /molecular_pipe — the only page carrying a node that wears this.
    ------------------------------------------------------------------ */
+/* the polymerase, one glyph for both glasses it works in — B8′a's and B8a's.
+   Hoisted rather than copied so the two can never drift into two enzymes. */
+const POLYMERASE_D=`M -5.4 -1.4 C -5.4 -7.2 5.4 -7.2 5.4 -1.4 L 5.4 1.6 `+
+  `C 5.4 3.6 3.0 4.0 2.4 2.2 C 1.5 -0.4 -1.5 -0.4 -2.4 2.2 `+
+  `C -3.0 4.0 -5.4 3.6 -5.4 1.6 Z`;
 function drawTagCapture(g,n){
   /* EVERY OFFSET IS EITHER A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC,
      and w, d and h are read at draw time because a resize is the only reason
@@ -6649,8 +6665,9 @@ function drawTagCapture(g,n){
      drawing rather than a lens over it */
   lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,
     fill:"var(--bg)","fill-opacity":".92"}));
-  /* the wall the held strands end up on, in the magnets' pale, so the inset
-     on the rack and the side of the glass read as one fact at two scales */
+  /* the wall the held strands are pulled to, in the magnets' pale, so the
+     inset on the rack and the side of the glass read as one fact at two
+     scales. It stays after they leave it: it is where the magnet is */
   const wall=a=>[(LX*Math.cos(a)).toFixed(1),(LY*Math.sin(a)).toFixed(1)];
   lens.appendChild(el("path",{d:`M ${wall(2.36).join(" ")} `+
     `A ${LX} ${LY} 0 0 1 ${wall(3.93).join(" ")}`,fill:"none",
@@ -6664,10 +6681,12 @@ function drawTagCapture(g,n){
   lens.appendChild(cp);
   const stage=el("g",{"clip-path":`url(#${cid})`});
   lens.appendChild(stage);
-  /* back to front: debris, copies, beads, strands. The beads sit under the
-     strands so the gold is drawn inside the pocket rather than behind it */
-  const L_DEB=el("g",{}), L_CPY=el("g",{}), L_BEAD=el("g",{}), L_STR=el("g",{});
-  [L_DEB,L_CPY,L_BEAD,L_STR].forEach(l=>stage.appendChild(l));
+  /* back to front: debris, copies, beads, strands, enzymes. The beads sit
+     under the strands so the gold is drawn inside the pocket rather than
+     behind it; the enzymes go over everything because they sit ON a strand */
+  const L_DEB=el("g",{}), L_CPY=el("g",{}), L_BEAD=el("g",{}), L_STR=el("g",{}),
+        L_POL=el("g",{});
+  [L_DEB,L_CPY,L_BEAD,L_STR,L_POL].forEach(l=>stage.appendChild(l));
 
   /* ---- THE STRAND, B8's WAY ---------------------------------------------- */
   const HL=15, TIP=HL+5.4, DROP=HL+2.4;
@@ -6689,15 +6708,21 @@ function drawTagCapture(g,n){
       stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".5"}));
     return sg;
   };
-  const tr=(x,y,a)=>`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${a.toFixed(1)})`;
+  const tr=(x,y,a,s=1)=>`translate(${x.toFixed(1)},${y.toFixed(1)}) `+
+    `rotate(${a.toFixed(1)})`+(s===1?"":` scale(${s.toFixed(3)})`);
+  const rot=(a,x,y)=>[x*Math.cos(a)-y*Math.sin(a), x*Math.sin(a)+y*Math.cos(a)];
 
   /* free, the gold turned toward the side the beads come from; held, swung
-     round so the bead leads and the gold is at the wall */
+     round so the bead leads and the gold is at the wall; then off the wall
+     into the middle at FS, squared up, so the four being counted line up.
+     The column sits a little left of centre because the copies need the
+     right: taken together the two columns are what is centred */
   const FREE=[[10,-20,-12],[22,6,16],[-6,18,-6]];
   const HELD=[[-28,-16,186],[-28,0,180],[-28,16,174]];
+  const FS=0.62, ANG=180, MIDS=[[-6,-16,ANG],[-6,0,ANG],[-6,16,ANG]];
   const COPIER=1;
   const strands=FREE.map((f,i)=>({g:strand(L_STR,i*1.9,tr(f[0],f[1],f[2]),"1"),
-    free:f, held:HELD[i], ph:r()*6.283}));
+    free:f, held:HELD[i], mid:MIDS[i], ph:r()*6.283}));
 
   /* THE DEBRIS IS FORMLESS ON PURPOSE, B8's reasoning: any shape given to it
      would be a claim about what it is, and all it is is not the thing kept */
@@ -6736,17 +6761,30 @@ function drawTagCapture(g,n){
   });
 
   /* THE COPIES: one, then two more, each generation under the last and
-     fainter, stepping away from the wall into the room the debris left.
-     Every copy slides out from the strand it was copied off. Born at their
-     source with real coordinates; the clock only moves them. */
-  const H=HELD[COPIER];
-  /* they step mostly sideways: straight up is where the top held strand is */
-  const COPY=[{from:[0,0],  to:[13,-3],  op:0.68, gen:0},
-              {from:[0,0],  to:[26,-6],  op:0.42, gen:1},
-              {from:[13,-3],to:[39,-9],  op:0.42, gen:1}];
+     fainter, landing in a column right of the held strands. Each fills in
+     BESIDE its template while an enzyme walks it, on the side it will leave
+     by, and then slides to its place — `side` is which side that is, so the
+     third copy peels off its template downward rather than across it. Born
+     beside their template with real coordinates; the clock only moves them.
+     The enzymes are born outside the rim where they come in from. */
+  const T0=MIDS[COPIER];
+  const COPY=[{from:T0,     to:[26,-2],  side: 1, op:0.68, gen:0, enter:[30,52]},
+              {from:T0,     to:[26,-18], side: 1, op:0.42, gen:1, enter:[-20,-52]},
+              {from:[26,-2],to:[26,14],  side:-1, op:0.42, gen:1, enter:[70,-24]}];
+  const A0=ANG*Math.PI/180;
+  COPY.forEach(c=>{
+    const al=rot(A0,0,6*c.side*FS);
+    c.beside=[c.from[0]+al[0], c.from[1]+al[1]];
+  });
   /* appended in reverse so the youngest are furthest back */
   COPY.slice().reverse().forEach(c=>{
-    c.g=strand(L_CPY,COPIER*1.9,tr(H[0]+c.from[0],H[1]+c.from[1],H[2]),"0");
+    c.g=strand(L_CPY,COPIER*1.9,tr(c.beside[0],c.beside[1],ANG,FS),"0");
+  });
+  COPY.forEach(c=>{
+    c.pol=el("g",{transform:tr(c.enter[0],c.enter[1],ANG,FS),opacity:"0"});
+    L_POL.appendChild(c.pol);
+    c.pol.appendChild(el("path",{d:POLYMERASE_D,fill:"var(--fg)","fill-opacity":".82",
+      stroke:"var(--stroke)","stroke-width":".6","stroke-opacity":".5"}));
   });
 
   /* the ring last, over everything, so nothing inside can soften its own edge */
@@ -6756,33 +6794,40 @@ function drawTagCapture(g,n){
   /* ---- TIMING -------------------------------------------------------------
      The beads take their time and arrive one after another; the pull is quick
      and the three held things move together, which is the one moment on the
-     bench that reads as an event. Then the hand-off along the flow, the two
-     generations, and a hold on four.
+     bench that reads as an event. Then the hand-off along the flow, with the
+     field dropping and the held three drifting in to the middle; then the
+     two generations, each an enzyme landing, a walk and a peel; and a hold
+     on four.
 
      PLACEMENT IS A PURE FUNCTION OF THE CLOCK, so a frame long enough to skip
      a whole beat cannot leave a bead halfway to a strand it has already left. */
   const T_IN=1.3, STAG=0.3, CAPD=1.2, T_PULL=3.4, PULLD=1.6,
-        T_FLOW=5.0, FLOWD=0.8, T_G1=5.9, GEN=0.9, T_G2=7.1, HOLD=2.2;
+        T_FLOW=5.0, FLOWD=0.8, T_FLOAT=5.3, FLOATD=1.4,
+        BINDD=0.7, SYND=1.1, MOVD=0.7, GEN=BINDD+SYND+MOVD,
+        T_G1=7.0, T_G2=T_G1+GEN+0.2, HOLD=2.2;
   const TOT=T_G2+GEN+HOLD;
 
   const place=(t,ph)=>{
     const pull=ease(clamp((t-T_PULL)/PULLD));
     const jig=(1-pull)*1.4;
+    const fl=ease(clamp((t-T_FLOAT)/FLOATD)), sc=1+(FS-1)*fl;
     /* once copying starts the other two held strands step back, so the four
        being counted are the brightest thing in the glass */
     const back=1-0.5*ease(clamp((t-T_G1+0.5)/0.5));
     strands.forEach((sd,i)=>{
-      const px=sd.free[0]+(sd.held[0]-sd.free[0])*pull+Math.cos(ph*0.8+sd.ph)*jig;
-      const py=sd.free[1]+(sd.held[1]-sd.free[1])*pull+Math.sin(ph*0.6+sd.ph)*jig;
-      const ang=sd.free[2]+(sd.held[2]-sd.free[2])*pull;
+      const hx=sd.free[0]+(sd.held[0]-sd.free[0])*pull+Math.cos(ph*0.8+sd.ph)*jig;
+      const hy=sd.free[1]+(sd.held[1]-sd.free[1])*pull+Math.sin(ph*0.6+sd.ph)*jig;
+      const ha=sd.free[2]+(sd.held[2]-sd.free[2])*pull;
+      const px=hx+(sd.mid[0]-hx)*fl, py=hy+(sd.mid[1]-hy)*fl,
+            ang=ha+(sd.mid[2]-ha)*fl;
       const dim=i===COPIER?1:back;
-      sd.g.setAttribute("transform",tr(px,py,ang));
+      sd.g.setAttribute("transform",tr(px,py,ang,sc));
       sd.g.setAttribute("opacity",dim.toFixed(2));
       const c=ease(clamp((t-T_IN-i*STAG)/CAPD));
       const a=ang*Math.PI/180;
-      const tx=px+Math.cos(a)*DROP, ty=py+Math.sin(a)*DROP;
+      const tx=px+Math.cos(a)*DROP*sc, ty=py+Math.sin(a)*DROP*sc;
       sd.b.g.setAttribute("transform",tr(sd.b.entry[0]+(tx-sd.b.entry[0])*c,
-        sd.b.entry[1]+(ty-sd.b.entry[1])*c, ang+180));
+        sd.b.entry[1]+(ty-sd.b.entry[1])*c, ang+180, sc));
       sd.b.g.setAttribute("opacity",(0.95*clamp(c/0.2)*dim).toFixed(2));
       setBead(sd.b,(c-0.6)/0.4);
     });
@@ -6795,15 +6840,27 @@ function drawTagCapture(g,n){
       d.g.setAttribute("transform",`translate(${dx.toFixed(1)},${dy.toFixed(1)})`);
       d.g.setAttribute("opacity",(1-clamp((out-0.35)/0.5)).toFixed(2));
     });
+    /* THE ENZYME LANDS ON THE FREE END AND WALKS TOWARD THE BEAD, the way a
+       copy is written, and stops short of it so the pocket stays readable.
+       The copy fills in as it walks, and when the walk is done the copy
+       slides off to its place and the enzyme lifts away on its own side */
     COPY.forEach(c=>{
-      const u=ease(clamp((t-(c.gen?T_G2:T_G1))/GEN));
-      c.g.setAttribute("transform",tr(H[0]+c.from[0]+(c.to[0]-c.from[0])*u,
-        H[1]+c.from[1]+(c.to[1]-c.from[1])*u, H[2]));
-      c.g.setAttribute("opacity",(c.op*clamp(u/0.5)).toFixed(2));
+      const g0=c.gen?T_G2:T_G1;
+      const b=ease(clamp((t-g0)/BINDD)), s=ease(clamp((t-g0-BINDD)/SYND)),
+            m=ease(clamp((t-g0-BINDD-SYND)/MOVD));
+      c.g.setAttribute("transform",tr(c.beside[0]+(c.to[0]-c.beside[0])*m,
+        c.beside[1]+(c.to[1]-c.beside[1])*m, ANG, FS));
+      c.g.setAttribute("opacity",(c.op*s).toFixed(2));
+      const on=rot(A0,(-HL+3+(2*HL-11)*s)*FS,(-1.6-8*m)*c.side*FS);
+      const ex=c.enter[0]+(c.from[0]+on[0]-c.enter[0])*b,
+            ey=c.enter[1]+(c.from[1]+on[1]-c.enter[1])*b;
+      c.pol.setAttribute("transform",tr(ex,ey,ANG+(c.side>0?0:180),FS));
+      c.pol.setAttribute("opacity",(0.9*clamp(b/0.25)*(1-m)).toFixed(2));
     });
-    /* the bench, in step: the field is on from the pull until the cut, and
-       the screen is lit from the hand-off, brightest as each generation lands */
-    T.setField(clamp((t-T_PULL+0.3)/0.5));
+    /* the bench, in step: the field is on from the pull until the beads
+       leave the wall, and the screen is lit from the hand-off, brightest as
+       each generation lands */
+    T.setField(clamp((t-T_PULL+0.3)/0.5)*(1-clamp((t-T_FLOAT)/0.4)));
     setFanLine(flow,0.34,(t-T_FLOW)/FLOWD);
     const pulse=g0=>Math.sin(Math.PI*clamp((t-g0)/GEN));
     lit.setAttribute("fill-opacity",(t<T_FLOW+FLOWD*0.7 ? 0 :
@@ -6812,8 +6869,8 @@ function drawTagCapture(g,n){
 
   /* THE CLOCK DOES NOT START AT ZERO. A reader asking for reduced motion never
      sees it advance, so the frame it starts on is the whole station for them,
-     and the one that carries both halves is the hold: beads shut on the wall,
-     debris gone, four copies */
+     and the one that carries both halves is the hold: beads shut and in the
+     middle, debris gone, four copies */
   let t=T_G2+GEN+HOLD*0.5, ph=0;
   const run=dt=>{ t=(t+dt)%TOT; ph+=dt*1.7; place(t,ph); };
   run(0);
@@ -7057,9 +7114,7 @@ function drawPcrAmplify(g,n){
   /* the enzyme: B8's bead grammar — solid pale body, hole cut in --bg — but
      the hole is a channel rather than a pocket, and the two feet either side of
      it are what makes it sit ON the strand instead of beside it */
-  const POLY=`M -5.4 -1.4 C -5.4 -7.2 5.4 -7.2 5.4 -1.4 L 5.4 1.6 `+
-             `C 5.4 3.6 3.0 4.0 2.4 2.2 C 1.5 -0.4 -1.5 -0.4 -2.4 2.2 `+
-             `C -3.0 4.0 -5.4 3.6 -5.4 1.6 Z`;
+  const POLY=POLYMERASE_D;
   const pol=[[-70,-46],[74,-8],[-72,44]].map(e=>{
     const pg=el("g",{transform:`translate(${e[0]},${e[1]})`,opacity:"0"});
     stage.appendChild(pg);
