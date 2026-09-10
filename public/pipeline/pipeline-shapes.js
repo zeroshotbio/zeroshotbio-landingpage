@@ -6199,19 +6199,31 @@ function drawCapture(g,n){
      even haze, and one flat opacity over twenty blobs reads as a filter laid
      on the glass rather than as stuff in the tube. The eight added pieces lie
      over where the strands start and where the two columns end up, so the
-     wash is what uncovers them. */
+     wash is what uncovers them.
+
+     AND THEN MORE. Asked for from the page a second time: the strands should
+     be hard to make out at all until the wash. So sixteen more pieces go down
+     over the strands' whole range, every piece is larger, and the thinnest
+     of them is denser than the old average — the chips still show through
+     here and there, which is enough to say something is under there without
+     letting it be read. The beads stay above it all in the stacking order:
+     they find their strands by chemistry, not by sight, and the viewer has
+     to be able to watch them do it. */
   const debris=[[-34,-14],[-38,6],[-26,24],[-12,-30],[-5,-2],[6,12],
                 [18,-18],[32,-12],[38,4],[10,33],[-14,35],[30,-28],
                 [-20,-8],[-15,15],[14,-4],[20,12],[0,-18],[-2,20],
-                [-28,-24],[26,24]].map(p=>{
+                [-28,-24],[26,24],
+                [-8,-20],[4,-10],[12,24],[-24,16],[24,-6],[-6,8],
+                [16,-28],[-18,-22],[28,14],[-30,-2],[8,4],[-10,26],
+                [22,-20],[-22,28],[34,-18],[-36,-8]].map(p=>{
     const dg=el("g",{transform:`translate(${p[0]},${p[1]})`});
     stage.appendChild(dg);
-    const q=[], sz=0.9+r()*0.7;
+    const q=[], sz=1.1+r()*0.9;
     for(let k=0;k<9;k++){ const a=k*6.283/9, rr=(2.8+r()*2.8)*sz;
       q.push(`${(Math.cos(a)*rr).toFixed(1)},${(Math.sin(a)*rr*0.8).toFixed(1)}`); }
     const den=r();
     dg.appendChild(el("polygon",{points:q.join(" "),fill:"var(--fg3)",
-      "fill-opacity":(0.22+0.5*den).toFixed(2),stroke:"var(--fg3)",
+      "fill-opacity":(0.42+0.45*den).toFixed(2),stroke:"var(--fg3)",
       "stroke-width":".8","stroke-opacity":(0.35+0.35*den).toFixed(2)}));
     return {g:dg, at:p, ph:r()*6.283, dl:r()*0.3};
   });
