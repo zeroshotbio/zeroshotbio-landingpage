@@ -1,7 +1,14 @@
-"""Generate the SILVER reader panel from a live listing of the warehouse."""
-import collections, pathlib
+"""Generate the SILVER reader panel from a live listing of the warehouse.
 
-SRC='/tmp/claude-1001/-data/1a934452-8c41-4975-b302-6d9d32c09db2/scratchpad/silver.tsv'
+Usage: python3 gen_silver_panel.py <scratch-dir>. The dir holds silver.tsv (size<TAB>key, from
+aws s3 ls --recursive) and panel_style.txt (the <style> block the SILVER panel opens with), and
+receives silver_panel.txt. Scratchpads are per-session and get cleaned up, so the dir is an
+argument rather than a path baked in: the last one baked in was gone by the next read.
+"""
+import collections, pathlib, sys
+
+SP=sys.argv[1]
+SRC=f'{SP}/silver.tsv'
 rows=[l.rstrip("\n").split("\t") for l in open(SRC) if l.strip()]
 rows=[(int(a),b) for a,b in rows]
 TOT=sum(sz for sz,_ in rows)
@@ -326,6 +333,28 @@ for name,acc,head,subs,leaves in MULTI:
         if hit: b.append(row(leaf.split('/')[-1],hit[0][0],'ok',note,2))
     B[name]=block(name,acc,n,s_,''.join(b))
 
+# ---- human/tahoe/
+# The first key with a species segment: every other prefix is zebrafish and sits at the root, and
+# this one sits under human/ so the species is in the key rather than only in the prose. It is also
+# the largest thing in the bucket by a distance - 100.6M cells, more than the rest of silver
+# together - and the one acquired prefix where both origins attest every byte they served.
+n,s_=agg('human/tahoe/')
+b=[row('README.md',get('human/tahoe/README.md')[0][0],'ok',
+       'two origins, the DMSO_TF trap, and why the 14 plates stay unmerged')]
+pn,ps=agg('human/tahoe/Paper/')
+b.append(row('Paper/',ps,'ok',f'{pn} objects - the bioRxiv preprint'))
+rn,rs=agg('human/tahoe/2025-02-25/')
+b.append(row('2025-02-25/',rs,'ok',f"{rn} objects - Arc's per-plate H5AD release; GCS md5 agrees on all 19"))
+hn,hs=agg('human/tahoe/2025-02-25/h5ad/')
+b.append(row('h5ad/',hs,'ok',f'{hn} plates - 100,648,790 cells x 62,710 genes, symbols only',2))
+b.append(row('obs_metadata.parquet',get('human/tahoe/2025-02-25/metadata/obs_metadata.parquet')[0][0],'ok',
+             'every cell in one table - match drug == "DMSO_TF" exactly, never by substring',2))
+fn,fs=agg('human/tahoe/2dc57900/')
+b.append(row('2dc57900/',fs,'ok',f"{fn} objects - the authors' annotation tables, Hugging Face commit 2dc57900"))
+b.append(row('gene_metadata.parquet',get('human/tahoe/2dc57900/metadata/gene_metadata.parquet')[0][0],'ok',
+             "the only route back to Ensembl IDs - same order as every plate's var",2))
+B['human/tahoe/']=block('human/tahoe/','#E04F6A',n,s_,''.join(b))
+
 # ---- megafin-1/
 n,s=agg('megafin-1/')
 g=collections.Counter(); c=collections.Counter()
@@ -373,6 +402,14 @@ for k in ('chemfish/','zmap/','micdropseq/','platt/','zscape/','zebrahub/','zcl2
           'farrell/','farnsworth/'):
     out.append(B[k])
 
+# scRNA-seq too, but its own section, because the species is the thing a reader has to know first:
+# nothing in it shares a genome, a gene space or an ontology with any block above.
+out.append(sec("Acquired · Human scRNA-seq",
+               "the only non-zebrafish data here, under its own human/ segment so the species is in "
+               "the key. GRCh38, cancer cell lines, no ZFA and no hpf — nothing in it joins the "
+               "zebrafish blocks on genes or anatomy"))
+out.append(B['human/tahoe/'])
+
 # The three modalities that are not single-cell transcriptomes. Together they are 7.1% of
 # the bucket, which is why the map floors their bands and marks them "~": a truthful band
 # for anatomy alone would be a tenth of a grid unit.
@@ -401,8 +438,8 @@ out.append(sec("Acquired \u00b7 Reference tables",
                "243,055 curated expression records. What a cluster label gets checked against"))
 out.append(B['zfin/'])
 
-style=open('/tmp/claude-1001/-data/1a934452-8c41-4975-b302-6d9d32c09db2/scratchpad/panel_style.txt').read()
+style=open(f'{SP}/panel_style.txt').read()
 panel=style+''.join(out)
-pathlib.Path('/tmp/claude-1001/-data/1a934452-8c41-4975-b302-6d9d32c09db2/scratchpad/silver_panel.txt').write_text(panel)
+pathlib.Path(f'{SP}/silver_panel.txt').write_text(panel)
 print("panel chars:",len(panel))
 print("blocks:",len(out)-1,"| total accounted:",f"{TOT:,}")

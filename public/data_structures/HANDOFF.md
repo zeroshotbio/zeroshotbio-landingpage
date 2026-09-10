@@ -440,6 +440,68 @@ a reason to open. The pins are now a `pins` command in two repos — ask the
 machine — but the prose has no such check, and `check-fit.mjs` cannot read.
 
 
+## The state of the data — 2026-09-10. `human/` opens, and one prefix is most of silver.
+
+```
+buckets    aws s3 ls --recursive on silver (bronze, gold and the repos not re-read)
+silver     959 obj · 538.20 GiB     was 925 · 222.44
+new        human/tahoe/  34 obj · 315.76 GiB · 58.7% of the bucket
+```
+
+**Tahoe-100M landed, and it is the first key with a species segment.** Every other
+prefix is zebrafish and sits at the root; this one is `human/tahoe/`, chosen over a
+flat `tahoe/` so the species is in the key rather than only in the prose. Two
+releases, both held as their origins serve them: `2025-02-25/` (Arc's per-plate H5AD
+release from GCS, 19 files, every one matching GCS's own `md5Hash`) and `2dc57900/`
+(the authors' annotation tables from Hugging Face at that commit, every one matching
+HF's LFS sha256 or git blob SHA-1). Plus `Paper/`. Uploaded by
+`/data/scratch/tahoe_upload.sh`, staged as symlinks in `/data/scratch/tahoe_publish/`.
+
+**It is bigger than everything else in silver put together**, which is what the map
+now shows: the Acquired column takes almost the whole vault, Tahoe gets its own
+"Human scRNA-seq" band, and the Parse column is a sliver. That is true area, not a
+layout bug — see *Please do not* on minimum tile areas.
+
+What changed, the four edits plus the claims the new bytes broke:
+
+| Was on the map | Now |
+| --- | --- |
+| silver `925 obj · 222.44 GiB` | **959 · 538.20** |
+| `22 datasets · 19 pinned`, `19 of 22 acquired prefixes have a module` | **23**, **19 of 23** |
+| `keller, zfap, tomoseq — the three that are not scRNA` | **+ human/tahoe — the first scRNA one** |
+| "half of what is in silver" — three prefixes, 20 obj, 9.7 GiB | **"most of what is in silver"** — four, 54 obj, 325.5 GiB |
+| `vs silver: 123% — gold is larger than silver` | **17% — silver is 5.7× gold** |
+| GOLD brief and OVERVIEW.state: "Gold is larger than silver" | rewritten |
+
+**"Gold is larger than silver" was already false before Tahoe.** It was true at the
+2026-08-29 read (93.85 GiB against 76.00) and stopped being true when the acquired
+prefixes landed on 2026-09-08; the 2026-09-09 read recorded silver at 222.44 GiB and
+the sentence survived it in three places. GOLD's `cond` still carries the 76.00
+comparison and is left alone — it is dated, and `cond` is the record.
+
+**`gen_silver_panel.py` takes its scratch dir as an argument now.** It had the previous
+session's scratchpad baked in, and that scratchpad was gone by this read — both
+`silver.tsv` and `panel_style.txt` with it. The style block was recovered from the
+live SILVER panel (everything up to the first `</style>`). Run it as
+`python3 gen_silver_panel.py <dir>`. `tahoe/` is not in `PINNED`, so it reads
+**NO RECORD**, which is true: its zsb-bronze module is not written, because the
+module generator assumes a one-segment `<dataset>/` prefix.
+
+**The hundred-word check in this file was counting the letter s.** The snippet under
+*The reader panel* puts `\s` inside a template literal, where it becomes a plain `s`,
+so it split on the letter and every brief looked short. Fixed to `\\s`. With a real
+count **six nodes are over the cap and were before this read** — BRONZE 124, BFETCH
+127, BREPO 114, SREPO 108, BACQ 103, MED 101. Not touched here; they are debt the
+broken check hid.
+
+**Checks.** `check-overlaps` **0 pairs** (132 text nodes), down from 1 — the
+`"Acquired (Open Source)"` / `"scRNA-seq"` pair is gone. `check-clicks` passes, 17
+stations. `check-fit` **7 failures, all identical on the previous commit** (served from
+a detached worktree and run side by side), so none is from this read. The console
+logs **5** negative-`<rect>` width/height errors against **3** on the previous commit:
+hairline tiles getting thinner as Tahoe takes the width. Layout debt, not clamped —
+a clamp is a minimum area by another name.
+
 ## The state of the data — 2026-09-09. Nothing moved in S3. The GitHub column had a wall behind it.
 
 ```
@@ -802,7 +864,7 @@ render them either. There is a word-count check worth re-running after edits:
 
 ```bash
 node -e 'const s=require("fs").readFileSync("ds-data.js","utf8");(0,eval)(s+`
-  const wc=x=>String(x).replace(/<[^>]+>/g,"").trim().split(/\s+/).length;
+  const wc=x=>String(x).replace(/<[^>]+>/g," ").trim().split(/\\s+/).length;
   NODES.forEach(n=>{const w=wc(n.brief); if(w>100)console.log("OVER",n.id,w)});
   ["brief","how","state"].forEach(k=>{const w=wc(OVERVIEW[k]);
     if(w>100)console.log("OVER OVERVIEW."+k,w)});`)'
