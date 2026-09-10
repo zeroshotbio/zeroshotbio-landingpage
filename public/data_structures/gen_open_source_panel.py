@@ -41,6 +41,7 @@ NOTES = {
     "zscape/GSE202639/reference/": "wild-type series + merged-in injection controls",
     "zscape/GSE202639/zperturb_full/": "the perturbation atlas - 804 embryos, 98 conditions",
     "zscape/GSE202639/zperturb_pilot/": "the pilot that preceded the full run",
+    "zcl2/analysis/": "OURS, not the origin's - the Table S1 annotation reconciliation, kept beside the release",
 }
 README_NOTE = "provenance, the per-file SHA-256 table, how it was acquired, how to verify"
 
@@ -113,8 +114,13 @@ kinds = [("ok", "In place — key-identical to where silver held it, confirmed b
 out.append('<div class=\\"fkl\\">' + "".join(f'<b><i class=\\"sw {k}\\"></i>{esc(t)}</b>' for k, t in kinds) + "</div>")
 out.append(sec("s3://zsb-open-source",
                "every dataset somebody else published, held as its origin released it. Nothing here is "
-               "ours. Keys are identical to silver's, and each dataset's root README.md is the custody "
+               "ours except zcl2/analysis/, a derived reconciliation kept beside its release. Keys are identical to silver's, and each dataset's root README.md is the custody "
                "record: provenance, a per-file SHA-256 table, how it was acquired, and how to verify it"))
+# PROJECTED="…" draws the bucket as a copy in flight will leave it, and says so first. A projection
+# is only ever drawn with this line on it; the next splice from a live listing removes it.
+import os
+if os.environ.get("PROJECTED"):
+    out.append(sec("Projected", os.environ["PROJECTED"]))
 bands = collections.OrderedDict((b, []) for b in ORDER + ["Other"])
 for p in sorted(agg, key=lambda x: -agg[x][1]):
     bands[BAND.get(p, "Other")].append(p)

@@ -440,6 +440,41 @@ a reason to open. The pins are now a `pins` command in two repos — ask the
 machine — but the prose has no such check, and `check-fit.mjs` cannot read.
 
 
+## The state of the data — 2026-09-10, last. The open-source bucket is full.
+
+```
+zsb-open-source   867 obj · 462.21 GiB   all 23 acquired datasets, each with its custody README
+silver            959 obj · 538.20 GiB   unchanged - still holds every copied object
+```
+
+**All 23 acquired prefixes are now in `zsb-open-source`**, copied key for key and reconciled clean:
+`/data/scratch/open_source_migration/reconcile_all.py` checks every planned key for presence, size and
+a CRC64NVME match, then for anything unexpected, excluded, README-less or left behind in silver, and
+found nothing on any prefix. The 14 declared exclusions stayed out, bar the one known stray
+(`chemfish/2025_03_release/Paper/`), which is drawn in the pending-deletion red until someone deletes
+it in the console. Silver is drawn exactly as it still is: a person deletes the copies, not a script,
+and its tile literals were deliberately left alone.
+
+**Each dataset's root README is the custody record now**, written for this bucket and replacing
+silver's: provenance, a per-file SHA-256 table (and the origin's own digests where it publishes them),
+the acquisition procedure, how to verify, and the move itself. Writing them surfaced errors in the old
+records, corrected in the new ones - celloracle's manifest pointed its 90 GSM files at GEO URLs that
+404, micdropseq's `SHA256SUMS` pins a README edited after it was computed, several silver READMEs
+carried wrong byte totals. `zcl2/analysis/` is the one thing in the bucket that is ours (a Table S1
+annotation reconciliation); the panel lede and its row say so.
+
+**The vault is 26 wide, not SILVER's 24.** At 867 objects the byte count on the right of the title bar
+ran into `OPEN SOURCE DATASETS` on the left - `check-overlaps` caught it. Two more units keep the name
+the user chose and still sit inside the lane.
+
+**`PROJECTED="…"`** on `gen_open_source_panel.py` draws the bucket as a copy in flight will leave it and
+puts that sentence at the top of the panel; the next plain refresh removes it. Use it only with the
+line on - a projection drawn as fact is the one thing this page must never do.
+
+**Checks.** `check-overlaps` 0 pairs (172 text nodes). `check-clicks` 18 stations. `check-fit` the same 7
+pre-existing failures. The console now logs 10 negative-`<rect>` errors, up from 5: the new vault has
+its own hairline tiles (tomoseq, trunk30hpf, farrell). Same debt, same reason not to clamp it.
+
 ## The state of the data — 2026-09-10, later. A second S3 lane: open-source datasets get a bucket.
 
 ```
