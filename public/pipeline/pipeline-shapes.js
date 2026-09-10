@@ -3370,7 +3370,10 @@ DRAW.reversetranscription = drawReverseTranscription;
    --ch1..12, which are declared on /molecular_pipe and nowhere else; this
    shape is worn by that page alone.
    ------------------------------------------------------------------ */
-function drawLigation(g,n){
+function drawLigation(g0,n){
+  /* one group, so the whole bench can be slid onto its box the way B2's is —
+     see ON B2'S SCALE, below */
+  const g=g0.appendChild(el("g",{transform:"translate(0,0)"}));
   const r=rng(1487);
   const clamp=x=>x<0?0:x>1?1:x;
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
@@ -3380,11 +3383,15 @@ function drawLigation(g,n){
      behind is where the view hangs the name label, and a 96-well deck is
      wide enough to reach it. Depth comes off the grid rather than being
      authored, because square well pitch is the whole requirement and it is
-     just width x rows / cols. */
+     just width x rows / cols.
+
+     B2'S FRACTIONS, NOT JUST B2'S PLATE. The tile is B2's size now, and the
+     plate is cut from it with the same 0.712 and 0.714 B2 cuts its own with,
+     so the two land on the same plastic at the same place on the same box. */
   const COLS=n.cols||12, ROWS=n.rows||8, NW=COLS*ROWS;
-  const PW=n.w*1.032;
+  const PW=n.w*0.712;
   const plate={x:n.x, y:n.y+n.d*0.30, w:PW, d:PW*ROWS/COLS};
-  const pth=n.h;
+  const pth=n.h*0.714;
   const HUE=k=>rampHue(k,NW);
   const deck=skirtSlab(g,plate,pth,"var(--ch8)");
 
@@ -3463,11 +3470,24 @@ function drawLigation(g,n){
      takes, and everything inside a lens is bigger against its rim than it was
      when there was one. The spacing is B2's proportion too — about a fifth of
      a lens between two of them, which is what stops three lenses reading as
-     one scalloped strip. */
-  const IN=n.w*0.80;
+     one scalloped strip.
+
+     ON B2'S SCALE, AS ASKED. The rounds sit side by side on one row, and a
+     second lens row at its own size and height read as a different bench.
+     So the unit, the glass and the spacing are B2's numbers exactly — which
+     also makes a chip here the same size as a chip there — and the molecule,
+     authored in IN, simply has a little more glass round it than it did. The
+     whole drawing is then slid the way B2's is, until the middle of what it
+     draws sits on the middle of the box; every term is read off n. */
+  const IN=n.w*0.54;
   const c0=P(n.x,n.y,n.h);
-  const IRX=21*IN, IRY=15*IN, IDX=50*IN, IY=c0[1]-46*IN;
+  const IRX=23*IN, IRY=20*IN, IDX=58*IN, IY=c0[1]-60*IN;
   const cxp=P(plate.x,plate.y,pth)[0];
+  const pc=P(plate.x,plate.y,0);
+  const low=P(plate.x+plate.w/2,plate.y+plate.d/2,0)[1];
+  const mid=P(n.x,n.y,n.h/2);
+  g.setAttribute("transform",`translate(${(mid[0]-pc[0]).toFixed(2)},`+
+    `${(mid[1]-(IY-IRY+low)/2).toFixed(2)})`);
 
   /* ---- THE MOLECULE'S OWN RULER -------------------------------------
      x runs in IN from a lens centre, so every length below reads as a length
