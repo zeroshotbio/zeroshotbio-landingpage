@@ -7475,7 +7475,7 @@ function qcScreen(g,n){
 }
 
 /* ------------------------------------------------------------------
-   B9 · QUANTIFY THE cDNA — a sample set up to be sized, and nothing moving.
+   B9 · QUANTIFY THE cDNA — a strip loaded into a cassette, and run.
 
    REBUILT FROM "EDIT VISUAL", NOT EDITED. The request named three objects and
    their arrangement and nothing else: a strip of PCR tubes, a flat cassette
@@ -7483,163 +7483,193 @@ function qcScreen(g,n){
    lane. So the machine, the display and the trace that stood here are gone
    rather than rearranged; qcBench and qcScreen stay behind for C3.
 
-   ANIMATED FROM "EDIT VISUAL" A SECOND TIME, with the arrangement kept as it
-   stood: a drop goes from a tube to RUN's well, the pins come down and hold,
-   the fragments run, and then the cassette steps back and a trace draws
-   itself over it. It is B9a's sequence, and it is written out again here
-   rather than called, for the reason the first request gave — a part shared
-   with the station next door would bring that station's layout with it, and
-   the layout is the half of this drawing that was already approved. The pins
-   are still born RAISED and go back up before the graph is read, so the
-   picture between runs is the one the first request asked for.
+   ANIMATED FROM "EDIT VISUAL" A SECOND TIME, with the arrangement kept: a
+   drop, the pins down, the run, a trace. It is B9a's sequence written out
+   again rather than called, because a part shared with the station next door
+   would bring that station's layout with it.
+
+   AND A THIRD TIME, which moved more than the second did. Every lane is loaded
+   now, not one, so there are as many lanes as tubes and each tube stands level
+   with its own lane. Each tube has its own colour, and the colour follows the
+   sample into its well, along its lane and onto its trace: it says which tube
+   a lane came from, not that the tubes hold different things. The pins became
+   two electrodes laid across the whole cassette, − over the wells and + at the
+   far end, because a pin over one lane cannot drive eight, and a sign is what
+   says an electrode is an electrode. The trace is written while the run goes,
+   not after it, and it stands to the right of the cassette rather than over
+   it, so nothing has to dim to make room.
 
    THE STRIP STANDS BEHIND AND THE WELLS FACE IT. Tubes along y at the back of
    the tile, lanes along x so a lane reads left to right the way the row does,
-   and every well at the end nearest the strip. The drop leaves the tube that
-   is level with RUN, so its path is one straight run along x and never has
-   to cross a lane to get there.
+   and every well at the end nearest the strip. So every drop is one straight
+   hop along x, and none crosses a lane to get to its own.
 
    Composed at w .72, d .72, h .40; every position is a fraction of the node
-   and every stroke is scaled with it. The tubes hold --ch6, the cDNA colour B8
-   and B8a hand on, and the drop and the trace carry it on from them.
+   and every stroke is scaled with it.
    ------------------------------------------------------------------ */
 function drawQuantify(g,n){
   const SC=n.w/0.72;
   const clamp=x=>x<0?0:x>1?1:x;
   const ease=u=>u*u*(3-2*u);
-  const SAMPLE="var(--ch6)";
+  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
+  /* one ink per tube, spread round the wheel so neighbours never share a hue.
+     --ch8 sits out: in the dark theme it is --signal, and --signal is kept
+     for the electrodes touching down */
+  const INK=["--ch1","--ch2","--ch3","--ch5","--ch6","--ch9","--ch10","--ch11"]
+    .map(v=>`var(${v})`);
+  const NL=INK.length;
+
+  /* the cassette's footprint and its lanes come first, because the strip is
+     laid out off them: tube j stands level with lane j */
+  const cas={x:n.x+n.w*0.10, y:n.y+n.d*0.01, w:n.w*0.50, d:n.d*0.64, h:n.h*0.14};
+  const lx0=cas.x-cas.w*0.42, lx1=cas.x+cas.w*0.43, lhw=cas.d*0.028, WW=cas.w*0.09;
+  const laneY=j=>cas.y-cas.d/2+cas.d*(0.13+j*0.74/(NL-1));
+  const sx0=lx0+WW*0.5, run=lx1-sx0;
 
   /* ---- THE STRIP ----------------------------------------------------------
      Eight tubes on the web that makes them one strip, drawn back to front so
      each tube stands in front of the one behind it. Tapered, because a PCR
      tube is. */
-  const NT=8, tx=n.x-n.w*0.27, tr=n.d*0.03, th=n.h*0.55;
-  const ty=i=>n.y+n.d*(-0.29+i*0.083);
-  g.appendChild(el("polygon",{points:pts([P(tx-tr*1.1,ty(0),th),P(tx+tr*1.1,ty(0),th),
-    P(tx+tr*1.1,ty(NT-1),th),P(tx-tr*1.1,ty(NT-1),th)]),fill:"var(--g-top)",
+  const tx=n.x-n.w*0.27, tr=n.d*0.027, th=n.h*0.55;
+  g.appendChild(el("polygon",{points:pts([P(tx-tr*1.1,laneY(0),th),P(tx+tr*1.1,laneY(0),th),
+    P(tx+tr*1.1,laneY(NL-1),th),P(tx-tr*1.1,laneY(NL-1),th)]),fill:"var(--g-top)",
     "fill-opacity":".5",stroke:"var(--stroke)","stroke-width":(0.6*SC).toFixed(2),
     "stroke-opacity":".5"}));
-  for(let i=0;i<NT;i++){
-    const foot=ellipseAt(tx,ty(i),0,tr*0.55), lvl=ellipseAt(tx,ty(i),th*0.36,tr*0.72),
-          rim=ellipseAt(tx,ty(i),th,tr);
+  for(let i=0;i<NL;i++){
+    const ty=laneY(i);
+    const foot=ellipseAt(tx,ty,0,tr*0.55), lvl=ellipseAt(tx,ty,th*0.36,tr*0.72),
+          rim=ellipseAt(tx,ty,th,tr);
     g.appendChild(el("polygon",{points:pts([...arcPts(rim,0,Math.PI,10),
       ...arcPts(foot,Math.PI,0,8)]),fill:"var(--g-top)","fill-opacity":".45",
       stroke:"var(--stroke)","stroke-width":(0.6*SC).toFixed(2),"stroke-opacity":".5"}));
     g.appendChild(el("polygon",{points:pts([...arcPts(lvl,0,Math.PI,10),
-      ...arcPts(foot,Math.PI,0,8)]),fill:SAMPLE,"fill-opacity":".55"}));
+      ...arcPts(foot,Math.PI,0,8)]),fill:INK[i],"fill-opacity":".7"}));
     g.appendChild(el("ellipse",{cx:rim.x.toFixed(1),cy:rim.y.toFixed(1),
       rx:rim.rx.toFixed(2),ry:rim.ry.toFixed(2),fill:"var(--bg)","fill-opacity":".35",
       stroke:"var(--stroke)","stroke-width":(0.6*SC).toFixed(2),"stroke-opacity":".55"}));
   }
 
   /* ---- THE CASSETTE -------------------------------------------------------
-     Low and flat, in front of the strip. RUN is the lane the pins are over:
-     fourth of six, so it is one of the row rather than its edge, and it is
-     drawn a shade firmer so the eye finds it before it finds the pins. In a
-     group of its own, because the request fades it and nothing else. */
-  const cas={x:n.x+n.w*0.10, y:n.y+n.d*0.01, w:n.w*0.50, d:n.d*0.64, h:n.h*0.14};
-  const cg=el("g",{});
-  g.appendChild(cg);
-  paint(cg,cas.x,cas.y,cas.w,cas.d,cas.h,SKIN.tile);
+     Low and flat, in front of the strip. No lane is picked out any more:
+     every one is loaded, so every one is drawn the same. */
+  paint(g,cas.x,cas.y,cas.w,cas.d,cas.h,SKIN.tile);
   const top=(x0,x1,y0,y1)=>pts([P(x0,y0,cas.h),P(x1,y0,cas.h),P(x1,y1,cas.h),P(x0,y1,cas.h)]);
-  const NL=6, RUN=3;
-  const lx0=cas.x-cas.w*0.42, lx1=cas.x+cas.w*0.43, lhw=cas.d*0.032, WW=cas.w*0.09;
-  const laneY=j=>cas.y-cas.d/2+cas.d*(0.13+j*0.74/(NL-1));
+  const wells=[];
   for(let j=0;j<NL;j++){
-    const ly=laneY(j), so=j===RUN?".75":".45";
-    cg.appendChild(el("polygon",{points:top(lx0,lx1,ly-lhw,ly+lhw),
+    const ly=laneY(j);
+    g.appendChild(el("polygon",{points:top(lx0,lx1,ly-lhw,ly+lhw),
       fill:"var(--bg)","fill-opacity":".7",stroke:"var(--stroke)",
-      "stroke-width":(0.5*SC).toFixed(2),"stroke-opacity":so}));
-    cg.appendChild(el("polygon",{points:top(lx0,lx0+WW,ly-lhw*1.4,ly+lhw*1.4),
+      "stroke-width":(0.5*SC).toFixed(2),"stroke-opacity":".55"}));
+    g.appendChild(el("polygon",{points:top(lx0,lx0+WW,ly-lhw*1.4,ly+lhw*1.4),
       fill:"var(--bg)","fill-opacity":".9",stroke:"var(--stroke)",
-      "stroke-width":(0.6*SC).toFixed(2),"stroke-opacity":so}));
+      "stroke-width":(0.6*SC).toFixed(2),"stroke-opacity":".6"}));
+    const w=el("polygon",{points:top(lx0,lx0+WW,ly-lhw*1.4,ly+lhw*1.4),
+      fill:INK[j],"fill-opacity":"0"});
+    g.appendChild(w); wells.push(w);
   }
-  const ry=laneY(RUN), sx0=lx0+WW*0.5, run=lx1-sx0;
-  const well=el("polygon",{points:top(lx0,lx0+WW,ry-lhw*1.4,ry+lhw*1.4),
-    fill:SAMPLE,"fill-opacity":"0"});
-  cg.appendChild(well);
 
-  /* the fragments: a screen radius, how far along the lane the run takes
-     them, and how many. Smaller goes further in the same three seconds, which
-     is the whole of the physics asked for and all of it this figure claims.
-     Pale, because they are the lane being read, not a second sample. */
-  const GROUPS=[{r:0.4,far:0.92,m:2},{r:0.6,far:0.58,m:3},{r:0.85,far:0.30,m:2}];
-  const rr=rng(911), dots=[];
-  GROUPS.forEach(G=>{ for(let i=0;i<G.m;i++){
-    const D={far:G.far*(0.95+rr()*0.10), dy:(rr()-0.5)*lhw*1.1};
-    const p=P(sx0,ry+D.dy,cas.h);
-    D.e=el("circle",{cx:p[0].toFixed(1),cy:p[1].toFixed(1),r:(G.r*SC).toFixed(2),
-      fill:"var(--fg)","fill-opacity":"0"});
-    cg.appendChild(D.e); dots.push(D);
-  }});
+  /* the fragments: three sizes, and smaller goes further in the same three
+     seconds, which is the whole of the physics asked for and all of it this
+     figure claims. How many of each size a lane carries is drawn per lane —
+     one to three — and COUNT keeps it, because the lane's trace is built off
+     the same numbers: a peak is as tall as its group is numerous. */
+  const SIZES=[{r:0.4,far:0.92},{r:0.6,far:0.58},{r:0.85,far:0.30}];
+  const rr=rng(911), dots=[], COUNT=[];
+  for(let j=0;j<NL;j++){
+    const ly=laneY(j);
+    COUNT.push(SIZES.map(G=>{
+      const m=1+Math.floor(rr()*3);
+      for(let i=0;i<m;i++){
+        const D={far:G.far*(0.95+rr()*0.10), y:ly+(rr()-0.5)*lhw*1.1};
+        const p=P(sx0,D.y,cas.h);
+        D.e=el("circle",{cx:p[0].toFixed(1),cy:p[1].toFixed(1),r:(G.r*SC).toFixed(2),
+          fill:INK[j],"fill-opacity":"0"});
+        g.appendChild(D.e); dots.push(D);
+      }
+      return m;
+    }));
+  }
   const dotsAt=(f,op)=>dots.forEach(D=>{
-    const p=P(sx0+run*D.far*f, ry+D.dy, cas.h);
+    const p=P(sx0+run*D.far*f, D.y, cas.h);
     D.e.setAttribute("cx",p[0].toFixed(1)); D.e.setAttribute("cy",p[1].toFixed(1));
     D.e.setAttribute("fill-opacity",op.toFixed(2));
   });
 
-  /* ---- THE DROP -----------------------------------------------------------
-     From the tube level with RUN, over the cassette's edge and down into the
-     well. A hop rather than a line: the request asked for a droplet moving,
-     and a flow line would be a fourth object in an arrangement it called
-     right. Born on the tube's rim, where it starts. */
-  const SRC=4, hop=n.h*0.35;
-  const d0=[tx,ty(SRC),th], d1=[sx0,ry,cas.h];
-  const dropAt=u=>P(d0[0]+(d1[0]-d0[0])*u, d0[1]+(d1[1]-d0[1])*u,
-    d0[2]+(d1[2]-d0[2])*u+hop*Math.sin(Math.PI*u));
-  const dp=dropAt(0);
-  const drop=el("circle",{cx:dp[0].toFixed(1),cy:dp[1].toFixed(1),r:(1.5*SC).toFixed(2),
-    fill:SAMPLE,"fill-opacity":"0"});
-  g.appendChild(drop);
+  /* ---- THE DROPS ----------------------------------------------------------
+     One per tube, each into the well level with it, one after another and
+     quick — loading is a pipette going down a row, not eight pipettes. A hop
+     rather than a line, as before. Each is born on its own tube's rim. */
+  const hop=n.h*0.35;
+  const drops=INK.map((ink,j)=>{
+    const ly=laneY(j);
+    const at=u=>P(tx+(sx0-tx)*u, ly, th+(cas.h-th)*u+hop*Math.sin(Math.PI*u));
+    const p=at(0);
+    const e=el("circle",{cx:p[0].toFixed(1),cy:p[1].toFixed(1),r:(1.2*SC).toFixed(2),
+      fill:ink,"fill-opacity":"0"});
+    g.appendChild(e);
+    return {at,e};
+  });
 
-  /* ---- THE PINS -----------------------------------------------------------
-     One over RUN's well and one over its far end, the two places a run is
-     driven between. Under each a faint drop to the lane, because in this
-     projection a pin hanging over a lane and a pin standing on the lane behind
-     it draw in the same place, and the drop is what says which. It shortens as
-     the pin comes down and is gone when the pin touches. Born raised; `down`
-     is 0 to 1. */
-  const UP=n.h*0.45, PL=n.h*0.75;
-  const pins=[sx0, lx1-cas.w*0.05].map(px=>{
-    const s=P(px,ry,cas.h), a=P(px,ry,cas.h+UP), b=P(px,ry,cas.h+UP+PL),
-          c=P(px,ry,cas.h+UP+PL*0.7);
+  /* ---- THE ELECTRODES -----------------------------------------------------
+     Two bars laid across every lane: one over the wells and one over the far
+     ends, the two places a run is driven between. DNA is negative and runs to
+     the positive, so the wells get − and the far end +, and the sign rides on
+     each stem so the reader is told what the bars are rather than left to
+     guess. Under each, a faint drop to the cassette, because in this
+     projection a bar hanging over the lanes and a bar lying on the ones behind
+     draw in the same place; it shortens as the bar comes down. Contact is
+     --signal. Born raised; `down` is 0 to 1. */
+  const UP=n.h*0.45, PL=n.h*0.6;
+  const ey0=laneY(0)-lhw*2.4, ey1=laneY(NL-1)+lhw*2.4, ym=(ey0+ey1)/2;
+  const rods=[[sx0,"−"],[lx1-cas.w*0.05,"+"]].map(([px,sign])=>{
+    const s=P(px,ym,cas.h), z=cas.h+UP, a0=P(px,ey0,z), a1=P(px,ey1,z),
+          m=P(px,ym,z), tp=P(px,ym,z+PL);
     const Q={px,
-      guide:el("line",{x1:s[0].toFixed(1),y1:s[1].toFixed(1),x2:a[0].toFixed(1),
-        y2:a[1].toFixed(1),stroke:"var(--fg3)","stroke-width":(0.6*SC).toFixed(2),
+      guide:el("line",{x1:s[0].toFixed(1),y1:s[1].toFixed(1),x2:m[0].toFixed(1),
+        y2:m[1].toFixed(1),stroke:"var(--fg3)","stroke-width":(0.6*SC).toFixed(2),
         "stroke-opacity":".6","stroke-dasharray":`${(1.2*SC).toFixed(2)} ${(1.6*SC).toFixed(2)}`}),
-      stem:el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),x2:b[0].toFixed(1),
-        y2:b[1].toFixed(1),stroke:"var(--fg2)","stroke-width":(0.9*SC).toFixed(2),
+      bar:el("line",{x1:a0[0].toFixed(1),y1:a0[1].toFixed(1),x2:a1[0].toFixed(1),
+        y2:a1[1].toFixed(1),stroke:"var(--fg2)","stroke-width":(1.6*SC).toFixed(2),
         "stroke-linecap":"round"}),
-      cap:el("line",{x1:c[0].toFixed(1),y1:c[1].toFixed(1),x2:b[0].toFixed(1),
-        y2:b[1].toFixed(1),stroke:"var(--fg2)","stroke-width":(2.4*SC).toFixed(2),
-        "stroke-linecap":"round"})};
-    g.appendChild(Q.guide); g.appendChild(Q.stem); g.appendChild(Q.cap);
+      stem:el("line",{x1:m[0].toFixed(1),y1:m[1].toFixed(1),x2:tp[0].toFixed(1),
+        y2:tp[1].toFixed(1),stroke:"var(--fg2)","stroke-width":(0.9*SC).toFixed(2),
+        "stroke-linecap":"round"}),
+      sign:el("text",{x:tp[0].toFixed(1),y:(tp[1]-1.2*SC).toFixed(1),"text-anchor":"middle",
+        "font-family":MONO,"font-size":(5*SC).toFixed(2),"font-weight":"700",
+        fill:"var(--fg2)"})};
+    Q.sign.textContent=sign;
+    g.appendChild(Q.guide); g.appendChild(Q.bar); g.appendChild(Q.stem); g.appendChild(Q.sign);
     return Q;
   });
-  const pinsAt=down=>pins.forEach(Q=>{
+  const rodsAt=(down,lit)=>rods.forEach(Q=>{
     const z=cas.h+UP*(1-down);
-    const a=P(Q.px,ry,z), b=P(Q.px,ry,z+PL), c=P(Q.px,ry,z+PL*0.7);
-    Q.guide.setAttribute("x2",a[0].toFixed(1)); Q.guide.setAttribute("y2",a[1].toFixed(1));
-    Q.stem.setAttribute("x1",a[0].toFixed(1)); Q.stem.setAttribute("y1",a[1].toFixed(1));
-    Q.stem.setAttribute("x2",b[0].toFixed(1)); Q.stem.setAttribute("y2",b[1].toFixed(1));
-    Q.cap.setAttribute("x1",c[0].toFixed(1));  Q.cap.setAttribute("y1",c[1].toFixed(1));
-    Q.cap.setAttribute("x2",b[0].toFixed(1));  Q.cap.setAttribute("y2",b[1].toFixed(1));
+    const a0=P(Q.px,ey0,z), a1=P(Q.px,ey1,z), m=P(Q.px,ym,z), tp=P(Q.px,ym,z+PL);
+    Q.guide.setAttribute("x2",m[0].toFixed(1)); Q.guide.setAttribute("y2",m[1].toFixed(1));
+    Q.bar.setAttribute("x1",a0[0].toFixed(1));  Q.bar.setAttribute("y1",a0[1].toFixed(1));
+    Q.bar.setAttribute("x2",a1[0].toFixed(1));  Q.bar.setAttribute("y2",a1[1].toFixed(1));
+    Q.stem.setAttribute("x1",m[0].toFixed(1));  Q.stem.setAttribute("y1",m[1].toFixed(1));
+    Q.stem.setAttribute("x2",tp[0].toFixed(1)); Q.stem.setAttribute("y2",tp[1].toFixed(1));
+    Q.sign.setAttribute("x",tp[0].toFixed(1));  Q.sign.setAttribute("y",(tp[1]-1.2*SC).toFixed(1));
+    const ink=lit?"var(--signal)":"var(--fg2)";
+    Q.bar.setAttribute("stroke",ink); Q.sign.setAttribute("fill",ink);
   });
 
   /* ---- THE GRAPH ----------------------------------------------------------
      Screen-space and scaled by being scaled, as B9a's is: a chart on a plane of
      the projection shears its type thirty degrees. Axis origin at the group's
-     own 0,0, x to the right and intensity up, on a backing panel so the trace
-     is read against its own axes and not the ground grid. One peak per
-     fragment size, small to large from the left, each as tall as its group is
-     numerous — the dots and the trace are one population, and the axes carry
-     names and no units because the request gave no size range.
+     own 0,0, x to the right and intensity up, on a backing panel so the traces
+     are read against their own axes and not the ground grid. One trace per
+     lane in its tube's colour, one peak per fragment size, small to large from
+     the left; the axes carry names and no units because no request gave a
+     size range.
 
-     IT SITS ABOVE THE CASSETTE AND LEFT OF CENTRE because B9's own name starts
-     at the tile's back edge and runs up-right; the panel stops short of it. */
-  const GW=30, GH=12, FS=2.6;
-  const anc=P(cas.x,cas.y,cas.h);
-  const KX=anc[0]-27*SC, KY=anc[1]-22*SC;
+     IT STANDS RIGHT OF THE CASSETTE, hung off the cassette's far corner, in
+     the wedge between B9's own name — which leaves the tile's back edge and
+     climbs up-right — and B9a's tile and graph below it. That wedge is why it
+     is smaller than B9a's. */
+  const GW=26, GH=10, FS=2.6;
+  const anc=P(cas.x+cas.w/2, cas.y-cas.d/2, cas.h);
+  const KX=anc[0]+21*SC, KY=anc[1]-11*SC;
   const gr=el("g",{transform:`translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${SC.toFixed(4)})`,
     opacity:"0"});
   g.appendChild(gr);
@@ -7649,60 +7679,77 @@ function drawQuantify(g,n){
     stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".5"}));
   gr.appendChild(el("polyline",{points:`0,${-GH} 0,0 ${GW},0`,fill:"none",
     stroke:"var(--fg2)","stroke-width":".5","stroke-opacity":".7"}));
-  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
   const xl=el("text",{x:(GW/2).toString(),y:(FS+1.2).toFixed(1),"text-anchor":"middle",
     "font-family":MONO,"font-size":FS.toFixed(2),fill:"var(--fg2)"});
   xl.textContent="size"; gr.appendChild(xl);
   const yl=el("text",{x:"-0.4",y:(-GH-1.4).toFixed(1),"text-anchor":"start",
     "font-family":MONO,"font-size":FS.toFixed(2),fill:"var(--fg2)"});
   yl.textContent="intensity"; gr.appendChild(yl);
-  const PEAKS=GROUPS.map((G,i)=>[0.2+i*0.3, 0.028, G.m]);
-  const sig=u=>{ let v=0.06;
-    PEAKS.forEach(([m,s,a])=>{ v+=a*Math.exp(-((u-m)*(u-m))/(2*s*s)); });
-    return v; };
-  const N=140;
-  let peak=0; for(let i=0;i<=N;i++) peak=Math.max(peak,sig(i/N));
-  const tp=[]; for(let i=0;i<=N;i++){ const u=i/N; tp.push([u*GW, -(sig(u)/peak)*GH*0.9]); }
-  /* born whole; the ticker owns only how much of it has been drawn */
-  let len=0;
-  for(let i=1;i<tp.length;i++) len+=Math.hypot(tp[i][0]-tp[i-1][0], tp[i][1]-tp[i-1][1]);
-  const trace=el("polyline",{points:tp.map(p=>p[0].toFixed(2)+","+p[1].toFixed(2)).join(" "),
-    fill:"none",stroke:SAMPLE,"stroke-width":".9","stroke-linecap":"round",
-    "stroke-linejoin":"round","stroke-dasharray":`${len.toFixed(1)} ${len.toFixed(1)}`,
-    "stroke-dashoffset":len.toFixed(1)});
-  gr.appendChild(trace);
+  const MU=[0.2,0.5,0.8], SD=0.028, N=120;
+  const curves=COUNT.map(ms=>{
+    const c=[];
+    for(let i=0;i<=N;i++){ const u=i/N; let v=0.06;
+      ms.forEach((m,k)=>{ v+=m*Math.exp(-((u-MU[k])*(u-MU[k]))/(2*SD*SD)); });
+      c.push([u,v]); }
+    return c;
+  });
+  /* one scale for every lane, so a tall peak is tall against its neighbours
+     and not only against itself */
+  let peak=0; curves.forEach(c=>c.forEach(p=>{ peak=Math.max(peak,p[1]); }));
+  const traces=curves.map((c,j)=>{
+    const p=c.map(([u,v])=>(u*GW).toFixed(2)+","+(-(v/peak)*GH*0.9).toFixed(2));
+    const e=el("polyline",{points:p.join(" "),fill:"none",stroke:INK[j],
+      "stroke-width":".55","stroke-opacity":".85","stroke-linecap":"round",
+      "stroke-linejoin":"round"});
+    gr.appendChild(e);
+    return {p,e};
+  });
+  /* WRITTEN AS FAR AS THE RUN HAS GOT. Born whole; the ticker cuts each trace
+     at the run's own fraction, so the small end — the fragments that have gone
+     furthest — is on the page first and the large end arrives with the slow
+     ones. Cut by x rather than by dash length: a dash reveals by arc length,
+     and a trace's arc length is almost all peaks, so it would stall on each. */
+  let shown=N;
+  const traceAt=f=>{
+    const k=Math.max(1,Math.round(f*N));
+    if(k===shown) return;
+    shown=k;
+    traces.forEach(T=>T.e.setAttribute("points",T.p.slice(0,k+1).join(" ")));
+  };
 
   /* ---- TIMING -------------------------------------------------------------
-     The request's own numbers: two seconds for the drop, one for the pins to
-     come down and hold, three for the run, three for the trace, and then a
-     hold on the finished peaks. The hold's length and the closing clear are
-     this drawing's — a loop that snaps from a finished graph to a bare
-     cassette reads as a glitch rather than a restart. The pins lift as the
-     cassette fades: the graph needs the air they were in. */
-  const DROP=2, LOWER=0.35, HOLD1=0.65, RUNT=3, DRAWG=3, HOLD2=3, CLEAR=0.8, FADE=0.6;
-  const t1=DROP, t2=t1+LOWER, t3=t2+HOLD1, t4=t3+RUNT, t5=t4+DRAWG, t6=t5+HOLD2, T=t6+CLEAR;
+     Loading is quick, as asked: a drop every fifth of a second, each under
+     half a second in the air. Then the electrodes come down and hold, the run
+     takes three seconds with the graph drawn alongside it, the electrodes lift
+     as it ends, and the finished traces hold before the loop clears — a loop
+     that snaps from a finished graph to a bare cassette reads as a glitch
+     rather than a restart. */
+  const DR=0.45, STAG=0.2, LOAD=STAG*(NL-1)+DR, LOWER=0.35, HOLD1=0.65,
+        RUNT=3, HOLD2=3, CLEAR=0.8, FADE=0.6;
+  const t1=LOAD, t2=t1+LOWER, t3=t2+HOLD1, t4=t3+RUNT, t5=t4+HOLD2, T=t5+CLEAR;
   const place=t=>{
-    const u=clamp(t/DROP), q=dropAt(ease(u));
-    drop.setAttribute("cx",q[0].toFixed(1)); drop.setAttribute("cy",q[1].toFixed(1));
-    drop.setAttribute("fill-opacity",(t<t1 ? 0.85*clamp(u/0.1)*(1-clamp((u-0.9)/0.1)) : 0).toFixed(2));
-    pinsAt(t<t1 ? 0 : t<t2 ? ease((t-t1)/LOWER) : t<t4 ? 1 : 1-ease(clamp((t-t4)/FADE)));
-    well.setAttribute("fill-opacity",(t<t1 ? 0.75*clamp((u-0.9)/0.1) : t<t3 ? 0.75 :
-      t<t6 ? 0.75-0.5*clamp((t-t3)/RUNT) : 0.25*(1-clamp((t-t6)/CLEAR))).toFixed(2));
+    drops.forEach((D,j)=>{
+      const u=clamp((t-j*STAG)/DR), q=D.at(ease(u));
+      D.e.setAttribute("cx",q[0].toFixed(1)); D.e.setAttribute("cy",q[1].toFixed(1));
+      D.e.setAttribute("fill-opacity",(t<t1 ? 0.9*clamp(u/0.1)*(1-clamp((u-0.9)/0.1)) : 0).toFixed(2));
+      wells[j].setAttribute("fill-opacity",(t<t3 ? 0.75*clamp((u-0.9)/0.1) :
+        t<t5 ? 0.75-0.5*clamp((t-t3)/RUNT) : 0.25*(1-clamp((t-t5)/CLEAR))).toFixed(2));
+    });
+    rodsAt(t<t1 ? 0 : t<t2 ? ease((t-t1)/LOWER) : t<t4 ? 1 : 1-ease(clamp((t-t4)/FADE)),
+      t>=t2 && t<t4);
     /* constant speed in the lane: a run is a field, not an ease */
-    dotsAt(clamp((t-t3)/RUNT),
-      t<t3 ? 0 : t<t6 ? 0.6*clamp((t-t3)/0.2) : 0.6*(1-clamp((t-t6)/CLEAR)));
-    cg.setAttribute("opacity",(t<t4 ? 1 : t<t6 ? 1-0.4*ease(clamp((t-t4)/FADE))
-      : 0.6+0.4*clamp((t-t6)/CLEAR)).toFixed(2));
-    gr.setAttribute("opacity",(t<t4 ? 0 : t<t6 ? clamp((t-t4)/0.4)
-      : 1-clamp((t-t6)/CLEAR)).toFixed(2));
-    trace.setAttribute("stroke-dashoffset",(len*(1-clamp((t-t4)/DRAWG))).toFixed(1));
+    const f=clamp((t-t3)/RUNT);
+    dotsAt(f, t<t3 ? 0 : t<t5 ? 0.85*clamp((t-t3)/0.2) : 0.85*(1-clamp((t-t5)/CLEAR)));
+    gr.setAttribute("opacity",(t<t3 ? 0 : t<t5 ? clamp((t-t3)/0.3)
+      : 1-clamp((t-t5)/CLEAR)).toFixed(2));
+    traceAt(f);
   };
 
   /* THE CLOCK DOES NOT START AT ZERO. Reduced motion never advances it, so
      the frame it starts on is the whole station for that reader — and the
-     frame that says what the station is for is the finished graph, over the
-     arrangement with its pins raised. */
-  let t=t5+HOLD2*0.5;
+     frame that says what the station is for is the finished graph beside the
+     run lanes, with the electrodes raised. */
+  let t=t4+HOLD2*0.5;
   const tick=dt=>{ t=(t+dt)%T; place(t); };
   tick(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; tick(dt); });

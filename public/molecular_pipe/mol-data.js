@@ -241,8 +241,10 @@ const NODES = [
 /* THE DRAWING WAS REBUILT FROM "EDIT VISUAL" AND THE RECORD DID NOT MOVE —
    /pipeline owns this prose. The request asked for a strip of PCR tubes, a
    cassette of narrow lanes and two electrode pins over one lane, and a second
-   set it running — drop, pins, run, trace — without moving any of it. Nothing
-   in the record depended on the drawing standing still. The record still cites
+   set it running — drop, pins, run, trace — without moving any of it. A third
+   loaded every lane from its own coloured tube, made the pins two marked
+   electrodes, and drew the trace beside the cassette while the run goes.
+   Nothing in the record depended on the drawing standing still. The record still cites
    section 2.5 for both measurements; the picture shows the size half of it
    being set up, and draws no Qubit, which it was never asked for. */
 {id:"QCD", key:"B9", group:"cDNA capture and amplification", shape:"quantify", name:"Quantify the cDNA", x:14.1, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
