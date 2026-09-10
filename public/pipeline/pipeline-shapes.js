@@ -6514,7 +6514,8 @@ DRAW.libraryprep = drawLibraryPrep;
    rack's magnets wash and the cycler's screen lights, each once and in step
    with the glass, so the bench says where each half of it is happening.
 
-   THE BENCH STANDS JUST BEHIND THE TILE, and not far behind. Forward is
+   THE BENCH STANDS JUST BEHIND WHERE THE TRACK ENDS — there is no tile of
+   its own to stand on; see below — and not far behind. Forward is
    where B8a's glass comes down — it is centred on the next tile along and
    its rim reaches back over most of this one — and further back is B8′'s own
    bench, whose plate stands just behind and between these two. So the pair
@@ -6646,8 +6647,10 @@ function drawTagCapture(g,n){
     P(cyc.x-cyc.w/2, cyc.y+cyc.d/2, cyc.h*0.7), "var(--fg3)", SC);
   setFanLine(flow,0.34,0);
 
-  /* the tile the track and the dot arrive at, in front of all of it */
-  paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.tile);
+  /* NO TILE. There was one here, the plain box the track arrives at, and it
+     was asked away from "Edit visual": with the bench and the glass drawn,
+     a grey block in front of them reads as a second, empty module. The
+     track still ends at n.x, n.y; the bench behind it is what it arrives at. */
 
   /* ---- THE MAGNIFICATION --------------------------------------------------
      A thin solid ellipse, the idiom this map uses everywhere for a view drawn
