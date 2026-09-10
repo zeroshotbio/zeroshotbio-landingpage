@@ -2985,7 +2985,11 @@ function drawReverseTranscription(g0,n){
      now: B3 receives this plate and has to draw the same green plastic, so the
      lip, the deck and the notch are one function rather than two copies that
      would drift. It hands back the deck, which is what the wells are laid on. */
-  const deck=skirtSlab(g,plate,pth,"var(--ch5)");
+  /* the plate and everything on it get a group of their own, because the
+     plate is centred on the node's outline separately from the lens row —
+     see ON ITS OWN, below */
+  const gp=g.appendChild(el("g",{transform:"translate(0,0)"}));
+  const deck=skirtSlab(gp,plate,pth,"var(--ch5)");
 
   /* ---- THE WELLS ----------------------------------------------------
      TWO DISCS PER WELL, not one. Dull-to-full is animated as a single
@@ -3002,12 +3006,12 @@ function drawReverseTranscription(g0,n){
   const wells=plateGrid(deck,pth,COLS,ROWS);
   const dots=[], shown=[];
   wells.forEach((w,k)=>{
-    drawWell(g,w,false);
+    drawWell(gp,w,false);
     const rx=(w.e.rx*0.86).toFixed(2), ry=(w.e.ry*0.86).toFixed(2);
-    g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx,ry,
+    gp.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx,ry,
       fill:"var(--fg3)","fill-opacity":".3"}));
     const e=el("ellipse",{cx:w.e.x,cy:w.e.y,rx,ry,fill:HUE(k),"fill-opacity":DIM});
-    g.appendChild(e); dots.push(e); shown.push("");
+    gp.appendChild(e); dots.push(e); shown.push("");
   });
 
   /* THE THREE OPENED WELLS. Three different rows and three different columns,
@@ -3026,7 +3030,7 @@ function drawReverseTranscription(g0,n){
     .sort((a,b)=>wells[a].e.x-wells[b].e.x);
   SRC.forEach(k=>{
     const s=wells[k].e;
-    g.appendChild(el("ellipse",{cx:s.x,cy:s.y,rx:(s.rx*2.1).toFixed(2),
+    gp.appendChild(el("ellipse",{cx:s.x,cy:s.y,rx:(s.rx*2.1).toFixed(2),
       ry:(s.ry*2.1).toFixed(2),fill:"none",stroke:"var(--fg)",
       "stroke-width":".9","stroke-opacity":".8"}));
   });
@@ -3076,8 +3080,20 @@ function drawReverseTranscription(g0,n){
   const pc=P(plate.x,plate.y,0);
   const low=P(plate.x+plate.w/2,plate.y+plate.d/2,0)[1];
   const mid=P(n.x,n.y,n.h/2);
-  g.setAttribute("transform",`translate(${(mid[0]-pc[0]).toFixed(2)},`+
-    `${(mid[1]-(IY-IRY+low)/2).toFixed(2)})`);
+  const TX=mid[0]-pc[0], TY=mid[1]-(IY-IRY+low)/2;
+  g.setAttribute("transform",`translate(${TX.toFixed(2)},${TY.toFixed(2)})`);
+
+  /* ON ITS OWN, AS ASKED NEXT. Slid with the lenses, the plate landed low in
+     the node's dashed outline, hanging out of the bottom of the box it belongs
+     to. So the lens row keeps the place the slide above gives it — that slide
+     is still reckoned from where the plate WAS thrown, so nothing over the
+     plate moves — and the plate alone is carried on until the middle of its
+     slab sits on the middle of the outline. A flat translate of an isometric
+     drawing is a move along the ground, so it is the same plate, only
+     somewhere else; PX/PY are what a tether adds to a well to find it. */
+  const pm=P(plate.x,plate.y,pth/2);
+  const PX=mid[0]-TX-pm[0], PY=mid[1]-TY-pm[1];
+  gp.setAttribute("transform",`translate(${PX.toFixed(2)},${PY.toFixed(2)})`);
   const OFFCD=2.4*IN;                   // the cDNA rail, below the template
   const BHW=6.3*IN;                     // half the chip, which the stub stops at
   /* s runs 0 at the far end to 1 at the AAA tail; off steps onto the cDNA rail */
@@ -3105,7 +3121,7 @@ function drawReverseTranscription(g0,n){
   };
 
   const insets=SRC.map((sk,idx)=>{
-    const src=wells[sk].e, col=HUE(sk);
+    const src={x:wells[sk].e.x+PX, y:wells[sk].e.y+PY}, col=HUE(sk);
     /* centred on the PLATE's own screen centre, not the node's. The plate is
        thrown forward of the tile, which in this projection moves it left; a row
        hung off the tile centre leans off the far end of the deck it magnifies */
