@@ -166,6 +166,30 @@ const NODES = [
  built:"Nothing to cite. The request that asked for this station described a picture — a strip of tubes in a low block, a thermal cycler and a 96-well plate with six columns filled, and over them the cut, the adapters and the construct assembling in that order — and named no manual section, no reagent, no cycle count and no instrument, so this record names none either.",
  cond:"Asked for from the page rather than read off an artefact, so what it carries is a figure and not a measurement. The segment order is the one the request gave. What it does not settle is how this station relates to C1 and C2 further along the row, whose built lines already cite sections 3.1 to 3.5 for fragmenting, adapter ligation and the indexing PCR, and which stand after B8a and B9 rather than before them. This record makes no protocol claim, and nothing downstream depends on which it is."},
 
+/* NOT LIFTED, AND ASKED FOR FROM THE PAGE — the fifth of its kind here, and
+   the third into this one stretch of the row. What the "Add a module" request
+   described was a picture: a magnetic rack and a small thermal cycler side by
+   side, and over them one magnification in which streptavidin beads close on
+   the gold tips of three barcoded strands, the debris drains away untouched,
+   and one held strand copies itself to four. It said what the picture is for,
+   too — the tag selects, not size — and that is what `sub` carries.
+
+   IT NAMED NO PROTOCOL. No section, no bead, no wash, no cycle count and no
+   instrument, so `built` names none and points at the request, the way B8′'s
+   and B8a's do. The one fact `does` leans on that the request did not supply
+   is where the biotin came from, and that is B8's own claim, cited to it by
+   key rather than restated as this record's. `cond` says the obvious thing
+   out loud: B8 already carries a capture and an amplification, and B8a draws
+   the amplification again. In UNVERIFIED, and the badge says so.
+
+   THE KEY IS A SUFFIX ON THE STATION IT FOLLOWS. It lands between B8′ and B8a,
+   so it is B8′a, and nothing downstream is renumbered. */
+{id:"SEL", key:"B8′a", group:"cDNA capture and amplification", shape:"tagcapture", name:"Capture the barcoded cDNA and amplify it", x:13.16, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
+ sub:"the tag selects, not size · one strand to four",
+ does:"The barcoded cDNA is pulled out of what is left of the lysed cells, and then copied. Streptavidin beads close over the biotin at the tip of each barcoded strand and hold it; the cell debris carries no tag, is never taken, and drains away. One held strand is then copied — one becomes two, then four. What selects is the tag, not size: the biotin was put on earlier in the row, which B8's record places in round three, and this is where it pays off.",
+ built:"Nothing to cite. The request that asked for this station described a picture — a magnetic rack holding a strip of 0.2 mL tubes beside a small benchtop thermal cycler, and over them streptavidin beads closing on the tagged strands, the debris draining away and one held strand copying itself to four — and named no manual section, no reagent, no wash, no cycle count and no instrument, so this record names none either.",
+ cond:"Asked for from the page rather than read off an artefact, so what it carries is a figure and not a measurement: three strands and four copies are where the picture stops, not counts. What it does not settle is how it stands against its neighbours — B8's built line already carries the streptavidin capture and an amplification, cited to sections 2.1 to 2.4, and B8a draws the amplification again one station on. This may be a third view of one step rather than a step of its own; the record makes no protocol claim, and nothing downstream depends on which it is."},
+
 /* NOT LIFTED, AND ASKED FOR FROM THE PAGE — the third of its kind here, after
    the pyramid and the regrouping, and the first that is not at the end of the
    row. What the "Add a module" request described was a picture: a thermal
@@ -414,8 +438,12 @@ const EDGES = [
   /* and B8′ between the first pair of those, so CAP -> AMP is two again. Still
      `lib`: the request is about what is done to the cDNA, not a change of what
      runs down the track. */
+  /* and B8′a between B8′ and B8a, so LPR -> AMP is two in its turn. Still
+     `lib`: capture and a copy change how much of the cDNA there is and what
+     it is standing in, not what runs down the track. */
   {a:"CAP",b:"LPR",kind:"lib"},
-  {a:"LPR",b:"AMP",kind:"lib"},
+  {a:"LPR",b:"SEL",kind:"lib"},
+  {a:"SEL",b:"AMP",kind:"lib"},
   {a:"AMP",b:"QCD",kind:"lib"},
   {a:"QCD",b:"FRG",kind:"lib"},
   {a:"FRG",b:"R4p",kind:"lib"},
@@ -475,9 +503,15 @@ const EDGES = [
    the same 1.234 on the same terms — 0.72 of station plus one extra minor gap
    of 0.6 at k 0.8567, x1 30.672 -> 31.906 — priced by scripts/pipeline_lane.mjs,
    which reports k unmoved and all seventeen existing gaps where they were. The
-   ten stations from B8a on slide 1.234 along. */
+   ten stations from B8a on slide 1.234 along.
+
+   B8′a, THE TAG CAPTURE, went in one step later still, between B8′ and B8a,
+   and cost the same 1.234 on the same terms — 0.72 of station plus one extra
+   minor gap of 0.6 at k 0.8567, x1 31.906 -> 33.140 — priced by
+   scripts/pipeline_lane.mjs, which reports k unmoved and all eighteen existing
+   gaps where they were. The ten stations from B8a on slide 1.234 along. */
 const LANES = [
-  {id:"r2", y:R2, x0:0.7, x1:31.906, dir:+1},
+  {id:"r2", y:R2, x0:0.7, x1:33.140, dir:+1},
 ];
 
 const ROWS = [R2], MIRROR = 22.7;
@@ -486,7 +520,7 @@ const ROWS = [R2], MIRROR = 22.7;
    out at the far end with the lane — a band is as long as its row, so a mat
    left at 24 would have the last station standing off the edge of its floor. */
 const BANDS = [
-  {name:"Molecular biology", x0:-2, x1:33.906, y0:R2-3.8, y1:R2+3.8},
+  {name:"Molecular biology", x0:-2, x1:35.140, y0:R2-3.8, y1:R2+3.8},
 ];
 
 /* No carries: this page is one row and it runs out at the handoff, which is
@@ -583,9 +617,10 @@ const REAL_SUBLIBS = [
    reader reads it WITHOUT guarding, so an absent one is a ReferenceError the
    moment anybody picks a station. Eight of this row's stations have not been
    checked with Patrick — C4 and C5 because they are new here and have never
-   been on the big map to be checked against, and B8′, B8a, C6 and C7 because
-   they were asked for from the page rather than read off an artefact at all. */
-const UNVERIFIED = new Set(["B8′","B8a","B9","C1","C2","C4","C5","C6","C7"]);
+   been on the big map to be checked against, and B8′, B8′a, B8a, C6 and C7
+   because they were asked for from the page rather than read off an artefact
+   at all. */
+const UNVERIFIED = new Set(["B8′","B8′a","B8a","B9","C1","C2","C4","C5","C6","C7"]);
 
 const SNIPPETS = {
   fish: () => { const c=pick(REAL_CELLS); return {label:"one well of embryos", flag:null,
@@ -725,20 +760,20 @@ purity           ${s.purity.toFixed(3)}`};},
 const OVERVIEW = {
   eyebrow:"ZEBRAFISH SINGLE-CELL · ROW 2 OF THE PLATONIC PIPELINE",
   title:"Molecular biology",
-  sub:"nineteen stations · fixed cells in, eight pairs of read files out",
+  sub:"twenty stations · fixed cells in, eight pairs of read files out",
   /* `does` is the field the reader renders as "The story" — the same name a
      node uses, because the overview IS a node as far as the text editor is
      concerned. Calling it anything else renders the word undefined. */
   does:`
-<p><mark>Row 2 of <a href="/pipeline">/pipeline</a>, on its own.</mark> Fixed material comes out of the freezer and thaws, and everything after it is chemistry: three rounds of in-situ barcoding, each followed by a pool and split, then lysis, cDNA capture and amplification, library prep, the indexing PCR, a size check, and the sequencer. The row now runs four boxes further than the big map's does: the conversion that turns the sequencer's run folder into eight pairs of read files, the handoff where those files change hands — or, on this instance, do not — a pyramid, which is a shape somebody asked this page for and not a step of anything, and the regrouping of reads into cells, which was asked for the same way but came with a reason attached. The third station asked for from the page landed in the middle of the row rather than past the end of it: <mark>B8a, the PCR amplification</mark>, a shut block and one molecule doubling under glass, between the capture and the quantification. The fourth went into the same gap one step earlier: <mark>B8′, the library construct</mark>, a strand cut and adapted under glass until the whole molecule stands assembled from P5 to P7.</p>
+<p><mark>Row 2 of <a href="/pipeline">/pipeline</a>, on its own.</mark> Fixed material comes out of the freezer and thaws, and everything after it is chemistry: three rounds of in-situ barcoding, each followed by a pool and split, then lysis, cDNA capture and amplification, library prep, the indexing PCR, a size check, and the sequencer. The row now runs four boxes further than the big map's does: the conversion that turns the sequencer's run folder into eight pairs of read files, the handoff where those files change hands — or, on this instance, do not — a pyramid, which is a shape somebody asked this page for and not a step of anything, and the regrouping of reads into cells, which was asked for the same way but came with a reason attached. The third station asked for from the page landed in the middle of the row rather than past the end of it: <mark>B8a, the PCR amplification</mark>, a shut block and one molecule doubling under glass, between the capture and the quantification. The fourth went into the same gap one step earlier: <mark>B8′, the library construct</mark>, a strand cut and adapted under glass until the whole molecule stands assembled from P5 to P7. The fifth went between those two: <mark>B8′a, the tag capture</mark>, beads closing on the tagged strands under glass while the debris drains away, and one held strand copying itself to four.</p>
 <p><mark>The barcode is built in the cell, not read off it.</mark> That is what makes this the row the rest of the map depends on: a cell never leaves its well with an identity attached — it acquires one by surviving three rounds of ligation in a known order, and the combination is the address. Round 4 is different in kind: it is a PCR index on the tube, not on the cell.</p>
-<p>This page is a <mark>bench for developing the row out</mark>, the way <a href="/FASTQ_pipe">/FASTQ_pipe</a> is one for row 3. A station that earns a real drawing gets one here first, on the tile it is on the big map, and comes back to /pipeline once it works. <mark>The prose is lifted and /pipeline owns it</mark> — change a claim there and lift it again. The exceptions are the last four boxes, B8′ and B8a, which are this page's own.</p>
+<p>This page is a <mark>bench for developing the row out</mark>, the way <a href="/FASTQ_pipe">/FASTQ_pipe</a> is one for row 3. A station that earns a real drawing gets one here first, on the tile it is on the big map, and comes back to /pipeline once it works. <mark>The prose is lifted and /pipeline owns it</mark> — change a claim there and lift it again. The exceptions are the last four boxes, B8′, B8′a and B8a, which are this page's own.</p>
 `,
   /* `built` and `cond` are the same two fields every node carries, and the
      reader renders them under their own headings. The overview is a node as far
      as the reader and the text editor are concerned, so leaving them out is a
      missing field rather than a shorter page. */
-  built:`<p>Thirteen stations lifted from row 2 of <a href="/pipeline">/pipeline</a>, and two more — the basecall and demultiplex, and the handoff after it — authored here, because the steps between the sequencer and the reads were drawn on no map. The other four, the library construct, the PCR amplification, the pyramid and the regrouping, cite nothing, because the requests that asked for them cited nothing. The figures are that map's: 48 wells in round one against 96 in rounds two and three, and 3,655,719,111 reads off the sequencer at the end. Nothing here is modelled — every number is read off an artefact and lives in the prose of the station that owns it.</p>`,
-  cond:`<p>This is a bench, so what it draws is deliberately unfinished — but the unfinished part is no longer the drawings: eighteen of the nineteen stations now carry one of their own, and the sequencer is the last still standing on the big map's generic apparatus. What is unfinished is the checking, and the badges say which. <mark>What must not drift is the prose</mark> — all of it but the six stations this page owns is lifted from /pipeline and that map owns it, so a claim that changes has to change there and be lifted again, or the site ends up with two accounts of one row.</p>`,
+  built:`<p>Thirteen stations lifted from row 2 of <a href="/pipeline">/pipeline</a>, and two more — the basecall and demultiplex, and the handoff after it — authored here, because the steps between the sequencer and the reads were drawn on no map. The other five, the library construct, the tag capture, the PCR amplification, the pyramid and the regrouping, cite nothing, because the requests that asked for them cited nothing. The figures are that map's: 48 wells in round one against 96 in rounds two and three, and 3,655,719,111 reads off the sequencer at the end. Nothing here is modelled — every number is read off an artefact and lives in the prose of the station that owns it.</p>`,
+  cond:`<p>This is a bench, so what it draws is deliberately unfinished — but the unfinished part is no longer the drawings: nineteen of the twenty stations now carry one of their own, and the sequencer is the last still standing on the big map's generic apparatus. What is unfinished is the checking, and the badges say which. <mark>What must not drift is the prose</mark> — all of it but the seven stations this page owns is lifted from /pipeline and that map owns it, so a claim that changes has to change there and be lifted again, or the site ends up with two accounts of one row.</p>`,
   howto:`<p>One landmark — the Thaw — sits on a dashed plinth and carries its name on the ground. Every other station stands on the tile it has on the big map and draws what happens on it. Hatching would mean the stage destroys data; nothing on this row does. The row reads left to right and nothing feeds it from off the page: on the big map the row above supplies the fixed material, and that is said by where the rows sit rather than by a track.</p>`,
 };

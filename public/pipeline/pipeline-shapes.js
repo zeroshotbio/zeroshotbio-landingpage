@@ -6505,6 +6505,323 @@ function drawLibraryPrep(g,n){
 DRAW.libraryprep = drawLibraryPrep;
 
 /* ------------------------------------------------------------------
+   B8′a · CAPTURE THE BARCODED cDNA AND AMPLIFY IT — the tag selects,
+   and what it selected is copied.
+
+   ASKED FOR FROM THE PAGE, from "Add a module", and the request set the
+   proportions: two small bench objects anchor the frame and one large
+   magnification is the subject. So nothing on the bench is the event. The
+   rack's magnets wash and the cycler's screen lights, each once and in step
+   with the glass, so the bench says where each half of it is happening.
+
+   THE BENCH STANDS JUST BEHIND THE TILE, and not far behind. Forward is
+   where B8a's glass comes down — it is centred on the next tile along and
+   its rim reaches back over most of this one — and further back is B8′'s own
+   bench, whose plate stands just behind and between these two. So the pair
+   sit on a screen-level row in the strip between, close enough to this
+   tile's back corner to read as this station's.
+
+   NO LEADERS. The glass is a view of both objects — capture in one, copying
+   in the other — and a pair of leaders can only name one of them; the one
+   path down to the rack also runs straight across B8′'s plate. The flow line
+   and the two lights carry the address instead.
+
+   THE GLASS HANGS IN THE ONE CLEAR AIR THERE IS: above B8′'s plate and below
+   B8′'s own glass, thrown right of the bench so B8′'s leaders pass its rim.
+
+   THE STRAND IS B8's, ENTIRE — half-length, wobble, three chips, gold tip —
+   because B8 and B8a either side of this draw the molecule that way, and a
+   third drawing makes the reader ask which one it is. The copies wear the
+   gold too, on B8a's terms: it marks the molecule, not a claim about which
+   end-tags survive into a copy.
+
+   A BEAD ENCLOSES; IT DOES NOT TOUCH. The request was specific, so the bead
+   here is not B8's hook-cut disc: it is a filled circle with a pocket in it
+   and a mouth into the pocket, it comes to rest centred on the gold, and the
+   mouth narrows to the width of the strand. The drop ends up inside with
+   daylight all round it. No bead goes near a chip or a piece of debris.
+
+   ONE, TWO, FOUR, AND THEN A CUT. Each generation is drawn under the last and
+   fainter. The return to the start does not rewind: a copy does not un-copy
+   and a bead does not let go on camera, so the state is a pure function of
+   the clock and the wrap puts the free strands back in one frame.
+
+   Reuses magnetRack from B8's bench and flowLine / setFanLine from the fan.
+   Spends --ch3, --ch4, --ch8, --ch11 and --c-top, all declared on
+   /molecular_pipe — the only page carrying a node that wears this.
+   ------------------------------------------------------------------ */
+function drawTagCapture(g,n){
+  /* EVERY OFFSET IS EITHER A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC,
+     and w, d and h are read at draw time because a resize is the only reason
+     this function runs again. Composed at w .72, d .72, h .40. */
+  const SC=n.w/0.72;
+  const clamp=x=>x<0?0:x>1?1:x;
+  const ease=u=>u*u*(3-2*u);
+  const r=rng(173);
+
+  /* ---- THE BENCH ----------------------------------------------------------
+     BACK is how far behind the tile; SP is how far either side of that point
+     the two stand. Walking +x and -y by the same amount is walking straight
+     across the page, so rack and cycler sit level and read left to right. */
+  const BACK=1.35, SP=0.36;
+  const bx=n.x-n.w*BACK, by=n.y-n.d*BACK;
+
+  /* one strip, not B8's two: the request asked for a strip, and at this size
+     a second row of tubes is noise rather than a fact */
+  const rack={x:bx-n.w*SP, y:by+n.d*SP, w:n.w*0.70, d:n.d*0.24, h:n.h*0.28,
+              tubes:8, strips:1};
+  const T=magnetRack(g, rack);
+
+  /* THE CYCLER IS ROUNDED, SO IT IS NOT paint(). Its footprint is a rounded
+     rectangle walked once; each side segment facing the viewer is a quad, and
+     on a convex footprint those quads tile the silhouette without overlapping,
+     so no sort is needed. Pale because the request said pale — --m-* is the
+     skin the rack's magnets are set in, so the two pale things on this bench
+     are one material. */
+  const cyc={x:bx+n.w*SP, y:by-n.d*SP, w:n.w*0.46, d:n.d*0.42, h:n.h*0.42};
+  const RR=Math.min(cyc.w,cyc.d)*0.28;
+  const ring=[];
+  [[1,-1],[1,1],[-1,1],[-1,-1]].forEach(([sx,sy],k)=>{
+    const ox=cyc.x+sx*(cyc.w/2-RR), oy=cyc.y+sy*(cyc.d/2-RR);
+    for(let i=0;i<=6;i++){ const a=(-90+90*k+15*i)*Math.PI/180;
+      ring.push([ox+RR*Math.cos(a), oy+RR*Math.sin(a)]); }
+  });
+  let s0=-1, s1=-1;
+  for(let i=0;i<ring.length;i++){
+    const p=ring[i], q=ring[(i+1)%ring.length];
+    const nx=q[1]-p[1], ny=p[0]-q[0];
+    if(nx+ny<=0) continue;
+    if(s0<0) s0=i; s1=i;
+    g.appendChild(el("polygon",{points:pts([P(p[0],p[1],cyc.h),P(q[0],q[1],cyc.h),
+      P(q[0],q[1],0),P(p[0],p[1],0)]),fill:ny>nx?"var(--m-left)":"var(--m-right)"}));
+  }
+  /* the seams between those quads are not edges of anything, so the outline
+     is drawn once round the band they make rather than round each of them */
+  const band=ring.slice(s0,s1+2);
+  g.appendChild(el("polygon",{points:pts([...band.map(p=>P(p[0],p[1],cyc.h)),
+    ...band.slice().reverse().map(p=>P(p[0],p[1],0))]),fill:"none",
+    stroke:"var(--stroke)","stroke-width":"1.2","stroke-opacity":".8"}));
+  g.appendChild(el("polygon",{points:pts(ring.map(p=>P(p[0],p[1],cyc.h))),
+    fill:"var(--m-top)",stroke:"var(--stroke)","stroke-width":"1.2","stroke-opacity":".8"}));
+
+  /* the angled screen: a wedge on the front of the top, its sloped face turned
+     up toward the reader. Only the sloped face and the +x cheek can be seen */
+  const wx0=cyc.x-cyc.w*0.32, wx1=cyc.x+cyc.w*0.32,
+        wy0=cyc.y+cyc.d*0.30, wy1=cyc.y-cyc.d*0.08, wz=cyc.h+n.h*0.20;
+  g.appendChild(el("polygon",{points:pts([P(wx1,wy0,cyc.h),P(wx1,wy1,cyc.h),P(wx1,wy1,wz)]),
+    fill:"var(--m-right)",stroke:"var(--stroke)","stroke-width":".9","stroke-opacity":".7"}));
+  const slope=[P(wx0,wy0,cyc.h),P(wx1,wy0,cyc.h),P(wx1,wy1,wz),P(wx0,wy1,wz)];
+  g.appendChild(el("polygon",{points:pts(slope),fill:"var(--m-left)",
+    stroke:"var(--stroke)","stroke-width":".9","stroke-opacity":".7"}));
+  const lerp=(A,B,u)=>[A[0]+(B[0]-A[0])*u, A[1]+(B[1]-A[1])*u];
+  const on=(u,v)=>lerp(lerp(slope[0],slope[1],u), lerp(slope[3],slope[2],u), v);
+  const face=pts([on(.14,.2),on(.86,.2),on(.86,.8),on(.14,.8)]);
+  g.appendChild(el("polygon",{points:face,fill:"var(--bg)","fill-opacity":".85",
+    stroke:"var(--stroke)","stroke-width":".6","stroke-opacity":".6"}));
+  const lit=el("polygon",{points:face,fill:"var(--signal)","fill-opacity":"0"});
+  g.appendChild(lit);
+
+  /* one short flow, rack to cycler. Faint while nothing is on it; a bead runs
+     it once, between the pull and the first copy, which is the moment the
+     held cDNA changes hands */
+  const RH=rack.h*1.60;
+  const flow=flowLine(g,
+    P(rack.x+rack.w/2, rack.y-rack.d/2, rack.h+RH*0.6),
+    P(cyc.x-cyc.w/2, cyc.y+cyc.d/2, cyc.h*0.7), "var(--fg3)", SC);
+  setFanLine(flow,0.34,0);
+
+  /* the tile the track and the dot arrive at, in front of all of it */
+  paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.tile);
+
+  /* ---- THE MAGNIFICATION --------------------------------------------------
+     A thin solid ellipse, the idiom this map uses everywhere for a view drawn
+     larger than life. Sized in screen pixels and scaled by being scaled: what
+     is inside it is a molecule, which has no world size to be authored in, so
+     it goes in a group carrying scale(n.w / .72) and a resize takes it along.
+     Centred off the bench's own top through n.x, n.y and n.h. */
+  const LX=62, LY=40;
+  const TOP=P(bx,by,cyc.h+n.h*0.20);
+  const KX=TOP[0]+40*SC, KY=TOP[1]-(LY+48)*SC;
+  const lens=el("g",{transform:
+    `translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${SC.toFixed(4)})`});
+  g.appendChild(lens);
+  /* nearly opaque: glass you can read the ground grid through is a hole in the
+     drawing rather than a lens over it */
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,
+    fill:"var(--bg)","fill-opacity":".92"}));
+  /* the wall the held strands end up on, in the magnets' pale, so the inset
+     on the rack and the side of the glass read as one fact at two scales */
+  const wall=a=>[(LX*Math.cos(a)).toFixed(1),(LY*Math.sin(a)).toFixed(1)];
+  lens.appendChild(el("path",{d:`M ${wall(2.36).join(" ")} `+
+    `A ${LX} ${LY} 0 0 1 ${wall(3.93).join(" ")}`,fill:"none",
+    stroke:"var(--m-top)","stroke-width":"3.4","stroke-opacity":".45"}));
+  /* debris drains past the rim and beads arrive from beyond it, so both have
+     to stop existing at the boundary. Uniqued: a checker draws this shape
+     twice, at two sizes, into one document */
+  const cid=`tagglass${++UID}`;
+  const cp=el("clipPath",{id:cid});
+  cp.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY}));
+  lens.appendChild(cp);
+  const stage=el("g",{"clip-path":`url(#${cid})`});
+  lens.appendChild(stage);
+  /* back to front: debris, copies, beads, strands. The beads sit under the
+     strands so the gold is drawn inside the pocket rather than behind it */
+  const L_DEB=el("g",{}), L_CPY=el("g",{}), L_BEAD=el("g",{}), L_STR=el("g",{});
+  [L_DEB,L_CPY,L_BEAD,L_STR].forEach(l=>stage.appendChild(l));
+
+  /* ---- THE STRAND, B8's WAY ---------------------------------------------- */
+  const HL=15, TIP=HL+5.4, DROP=HL+2.4;
+  const CHIP=["var(--ch8)","var(--ch11)","var(--ch4)"];
+  const spine=k=>{ let d=`M ${-HL} 0`;
+    for(let s=1;s<=10;s++)
+      d+=` L ${(-HL+2*HL*(s/10)).toFixed(1)} ${(Math.sin(s*0.86+k)*2.1).toFixed(1)}`;
+    return d; };
+  const strand=(parent,k,tr,op)=>{
+    const sg=el("g",{transform:tr,opacity:op});
+    parent.appendChild(sg);
+    sg.appendChild(el("path",{d:spine(k),fill:"none",stroke:"var(--c-top)",
+      "stroke-width":"1.5","stroke-opacity":".75","stroke-linecap":"round"}));
+    CHIP.forEach((c,i)=>sg.appendChild(el("rect",{x:(-8.4+i*6.2).toFixed(1),y:"-1.9",
+      width:"4.6",height:"3.8",rx:"1.1",fill:c,"fill-opacity":".9",
+      stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".5"})));
+    sg.appendChild(el("path",{d:`M ${HL-0.6} 0 C ${HL+1.4} -3.3 ${TIP} -2.2 ${TIP} 0 `+
+      `C ${TIP} 2.2 ${HL+1.4} 3.3 ${HL-0.6} 0 Z`,fill:"var(--ch3)","fill-opacity":".95",
+      stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".5"}));
+    return sg;
+  };
+  const tr=(x,y,a)=>`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${a.toFixed(1)})`;
+
+  /* free, the gold turned toward the side the beads come from; held, swung
+     round so the bead leads and the gold is at the wall */
+  const FREE=[[10,-20,-12],[22,6,16],[-6,18,-6]];
+  const HELD=[[-28,-16,186],[-28,0,180],[-28,16,174]];
+  const COPIER=1;
+  const strands=FREE.map((f,i)=>({g:strand(L_STR,i*1.9,tr(f[0],f[1],f[2]),"1"),
+    free:f, held:HELD[i], ph:r()*6.283}));
+
+  /* THE DEBRIS IS FORMLESS ON PURPOSE, B8's reasoning: any shape given to it
+     would be a claim about what it is, and all it is is not the thing kept */
+  const debris=[[-36,-6],[-12,0],[44,-12],[34,26]].map(p=>{
+    const q=[];
+    for(let k=0;k<9;k++){ const a=k*6.283/9, rr=4.4+r()*3.4;
+      q.push(`${(Math.cos(a)*rr).toFixed(1)},${(Math.sin(a)*rr*0.8).toFixed(1)}`); }
+    const dg=el("g",{transform:`translate(${p[0]},${p[1]})`});
+    L_DEB.appendChild(dg);
+    dg.appendChild(el("polygon",{points:q.join(" "),fill:"var(--fg3)",
+      "fill-opacity":".3",stroke:"var(--fg3)","stroke-width":".8","stroke-opacity":".5"}));
+    return {g:dg, at:p, ph:r()*6.283};
+  });
+
+  /* THE BEAD: a ring of body round a pocket, with a mouth from the pocket to
+     the outside. The mouth faces +x here and the bead is turned to face the
+     strand. What closes is the mouth — from wider than the drop to the width
+     of the strand — so the drop is shut in without anything meeting it. */
+  const BR=7.4, PR=3.6;
+  const setBead=(b,c)=>{
+    const hw=3.3-2.4*clamp(c);
+    const a=Math.asin(hw/BR), q=Math.asin(hw/PR);
+    const o=t=>`${(BR*Math.cos(t)).toFixed(2)} ${(BR*Math.sin(t)).toFixed(2)}`;
+    const i=t=>`${(PR*Math.cos(t)).toFixed(2)} ${(PR*Math.sin(t)).toFixed(2)}`;
+    b.body.setAttribute("d",`M ${o(a)} A ${BR} ${BR} 0 1 1 ${o(-a)} `+
+      `L ${i(-q)} A ${PR} ${PR} 0 1 0 ${i(q)} Z`);
+  };
+  [[LX+8,-14],[LX+8,4],[LX+8,20]].forEach((e,i)=>{
+    const bg=el("g",{transform:`translate(${e[0]},${e[1]}) rotate(180)`,opacity:"0"});
+    L_BEAD.appendChild(bg);
+    const body=el("path",{d:"",fill:"var(--fg)","fill-opacity":".82",
+      stroke:"var(--stroke)","stroke-width":".6","stroke-opacity":".5"});
+    bg.appendChild(body);
+    strands[i].b={g:bg, body, entry:e};
+    setBead(strands[i].b,0);
+  });
+
+  /* THE COPIES: one, then two more, each generation under the last and
+     fainter, stepping away from the wall into the room the debris left.
+     Every copy slides out from the strand it was copied off. Born at their
+     source with real coordinates; the clock only moves them. */
+  const H=HELD[COPIER];
+  /* they step mostly sideways: straight up is where the top held strand is */
+  const COPY=[{from:[0,0],  to:[13,-3],  op:0.68, gen:0},
+              {from:[0,0],  to:[26,-6],  op:0.42, gen:1},
+              {from:[13,-3],to:[39,-9],  op:0.42, gen:1}];
+  /* appended in reverse so the youngest are furthest back */
+  COPY.slice().reverse().forEach(c=>{
+    c.g=strand(L_CPY,COPIER*1.9,tr(H[0]+c.from[0],H[1]+c.from[1],H[2]),"0");
+  });
+
+  /* the ring last, over everything, so nothing inside can soften its own edge */
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,fill:"none",
+    stroke:"var(--fg2)","stroke-width":"1.3","stroke-opacity":".85"}));
+
+  /* ---- TIMING -------------------------------------------------------------
+     The beads take their time and arrive one after another; the pull is quick
+     and the three held things move together, which is the one moment on the
+     bench that reads as an event. Then the hand-off along the flow, the two
+     generations, and a hold on four.
+
+     PLACEMENT IS A PURE FUNCTION OF THE CLOCK, so a frame long enough to skip
+     a whole beat cannot leave a bead halfway to a strand it has already left. */
+  const T_IN=1.3, STAG=0.3, CAPD=1.2, T_PULL=3.4, PULLD=1.6,
+        T_FLOW=5.0, FLOWD=0.8, T_G1=5.9, GEN=0.9, T_G2=7.1, HOLD=2.2;
+  const TOT=T_G2+GEN+HOLD;
+
+  const place=(t,ph)=>{
+    const pull=ease(clamp((t-T_PULL)/PULLD));
+    const jig=(1-pull)*1.4;
+    /* once copying starts the other two held strands step back, so the four
+       being counted are the brightest thing in the glass */
+    const back=1-0.5*ease(clamp((t-T_G1+0.5)/0.5));
+    strands.forEach((sd,i)=>{
+      const px=sd.free[0]+(sd.held[0]-sd.free[0])*pull+Math.cos(ph*0.8+sd.ph)*jig;
+      const py=sd.free[1]+(sd.held[1]-sd.free[1])*pull+Math.sin(ph*0.6+sd.ph)*jig;
+      const ang=sd.free[2]+(sd.held[2]-sd.free[2])*pull;
+      const dim=i===COPIER?1:back;
+      sd.g.setAttribute("transform",tr(px,py,ang));
+      sd.g.setAttribute("opacity",dim.toFixed(2));
+      const c=ease(clamp((t-T_IN-i*STAG)/CAPD));
+      const a=ang*Math.PI/180;
+      const tx=px+Math.cos(a)*DROP, ty=py+Math.sin(a)*DROP;
+      sd.b.g.setAttribute("transform",tr(sd.b.entry[0]+(tx-sd.b.entry[0])*c,
+        sd.b.entry[1]+(ty-sd.b.entry[1])*c, ang+180));
+      sd.b.g.setAttribute("opacity",(0.95*clamp(c/0.2)*dim).toFixed(2));
+      setBead(sd.b,(c-0.6)/0.4);
+    });
+    /* THE DEBRIS IS NEVER TAKEN. Nothing goes near it while the beads work,
+       and when the field comes on it drains straight down out of the glass */
+    const out=ease(clamp((pull-0.18)/0.72));
+    debris.forEach(d=>{
+      const dx=d.at[0]+Math.cos(ph*0.7+d.ph)*jig*1.2;
+      const dy=d.at[1]+Math.sin(ph*0.5+d.ph)*jig*1.2+out*(LY+26);
+      d.g.setAttribute("transform",`translate(${dx.toFixed(1)},${dy.toFixed(1)})`);
+      d.g.setAttribute("opacity",(1-clamp((out-0.35)/0.5)).toFixed(2));
+    });
+    COPY.forEach(c=>{
+      const u=ease(clamp((t-(c.gen?T_G2:T_G1))/GEN));
+      c.g.setAttribute("transform",tr(H[0]+c.from[0]+(c.to[0]-c.from[0])*u,
+        H[1]+c.from[1]+(c.to[1]-c.from[1])*u, H[2]));
+      c.g.setAttribute("opacity",(c.op*clamp(u/0.5)).toFixed(2));
+    });
+    /* the bench, in step: the field is on from the pull until the cut, and
+       the screen is lit from the hand-off, brightest as each generation lands */
+    T.setField(clamp((t-T_PULL+0.3)/0.5));
+    setFanLine(flow,0.34,(t-T_FLOW)/FLOWD);
+    const pulse=g0=>Math.sin(Math.PI*clamp((t-g0)/GEN));
+    lit.setAttribute("fill-opacity",(t<T_FLOW+FLOWD*0.7 ? 0 :
+      0.35+0.35*Math.max(pulse(T_G1),pulse(T_G2))).toFixed(2));
+  };
+
+  /* THE CLOCK DOES NOT START AT ZERO. A reader asking for reduced motion never
+     sees it advance, so the frame it starts on is the whole station for them,
+     and the one that carries both halves is the hold: beads shut on the wall,
+     debris gone, four copies */
+  let t=T_G2+GEN+HOLD*0.5, ph=0;
+  const run=dt=>{ t=(t+dt)%TOT; ph+=dt*1.7; place(t,ph); };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.tagcapture = drawTagCapture;
+
+/* ------------------------------------------------------------------
    B8a · PCR AMPLIFICATION — the doubling under glass, and nothing else.
 
    ASKED FOR FROM THE PAGE, from the map's own "Add a module" button, and what
