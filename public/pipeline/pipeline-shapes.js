@@ -7461,120 +7461,6 @@ function drawPcrAmplify(g,n){
 }
 DRAW.pcramplify = drawPcrAmplify;
 
-/* ==================================================================
-   THE QC BENCH, AS TWO COMPONENTS — because two stations run it.
-
-   B9 and C3 are the same instrument. Section 2.5 and section 3.6 are the same
-   two measurements — Qubit for concentration, a tape or a chip for size — three
-   sections apart, on material that has changed in between. Drawing them as two
-   different objects would say the lab owns two of everything, which is not what
-   the manual describes, and it would hide the one thing that IS different: what
-   is in the tube and what comes off it.
-
-   So the machine and the display are components, the way B8's thermal cycler is
-   a component C2 calls. Each caller owns its own material, its own trace and its
-   own clock, and nothing else.
-
-   NEITHER CALLER LETS A NUMBER LAND, and that is a coincidence of the record
-   rather than a property of the component: B9's concentration set the cycle
-   count and is gone, C3's trace was never filed at all. So the readout cells are
-   handed back rather than driven from here — refusing is the caller's claim to
-   make, and a third caller with an archived number should be able to fill them.
-
-   B9 NO LONGER CALLS THEM. "Edit visual" rebuilt B9 as a strip, a cassette
-   and two pins with no machine on the bench, so C3 is the one caller today;
-   the two sections are still the same measurement, and the paragraph above
-   still says why the component is shaped for more than one.
-
-   Requires ellipseAt() and arcPts() from the A2 clutch block.
-   ================================================================== */
-
-/* THE MACHINE: body, read port, the one tube standing in it, and the readout
-   strip on the front face. Composed at w .72, d .72, h .4, and every offset is
-   a fraction of the node — a caller on a wider tile gets a wider machine rather
-   than a stranded one. */
-function qcBench(g,n,o){
-  o=o||{};
-  const SC=n.w/0.72, hue=o.fill||"var(--ch6)";
-
-  paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
-
-  /* the read port, and the one tube in it. Drawn as a recess rather than a
-     socket on the surface: the tube has to sit IN the machine for the box to
-     read as measuring it instead of carrying it. */
-  const tr=Math.min(n.w,n.d)*0.105, tx=n.x-n.w*0.22, ty=n.y+n.d*0.06;
-  const port=ellipseAt(tx,ty,n.h,tr*1.9);
-  g.appendChild(el("ellipse",{cx:port.x.toFixed(1),cy:port.y.toFixed(1),
-    rx:port.rx.toFixed(2),ry:port.ry.toFixed(2),fill:"var(--fg)","fill-opacity":".14",
-    stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".5"}));
-  const foot=ellipseAt(tx,ty,n.h,tr),
-        lvl =ellipseAt(tx,ty,n.h+n.h*0.44,tr),
-        rim =ellipseAt(tx,ty,n.h+n.h*0.82,tr);
-  g.appendChild(el("polygon",{points:pts([...arcPts(rim,0,Math.PI,12),
-    ...arcPts(foot,Math.PI,0,12)]),fill:"var(--g-top)","fill-opacity":".4",
-    stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".45"}));
-  const liquid=el("polygon",{points:pts([...arcPts(lvl,0,Math.PI,12),
-    ...arcPts(foot,Math.PI,0,12)]),fill:hue,"fill-opacity":".5"});
-  g.appendChild(liquid);
-  g.appendChild(el("ellipse",{cx:rim.x.toFixed(1),cy:rim.y.toFixed(1),
-    rx:rim.rx.toFixed(2),ry:rim.ry.toFixed(2),fill:"var(--bg)","fill-opacity":".35",
-    stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".55"}));
-
-  /* the readout, a hair proud of the front face so the face cannot swallow it */
-  const fy=n.y+n.d/2+0.002;
-  const fq=(x0,x1,z0,z1)=>pts([P(x0,fy,z1),P(x1,fy,z1),P(x1,fy,z0),P(x0,fy,z0)]);
-  const rx0=n.x-n.w*0.32, rx1=n.x+n.w*0.32, rz0=n.h*0.24, rz1=n.h*0.60, rw=rx1-rx0;
-  g.appendChild(el("polygon",{points:fq(rx0,rx1,rz0,rz1),fill:"var(--bg)",
-    "fill-opacity":".8",stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
-  const lamp=el("polygon",{points:fq(rx0+rw*0.07,rx0+rw*0.17,
-    rz0+(rz1-rz0)*0.28,rz1-(rz1-rz0)*0.28),fill:hue,"fill-opacity":".15"});
-  g.appendChild(lamp);
-  const cells=[];
-  for(let i=0;i<3;i++){
-    const cx0=rx0+rw*(0.34+i*0.20), cx1=cx0+rw*0.14, cz=(rz0+rz1)/2;
-    const a=P(cx0,fy,cz), b=P(cx1,fy,cz);
-    const d=el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
-      x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg2)",
-      "stroke-width":(1.1*SC).toFixed(2),"stroke-opacity":".3","stroke-linecap":"round"});
-    g.appendChild(d); cells.push(d);
-  }
-  return {SC,
-    /* what is in the tube can change between runs — the lamp goes with it,
-       because a machine showing one colour while holding another is two claims */
-    setFill :c=>{ liquid.setAttribute("fill",c); lamp.setAttribute("fill",c); },
-    setLamp :v=>lamp.setAttribute("fill-opacity",v.toFixed(2)),
-    setCells:v=>cells.forEach(d=>d.setAttribute("stroke-opacity",v.toFixed(2)))};
-}
-
-/* THE DISPLAY: the plinth it stands on, the bezel, the screen and the baseline.
-   at(u,v) is the screen's own frame — u across, v up, both 0 to 1 — with the top
-   margin a trace needs already inside it, so no caller has to remember it. */
-function qcScreen(g,n){
-  const pl={x:n.x+n.w*0.80, y:n.y-n.d*1.62, w:n.w*1.46, d:n.d*0.34, h:n.h*0.20};
-  paint(g,pl.x,pl.y,pl.w,pl.d,pl.h,SKIN.tile);
-
-  /* the screen is one plane at constant y, which in this projection is the same
-     rhombus a machine's front panel is — so it reads as a face of the apparatus
-     rather than a chart floating over the bench */
-  const sy=pl.y-pl.d*0.10;
-  const sq=(x0,x1,z0,z1)=>pts([P(x0,sy,z1),P(x1,sy,z1),P(x1,sy,z0),P(x0,sy,z0)]);
-  const px0=pl.x-pl.w*0.46, px1=pl.x+pl.w*0.46, pw=px1-px0;
-  const pz0=pl.h+n.h*0.10, pz1=pl.h+n.h*1.50, ph=pz1-pz0;
-  const bx=pl.w*0.035, bz=n.h*0.09;
-  g.appendChild(el("polygon",{points:sq(px0-bx,px1+bx,pz0-bz,pz1+bz),
-    fill:"var(--fg)","fill-opacity":".1",stroke:"var(--stroke)",
-    "stroke-width":"1","stroke-opacity":".7"}));
-  g.appendChild(el("polygon",{points:sq(px0,px1,pz0,pz1),fill:"var(--bg)",
-    "fill-opacity":".85",stroke:"none"}));
-
-  const at=(u,v)=>P(px0+u*pw, sy, pz0+v*ph*0.92);
-  const base0=at(0,0), base1=at(1,0);
-  g.appendChild(el("line",{x1:base0[0].toFixed(1),y1:base0[1].toFixed(1),
-    x2:base1[0].toFixed(1),y2:base1[1].toFixed(1),stroke:"var(--fg2)",
-    "stroke-width":".8","stroke-opacity":".35"}));
-  return {at, sq, px0, pw, pz0, pz1, base0, base1};
-}
-
 /* ------------------------------------------------------------------
    B9 · QUANTIFY THE cDNA — a strip loaded into a cassette, and run.
 
@@ -7582,7 +7468,8 @@ function qcScreen(g,n){
    their arrangement and nothing else: a strip of PCR tubes, a flat cassette
    with a row of narrow lanes across it, and two thin electrode pins over one
    lane. So the machine, the display and the trace that stood here are gone
-   rather than rearranged; qcBench and qcScreen stay behind for C3.
+   rather than rearranged. C3 has since followed onto B9a's bench, so the
+   machine and display components they shared are gone as well.
 
    ANIMATED FROM "EDIT VISUAL" A SECOND TIME, with the arrangement kept: a
    drop, the pins down, the run, a trace. It is B9a's sequence written out
@@ -7893,10 +7780,16 @@ DRAW.quantify = drawQuantify;
    carrying scale(n.w / .95), hung off the cassette's far corner, and a resize
    takes it along.
 
+   C3 RUNS ON THIS BENCH TOO, and says so through `o`: which sizes a lane
+   carries, how many at least, how wide a peak is, and a printed window on
+   the size axis. Left out, every one of them is B9a's, so B9a is drawn
+   exactly as it was before C3 asked to match it.
+
    Composed at w .95, d .95, h .40; every position is a fraction of the node
    and every stroke is scaled with it.
    ------------------------------------------------------------------ */
-function drawSizeRun(g,n){
+function drawSizeRun(g,n,o){
+  o=o||{};
   const SC=n.w/0.95;
   const clamp=x=>x<0?0:x>1?1:x;
   const ease=u=>u*u*(3-2*u);
@@ -8001,12 +7894,13 @@ function drawSizeRun(g,n){
      the whole of the physics asked for and all of it this figure claims.
      COUNT keeps how many of each size a lane carries, because the lane's
      trace is built off the same numbers. */
-  const SIZES=[{r:0.4,far:0.92},{r:0.6,far:0.58},{r:0.85,far:0.30}];
-  const rr=rng(907), dots=[], COUNT=[];
+  const SIZES=o.sizes||[{r:0.4,far:0.92,mu:0.2},{r:0.6,far:0.58,mu:0.5},
+    {r:0.85,far:0.30,mu:0.8}];
+  const rr=rng(o.seed||907), dots=[], COUNT=[], M0=o.least||1;
   for(let j=0;j<NL;j++){
     const ly=laneY(j);
     COUNT.push(SIZES.map(G=>{
-      const m=1+Math.floor(rr()*3);
+      const m=M0+Math.floor(rr()*3);
       for(let i=0;i<m;i++){
         const D={far:G.far*(0.95+rr()*0.10), y:ly+(rr()-0.5)*lhw*1.1};
         const p=P(sx0,D.y,cas.h);
@@ -8101,17 +7995,24 @@ function drawSizeRun(g,n){
     stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".5"}));
   gr.appendChild(el("polyline",{points:`0,${-GH} 0,0 ${GW},0`,fill:"none",
     stroke:"var(--fg2)","stroke-width":".5","stroke-opacity":".7"}));
-  const xl=el("text",{x:(GW/2).toString(),y:(FS+1.2).toFixed(1),"text-anchor":"middle",
+  /* a window is printed before the traces so they are drawn landing in it,
+     and its label stands in for "size": a range in bp already says the axis
+     is size, and says it with the only numbers a caller was given */
+  const WIN=o.window, XL=WIN ? GW*(WIN[0]+WIN[1])/2 : GW/2;
+  if(WIN) gr.appendChild(el("rect",{x:(WIN[0]*GW).toFixed(2),y:(-GH).toString(),
+    width:((WIN[1]-WIN[0])*GW).toFixed(2),height:GH.toString(),fill:"var(--fg2)",
+    "fill-opacity":".12",stroke:"none"}));
+  const xl=el("text",{x:XL.toFixed(2),y:(FS+1.2).toFixed(1),"text-anchor":"middle",
     "font-family":MONO,"font-size":FS.toFixed(2),fill:"var(--fg2)"});
-  xl.textContent="size"; gr.appendChild(xl);
+  xl.textContent=WIN ? WIN[2] : "size"; gr.appendChild(xl);
   const yl=el("text",{x:"-0.4",y:(-GH-1.4).toFixed(1),"text-anchor":"start",
     "font-family":MONO,"font-size":FS.toFixed(2),fill:"var(--fg2)"});
   yl.textContent="intensity"; gr.appendChild(yl);
-  const MU=[0.2,0.5,0.8], SD=0.028, N=120;
+  const SD=o.sd||0.028, N=120;
   const curves=COUNT.map(ms=>{
     const c=[];
     for(let i=0;i<=N;i++){ const u=i/N; let v=0.06;
-      ms.forEach((m,k)=>{ v+=m*Math.exp(-((u-MU[k])*(u-MU[k]))/(2*SD*SD)); });
+      ms.forEach((m,k)=>{ const d=u-SIZES[k].mu; v+=m*Math.exp(-(d*d)/(2*SD*SD)); });
       c.push([u,v]); }
     return c;
   });
@@ -8905,204 +8806,28 @@ function drawIndexPcr(g,n){
 DRAW.indexpcr = drawIndexPcr;
 
 /* ------------------------------------------------------------------
-   C3 · QUANTIFY AND SIZE-CHECK — B9's frame, and one different curve.
+   C3 · QUANTIFY AND SIZE-CHECK — B9a's bench, and one peak.
 
-   THIS IS DELIBERATELY THE SAME PICTURE AS B9 AND THAT IS THE ARGUMENT. Section
-   3.6 sends a tube to the same Qubit and the same tape that section 2.5 used
-   four boxes back, so the station calls qcBench and qcScreen rather than
-   inventing a second machine, keeps B9's material colour, keeps its trace
-   component and runs its clock at B9's rate. Every choice here is "whatever B9
-   did", because the one thing this frame has to say is what CHANGED, and a
-   difference is only legible against a background that did not move.
+   ASKED FOR FROM "EDIT VISUAL" as "match B9a", with the 400 to 500 bp peak
+   kept because it is the point of the station. So this is B9a's drawing
+   called, not copied: the strip, the cassette, the eight lanes, the current
+   and the graph beside the run are all B9a's, and a later edit to that bench
+   lands here too. Section 3.6 is the same kind of measurement section 2.5
+   made, and two stations drawn alike say so.
 
-   B9 HAS SINCE BEEN REDRAWN from "Edit visual" as a strip, a cassette and two
-   pins, so on /molecular_pipe the two stations no longer share a picture. The
-   argument above is still what this frame is built on; B9 is no longer the
-   frame it is being read against there.
-
-   THE CURVE IS THE WHOLE CONTENT. B9 drew a broad low hump — un-fragmented cDNA
-   spread over every size the amplification made. Between there and here C1 cut
-   it and section 3.7 size-selected twice, so what comes off the tape now is one
-   tight peak with a ladder marker either side of it. Same axis, same instrument,
-   same sweep: a viewer who has watched B9 reads the narrowing without being
-   told, which no caption placed next to two unrelated drawings would achieve.
-
-   THE GEL LANE UNDER THE TRACE IS THE SAME READING TWICE. A tape station prints
-   both, and the lane is the one a bench actually squints at — bands rather than
-   a curve. It fades in behind the pen so it is plainly derived from the trace
-   and not a second measurement.
-
-   NOTHING PULSES. The lamp used to breathe on a sine here and it has been taken
-   out: a machine that shimmers while it holds says something is still
-   happening, and after the sweep nothing is. The trace drawing itself is the
-   entire motion budget, and then the station sits still for nine seconds —
-   longer than any other beat on this row, because a size check IS a long look
-   at a finished number.
+   WHAT DIFFERS IS WHAT IS IN THE LANES. The eight tubes are now the eight
+   indexed sublibraries, and each carries one size of fragment rather than
+   B9a's three — C1 cut the cDNA and section 3.7 size-selected it twice — so
+   every trace is a single peak, and all eight fall in the same place.
 
    THE 400 TO 500 bp WINDOW IS PRINTED, NOT MEASURED. Appendix B expects a
-   single peak in that band, so the band is drawn on the glass and labelled and
-   the trace is drawn landing in it. cond says no electropherogram was archived,
-   so the readout cells stay dashes however long the instrument runs — the same
-   refusal B9 makes, for the same reason: the row can show that a measurement
-   happened and still decline to invent what it said.
+   single peak in that band, so the band is drawn on the graph and labelled,
+   and the traces are drawn landing in it. cond says no electropherogram was
+   archived; the traces show where the peak should be, not what one was.
    ------------------------------------------------------------------ */
 function drawSizeCheck(g,n){
-  /* B9's colour, not one of C2's eight sublibrary hues. The eight ARE
-     distinguishable by now and a colour change would be a second difference in
-     a frame whose whole job is to isolate one. */
-  const LIBM="var(--ch6)";
-  const clamp=x=>Math.max(0,Math.min(1,x));
-
-  const M=qcBench(g,n), SC=M.SC;
-  const SCR=qcScreen(g,n);
-
-  /* qcScreen hands back its own frame and its own corners; everything below is
-     placed through them, so a resize moves the machine and the display together
-     and this station never has to know the tile's size itself. */
-  const ph=SCR.pz1-SCR.pz0;
-  const Z=v=>SCR.pz0+v*ph*0.92;            // at()'s v axis, in world z
-  const X=u=>SCR.px0+u*SCR.pw;
-
-  /* ---- THE SCREEN IS SHARED: LANE BELOW, TRACE ABOVE ---------------------
-     The panel stands about fourteen pixels tall at the authored size, so this
-     split is the tightest thing in the drawing: the lane takes the strip that
-     qcScreen already closed off with a baseline, and the trace stands on a
-     second line just above it. */
-  const LANE0=0.04, LANE1=0.25, BASE=0.30;
-
-  /* the peak has to land in the window, so the window is declared first and the
-     gaussian is centred on it rather than the other way about */
-  const W0=0.455, W1=0.585, PKC=(W0+W1)/2;
-  g.appendChild(el("polygon",{points:SCR.sq(X(W0),X(W1),Z(BASE),Z(1)),
-    fill:"var(--fg2)","fill-opacity":".09",stroke:"none"}));
-
-  /* ---- THE TRACE ---------------------------------------------------------
-     Three gaussians, the way B9 builds its own: a sharp ladder marker at each
-     end of the run and the library between them. The middle sigma is the only
-     number in this file that carries an argument — B9's is 0.110 and this one
-     is a third of it, and that ratio IS the double size selection. */
-  const PEAKS=[[0.085,0.018,0.50],[PKC,0.034,1.00],[0.930,0.020,0.44]];
-  const sig=u=>{ let v=0.035;
-    PEAKS.forEach(([m,s,a])=>{ v+=a*Math.exp(-((u-m)*(u-m))/(2*s*s)); });
-    return v; };
-  const N=160;
-  let peak=0; for(let i=0;i<=N;i++) peak=Math.max(peak,sig(i/N));
-  const PT=(u,v)=>SCR.at(u, BASE+(v/peak)*(1-BASE));
-
-  const base0=PT(0,0), base1=PT(1,0);
-  g.appendChild(el("line",{x1:base0[0].toFixed(1),y1:base0[1].toFixed(1),
-    x2:base1[0].toFixed(1),y2:base1[1].toFixed(1),stroke:"var(--fg2)",
-    "stroke-width":".8","stroke-opacity":".35"}));
-
-  /* ---- THE GEL LANE ------------------------------------------------------
-     Five bands, graded by how much signal is over them: the two markers, the
-     library, and a shoulder either side of it so the band reads as a
-     distribution rather than a hairline. Born with real coordinates and zero
-     opacity — the ticker only ever raises them. */
-  g.appendChild(el("polygon",{points:SCR.sq(X(0.02),X(0.98),Z(LANE0),Z(LANE1)),
-    fill:"var(--fg)","fill-opacity":".16",stroke:"var(--fg2)",
-    "stroke-width":".6","stroke-opacity":".5"}));
-  const BANDS=[[0.085,0.011,0.55],[0.472,0.013,0.30],[PKC,0.026,0.95],
-               [0.568,0.013,0.30],[0.930,0.010,0.46]].map(([u,hw,op])=>{
-    const e=el("polygon",{points:SCR.sq(X(u-hw),X(u+hw),Z(LANE0+0.02),Z(LANE1-0.02)),
-      fill:LIBM,"fill-opacity":"0",stroke:"none"});
-    g.appendChild(e); return {u,op,e};
-  });
-
-  const tp=[]; for(let i=0;i<=N;i++){ const u=i/N; tp.push(PT(u,sig(u))); }
-  const fill=el("polygon",{points:pts([...tp,base1,base0]),
-    fill:LIBM,"fill-opacity":"0"});
-  g.appendChild(fill);
-  /* the sweep is a dash offset rather than a rewritten point list — B9's rule.
-     The curve is born whole and the ticker owns only how much of it has been
-     drawn yet. */
-  let len=0;
-  for(let i=1;i<tp.length;i++)
-    len+=Math.hypot(tp[i][0]-tp[i-1][0], tp[i][1]-tp[i-1][1]);
-  const trace=el("polyline",{points:pts(tp),fill:"none",stroke:LIBM,
-    "stroke-width":(1.5*SC).toFixed(2),"stroke-linecap":"round",
-    "stroke-linejoin":"round","stroke-dasharray":`${len.toFixed(1)} ${len.toFixed(1)}`,
-    "stroke-dashoffset":len.toFixed(1)});
-  g.appendChild(trace);
-
-  const sTop=PT(0,peak);
-  const scan=el("line",{x1:base0[0].toFixed(1),y1:base0[1].toFixed(1),
-    x2:sTop[0].toFixed(1),y2:sTop[1].toFixed(1),stroke:"var(--signal)",
-    "stroke-width":".9","stroke-opacity":"0"});
-  g.appendChild(scan);
-  const pen=el("circle",{cx:tp[0][0].toFixed(1),cy:tp[0][1].toFixed(1),
-    r:(2*SC).toFixed(2),fill:LIBM,"fill-opacity":"0"});
-  g.appendChild(pen);
-
-  /* ---- THE LABEL ---------------------------------------------------------
-     Above the bezel rather than on the glass: the panel is fourteen pixels of
-     screen and ten characters laid across it would sit on the peak they name.
-     Authored in screen pixels, so it is sized off SC rather than off n.w and
-     grows by being scaled with the machine; centred on the window's midline,
-     which is what lets it point at the peak without a leader. */
-  const FS=3.2*SC;
-  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
-  const lp=SCR.at(PKC, 1.32);
-  const cap=el("text",{x:lp[0].toFixed(1),y:lp[1].toFixed(1),"text-anchor":"middle",
-    "font-family":MONO,"font-size":FS.toFixed(2),
-    "letter-spacing":(FS*0.04).toFixed(2),fill:"var(--fg2)","fill-opacity":".75"});
-  cap.textContent="400–500 bp"; g.appendChild(cap);
-
-  /* the lamp is set once and never touched again. It used to breathe on a sine
-     and that was the only thing in the frame still moving during the hold. */
-  M.setLamp(0.22);
-
-  /* ---- TIMING -------------------------------------------------------------
-     THE SWEEP IS B9's, TO THE TENTH. RUN is 3.4 s here because it is 3.4 s
-     there, and two QC traces drawn at one speed in one asset say "same
-     measurement, twice" better than any label on either of them.
-
-     THE PERIOD IS EXACTLY TWICE B9's, which is what keeps them off each other
-     forever. B9 spends 3.4 s of every 6.8 s drawing — a half duty cycle — so
-     nothing shorter than a doubling leaves a gap this sweep fits in, and any
-     period that is not a whole multiple of 6.8 drifts until the two collide.
-     At 13.6 the free windows are [3.4, 6.8) and [10.2, 13.6); this station
-     takes the first and holds through both of B9's.
-
-     THE CLOCK DOES NOT START AT ZERO, and 10.2 is the offset that lands the
-     sweep in that window: our t reaches 0 exactly 3.4 s from now, which is the
-     moment B9 lifts its pen. It is also mid-hold, so a browser asking for
-     reduced motion — which never advances t — gets the finished trace, the full
-     lane and the dashes, rather than an empty screen.
-
-     A RESIZE RESTARTS THIS CLOCK and the two fall out of step until the page is
-     reloaded. That is the honest cost of a per-shape ticker and it is cheaper
-     than a shared clock every station would then have to agree about. */
-  const RUN=3.4, HOLD=9.4, CLEAR=0.8, T=RUN+HOLD+CLEAR;
-  let t=10.2;
-  const run=dt=>{
-    t=(t+dt)%T;
-    const running=t<RUN, u=clamp(t/RUN);
-    const out=t<RUN+HOLD ? 0 : clamp((t-RUN-HOLD)/CLEAR);
-    trace.setAttribute("stroke-dashoffset",(len*(1-u)).toFixed(1));
-    trace.setAttribute("stroke-opacity",(1-out).toFixed(2));
-    const i=Math.min(N,Math.round(u*N));
-    const b=PT(i/N,0), c=PT(i/N,peak);
-    scan.setAttribute("x1",b[0].toFixed(1)); scan.setAttribute("y1",b[1].toFixed(1));
-    scan.setAttribute("x2",c[0].toFixed(1)); scan.setAttribute("y2",c[1].toFixed(1));
-    scan.setAttribute("stroke-opacity",running?".5":"0");
-    pen.setAttribute("cx",tp[i][0].toFixed(1)); pen.setAttribute("cy",tp[i][1].toFixed(1));
-    pen.setAttribute("fill-opacity",running?".9":"0");
-    /* the fill eases in over half a second as the pen lifts — B9's number and
-       B9's ramp, because a fill that snaps on is a second event at the end of
-       one, and this frame is allowed exactly one */
-    fill.setAttribute("fill-opacity",
-      (t<RUN ? 0 : 0.16*clamp((t-RUN)/0.5)*(1-out)).toFixed(2));
-    /* the bands come up behind the pen, so the lane is plainly the trace read a
-       second way rather than a second thing being measured */
-    BANDS.forEach(B=>B.e.setAttribute("fill-opacity",
-      (B.op*clamp((u-B.u)/0.06)*(1-out)).toFixed(2)));
-    /* the dashes come UP when the run ends. Nothing lands in them — that is the
-       point — but they have to be legible at the moment a number would be. */
-    M.setCells(running?0.3:0.75);
-  };
-  run(0);
-  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+  drawSizeRun(g,n,{sizes:[{r:0.7,far:0.55,mu:0.52}], least:2, sd:0.036,
+    window:[0.44,0.60,"400–500 bp"], seed:523});
 }
 DRAW.sizecheck = drawSizeCheck;
 

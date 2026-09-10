@@ -315,7 +315,8 @@ const NODES = [
  cond:"Clean, and the only part of the whole library prep that can be checked after the fact: eight sublibraries went in and eight came back, each with a distinct index, and the valid-barcode fraction of 0.757 is consistent across them."},
 
 /* shape is this page's own, not the lifted record's: /pipeline draws C3 as a
-   dish at row-2 size, and at this bench it is B9's instrument run eight times.
+   dish at row-2 size, and at this bench it is B9a's cassette run on the eight
+   sublibraries, with the 400-500 bp window printed on its graph.
    The prose below is still lifted verbatim — only the drawing differs. */
 {id:"LIB", key:"C3", group:"Sequencing library prep", shape:"sizecheck", name:"Quantify and size-check", x:18.6, y:R2, lane:"r2", w:0.95, d:0.95, h:0.34,
  sub:"eight indexed libraries · 400-500 bp peak",
