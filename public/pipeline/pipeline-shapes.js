@@ -3409,7 +3409,11 @@ function drawLigation(g0,n){
   const plate={x:n.x, y:n.y+n.d*0.30, w:PW, d:PW*ROWS/COLS};
   const pth=n.h*0.714;
   const HUE=k=>rampHue(k,NW);
-  const deck=skirtSlab(g,plate,pth,"var(--ch8)");
+  /* the plate and everything on it get a group of their own, because the
+     plate is centred on the node's outline separately from the lens row —
+     see ON ITS OWN, below, which is B2's move made again here */
+  const gp=g.appendChild(el("g",{transform:"translate(0,0)"}));
+  const deck=skirtSlab(gp,plate,pth,"var(--ch8)");
 
   /* ---- THE WELLS ----------------------------------------------------
      Two discs each, as the other two rounds lay them: a grey that never
@@ -3422,12 +3426,12 @@ function drawLigation(g0,n){
   const wells=plateGrid(deck,pth,COLS,ROWS);
   const dots=[], shown=[];
   wells.forEach((w,k)=>{
-    drawWell(g,w,false);
+    drawWell(gp,w,false);
     const rx=(w.e.rx*0.86).toFixed(2), ry=(w.e.ry*0.86).toFixed(2);
-    g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx,ry,
+    gp.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx,ry,
       fill:"var(--fg3)","fill-opacity":".3"}));
     const e=el("ellipse",{cx:w.e.x,cy:w.e.y,rx,ry,fill:HUE(k),"fill-opacity":DIM});
-    g.appendChild(e); dots.push(e); shown.push("");
+    gp.appendChild(e); dots.push(e); shown.push("");
   });
 
   /* ---- THE THREE CELLS, AND THE TWO WELLS THEY CAME OUT OF ----------
@@ -3456,7 +3460,7 @@ function drawLigation(g0,n){
      thicken the stroke and hide it */
   CELLS.filter((c,i)=>CELLS.findIndex(o=>o.well===c.well)===i).forEach(c=>{
     const s=wells[c.well].e;
-    g.appendChild(el("ellipse",{cx:s.x,cy:s.y,rx:(s.rx*2.1).toFixed(2),
+    gp.appendChild(el("ellipse",{cx:s.x,cy:s.y,rx:(s.rx*2.1).toFixed(2),
       ry:(s.ry*2.1).toFixed(2),fill:"none",stroke:"var(--fg)",
       "stroke-width":".9","stroke-opacity":".8"}));
   });
@@ -3502,8 +3506,20 @@ function drawLigation(g0,n){
   const pc=P(plate.x,plate.y,0);
   const low=P(plate.x+plate.w/2,plate.y+plate.d/2,0)[1];
   const mid=P(n.x,n.y,n.h/2);
-  g.setAttribute("transform",`translate(${(mid[0]-pc[0]).toFixed(2)},`+
-    `${(mid[1]-(IY-IRY+low)/2).toFixed(2)})`);
+  const TX=mid[0]-pc[0], TY=mid[1]-(IY-IRY+low)/2;
+  g.setAttribute("transform",`translate(${TX.toFixed(2)},${TY.toFixed(2)})`);
+
+  /* ON ITS OWN, AS ASKED OF B2 AND THEN OF THIS BENCH. Slid with the lenses,
+     the plate landed in the bottom corner of the node's dashed outline. The
+     lens row keeps the place the slide above gives it — that slide is still
+     reckoned from where the plate WAS thrown, so nothing over the plate moves
+     — and the plate alone is carried on until the middle of its slab sits on
+     the middle of the outline. A flat translate of an isometric drawing is a
+     move along the ground, so it is the same plate, only somewhere else;
+     PX/PY are what a tether adds to a well to find it. */
+  const pm=P(plate.x,plate.y,pth/2);
+  const PX=mid[0]-TX-pm[0], PY=mid[1]-TY-pm[1];
+  gp.setAttribute("transform",`translate(${PX.toFixed(2)},${PY.toFixed(2)})`);
 
   /* ---- THE MOLECULE'S OWN RULER -------------------------------------
      x runs in IN from a lens centre, so every length below reads as a length
@@ -3570,7 +3586,8 @@ function drawLigation(g0,n){
   };
 
   const insets=CELLS.map((cell,idx)=>{
-    const src=wells[cell.well].e, col=HUE(cell.well);
+    const src={x:wells[cell.well].e.x+PX, y:wells[cell.well].e.y+PY},
+      col=HUE(cell.well);
     /* centred on the PLATE's own screen centre, not the node's. The plate is
        thrown forward of the tile, which in this projection moves it left; a
        row hung off the tile centre leans off the far end of the deck it
