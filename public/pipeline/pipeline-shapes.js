@@ -7956,6 +7956,47 @@ function drawSizeRun(g,n){
     g.appendChild(w); wells.push(w);
   }
 
+  /* ---- THE CURRENT --------------------------------------------------------
+     ASKED FOR FROM "EDIT VISUAL": the current was only a change of colour on
+     two bars, and the request wanted a shock across the plate from − to +
+     before anything moves. So once the bars are down, bolts crack from the −
+     bar to the + bar with a visible front, the plate flashes as they arrive,
+     and only then do the fragments set off. While the run lasts the bolts stay
+     on, faint and crackling, because the field is what is moving them.
+     They lie under the fragments so a lane is never hidden by its own field.
+     Born whole along their own lines; the ticker cuts and re-jitters them. */
+  const RX=[sx0, lx1-cas.w*0.05];
+  const ey0=laneY(0)-lhw*2.4, ey1=laneY(NL-1)+lhw*2.4, ym=(ey0+ey1)/2;
+  const flash=el("polygon",{points:top(lx0,lx1,ey0,ey1),fill:"var(--signal)",
+    "fill-opacity":"0"});
+  g.appendChild(flash);
+  const NB=3, NS=14, JA=(ey1-ey0)*0.07, zb=cas.h+n.h*0.02, rb=rng(311);
+  const bolts=Array.from({length:NB},(_,i)=>{
+    const B={y:ey0+(ey1-ey0)*(i+0.5)/NB, j:[]};
+    B.glow=el("polyline",{fill:"none",stroke:"var(--signal)","stroke-width":(2.6*SC).toFixed(2),
+      "stroke-opacity":"0","stroke-linejoin":"round","stroke-linecap":"round"});
+    B.core=el("polyline",{fill:"none",stroke:"var(--signal)","stroke-width":(0.8*SC).toFixed(2),
+      "stroke-opacity":"0","stroke-linejoin":"round","stroke-linecap":"round"});
+    g.appendChild(B.glow); g.appendChild(B.core);
+    return B;
+  });
+  /* the ends are pinned to the bars; only the middle wanders */
+  const jitter=()=>bolts.forEach(B=>{
+    B.j=Array.from({length:NS+1},(_,i)=>i===0||i===NS ? 0 : (rb()-0.5)*2*JA); });
+  const boltsAt=(f,op)=>{
+    const k=Math.round(clamp(f)*NS);
+    bolts.forEach(B=>{
+      const p=[];
+      for(let i=0;i<=Math.max(1,k);i++)
+        p.push(P(RX[0]+(RX[1]-RX[0])*i/NS, B.y+B.j[i], zb));
+      const s=pts(p);
+      B.core.setAttribute("points",s); B.glow.setAttribute("points",s);
+      B.core.setAttribute("stroke-opacity",op.toFixed(2));
+      B.glow.setAttribute("stroke-opacity",(op*0.3).toFixed(2));
+    });
+  };
+  jitter(); boltsAt(1,0);
+
   /* the fragments: smaller goes further in the same three seconds, which is
      the whole of the physics asked for and all of it this figure claims.
      COUNT keeps how many of each size a lane carries, because the lane's
@@ -8005,8 +8046,7 @@ function drawSizeRun(g,n){
      the lanes will land, which this projection would otherwise leave to a
      guess. Contact is --signal. Born raised; `down` is 0 to 1. */
   const UP=n.h*0.45, PL=n.h*0.6;
-  const ey0=laneY(0)-lhw*2.4, ey1=laneY(NL-1)+lhw*2.4, ym=(ey0+ey1)/2;
-  const rods=[[sx0,"−"],[lx1-cas.w*0.05,"+"]].map(([px,sign])=>{
+  const rods=[[RX[0],"−"],[RX[1],"+"]].map(([px,sign])=>{
     const s=P(px,ym,cas.h), z=cas.h+UP, a0=P(px,ey0,z), a1=P(px,ey1,z),
           m=P(px,ym,z), tp=P(px,ym,z+PL);
     const Q={px,
@@ -8102,14 +8142,26 @@ function drawSizeRun(g,n){
   /* ---- TIMING -------------------------------------------------------------
      Loading is quick, as asked: a drop every fifth of a second, each under
      half a second in the air, and all of it done before the electrodes move.
-     Then they come down and hold, the run takes three seconds with the graph
-     written alongside it, the electrodes lift as it ends, and the finished
-     traces hold before the loop clears — a loop that snaps from a finished
-     graph to a bare cassette reads as a glitch rather than a restart. */
-  const DR=0.45, STAG=0.2, LOAD=STAG*(NL-1)+DR, LOWER=0.35, HOLD1=0.65,
-        RUNT=3, HOLD2=3, CLEAR=0.8, FADE=0.6;
+     Then they come down, the shock crosses the plate and flashes as it lands,
+     and only after the flash does the run start — the order is the cause.
+     The run takes three seconds with the graph written alongside it, the
+     electrodes lift as it ends, and the finished traces hold before the loop
+     clears — a loop that snaps from a finished graph to a bare cassette reads
+     as a glitch rather than a restart. */
+  const DR=0.45, STAG=0.2, LOAD=STAG*(NL-1)+DR, LOWER=0.35, ARC0=0.1, ARCT=0.4,
+        ARCH=0.3, HOLD1=ARC0+ARCT+ARCH, RUNT=3, HOLD2=3, CLEAR=0.8, FADE=0.6, CRACK=0.06;
   const t1=LOAD, t2=t1+LOWER, t3=t2+HOLD1, t4=t3+RUNT, t5=t4+HOLD2, T=t5+CLEAR;
+  const ta=t2+ARC0, tb=ta+ARCT;
+  let crack=-1;
   const place=t=>{
+    /* a bolt that holds still is a wire; re-draw its wander a few times a
+       second, and only while it is on the page */
+    const on=t>=ta && t<t4;
+    if(on && Math.floor(t/CRACK)!==crack){ crack=Math.floor(t/CRACK); jitter(); }
+    boltsAt(t<tb ? (t-ta)/ARCT : 1,
+      !on ? 0 : t<tb ? 1 : t<t3 ? 1-0.6*clamp((t-tb)/ARCH) : 0.22+0.2*rb());
+    flash.setAttribute("fill-opacity",(t<tb || t>=t4 ? 0 :
+      0.35*(1-clamp((t-tb)/(ARCH+0.2)))).toFixed(2));
     drops.forEach((D,j)=>{
       const u=clamp((t-j*STAG)/DR), q=D.at(ease(u));
       D.e.setAttribute("cx",q[0].toFixed(1)); D.e.setAttribute("cy",q[1].toFixed(1));
