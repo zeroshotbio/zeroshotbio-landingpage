@@ -2933,7 +2933,10 @@ const rampHue=(k,nw)=>{
    declared on /molecular_pipe and
    nowhere else; this shape is worn by that page alone.
    ------------------------------------------------------------------ */
-function drawReverseTranscription(g,n){
+function drawReverseTranscription(g0,n){
+  /* everything is drawn into one group so the whole bench can be slid onto
+     the centre of its own box at the end of the layout — see CENTRED, below */
+  const g=g0.appendChild(el("g",{transform:"translate(0,0)"}));
   const r=rng(823);
   const clamp=x=>x<0?0:x>1?1:x;
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
@@ -3062,6 +3065,19 @@ function drawReverseTranscription(g,n){
   const IN=n.w*0.54;
   const c0=P(n.x,n.y,n.h);
   const IRX=23*IN, IRY=20*IN, IDX=58*IN, IY=c0[1]-60*IN;
+
+  /* CENTRED, AS ASKED. The plate thrown forward and the lenses hung over it
+     left the drawing up and to the left of the box it belongs to. So the
+     layout above keeps every distance it had inside itself, and the whole of
+     it is slid as one until the middle of what it draws — lens tops to the
+     plate's near corner, and the plate's own screen x, which the lens row is
+     centred on — sits on the middle of the node's box. Every term is read off
+     n, so the centring holds at any size a corner is dragged to. */
+  const pc=P(plate.x,plate.y,0);
+  const low=P(plate.x+plate.w/2,plate.y+plate.d/2,0)[1];
+  const mid=P(n.x,n.y,n.h/2);
+  g.setAttribute("transform",`translate(${(mid[0]-pc[0]).toFixed(2)},`+
+    `${(mid[1]-(IY-IRY+low)/2).toFixed(2)})`);
   const OFFCD=2.4*IN;                   // the cDNA rail, below the template
   const BHW=6.3*IN;                     // half the chip, which the stub stops at
   /* s runs 0 at the far end to 1 at the AAA tail; off steps onto the cDNA rail */
