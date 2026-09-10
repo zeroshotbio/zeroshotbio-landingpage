@@ -6097,10 +6097,14 @@ function drawCapture(g,n){
      side the magnets are behind — the whole event is a sweep to that side. It
      carries the same pale as the plates in the block, so the two read as one
      fact seen at two scales rather than as two decorations. */
+  /* TWO WALLS, ONE EACH SIDE. Asked for from the page: three strands land on
+     one side and three on the other, so the tube is drawn sitting between two
+     plates and the sweep splits rather than all going one way. */
   const wall=(a)=>[(LX*Math.cos(a)).toFixed(1),(LY*Math.sin(a)).toFixed(1)];
-  lens.appendChild(el("path",{d:`M ${wall(2.36).join(" ")} `+
-    `A ${LX} ${LY} 0 0 1 ${wall(3.93).join(" ")}`,fill:"none",
-    stroke:"var(--m-top)","stroke-width":"3.4","stroke-opacity":".45"}));
+  [[2.36,3.93],[-0.79,0.79]].forEach(([a0,a1])=>
+    lens.appendChild(el("path",{d:`M ${wall(a0).join(" ")} `+
+      `A ${LX} ${LY} 0 0 1 ${wall(a1).join(" ")}`,fill:"none",
+      stroke:"var(--m-top)","stroke-width":"3.4","stroke-opacity":".45"})));
 
   /* the debris leaves the field of view, which means it has to be able to go
      past the boundary and stop existing there rather than at the edge of the
@@ -6114,7 +6118,7 @@ function drawCapture(g,n){
   lens.appendChild(stage);
 
   /* ---- WHAT IS IN THE TUBE ------------------------------------------------
-     Three barcoded strands and four pieces of debris, and the difference
+     Six barcoded strands and a dozen pieces of debris, and the difference
      between them is the entire step. A strand carries three chips — the three
      rounds of in-situ barcoding — and one gold drop at its tip, which is the
      biotin round three put there. The debris carries neither. Nothing else in
@@ -6132,8 +6136,14 @@ function drawCapture(g,n){
       d+=` L ${(-HL+2*HL*(s/10)).toFixed(1)} ${(Math.sin(s*0.86+k)*2.1).toFixed(1)}`;
     return d; };
 
-  const FREE=[[7,-18,-14],[15,4,17],[-3,20,-7]];
-  const HELD=[[-17,-14,188],[-15,1,178],[-18,13,194]];
+  /* the first three point right, meet beads coming in from the right and are
+     swept to the left wall; the last three are the same event mirrored. Free,
+     the six are a tangle; held, they are two columns of three tip-to-wall, so
+     what the wash leaves behind reads as sorted rather than merely left over. */
+  const FREE=[[8,-24,-12],[18,2,16],[-2,24,-8],
+              [-12,-12,196],[-20,8,168],[22,19,174]];
+  const HELD=[[-18,-14,188],[-17,1,178],[-19,13,194],
+              [18,-14,352],[17,1,362],[19,13,346]];
   const strands=FREE.map((f,i)=>{
     const sg=el("g",{transform:`translate(${f[0]},${f[1]}) rotate(${f[2]})`});
     stage.appendChild(sg);
@@ -6148,15 +6158,18 @@ function drawCapture(g,n){
     return {g:sg, free:f, held:HELD[i], ph:r()*6.283};
   });
 
-  const debris=[[-24,-9],[-9,17],[25,-23],[31,13]].map(p=>{
+  /* smaller than the four there used to be, so twelve of them crowd the
+     strands without burying them */
+  const debris=[[-34,-14],[-38,6],[-26,24],[-12,-30],[-5,-2],[6,12],
+                [18,-18],[32,-12],[38,4],[10,33],[-14,35],[30,-28]].map(p=>{
     const dg=el("g",{transform:`translate(${p[0]},${p[1]})`});
     stage.appendChild(dg);
     const q=[];
-    for(let k=0;k<9;k++){ const a=k*6.283/9, rr=4.4+r()*3.4;
+    for(let k=0;k<9;k++){ const a=k*6.283/9, rr=2.8+r()*2.8;
       q.push(`${(Math.cos(a)*rr).toFixed(1)},${(Math.sin(a)*rr*0.8).toFixed(1)}`); }
     dg.appendChild(el("polygon",{points:q.join(" "),fill:"var(--fg3)",
       "fill-opacity":".3",stroke:"var(--fg3)","stroke-width":".8","stroke-opacity":".5"}));
-    return {g:dg, at:p, ph:r()*6.283};
+    return {g:dg, at:p, ph:r()*6.283, dl:r()*0.22};
   });
 
   /* A BEAD IS A FILLED CIRCLE WITH A HOOK CUT OUT OF IT. Streptavidin is a
@@ -6170,7 +6183,7 @@ function drawCapture(g,n){
       `M ${(HR*Math.cos(-a)).toFixed(1)} ${(HR*Math.sin(-a)).toFixed(1)} `+
       `A ${HR} ${HR} 0 1 0 ${(HR*Math.cos(a)).toFixed(1)} ${(HR*Math.sin(a)).toFixed(1)}`);
   };
-  [[57,-15],[60,3],[56,17]].forEach((e,i)=>{
+  [[57,-15],[60,3],[56,17],[-57,-17],[-60,1],[-56,15]].forEach((e,i)=>{
     const bg=el("g",{transform:`translate(${e[0]},${e[1]})`,opacity:"0"});
     stage.appendChild(bg);
     bg.appendChild(el("circle",{cx:"0",cy:"0",r:"5.2",fill:"var(--fg)",
@@ -6191,8 +6204,8 @@ function drawCapture(g,n){
      Capture is the long beat — twenty minutes of binding at the bench, and the
      step the station is named for — so the beads take their time coming in and
      arrive one after another rather than together. The pull is quick, because
-     a rack clears in under a minute and because three things moving the same
-     way at once is the only moment on this bench that reads as an event.
+     a rack clears in under a minute and because six things splitting to two
+     walls at once is the only moment on this bench that reads as an event.
 
      PLACEMENT IS A PURE FUNCTION OF THE CLOCK. Every element is stated from t
      alone rather than nudged from where it was, so a frame long enough to skip
@@ -6229,9 +6242,11 @@ function drawCapture(g,n){
     /* THE DEBRIS IS NEVER TOUCHED AND THEN IT IS GONE. No bead goes near it,
        nothing about it changes while the beads work, and when the magnet comes
        on it drains straight down and out of the glass. That sequence is the
-       claim the whole station rests on. */
-    const out=ease(clamp((pull-0.18)/0.72));
+       claim the whole station rests on. Each piece leaves on its own small
+       delay, so it goes as a wash rather than as one slab dropping, and the
+       held columns come out from under it. */
     debris.forEach(d=>{
+      const out=ease(clamp((pull-0.12-d.dl)/0.66));
       const dx=d.at[0]+Math.cos(ph*0.7+d.ph)*jig*1.2;
       const dy=d.at[1]+Math.sin(ph*0.5+d.ph)*jig*1.2+out*(LY+26);
       d.g.setAttribute("transform",`translate(${dx.toFixed(1)},${dy.toFixed(1)})`);
