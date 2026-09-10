@@ -6684,9 +6684,9 @@ function drawTagCapture(g,n){
   /* back to front: debris, copies, beads, strands, enzymes. The beads sit
      under the strands so the gold is drawn inside the pocket rather than
      behind it; the enzymes go over everything because they sit ON a strand */
-  const L_DEB=el("g",{}), L_CPY=el("g",{}), L_BEAD=el("g",{}), L_STR=el("g",{}),
-        L_POL=el("g",{});
-  [L_DEB,L_CPY,L_BEAD,L_STR,L_POL].forEach(l=>stage.appendChild(l));
+  const L_DEB=el("g",{}), L_FLD=el("g",{}), L_CPY=el("g",{}), L_BEAD=el("g",{}),
+        L_STR=el("g",{}), L_POL=el("g",{});
+  [L_DEB,L_FLD,L_CPY,L_BEAD,L_STR,L_POL].forEach(l=>stage.appendChild(l));
 
   /* ---- THE STRAND, B8's WAY ---------------------------------------------- */
   const HL=15, TIP=HL+5.4, DROP=HL+2.4;
@@ -6787,6 +6787,59 @@ function drawTagCapture(g,n){
       stroke:"var(--stroke)","stroke-width":".6","stroke-opacity":".5"}));
   });
 
+  /* ---- AND THEN IT DOES NOT STOP -----------------------------------------
+     ASKED FOR A THIRD TIME: more amplification, fill the whole circle. So
+     after the two generations an enzyme walks out, the doubling carries on
+     without one — eight, sixteen, thirty-two — too fast to follow copy by
+     copy, which is the fact being drawn. Each new copy is born on the copy
+     nearest its slot and slides out to it, so the fill spreads from the
+     column of four rather than appearing. The slots are rows on the three
+     copies' own pitch; each row is cut by the rim, the held strands and
+     their beads, and the copies already there, and every stretch left over
+     is packed as full as it goes and centred in itself. A grid would leave
+     the ends of every row empty, and the ends are most of an ellipse. */
+  const CL=TIP*FS, CR=HL*FS, CY=3.2*FS, PAD=1.5, GAP=2.4;
+  const CW=CL+CR+GAP, CH=8, X0=COPY[0].to[0], Y0=COPY[0].to[1];
+  const HX0=MIDS[0][0]-(DROP+BR)*FS-PAD, HX1=MIDS[0][0]+CR+PAD,
+        HY=Math.max(...MIDS.map(m=>Math.abs(m[1])))+BR*FS+PAD;
+  const slots=[];
+  for(let j=-8;j<=8;j++){
+    const y=Y0+j*CH, e=(Math.abs(y)+CY)/(LY-2);
+    if(e>=1) continue;
+    const a=(LX-2)*Math.sqrt(1-e*e);
+    /* what is already on this row, as [left, right] of the space it takes */
+    const cut=COPY.filter(c=>Math.abs(c.to[1]-y)<CH*0.9)
+      .map(c=>[c.to[0]-CL-GAP, c.to[0]+CR+GAP]);
+    if(Math.abs(y)-CY<HY) cut.push([HX0,HX1]);
+    cut.sort((p,q)=>p[0]-q[0]);
+    let x0=-a;
+    [...cut,[a,a]].forEach(([l,rr])=>{
+      const run=Math.min(l,a)-x0, k=Math.floor((run+GAP)/CW);
+      const lead=(run-(k*CW-GAP))/2;
+      for(let i=0;i<k;i++) slots.push([x0+lead+CL+i*CW, y]);
+      x0=Math.max(x0,rr);
+    });
+  }
+  /* nearest the four first, so each wave is a ring round the last one */
+  const far=s=>Math.hypot(s[0]-X0,(s[1]-Y0)*1.5);
+  slots.sort((a,b)=>far(a)-far(b));
+  const placed=[T0,...COPY.map(c=>c.to)], FLOOD=[];
+  let NW=0;
+  for(let i=0;i<slots.length;NW++){
+    /* a wave is as many copies as there are molecules to copy: doubling */
+    const wave=slots.slice(i,i+placed.length); i+=wave.length;
+    wave.forEach((s,k)=>{
+      const d=p=>Math.hypot(p[0]-s[0],p[1]-s[1]);
+      FLOOD.push({to:s, from:placed.reduce((m,p)=>d(p)<d(m)?p:m),
+        wave:NW, lag:k/wave.length, op:Math.max(0.24,0.38-0.05*NW)});
+    });
+    placed.push(...wave);
+  }
+  /* youngest furthest back, as with the three above */
+  FLOOD.slice().reverse().forEach(f=>{
+    f.g=strand(L_FLD,COPIER*1.9,tr(f.from[0],f.from[1],ANG,FS),"0");
+  });
+
   /* the ring last, over everything, so nothing inside can soften its own edge */
   lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,fill:"none",
     stroke:"var(--fg2)","stroke-width":"1.3","stroke-opacity":".85"}));
@@ -6796,16 +6849,18 @@ function drawTagCapture(g,n){
      and the three held things move together, which is the one moment on the
      bench that reads as an event. Then the hand-off along the flow, with the
      field dropping and the held three drifting in to the middle; then the
-     two generations, each an enzyme landing, a walk and a peel; and a hold
-     on four.
+     two generations, each an enzyme landing, a walk and a peel; then the
+     flood, a wave a beat; and a hold on a full glass.
 
      PLACEMENT IS A PURE FUNCTION OF THE CLOCK, so a frame long enough to skip
      a whole beat cannot leave a bead halfway to a strand it has already left. */
   const T_IN=1.3, STAG=0.3, CAPD=1.2, T_PULL=3.4, PULLD=1.6,
         T_FLOW=5.0, FLOWD=0.8, T_FLOAT=5.3, FLOATD=1.4,
         BINDD=0.7, SYND=1.1, MOVD=0.7, GEN=BINDD+SYND+MOVD,
-        T_G1=7.0, T_G2=T_G1+GEN+0.2, HOLD=2.2;
-  const TOT=T_G2+GEN+HOLD;
+        T_G1=7.0, T_G2=T_G1+GEN+0.2, T_FL=T_G2+GEN+0.1, WAVE=0.8, FLD=0.6,
+        HOLD=2.6;
+  const TOT=T_FL+NW*WAVE+0.3+HOLD;
+  FLOOD.forEach(f=>{ f.t0=T_FL+f.wave*WAVE+f.lag*0.3; });
 
   const place=(t,ph)=>{
     const pull=ease(clamp((t-T_PULL)/PULLD));
@@ -6857,21 +6912,29 @@ function drawTagCapture(g,n){
       c.pol.setAttribute("transform",tr(ex,ey,ANG+(c.side>0?0:180),FS));
       c.pol.setAttribute("opacity",(0.9*clamp(b/0.25)*(1-m)).toFixed(2));
     });
+    FLOOD.forEach(f=>{
+      const u=ease(clamp((t-f.t0)/FLD));
+      f.g.setAttribute("transform",tr(f.from[0]+(f.to[0]-f.from[0])*u,
+        f.from[1]+(f.to[1]-f.from[1])*u, ANG, FS));
+      f.g.setAttribute("opacity",(f.op*clamp(u*2)).toFixed(2));
+    });
     /* the bench, in step: the field is on from the pull until the beads
        leave the wall, and the screen is lit from the hand-off, brightest as
        each generation lands */
     T.setField(clamp((t-T_PULL+0.3)/0.5)*(1-clamp((t-T_FLOAT)/0.4)));
     setFanLine(flow,0.34,(t-T_FLOW)/FLOWD);
-    const pulse=g0=>Math.sin(Math.PI*clamp((t-g0)/GEN));
+    const pulse=(g0,D)=>Math.sin(Math.PI*clamp((t-g0)/D));
+    let hi=Math.max(pulse(T_G1,GEN),pulse(T_G2,GEN));
+    for(let w=0;w<NW;w++) hi=Math.max(hi,pulse(T_FL+w*WAVE,WAVE));
     lit.setAttribute("fill-opacity",(t<T_FLOW+FLOWD*0.7 ? 0 :
-      0.35+0.35*Math.max(pulse(T_G1),pulse(T_G2))).toFixed(2));
+      0.35+0.35*hi).toFixed(2));
   };
 
   /* THE CLOCK DOES NOT START AT ZERO. A reader asking for reduced motion never
      sees it advance, so the frame it starts on is the whole station for them,
      and the one that carries both halves is the hold: beads shut and in the
-     middle, debris gone, four copies */
-  let t=T_G2+GEN+HOLD*0.5, ph=0;
+     middle, debris gone, the glass full of copies */
+  let t=TOT-HOLD*0.5, ph=0;
   const run=dt=>{ t=(t+dt)%TOT; ph+=dt*1.7; place(t,ph); };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
