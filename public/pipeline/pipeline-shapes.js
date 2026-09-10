@@ -3928,30 +3928,33 @@ function drawLigation3(g0,n){
      authored, because square well pitch is the entire requirement and it is
      just width x rows / cols.
 
-     B4'S TILE AND B4'S FRACTIONS. The two ligations were asked to read as
-     one plate at one scale, so this tile is B4's size and the plate is cut
-     from it with B4's 0.712 and 0.714 — the same plastic, at the same place
-     on the same box.
+     B5'S RECEIVING PLATE, SIZE AND LIP. This is the plate B5 deals into,
+     and the page asked for it to arrive at the size it left: B5 draws it at
+     1.72 of its own 1.5 wide, which is 1.7793 of this tile's 1.45, and at
+     B5's h — 0.714 of this one's. The lip was already B5's --ch3; at the old
+     0.712 it was too thin a rim to read as the same yellow, and at this
+     size it does. Still cut from w, so a resize carries it.
 
      THAT SEAT IS NOW AN ANCHOR AND NOT WHERE THE PLATE IS DRAWN. The
-     bench's slide, the lens row and the callout were all composed off it,
-     and the page asked for the plate alone to move — into the middle of the
-     node's own box, where it had sat in the bottom corner. So the seat keeps
-     fixing everything it fixed, and the plate is placed afterwards, once
-     the slide is known, as whatever world position puts its centre on the
-     box's centre on screen. IN and the lens radii come up here with it,
-     because the slide is cut from them. */
+     bench's slide was composed off it, and the page asked for the plate
+     alone to move — into the middle of the node's own box, where it had
+     sat in the bottom corner. So the seat keeps fixing the slide, and the
+     plate is placed afterwards, once the slide is known, as whatever world
+     position puts its centre on the box's centre on screen. The lens row
+     and the callout are then hung off the PLATE, because at B5's size it
+     reaches past everything the seat used to leave room for. IN and the
+     lens radii come up here with it, because the slide is cut from them. */
   const COLS=n.cols||12, ROWS=n.rows||8, NW=COLS*ROWS;
-  const PW=n.w*0.712;
+  const PW=n.w*1.7793;
   const seat={x:n.x, y:n.y+n.d*0.30, w:PW, d:PW*ROWS/COLS};
   const pth=n.h*0.714;
   const HUE=k=>rampHue(k,NW);
   const IN=n.w*0.54;
   const IRX=23*IN, IRY=20*IN, IDX=58*IN;
-  const c0=P(n.x,n.y,n.h), IY=c0[1]-60*IN;
+  const c0=P(n.x,n.y,n.h), IY0=c0[1]-60*IN;
   const mid=P(n.x,n.y,n.h/2);
   const TX=mid[0]-P(seat.x,seat.y,0)[0];
-  const TY=mid[1]-(IY-IRY+P(seat.x+seat.w/2,seat.y+seat.d/2,0)[1])/2;
+  const TY=mid[1]-(IY0-IRY+P(seat.x+seat.w/2,seat.y+seat.d/2,0)[1])/2;
   g.setAttribute("transform",`translate(${TX.toFixed(2)},${TY.toFixed(2)})`);
   /* the screen miss between the seat's centre and the box's, turned back
      into world x and y by undoing P — sx is x-y, sy is x+y */
@@ -3959,6 +3962,10 @@ function drawLigation3(g0,n){
   const su=(mid[0]-TX-pm[0])/(S*C30), sv=(mid[1]-TY-pm[1])/(S*0.5);
   const plate={x:seat.x+(su+sv)/2, y:seat.y+(sv-su)/2, w:seat.w, d:seat.d};
   const deck=skirtSlab(g,plate,pth,"var(--ch3)");
+  /* the lens row stands just clear of the plate's far corner. The lenses are
+     opaque, and a row left at the height the small plate allowed would sit
+     on the back three rows of wells — two of the tethered ones among them */
+  const IY=P(plate.x-plate.w/2,plate.y-plate.d/2,pth)[1]-IRY-3*IN;
 
   /* ---- THE WELLS ----------------------------------------------------
      Two discs each: B5's pooled mixture, which never moves, and the well's
@@ -4306,10 +4313,10 @@ function drawLigation3(g0,n){
      Off the front of the plate rather than under the node's centre: the
      lane's own track runs down-right through the middle of the tile, and
      anything hung straight below it lands on the track. Measured off the
-     PLATE, in both position and size — the plate did not change when the
-     lenses did, and a number cut from the lens unit would have shrunk with
-     them for no reason a reader could see. */
-  const base=P(seat.x, seat.y+seat.d*1.35, 0), FS=6.6*IN;
+     PLATE and not the seat: at B5's size the seat's old spot is under B5's
+     own receiving plate, and the one clear ground left is just in front of
+     this plate's nearest corner, between that plate and the track. */
+  const base=P(plate.x+plate.w*0.45, plate.y+plate.d, 0), FS=6.6*IN;
   const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
   const say=(dy,txt,col,weight)=>{
     const t=el("text",{x:base[0].toFixed(1),y:(base[1]+dy).toFixed(1),

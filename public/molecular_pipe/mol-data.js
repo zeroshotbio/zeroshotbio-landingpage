@@ -126,8 +126,10 @@ const NODES = [
    one thing on this row no single plate can show. The prose stays lifted
    verbatim.
    w, d and h are B4's, because the two ligations were asked to read at one
-   plate size and one scale. The 0.45 is paid out of the gap behind it, not the
-   lane's end; see the note above LANES. */
+   scale. The PLATE is not B4's: it was asked to match B5's receiving plate,
+   which it is, so the shape cuts it from w at B5's size rather than B4's.
+   The 0.45 is paid out of the gap behind it, not the lane's end; see the note
+   above LANES. */
 {id:"R3p", key:"B6", group:"In situ barcoding", shape:"ligation3", name:"Round 3 — ligation", x:9.0, y:R2, lane:"r2", w:1.45, d:1.16, h:0.42, cols:12, rows:8, gap:0.05443,
  sub:"96 wells · R3_v3 · TruSeq R2 + biotin",
  does:"A third barcode is ligated, and it brings two passengers: the Illumina TruSeq Read 2 sequence, and a biotin. After this round a cell's path through three plates is almost certainly unique — that combination is what will be read as a cell identity, and no droplet was ever involved.",
