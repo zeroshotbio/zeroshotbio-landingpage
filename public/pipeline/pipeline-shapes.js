@@ -7344,17 +7344,27 @@ function drawPcrAmplify(g,n){
      in every direction. It keeps its parent's wobble, because it is the same
      sequence.
 
+     ASKED FOR A TENTH TIME: "make it about 20% less chaotic." So every knob
+     that makes the scatter a scatter is turned down by about a fifth and none
+     is turned off — the ninth request still stands. A fifth fewer strands, so
+     the full glass has room between them; headings drawn from four-fifths of
+     the circle about a shared axis rather than all of it, so the crowd leans
+     one way without lining up; a fifth less spread in when each copy starts;
+     and a fifth less drift. Still more than can be counted.
+
      THE WHOLE LINEAGE IS WORKED OUT HERE, before anything is drawn, as a
      queue of strands ordered by when each is next free to be copied. Every
      strand is born at its final place and every enzyme at the point it flies
      in from, and the ticker states a place, an opacity and how much of a copy
      is written from the clock alone, and builds nothing mid-flight — which is
-     also what keeps forty invisible strands from dragging the selection halo
+     also what keeps thirty-odd invisible strands from dragging the selection halo
      across the map. Templates first, so everything written lands over what it
      was written from, and every enzyme over every strand. */
-  const FS=0.66, SIDE=5.5*FS, N=48;
+  const FS=0.66, SIDE=5.5*FS, N=38;
   const T_G1=0.9, BINDD=0.5, SYND=1.3, MOVD=0.7, GEN=BINDD+SYND+MOVD,
-        ASYNC=1.4, JIT=0.6, GAP=0.1, HOLD=3.0;
+        ASYNC=1.12, JIT=0.48, GAP=0.1, HOLD=3.0, DRIFT=0.8;
+  /* a heading anywhere within four-fifths of the circle either side of flat */
+  const head=()=>(r()-0.5)*288;
   const L_STR=el("g",{}), L_POL=el("g",{});
   stage.appendChild(L_STR); stage.appendChild(L_POL);
   const tr=(x,y,a)=>`translate(${x.toFixed(1)},${y.toFixed(1)}) `+
@@ -7382,7 +7392,7 @@ function drawPcrAmplify(g,n){
     return {x:Math.cos(a)*LX*d, y:Math.sin(a)*LY*d};
   };
   for(let i=0;i<3;i++){ const h=home(null);
-    S.push({x:h.x, y:h.y, a:r()*360, k:i*1.9, ph:r()*6.283, par:null}); }
+    S.push({x:h.x, y:h.y, a:head(), k:i*1.9, ph:r()*6.283, par:null}); }
   const queue=S.map(s=>({s, at:T_G1+r()*ASYNC}));
   while(S.length<N){
     let mi=0; queue.forEach((e,i)=>{ if(e.at<queue[mi].at) mi=i; });
@@ -7391,7 +7401,7 @@ function drawPcrAmplify(g,n){
     /* the enzyme comes in from the far side of its template, the side its
        body will sit on, rather than across the glass from the rim */
     const ein=rot(p.a*Math.PI/180, 0, -side*26);
-    const c={x:h.x, y:h.y, a:r()*360, k:p.k, ph:r()*6.283, par:p, t0:at, side,
+    const c={x:h.x, y:h.y, a:head(), k:p.k, ph:r()*6.283, par:p, t0:at, side,
              ex:p.x+ein[0], ey:p.y+ein[1]};
     S.push(c);
     const free=at+GEN+GAP;
@@ -7440,7 +7450,7 @@ function drawPcrAmplify(g,n){
      PLACEMENT IS A PURE FUNCTION OF THE CLOCK. Everything is stated from t
      alone rather than nudged from where it was, so a frame long enough to skip
      a whole beat — a tab coming back, a step in trace mode — cannot leave an
-     enzyme halfway down a template it has already finished. Forty-eight
+     enzyme halfway down a template it has already finished. Thirty-eight
      strands is a few hundred attributes a frame, so each is written only when
      its value changes, and a finished copy costs one transform. */
   const CHIPX=CHIP.map((c,i)=>-8.4+i*6.2);
@@ -7452,7 +7462,7 @@ function drawPcrAmplify(g,n){
     /* parents come before their copies in S, so a parent's place this frame
        is known by the time a copy being written off it asks */
     S.forEach(s=>{
-      const dx=Math.cos(ph*0.8+s.ph)*1.0, dy=Math.sin(ph*0.6+s.ph)*1.0;
+      const dx=Math.cos(ph*0.8+s.ph)*DRIFT, dy=Math.sin(ph*0.6+s.ph)*DRIFT;
       if(!s.par){ s.cx=s.x+dx; s.cy=s.y+dy; s.ca=s.a;
         set(s.g,"transform",tr(s.cx,s.cy,s.a)); return; }
       const p=s.par, t0=s.t0, A=p.ca*Math.PI/180;
