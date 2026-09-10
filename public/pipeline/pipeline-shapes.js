@@ -6155,13 +6155,14 @@ DRAW.capture = drawCapture;
    magnification is the subject. So the strip, the cycler and the plate carry
    no animation of their own. Nothing on the bench is the event; the glass is.
 
-   THE BENCH STANDS BEHIND THE TILE, NOT ON IT. The ground either side is
+   THE BENCH STANDS BEHIND WHERE THE TRACK ENDS — there is no tile of its
+   own to stand on; see below — not on that point. The ground either side is
    spoken for: B8a's glass sits centred on the next tile along and its left
    rim reaches back over this one, and B8's rack stands forward-left. Behind
    is the only clear ground, so the three objects stand in a screen-level row
    there — which is also what "in a row, left to right" means on an isometric
-   grid, where a line along x runs down the page. The tile stays where the
-   track and the dot arrive.
+   grid, where a line along x runs down the page. The track and the dot
+   still arrive at the node's own x, y.
 
    THE PLATE IS VIOLET AND HALF FULL BECAUSE THE REQUEST SAID SO, and the
    violet is --ch10 because that is the colour this row already gives a UDI:
@@ -6284,8 +6285,11 @@ function drawLibraryPrep(g,n){
    [P(cyc.x+cyc.w/2,cyc.y-cyc.d/2,cyc.h*0.7),        P(plate.x-plate.w/2,plate.y+plate.d/2,pth)]]
     .forEach(([A,B])=>setFanLine(flowLine(g,A,B,FLOW,SC),0.34,0));
 
-  /* the tile the track and the dot arrive at, in front of all of it */
-  paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.tile);
+  /* NO TILE. There was one here, the plain box the track arrives at, and it
+     was asked away from "Edit visual", as B8′a's was: with the bench and the
+     glass drawn, a grey block in front of them reads as a second, empty
+     module. The track still ends at n.x, n.y; the bench behind it is what it
+     arrives at. */
 
   /* ---- THE MAGNIFICATION --------------------------------------------------
      A thin solid ellipse with two leaders down to the cycler's lid: the idiom
