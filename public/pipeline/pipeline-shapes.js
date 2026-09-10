@@ -35,6 +35,7 @@ const topOf = n => n.shape==="works"   ? n.h*0.96
                  : n.shape==="tankrack"? 1.4
                  : n.shape==="machine" ? 1.42
                  : n.shape==="pyramid" ? n.h+n.w*PYRAMID_RISE
+                 : n.shape==="readcycle" ? n.h*1.32   /* the arm's rail over the flatbed */
                  : n.shape==="vials"   ? n.h  : n.h;
 
 
@@ -8787,6 +8788,227 @@ function drawSizeCheck(g,n){
     window:[0.44,0.60,"400–500 bp"], seed:523});
 }
 DRAW.sizecheck = drawSizeCheck;
+
+/* ------------------------------------------------------------------
+   Sa · THE READ CYCLE, CUT AWAY — the sequencer with its lid off.
+
+   ASKED FOR FROM THE PAGE, from the map's own "Add a module" button, as a
+   picture: a charcoal box, a pale flatbed on top with a small arm sliding
+   over it and changing colour as it goes, and the top panel cut away so the
+   flow cell inside can be watched. S one gap back is the instrument seen from
+   outside; this is the same instrument opened, and it claims no more about
+   the chemistry than S's own drawing does.
+
+   THE LID IS CUT, NOT HIDDEN. The back third of the top panel stays — the
+   flatbed has to stand on something — and the front two thirds are gone, so
+   what the reader sees is a rim, two inner walls in shadow and a floor raised
+   to half the box's height. The floor is raised because the front walls are
+   left standing: at this projection a flow cell on the true bottom would be
+   mostly behind them, and a dollhouse whose room cannot be seen is a box.
+
+   TWO BEATS INSIDE, AND THE FIRST ONE HAPPENS ONCE. Dots arrive thinly and
+   multiply where they are into tight patches — nothing moves, a patch only
+   gets denser and brighter — and after a one-second hold on the full field
+   the clusters start reading out: every two seconds all of them go to one
+   new shared colour together, and a faint shutter line crosses the cell.
+   That second beat loops for as long as the page is open; the growth is not
+   replayed, because the request put the loop on the flashing alone. The
+   unison is the request's picture of a cycle being imaged and not a claim
+   that every cluster read the same base.
+
+   THE ARM IS ON ITS OWN CLOCK. It sweeps and changes colour throughout, brisk
+   on purpose, and nothing inside waits for it.
+
+   Spends --ch1, --ch3, --ch8 and --ch11, which are declared on
+   /molecular_pipe and nowhere else; this shape is worn by that page alone,
+   the way C7's is.
+   ------------------------------------------------------------------ */
+function drawReadCycle(g,n){
+  /* EVERY OFFSET IS EITHER A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC,
+     and w, d and h are read at draw time because a resize is the only reason
+     this function runs again. Composed at w 1.60, d 1.30, h .46: an open box
+     has to be wide enough to show a floor past its own front walls. */
+  const SC=n.w/1.60;
+  const clamp=x=>x<0?0:x>1?1:x;
+  const X=f=>n.x+f*n.w, Y=f=>n.y+f*n.d, Z=f=>f*n.h;
+  const r=rng(52817);
+  const HUE=["var(--ch1)","var(--ch3)","var(--ch8)","var(--ch11)"];
+  const add=(gg,e)=>{ gg.appendChild(e); return e; };
+  const DX=dx=>`translate(${(dx*S*C30).toFixed(2)},${(dx*S*0.5).toFixed(2)})`;
+  const quad=(a,b,c,d)=>pts([a,b,c,d]);
+  const face=(gg,points,fill,o)=>add(gg,el("polygon",{points,fill,"fill-opacity":o||1}));
+  /* a white line, not the map's usual --stroke: the request asked for the
+     edges to read white against the charcoal */
+  const edge=(gg,ps,o,wd)=>add(gg,el("polyline",{points:pts(ps),fill:"none",
+    stroke:"var(--fg)","stroke-width":((wd||1.2)*SC).toFixed(2),"stroke-opacity":o||.9,
+    "stroke-linejoin":"round","stroke-linecap":"round"}));
+  /* a solid lifted to an arbitrary z, three faces, one fill each */
+  const block=(gg,x,y,w,d,z0,z1,f)=>{
+    const a=x-w/2,b=x+w/2,c=y-d/2,e=y+d/2;
+    return [face(gg,quad(P(a,e,z1),P(b,e,z1),P(b,e,z0),P(a,e,z0)),f[0],f[3]),
+            face(gg,quad(P(b,c,z1),P(b,e,z1),P(b,e,z0),P(b,c,z0)),f[1],f[4]),
+            face(gg,quad(P(a,c,z1),P(b,c,z1),P(b,e,z1),P(a,e,z1)),f[2],f[5])];
+  };
+
+  const h=n.h, x0=X(-0.5), x1=X(0.5), y0=Y(-0.5), y1=Y(0.5);
+  /* the opening: rims of a twentieth of the width, and the back strip that
+     still carries the flatbed */
+  const ix0=X(-0.45), ix1=X(0.45), iy0=Y(-0.16), iy1=Y(0.44), zf=Z(0.44);
+
+  /* ---- FOOTPRINT AND GLOW, both under the box ----------------------------
+     The glow is the silhouette stroked wide and faint three times rather than
+     a blur filter: the selection halo is already a CSS filter on this group,
+     and a second one inside it is a second thing to go wrong on a phone. */
+  const m=0.07;
+  g.appendChild(el("polygon",{points:quad(P(X(-0.5-m),Y(-0.5-m),0),P(X(0.5+m),Y(-0.5-m),0),
+    P(X(0.5+m),Y(0.5+m),0),P(X(-0.5-m),Y(0.5+m),0)),fill:"none",stroke:"var(--fg)",
+    "stroke-width":SC.toFixed(2),"stroke-opacity":".45",
+    "stroke-dasharray":`${(4*SC).toFixed(1)} ${(3*SC).toFixed(1)}`}));
+  const sil=pts([P(x0,y0,h),P(x1,y0,h),P(x1,y0,0),P(x1,y1,0),P(x0,y1,0),P(x0,y1,h)]);
+  [[16,".035"],[10,".05"],[5,".07"]].forEach(([wd,o])=>g.appendChild(el("polygon",{points:sil,
+    fill:"none",stroke:"var(--fg)","stroke-width":(wd*SC).toFixed(2),"stroke-opacity":o,
+    "stroke-linejoin":"round"})));
+
+  /* ---- THE ROOM ----------------------------------------------------------
+     Inner walls and floor in the box's own skin under a wash of the page
+     ground, so the inside reads as the same material in shadow rather than
+     as something else put in there. */
+  const room=(points,fill)=>{ face(g,points,fill); face(g,points,"var(--bg)",.35); };
+  room(quad(P(ix0,iy0,h),P(ix1,iy0,h),P(ix1,iy0,zf),P(ix0,iy0,zf)),"var(--k-left)");
+  room(quad(P(ix0,iy0,h),P(ix0,iy1,h),P(ix0,iy1,zf),P(ix0,iy0,zf)),"var(--k-right)");
+  room(quad(P(ix0,iy0,zf),P(ix1,iy0,zf),P(ix1,iy1,zf),P(ix0,iy1,zf)),"var(--k-top)");
+  [[P(ix0,iy0,h),P(ix0,iy0,zf),P(ix1,iy0,zf)],[P(ix0,iy0,zf),P(ix0,iy1,zf)]]
+    .forEach(ps=>edge(g,ps,.35,0.8));
+
+  /* ---- THE FLOW CELL: a flat green slab on the raised floor --------------
+     Kept to the back and left of the floor, which is the part of it the
+     front walls do not cover. */
+  const sx0=X(-0.40), sx1=X(0.30), sy0=Y(-0.10), sy1=Y(0.30), zs=zf+Z(0.06);
+  block(g,(sx0+sx1)/2,(sy0+sy1)/2,sx1-sx0,sy1-sy0,zf,zs,
+    ["var(--ok)","var(--ok)","var(--ok)",.45,.35,.8]);
+  edge(g,[P(sx0,sy0,zs),P(sx1,sy0,zs),P(sx1,sy1,zs),P(sx0,sy1,zs),P(sx0,sy0,zs)],.45,0.6);
+
+  /* ---- THE CLUSTERS -------------------------------------------------------
+     Eighteen patches on a jittered six-by-three, so the first dots in land
+     scattered rather than on a lattice. Every dot is placed once, here, and
+     never moves: a patch grows by dots switching on inside it. The patch
+     radius is a fraction of the width, so it stays tight at any size. */
+  const field=el("g",{}); g.appendChild(field);
+  const NU=6, NV=3, PER=8, CR=n.w*0.024;
+  const dot=[];
+  for(let a=0;a<NU;a++)for(let b=0;b<NV;b++){
+    const cu=(a+0.5+(r()-0.5)*0.5)/NU, cv=(b+0.5+(r()-0.5)*0.5)/NV;
+    const cx=sx0+cu*(sx1-sx0), cy=sy0+cv*(sy1-sy0);
+    for(let j=0;j<PER;j++){
+      const th=r()*Math.PI*2, rad=j?CR*Math.sqrt(r()):0;
+      const p=P(cx+Math.cos(th)*rad, cy+Math.sin(th)*rad, zs+0.001);
+      /* the first dot of a patch is its seed and comes early; the rest come
+         in through the three seconds, so the field thickens rather than fills */
+      const born=j? 0.35+((j-1)/(PER-1))*2.3+r()*0.3 : r()*0.5;
+      dot.push({born, node:add(field,el("circle",{cx:p[0].toFixed(1),cy:p[1].toFixed(1),
+        r:(0.95*SC).toFixed(2),fill:"var(--fg)","fill-opacity":"0"}))});
+    }
+  }
+  /* the shutter, born on the cell's left edge and driven across it */
+  const shut=add(g,el("line",{x1:P(sx0,sy0,zs)[0].toFixed(1),y1:P(sx0,sy0,zs)[1].toFixed(1),
+    x2:P(sx0,sy1,zs)[0].toFixed(1),y2:P(sx0,sy1,zs)[1].toFixed(1),stroke:"var(--fg)",
+    "stroke-width":(1.1*SC).toFixed(2),"stroke-opacity":"0","stroke-linecap":"round"}));
+
+  /* ---- THE SHELL, painted over the room so the front walls cover what they
+     would cover. Fill only; the white edges go on afterwards as lines, so the
+     rim pieces do not draw seams between each other. */
+  face(g,quad(P(x0,y1,h),P(x1,y1,h),P(x1,y1,0),P(x0,y1,0)),SKIN.works.left);
+  face(g,quad(P(x1,y0,h),P(x1,y1,h),P(x1,y1,0),P(x1,y0,0)),SKIN.works.right);
+  face(g,quad(P(x0,y0,h),P(x1,y0,h),P(x1,iy0,h),P(x0,iy0,h)),SKIN.works.top);
+  face(g,quad(P(x0,iy0,h),P(ix0,iy0,h),P(ix0,y1,h),P(x0,y1,h)),SKIN.works.top);
+  face(g,quad(P(ix1,iy0,h),P(x1,iy0,h),P(x1,y1,h),P(ix1,y1,h)),SKIN.works.top);
+  face(g,quad(P(ix0,iy1,h),P(ix1,iy1,h),P(ix1,y1,h),P(ix0,y1,h)),SKIN.works.top);
+  edge(g,[P(x0,y1,h),P(x0,y0,h),P(x1,y0,h),P(x1,y1,h),P(x0,y1,h),P(x0,y1,0),P(x1,y1,0),
+          P(x1,y0,0),P(x1,y0,h)]);
+  edge(g,[P(x1,y1,h),P(x1,y1,0)]);
+  edge(g,[P(ix0,iy0,h),P(ix1,iy0,h),P(ix1,iy1,h),P(ix0,iy1,h),P(ix0,iy0,h)],.75,1);
+
+  /* ---- THE FLATBED, on what is left of the lid --------------------------- */
+  const bz=h+Z(0.14), bx=n.x, by=Y(-0.33), bw=n.w*0.76, bd=n.d*0.24;
+  const PALE=[SKIN.monolith.left,SKIN.monolith.right,SKIN.monolith.top,1,1,1];
+  /* two posts and a rail behind the bed, which is what the arm rides; drawn
+     first because they stand behind it */
+  const rz0=bz+Z(0.13), rz1=bz+Z(0.18), ry=Y(-0.47);
+  [-0.42,0.42].forEach(f=>block(g,X(f),ry,n.w*0.03,n.d*0.03,h,rz1,PALE));
+  block(g,bx,by,bw,bd,h,bz,PALE);
+  edge(g,[P(bx-bw/2,by+bd/2,bz),P(bx+bw/2,by+bd/2,bz),P(bx+bw/2,by-bd/2,bz)],.6,0.8);
+  block(g,bx,ry,n.w*0.86,n.d*0.03,rz0,rz1,PALE);
+
+  /* ---- THE ARM: built at the left end of its travel, translated from there.
+     It only ever moves in x, so a screen-space translate is exact. The line
+     it throws on the bed takes its colour, which is how the colour reads as
+     the arm's doing rather than a lamp on it. */
+  const aL=X(-0.33), aR=X(0.33), ay=Y(-0.33), ad=n.d*0.30, aw=n.w*0.05;
+  const arm=el("g",{}); g.appendChild(arm);
+  const beam=add(arm,el("line",{x1:P(aL,by-bd/2,bz+0.001)[0].toFixed(1),
+    y1:P(aL,by-bd/2,bz+0.001)[1].toFixed(1),x2:P(aL,by+bd/2,bz+0.001)[0].toFixed(1),
+    y2:P(aL,by+bd/2,bz+0.001)[1].toFixed(1),stroke:HUE[0],"stroke-width":(1.4*SC).toFixed(2),
+    "stroke-opacity":".6","stroke-linecap":"round"}));
+  const armF=block(arm,aL,ay,aw,ad,bz+Z(0.08),rz1,[HUE[0],HUE[0],HUE[0],.75,.6,.95]);
+  armF.forEach(p=>{ p.setAttribute("stroke","var(--fg)");
+    p.setAttribute("stroke-width",(0.6*SC).toFixed(2)); p.setAttribute("stroke-opacity",".7"); });
+
+  /* ---- TIMING -------------------------------------------------------------
+     The growth, the hold and the beat are the request's own numbers. SWEEP is
+     how long the shutter takes to cross, well inside a beat so it reads as one
+     pass per colour. The arm's clock wraps at 4.8 s, which is three sweeps and
+     sixteen colour steps, so it never drifts and never jumps. */
+  const BUILD=3, HOLD=1, BEAT=2, SWEEP=0.7, ARMP=1.6, STEP=0.3, AWRAP=4.8;
+  const tF=BUILD+HOLD, LOOP=BEAT*HUE.length;
+  /* THE CLOCK STARTS ON A LIT FIELD, and then goes back to the start. A
+     reader with motion off never advances it, so the first frame drawn is the
+     whole station for them and it has to be the clusters reading out, not an
+     empty cell. The first tick that does run rewinds to zero so everyone else
+     sees the field grow. */
+  let t=tF+1.0, ta=0, mode=-1, hue=-1, armHue=0, fresh=true;
+  const setHue=i=>{ if(i===hue) return; hue=i;
+    const f=i<0?"var(--fg)":HUE[i]; dot.forEach(d=>d.node.setAttribute("fill",f)); };
+  const enter=md=>{
+    mode=md;
+    dot.forEach(d=>d.node.setAttribute("fill-opacity", md===0?"0":"1"));
+    if(md<2) setHue(-1);
+    field.setAttribute("opacity", md===1?".95":"1");
+    shut.setAttribute("stroke-opacity","0");
+  };
+  const run=dt=>{
+    t+=dt; ta=(ta+dt)%AWRAP;
+    if(t>=tF+LOOP) t=tF+((t-tF)%LOOP);
+
+    const ph=(ta%ARMP)/ARMP, tri=ph<0.5?ph*2:2-ph*2, e=tri*tri*(3-2*tri);
+    arm.setAttribute("transform",DX((aR-aL)*e));
+    const ai=Math.floor(ta/STEP)%HUE.length;
+    if(ai!==armHue){ armHue=ai; beam.setAttribute("stroke",HUE[ai]);
+      armF.forEach(p=>p.setAttribute("fill",HUE[ai])); }
+
+    const md = t<BUILD?0 : t<tF?1 : 2;
+    if(md!==mode) enter(md);
+    if(md===0){                         // dim seeds, then denser and brighter patches
+      const lum=0.28+0.67*clamp(t/BUILD);
+      dot.forEach(d=>d.node.setAttribute("fill-opacity",
+        (lum*clamp((t-d.born)/0.15)).toFixed(3)));
+      return;
+    }
+    if(md===2){                         // one colour for all of them, and the shutter
+      const k=t-tF, u=k%BEAT;
+      setHue(Math.floor(k/BEAT)%HUE.length);
+      field.setAttribute("opacity",(0.62+0.38*Math.exp(-u*4)).toFixed(3));
+      const su=u/SWEEP;
+      shut.setAttribute("transform",DX((sx1-sx0)*clamp(su)));
+      shut.setAttribute("stroke-opacity",(su<1?0.4*Math.sin(Math.PI*su):0).toFixed(3));
+    }
+    /* held: the full field, white, before the first colour */
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return;
+    if(fresh){ fresh=false; t=0; mode=-1; }
+    run(dt); });
+}
+DRAW.readcycle = drawReadCycle;
 
 /* ------------------------------------------------------------------
    C4 · BASECALL AND DEMULTIPLEX — signal off the instrument, resolving into

@@ -334,6 +334,31 @@ const NODES = [
  built:"Paired-end, to the read structure in Appendix B: read 1 is 64 bases of cDNA insert, read 2 is 58 bases carrying barcodes 1 to 3 plus the UMI, and the i7 and i5 indexes are 8 bases each and carry the fourth barcode. Longer read 2 lengths are allowed and simply trimmed by the analysis pipeline. Per-sublibrary read counts run 420.9 M to 491.9 M. Across the corpus: NextSeq 500/2000 and NovaSeq 6000 (ZSCAPE), NovaSeq 6000 (Zebrahub), NextSeq 550 (CellOracle), HiSeq or MGI DNBSEQ-T7 at 150+150 bp (ZCL2).",
  cond:"Run metrics are only partly recoverable. Q30 and valid-barcode fraction survive in the vendor report (0.757 valid barcodes overall), but cluster density, per-lane yield, the lane count and whether the recommended 5 percent PhiX was spiked in are not held anywhere on this instance. That is the norm, not the exception — no dataset in the corpus archives its run metrics alongside its counts."},
 
+/* NOT LIFTED, AND ASKED FOR FROM THE PAGE. The "Add a module" request asked
+   for the Illumina sequencer again, opened: the interior visible during the
+   read cycle, dots multiplying into clusters on a green surface and then the
+   clusters reading out in colour, with an arm over a flatbed moving on top.
+   It said what to draw and what not to — no strands, no primers, no bridges —
+   and named no instrument model, no chemistry, no cycle count and no read
+   length, so this record names none either. It is S seen from inside rather
+   than a step of its own, and `cond` says so.
+
+   THE KEY IS A SUFFIX ON THE STATION IT FOLLOWS: it lands between S and C4,
+   so it is Sa, and nothing downstream is renumbered. In UNVERIFIED, and the
+   badge says so. The 1.60 was paid for at the end of the lane — see the note
+   above LANES — so no gap already on the row moved.
+
+   ITS NAME IS NUDGED BACK, and that is C4's cloud rather than a taste. C4
+   hangs its reads in the empty corridor between S's name and its own, and a
+   station put in between S and C4 emits its name straight up the middle of
+   that corridor. lab.dx moves the emission point 1.4 back toward S, which is
+   just past the cloud's near edge; C4 itself is not touched. */
+{id:"RCY", key:"Sa", group:"The sequencer", shape:"readcycle", name:"The read cycle, cut away", x:21.75, y:R2, lane:"r2", w:1.60, d:1.30, h:0.46, lab:{dx:-1.4},
+ sub:"the lid off · clusters grow, then read out in colour",
+ does:"The sequencer with its top panel cut away, so the flow cell can be watched while it is read. Dots appear thinly across the green surface and multiply where they stand into tight, bright clusters; once the field is full, every cluster flashes to one new colour together every two seconds while a shutter line crosses the cell, and the arm on the flatbed above slides back and forth changing colour the whole time.",
+ built:"Nothing to cite. The request that asked for this station described a picture — a charcoal box with its top cut away, a pale flatbed and a moving arm on top, clusters growing on a green surface and then flashing in colour — and named no instrument model, no chemistry, no cycle count and no read length, so this record names none either. What was actually sequenced, and on what, is S's record and stays there.",
+ cond:"Asked for from the page rather than read off an artefact, so what it carries is a figure and not a measurement. The cluster count, the colours and the two-second beat are drawn, not read, and every cluster turning the same colour at once is the request's picture of a cycle being imaged rather than a claim about what any cluster read. It is a second view of S rather than a step of its own: nothing is made or consumed here, and nothing downstream depends on it."},
+
 /* NOT LIFTED. THIS STATION IS THIS PAGE'S OWN and it exists on no other map —
    /pipeline's row 2 stops at the sequencer, and row 3 opens on the FASTQ pool
    as an object that has already arrived. The step that makes it was drawn
@@ -498,7 +523,10 @@ const EDGES = [
   {a:"LIB",b:"SEQ",kind:"lib"},
   /* the only tracks on this row carrying `read`: everything before the
      sequencer is material, and what leaves it is not */
-  {a:"SEQ",b:"DMX",kind:"read"},
+  /* and Sa between S and C4, so SEQ -> DMX is two. Still `read`: the cutaway
+     is the sequencer seen from inside, not a change of what leaves it. */
+  {a:"SEQ",b:"RCY",kind:"read"},
+  {a:"RCY",b:"DMX",kind:"read"},
   {a:"DMX",b:"HND",kind:"read"},
   /* the chain has to stay whole — a station on the row with nothing running
      into it is an orphan, and the row would read as ending twice */
@@ -564,6 +592,14 @@ const EDGES = [
    scripts/pipeline_lane.mjs, which reports k unmoved and every existing gap
    where it was. The eight stations from C1 on slide 1.445 along.
 
+   Sa, THE READ CYCLE CUT AWAY, went in between S and C4 and cost 2.095 — 1.60
+   of station, wide enough for an open box to show its floor past its own
+   front walls, plus the minor gap after it: S is a machine, so the major gap
+   in front of Sa is the one S -> C4 already had, and what is bought is one
+   extra 0.6 at k 0.8248. x1 34.585 -> 36.680, priced by
+   scripts/pipeline_lane.mjs, which reports k unmoved and every existing gap
+   where it was. The six stations from C4 on slide 2.095 along.
+
    B5 GREW AND PAID IN ITS OWN GAPS, NOT AT THE END, and that is deliberate.
    It went from 0.6 to B3's 1.5, and paying 0.9 on x1 would have slid B5 by
    half of it and every station after it by all of it — which on the live page
@@ -580,7 +616,7 @@ const EDGES = [
    centre on the row stays put; B6's own slides 0.225 right, because it grew
    rightwards into that gap. */
 const LANES = [
-  {id:"r2", y:R2, x0:0.7, x1:34.585, dir:+1},
+  {id:"r2", y:R2, x0:0.7, x1:36.680, dir:+1},
 ];
 
 const ROWS = [R2], MIRROR = 22.7;
@@ -589,7 +625,7 @@ const ROWS = [R2], MIRROR = 22.7;
    out at the far end with the lane — a band is as long as its row, so a mat
    left at 24 would have the last station standing off the edge of its floor. */
 const BANDS = [
-  {name:"Molecular biology", x0:-2, x1:36.585, y0:R2-3.8, y1:R2+3.8},
+  {name:"Molecular biology", x0:-2, x1:38.680, y0:R2-3.8, y1:R2+3.8},
 ];
 
 /* No carries: this page is one row and it runs out at the handoff, which is
@@ -688,8 +724,8 @@ const REAL_SUBLIBS = [
    checked with Patrick — C4 and C5 because they are new here and have never
    been on the big map to be checked against, and B8′, B8′a, B8a, C6 and C7
    because they were asked for from the page rather than read off an artefact
-   at all. B9a is one more of those. */
-const UNVERIFIED = new Set(["B8′","B8′a","B8a","B9","B9a","C1","C2","C4","C5","C6","C7"]);
+   at all. B9a is one more of those, and so is Sa. */
+const UNVERIFIED = new Set(["B8′","B8′a","B8a","B9","B9a","C1","C2","Sa","C4","C5","C6","C7"]);
 
 const SNIPPETS = {
   fish: () => { const c=pick(REAL_CELLS); return {label:"one well of embryos", flag:null,
