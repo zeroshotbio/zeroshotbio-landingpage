@@ -7194,13 +7194,13 @@ DRAW.tagcapture = drawTagCapture;
    channel the strand runs through, and it is the channel travelling the length
    of the template that is the copying.
 
-   THE CLOUD IS THE POINT AND IT ARRIVES IN THREE WAVES, each larger, smaller
-   and fainter than the last, each blooming outward past the ring where it is
-   clipped. Three waves rather than thirty strands fading one by one, because a
-   wave is three attribute writes a frame instead of thirty and the reader
-   cannot count either one. What it says is the only number this station is
-   allowed: not eight, not four, more than can be drawn. AND THE RETURN TO
-   THREE IS A CUT. Playing an amplification backwards shows copies merging and
+   THE CLOUD IS THE POINT AND THE ENZYMES MAKE ALL OF IT. It used to arrive in
+   three faded waves once the countable copies were done, which said the mass
+   existed without saying where it came from; since the ninth request every
+   strand in it is written by a polymerase, off a strand that was itself
+   written, until the glass is full. What it says is still the only number
+   this station is allowed: not eight, not four, more than can be counted.
+   AND THE RETURN TO THREE IS A CUT. Playing an amplification backwards shows copies merging and
    that is the one thing a PCR never does; so the state is a pure function of
    the clock and the wrap puts three strands back on the stage in one frame.
 
@@ -7319,99 +7319,105 @@ function drawPcrAmplify(g,n){
     return sg;
   };
 
-  /* ---- THE CLOUD, BORN WHERE IT WILL END UP -------------------------------
-     Every strand in it gets its real place at build time and the waves carry
-     nothing but an opacity and a bloom, which is what keeps a group of thirty
-     invisible strands from dragging the selection halo across the map. Seeded,
-     so the scatter is the same drawing every time it is drawn. Sorted by
-     radius so the wave that arrives first is the one nearest the middle: an
-     amplification fills outwards from what is already there. */
-  const CLOUD=[];
-  for(let i=0;i<36;i++){
-    const a=r()*6.283, rad=0.16+1.20*Math.sqrt(r());
-    CLOUD.push({x:Math.cos(a)*LX*1.30*rad, y:Math.sin(a)*LY*1.30*rad,
-                rot:r()*360, rad, k:r()*6});
-  }
-  CLOUD.sort((p,q)=>p.rad-q.rad);
-  const waves=[]; let ci=0;
-  [{n:12,sc:0.62,op:0.55},{n:12,sc:0.52,op:0.42},{n:12,sc:0.44,op:0.30}]
-    .forEach(w=>{
-      const wg=el("g",{transform:"scale(0.74)",opacity:"0"});
-      stage.appendChild(wg);
-      for(let j=0;j<w.n;j++,ci++){ const c=CLOUD[ci];
-        strand(wg,c.k,`translate(${c.x.toFixed(1)},${c.y.toFixed(1)}) `+
-          `rotate(${c.rot.toFixed(0)}) scale(${w.sc})`,w.op.toFixed(2)); }
-      waves.push(wg);
-    });
-
-  /* ---- THREE FAMILIES, EACH ONE STRAND BECOMING FOUR -----------------------
+  /* ---- A LINEAGE, SCHEDULED BEFORE IT RUNS --------------------------------
      ASKED FOR A SEVENTH TIME: "show the actual replication as the polymerase
      travels down the strand, then new polymerases add to the new strands and
-     it amplifies like that." Until now the copy faded in whole while an enzyme
-     slid past it, which says a copy exists afterwards and not that the enzyme
-     made it. So a copy is now WRITTEN: its backbone grows out of the enzyme's
-     channel as the enzyme walks, each chip lands as the enzyme passes the
-     chip it is copying, and the gold arrives last, at the end of the walk.
-     Then the pair comes apart and a second generation of enzymes lands on
-     BOTH strands — the template and the copy it just made — which is the
-     whole of why PCR is exponential and not merely repeated: a copy is a
-     template the moment it exists. One becomes two becomes four, three times
-     over, and the cloud is the doublings nobody can count any more.
+     it amplifies like that." So a copy is WRITTEN: its backbone grows out of
+     the enzyme's channel as the enzyme walks, each chip lands as the enzyme
+     passes the chip it is copying, and the gold arrives last, at the end of
+     the walk. Then the pair comes apart and both are templates — the whole of
+     why PCR is exponential and not merely repeated: a copy is a template the
+     moment it exists.
 
-     Each family is a column so its four are legible as one lineage: the
-     template in the middle, each copy peeling off to the side it was written
-     on, the second generation to the outside. The cloud is drawn first and
-     everything countable lands over it, because the twelve a reader is meant
-     to follow must never end up behind the mass they explain. Every copy is
-     born beside its parent at full geometry and invisible, so the ticker
-     states a place, an opacity and how much of it is written, and builds
-     nothing mid-flight. */
-  const FS=0.66, PITCH=13, SIDE=5.5*FS;
-  const FAM=[[-28,0,-5],[-1,3,4],[26,-2,-3]];
+     ASKED FOR A NINTH TIME: "keep the polymerases attaching and replicating
+     until the whole circle is filled", and "the orientations of the strands
+     can be more random and dispersed." Until now two generations were
+     written and then a faded cloud was dropped in over them, so the enzymes
+     stopped at twelve strands and the other thirty-six came from nowhere; and
+     the twelve stood in three tidy columns, which is a figure's order and not
+     a tube's. So there is no longer a cloud and no longer a column. Every
+     strand, the moment its own copy peels off, waits a seeded moment and
+     takes an enzyme again, and so does the copy, until the glass holds N.
+     Each copy peels away to a home of its own near its parent — the emptiest
+     of a dozen seeded candidates, so the fill spreads rather than piles — and
+     turns as it goes to an angle of its own, so the full glass is a scatter
+     in every direction. It keeps its parent's wobble, because it is the same
+     sequence.
+
+     THE WHOLE LINEAGE IS WORKED OUT HERE, before anything is drawn, as a
+     queue of strands ordered by when each is next free to be copied. Every
+     strand is born at its final place and every enzyme at the point it flies
+     in from, and the ticker states a place, an opacity and how much of a copy
+     is written from the clock alone, and builds nothing mid-flight — which is
+     also what keeps forty invisible strands from dragging the selection halo
+     across the map. Templates first, so everything written lands over what it
+     was written from, and every enzyme over every strand. */
+  const FS=0.66, SIDE=5.5*FS, N=48;
+  const T_G1=0.9, BINDD=0.5, SYND=1.3, MOVD=0.7, GEN=BINDD+SYND+MOVD,
+        ASYNC=1.4, JIT=0.6, GAP=0.1, HOLD=3.0;
   const L_STR=el("g",{}), L_POL=el("g",{});
   stage.appendChild(L_STR); stage.appendChild(L_POL);
   const tr=(x,y,a)=>`translate(${x.toFixed(1)},${y.toFixed(1)}) `+
     `rotate(${a.toFixed(1)}) scale(${FS})`;
+  const rot=(a,x,y)=>[x*Math.cos(a)-y*Math.sin(a), x*Math.sin(a)+y*Math.cos(a)];
+
+  /* a copy's home: near its parent, inside the ring by enough that most of it
+     shows, and as far from every home already handed out as a dozen tries
+     can find. The three templates are placed the same way across the middle
+     of the glass, so they start apart. */
+  const S=[];
+  const inside=(x,y,e)=>(x/LX)*(x/LX)+(y/LY)*(y/LY)<=e*e;
+  const home=near=>{
+    let best=null, bs=-1;
+    for(let c=0;c<12;c++){
+      const a=r()*6.283, d=r();
+      const x=near ? near.x+Math.cos(a)*(10+24*d) : Math.cos(a)*LX*0.6*Math.sqrt(d);
+      const y=near ? near.y+Math.sin(a)*(10+24*d) : Math.sin(a)*LY*0.6*Math.sqrt(d);
+      if(!inside(x,y,0.86)) continue;
+      const s=S.reduce((m,o)=>Math.min(m,Math.hypot(o.x-x,o.y-y)),1e9);
+      if(s>bs){ bs=s; best={x,y}; }
+    }
+    if(best) return best;
+    const a=r()*6.283, d=0.86*Math.sqrt(r());
+    return {x:Math.cos(a)*LX*d, y:Math.sin(a)*LY*d};
+  };
+  for(let i=0;i<3;i++){ const h=home(null);
+    S.push({x:h.x, y:h.y, a:r()*360, k:i*1.9, ph:r()*6.283, par:null}); }
+  const queue=S.map(s=>({s, at:T_G1+r()*ASYNC}));
+  while(S.length<N){
+    let mi=0; queue.forEach((e,i)=>{ if(e.at<queue[mi].at) mi=i; });
+    const {s:p, at}=queue.splice(mi,1)[0];
+    const h=home(p), side=r()<0.5?1:-1;
+    /* the enzyme comes in from the far side of its template, the side its
+       body will sit on, rather than across the glass from the rim */
+    const ein=rot(p.a*Math.PI/180, 0, -side*26);
+    const c={x:h.x, y:h.y, a:r()*360, k:p.k, ph:r()*6.283, par:p, t0:at, side,
+             ex:p.x+ein[0], ey:p.y+ein[1]};
+    S.push(c);
+    const free=at+GEN+GAP;
+    queue.push({s:p, at:free+r()*JIT}, {s:c, at:free+r()*JIT});
+  }
+  const T_FULL=Math.max(...S.map(s=>s.par ? s.t0+GEN : 0)), TOT=T_FULL+HOLD;
+
   /* the backbone is revealed by a dash measured in pathLength, so how much of
      a copy exists is one number the clock sets rather than a path rebuilt */
-  const written=(k,f,side)=>{
-    const sg=strand(L_STR,k,tr(f[0],f[1]+side*SIDE,f[2]),"0");
-    const parts=[...sg.childNodes];
-    parts[0].setAttribute("pathLength","1");
-    parts[0].setAttribute("stroke-dasharray","1 1");
-    parts[0].setAttribute("stroke-dashoffset","1");
-    return {g:sg, parts};
-  };
-
+  S.forEach(s=>{
+    if(!s.par){ s.g=strand(L_STR,s.k,tr(s.x,s.y,s.a),"1"); return; }
+    s.g=strand(L_STR,s.k,tr(s.x,s.y,s.a),"0");
+    s.parts=[...s.g.childNodes];
+    s.parts[0].setAttribute("pathLength","1");
+    s.parts[0].setAttribute("stroke-dasharray","1 1");
+    s.parts[0].setAttribute("stroke-dashoffset","1");
+  });
   /* the enzyme: B8's bead grammar — solid pale body, hole cut in --bg — but
      the hole is a channel rather than a pocket, and the two feet either side of
-     it are what makes it sit ON the strand instead of beside it. Born outside
-     the rim it comes in from. */
-  const enzyme=e=>{
-    const pg=el("g",{transform:tr(e[0],e[1],0),opacity:"0"});
-    L_POL.appendChild(pg);
-    pg.appendChild(el("path",{d:POLYMERASE_D,fill:"var(--fg)","fill-opacity":".82",
+     it are what makes it sit ON the strand instead of beside it. Born at the
+     point it comes in from. */
+  S.forEach(s=>{ if(!s.par) return;
+    s.pol=el("g",{transform:tr(s.ex,s.ey,0),opacity:"0"});
+    L_POL.appendChild(s.pol);
+    s.pol.appendChild(el("path",{d:POLYMERASE_D,fill:"var(--fg)","fill-opacity":".82",
       stroke:"var(--stroke)","stroke-width":".6","stroke-opacity":".5"}));
-    return pg;
-  };
-  /* one job per copy: which strand it is read off, which side it is written
-     on, which row it ends in, and which generation it belongs to. The second
-     generation's enzymes come in from the side their strand is leaving by.
-     Each family and each job draws its own seeded jitter here, spent below as
-     a start time */
-  const fams=FAM.map((f,i)=>{
-    const k=i*1.9;
-    const F={f, k, ph:r()*6.283, T:strand(L_STR,k,tr(f[0],f[1],f[2]),"1"),
-             jit:r()};
-    F.jobs=[
-      {from:"T", to:"C1", side: 1, row: 0.5, gen:0,
-       enter:[f[0]*1.6, -LY-12]},
-      {from:"T", to:"C2a",side:-1, row:-1.5, gen:1,
-       enter:[f[0]*1.5, -LY-12]},
-      {from:"C1",to:"C2b",side: 1, row: 1.5, gen:1,
-       enter:[f[0]*1.5, LY+12]}];
-    F.jobs.forEach(j=>{ j.jit=r(); j.c=written(k,f,j.side); j.pol=enzyme(j.enter); });
-    return F;
   });
 
   /* the ring last, over everything, so nothing inside can soften its own edge */
@@ -7419,82 +7425,64 @@ function drawPcrAmplify(g,n){
     stroke:"var(--fg2)","stroke-width":"1.5","stroke-opacity":".85"}));
 
   /* ---- TIMING -------------------------------------------------------------
-     Three strands adrift long enough to be counted; then two generations,
-     each an enzyme landing, a walk that writes the copy, and a peel; then
-     the fill. The walk is the slow part and it is linear — an enzyme that
-     eased in and out along a strand would read as sliding into place rather
-     than travelling.
+     Three strands adrift long enough to be counted; then copy after copy,
+     each an enzyme landing, a walk that writes the copy, and a peel, until
+     the glass is full; then a hold on the full glass. The walk is the slow
+     part and it is linear — an enzyme that eased in and out along a strand
+     would read as sliding into place rather than travelling.
 
      ASKED FOR AN EIGHTH TIME: "make the replication a bit faster, and it can
      be asynchronous — different strands can amplify at slightly different
-     times." So the beats are shorter, and the lockstep is gone. It used to be
-     a fixed stagger, family by family, with the second generation starting
-     everywhere at once; now each family starts at its own seeded moment and
-     each second-generation copy at its own moment after that, so one family
-     can be into its doubling while another is still being copied. The only
-     order kept is the one the chemistry keeps: a strand is not copied before
-     it exists, so a family's second generation waits for its first copy to
-     peel off. The cloud comes once the last copy is written.
+     times." So the beats are short and every start is a seeded moment of its
+     own. The only order kept is the one the chemistry keeps: a strand is not
+     copied before it exists, and a strand is not copied twice at once.
 
      PLACEMENT IS A PURE FUNCTION OF THE CLOCK. Everything is stated from t
      alone rather than nudged from where it was, so a frame long enough to skip
      a whole beat — a tab coming back, a step in trace mode — cannot leave an
-     enzyme halfway down a template it has already finished. */
-  const T_G1=0.9, BINDD=0.5, SYND=1.3, MOVD=0.55, GEN=BINDD+SYND+MOVD,
-        ASYNC=1.4, JIT=0.9, GAP=0.1, CWAVE=0.45, CFADE=0.9, HOLD=3.0;
-  let T_CLOUD=0;
-  fams.forEach(F=>{ const t0=T_G1+F.jit*ASYNC;
-    F.jobs.forEach(j=>{ j.t0=j.gen ? t0+GEN+GAP+j.jit*JIT : t0;
-      T_CLOUD=Math.max(T_CLOUD, j.t0+GEN+GAP); }); });
-  const TOT=T_CLOUD+2*CWAVE+CFADE+HOLD;
-  const rot=(a,x,y)=>[x*Math.cos(a)-y*Math.sin(a), x*Math.sin(a)+y*Math.cos(a)];
-  /* where each chip starts, so it lands as the enzyme's channel reaches it */
+     enzyme halfway down a template it has already finished. Forty-eight
+     strands is a few hundred attributes a frame, so each is written only when
+     its value changes, and a finished copy costs one transform. */
   const CHIPX=CHIP.map((c,i)=>-8.4+i*6.2);
+  const set=(e,a,v)=>{ const key="_amp_"+a;
+    if(e[key]!==v){ e[key]=v; e.setAttribute(a,v); } };
+  const turn=(a,b)=>((b-a)%360+540)%360-180;
 
   const place=(t,ph)=>{
-    fams.forEach((F,i)=>{
-      const f=F.f, A=f[2]*Math.PI/180;
-      /* the family drifts as one, so a copy being written stays in register
-         with the strand it is being written off */
-      const dx=Math.cos(ph*0.8+F.ph)*1.0, dy=Math.sin(ph*0.6+F.ph)*1.0;
-      const beat=j=>{ const t0=j.t0;
-        return [ease(clamp((t-t0)/BINDD)), clamp((t-t0-BINDD)/SYND),
-                ease(clamp((t-t0-BINDD-SYND)/MOVD))]; };
-      /* the template moves up half a row as its first copy leaves, so the
-         pair splits either side of where the one strand was */
-      const m1=beat(F.jobs[0])[2];
-      const pos={T:[f[0]+dx, f[1]+dy-PITCH*0.5*m1]};
-      F.T.setAttribute("transform",tr(pos.T[0],pos.T[1],f[2]));
-      F.jobs.forEach(j=>{
-        const [b,s,m]=beat(j), P=pos[j.from];
-        const al=rot(A,0,j.side*SIDE);
-        const bx=P[0]+al[0], by=P[1]+al[1];
-        const hx=f[0]+dx, hy=f[1]+dy+j.row*PITCH;
-        const cx=bx+(hx-bx)*m, cy=by+(hy-by)*m;
-        pos[j.to]=[cx,cy];
-        j.c.g.setAttribute("transform",tr(cx,cy,f[2]));
-        /* a dash of zero length still draws its round cap, so an unwritten
-           copy is switched off rather than left as a dot */
-        j.c.g.setAttribute("opacity",clamp(s*20).toFixed(2));
-        const xe=-HL+2*HL*s;
-        j.c.parts[0].setAttribute("stroke-dashoffset",(1-s).toFixed(3));
-        CHIPX.forEach((x0,ci)=>j.c.parts[1+ci].setAttribute("opacity",
-          clamp((xe-x0)/4.6).toFixed(2)));
-        j.c.parts[4].setAttribute("opacity",clamp((s-0.9)/0.1).toFixed(2));
-        /* the enzyme rides its strand's own frame at the growing end of the
-           copy, feet either side of the template and its body on the far
-           side from the copy; when the walk is done it lifts off that side */
-        const on=rot(A, xe*FS, (-1.6-8*m)*j.side*FS);
-        const tx=P[0]+on[0], ty=P[1]+on[1];
-        j.pol.setAttribute("transform",tr(j.enter[0]+(tx-j.enter[0])*b,
-          j.enter[1]+(ty-j.enter[1])*b, f[2]+(j.side>0?0:180)));
-        j.pol.setAttribute("opacity",(0.9*clamp(b/0.25)*(1-m)).toFixed(2));
-      });
-    });
-    waves.forEach((wg,wi)=>{
-      const f=ease(clamp((t-T_CLOUD-wi*CWAVE)/CFADE));
-      wg.setAttribute("opacity",f.toFixed(2));
-      wg.setAttribute("transform",`scale(${(0.74+0.26*f).toFixed(3)})`);
+    /* parents come before their copies in S, so a parent's place this frame
+       is known by the time a copy being written off it asks */
+    S.forEach(s=>{
+      const dx=Math.cos(ph*0.8+s.ph)*1.0, dy=Math.sin(ph*0.6+s.ph)*1.0;
+      if(!s.par){ s.cx=s.x+dx; s.cy=s.y+dy; s.ca=s.a;
+        set(s.g,"transform",tr(s.cx,s.cy,s.a)); return; }
+      const p=s.par, t0=s.t0, A=p.ca*Math.PI/180;
+      const b=ease(clamp((t-t0)/BINDD)), w=clamp((t-t0-BINDD)/SYND),
+            m=ease(clamp((t-t0-BINDD-SYND)/MOVD));
+      /* written in register alongside its parent, then peeled off to its own
+         home, turning to its own angle on the way */
+      const al=rot(A,0,s.side*SIDE);
+      const bx=p.cx+al[0], by=p.cy+al[1];
+      s.cx=bx+(s.x+dx-bx)*m; s.cy=by+(s.y+dy-by)*m; s.ca=p.ca+turn(p.ca,s.a)*m;
+      /* a dash of zero length still draws its round cap, so an unwritten
+         copy is switched off rather than left as a dot */
+      set(s.g,"opacity",clamp(w*20).toFixed(2));
+      if(w>0) set(s.g,"transform",tr(s.cx,s.cy,s.ca));
+      const xe=-HL+2*HL*w;
+      set(s.parts[0],"stroke-dashoffset",(1-w).toFixed(3));
+      CHIPX.forEach((x0,ci)=>set(s.parts[1+ci],"opacity",
+        clamp((xe-x0)/4.6).toFixed(2)));
+      set(s.parts[4],"opacity",clamp((w-0.9)/0.1).toFixed(2));
+      /* the enzyme rides its template's own frame at the growing end of the
+         copy, feet either side of the template and its body on the far side
+         from the copy; when the walk is done it lifts off that side */
+      const vis=0.9*clamp(b/0.25)*(1-m);
+      set(s.pol,"opacity",vis.toFixed(2));
+      if(vis>0){
+        const on=rot(A, xe*FS, (-1.6-8*m)*s.side*FS);
+        const tx=p.cx+on[0], ty=p.cy+on[1];
+        set(s.pol,"transform",tr(s.ex+(tx-s.ex)*b, s.ey+(ty-s.ey)*b,
+          p.ca+(s.side>0?0:180)));
+      }
     });
   };
 
@@ -7502,7 +7490,7 @@ function drawPcrAmplify(g,n){
      advances it, so whatever t begins at is the whole station for that reader,
      and for this one it has to be the full glass — the frame the request asks
      the figure to end on. */
-  let t=T_CLOUD+2*CWAVE+CFADE+HOLD*0.5, ph=0;
+  let t=T_FULL+HOLD*0.5, ph=0;
   const run=dt=>{ t=(t+dt)%TOT; ph+=dt*1.7; place(t,ph); };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
