@@ -7359,6 +7359,16 @@ function drawPcrAmplify(g,n){
      one way without lining up; a fifth less spread in when each copy starts;
      and a fifth less drift. Still more than can be counted.
 
+     ASKED FOR AN ELEVENTH TIME: "I don't like this weird flip thing the
+     strands are doing. Once replicated the strands should separate in the
+     space." The flip was the peel: a copy swung from its parent's heading to
+     a fresh random one, up to half a turn, and its home could lie on the far
+     side of the parent, so it crossed back over the strand it came off. So a
+     copy's home is now chosen on the side it was written on, it slides
+     straight out that way, and it turns by no more than a few degrees — the
+     dispersion the ninth request asked for now builds up down the lineage,
+     a little per generation, instead of arriving as a spin.
+
      THE WHOLE LINEAGE IS WORKED OUT HERE, before anything is drawn, as a
      queue of strands ordered by when each is next free to be copied. Every
      strand is born at its final place and every enzyme at the point it flies
@@ -7372,6 +7382,9 @@ function drawPcrAmplify(g,n){
         ASYNC=1.12, JIT=0.48, GAP=0.1, HOLD=3.0, DRIFT=0.8;
   /* a heading anywhere within four-fifths of the circle either side of flat */
   const head=()=>(r()-0.5)*288;
+  /* how far a copy may turn off its parent's heading as it separates: a
+     drift, never a flip */
+  const TWIST=36;
   const L_STR=el("g",{}), L_POL=el("g",{});
   stage.appendChild(L_STR); stage.appendChild(L_POL);
   const tr=(x,y,a)=>`translate(${x.toFixed(1)},${y.toFixed(1)}) `+
@@ -7384,10 +7397,13 @@ function drawPcrAmplify(g,n){
      of the glass, so they start apart. */
   const S=[];
   const inside=(x,y,e)=>(x/LX)*(x/LX)+(y/LY)*(y/LY)<=e*e;
-  const home=near=>{
+  const home=(near,side)=>{
     let best=null, bs=-1;
     for(let c=0;c<12;c++){
-      const a=r()*6.283, d=r();
+      /* a copy's candidates all lie out on its own side of the parent, so
+         separating never means passing back across it */
+      const a=near ? near.a*Math.PI/180+side*Math.PI/2+(r()-0.5)*2.2 : r()*6.283,
+            d=r();
       const x=near ? near.x+Math.cos(a)*(10+24*d) : Math.cos(a)*LX*0.6*Math.sqrt(d);
       const y=near ? near.y+Math.sin(a)*(10+24*d) : Math.sin(a)*LY*0.6*Math.sqrt(d);
       if(!inside(x,y,0.86)) continue;
@@ -7404,11 +7420,11 @@ function drawPcrAmplify(g,n){
   while(S.length<N){
     let mi=0; queue.forEach((e,i)=>{ if(e.at<queue[mi].at) mi=i; });
     const {s:p, at}=queue.splice(mi,1)[0];
-    const h=home(p), side=r()<0.5?1:-1;
+    const side=r()<0.5?1:-1, h=home(p,side);
     /* the enzyme comes in from the far side of its template, the side its
        body will sit on, rather than across the glass from the rim */
     const ein=rot(p.a*Math.PI/180, 0, -side*26);
-    const c={x:h.x, y:h.y, a:head(), k:p.k, ph:r()*6.283, par:p, t0:at, side,
+    const c={x:h.x, y:h.y, a:p.a+(r()-0.5)*TWIST, k:p.k, ph:r()*6.283, par:p, t0:at, side,
              ex:p.x+ein[0], ey:p.y+ein[1]};
     S.push(c);
     const free=at+GEN+GAP;
