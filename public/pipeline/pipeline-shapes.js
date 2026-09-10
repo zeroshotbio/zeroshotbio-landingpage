@@ -6147,6 +6147,364 @@ function drawCapture(g,n){
 DRAW.capture = drawCapture;
 
 /* ------------------------------------------------------------------
+   B8′ · TURN THE cDNA INTO A LIBRARY — three quiet objects on the bench,
+   and the whole molecule once, under glass.
+
+   ASKED FOR FROM THE PAGE, from "Add a module", and the request set the
+   proportions itself: the bench objects are small and anchor the frame, the
+   magnification is the subject. So the strip, the cycler and the plate carry
+   no animation of their own. Nothing on the bench is the event; the glass is.
+
+   THE BENCH STANDS BEHIND THE TILE, NOT ON IT. The ground either side is
+   spoken for: B8a's glass sits centred on the next tile along and its left
+   rim reaches back over this one, and B8's rack stands forward-left. Behind
+   is the only clear ground, so the three objects stand in a screen-level row
+   there — which is also what "in a row, left to right" means on an isometric
+   grid, where a line along x runs down the page. The tile stays where the
+   track and the dot arrive.
+
+   THE PLATE IS VIOLET AND HALF FULL BECAUSE THE REQUEST SAID SO, and the
+   violet is --ch10 because that is the colour this row already gives a UDI:
+   C2's plate and C2's construct wear it. The two UDI blocks in the glass
+   share it, so the plate and the index read as one thing at two scales.
+
+   SCORE, PART, CLOSE, ASSEMBLE, HOLD. The cut and the rounding-off are one
+   eased parameter, as on C1, because the request put them in one breath —
+   "the pieces separate, their cut ends rounding off as they part". Every
+   free end gets a Y: the request said the free ends, not one end. Then the
+   three plain pieces leave and the one carrying the chips moves to the
+   middle, and the construct is laid over it left to right, P5 first, each
+   block sliding in from the empty side with its name arriving with it.
+
+   THE CHIPS ARE THE BARCODING ROUNDS' COLOURS. --ch8, --ch11 and --ch4 are
+   what this row gives the three in-situ rounds wherever it draws a strand —
+   B8's glass, B8a's, C2's construct — so BC1, BC2 and BC3 are the same three
+   chips on the strand before the cut and in the bar after it. P5, P7, R1 and
+   R2 are grey: none of them identifies anything, and colour on this row
+   means identity.
+
+   THE HOLD IS THE LONGEST BEAT AND THE RESTING STATE. The request asked for
+   the complete construct to be held, so the clock starts inside the hold: a
+   reader with motion turned off sees the whole molecule and nothing else.
+
+   Reuses skirtSlab / plateGrid / drawWell from the plate set, flowLine /
+   setFanLine from the fan and ellipseAt / arcPts from the clutch block.
+   Spends --ch4, --ch6, --ch8, --ch10 and --ch11, declared on /molecular_pipe —
+   the only page carrying a node that wears this.
+   ------------------------------------------------------------------ */
+function drawLibraryPrep(g,n){
+  /* EVERY OFFSET IS EITHER A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC,
+     and w, d and h are read at draw time because a resize is the only reason
+     this function runs again. Composed at w .72, d .72, h .40 — the tile B8a
+     and B9 stand on. */
+  const SC=n.w/0.72;
+  const clamp=x=>x<0?0:x>1?1:x;
+  const ease=u=>u*u*(3-2*u);
+  const r=rng(241);
+  const CDNA="var(--ch6)", UDI="var(--ch10)", ADPT="var(--fg2)", FLOW="var(--fg3)";
+  const CHIP=["var(--ch8)","var(--ch11)","var(--ch4)"];
+
+  /* a box that starts above the ground, which paint() cannot draw: the lid
+     sits on the cycler rather than growing out of the floor */
+  const slab=(x,y,w,d,z0,z1,skin)=>{
+    const hw=w/2, hd=d/2;
+    const c=[[x-hw,y-hd],[x+hw,y-hd],[x+hw,y+hd],[x-hw,y+hd]];
+    const q=(i,z)=>P(c[i][0],c[i][1],z);
+    [["left",[q(3,z1),q(2,z1),q(2,z0),q(3,z0)]],
+     ["right",[q(1,z1),q(2,z1),q(2,z0),q(1,z0)]],
+     ["top",[q(0,z1),q(1,z1),q(2,z1),q(3,z1)]]].forEach(([k,p])=>
+      g.appendChild(el("polygon",{points:pts(p),fill:skin[k],
+        stroke:"var(--stroke)","stroke-width":skin.sw,"stroke-opacity":skin.so})));
+  };
+
+  /* ---- THE BENCH, ONE SCREEN-LEVEL ROW BEHIND THE TILE --------------------
+     BACK is how far behind; the two spans are how far either side of the
+     cycler the strip and the plate stand. Walking +x and -y by the same amount
+     is walking straight across the page, so the three sit level with each
+     other and read left to right. */
+  const BACK=1.60, LEFT=0.66, RIGHT=0.80;
+  const cx=n.x-n.w*BACK, cy=n.y-n.d*BACK;
+
+  /* the strip, in a low block. The web is what makes eight tubes a strip
+     rather than eight loose tubes — C2's reasoning, at a smaller size */
+  const rack={x:cx-n.w*LEFT, y:cy+n.d*LEFT, w:n.w*0.62, d:n.d*0.22, h:n.h*0.22};
+  paint(g,rack.x,rack.y,rack.w,rack.d,rack.h,SKIN.works);
+  const PER=8, RT=n.w*0.030, RH=n.h*0.42;
+  const WZ1=rack.h+RH*0.88, WZ0=WZ1-n.h*0.10;
+  const xA=rack.x-rack.w/2+0.5*rack.w/PER-RT, xB=rack.x+rack.w/2-0.5*rack.w/PER+RT;
+  g.appendChild(el("polygon",{points:pts([P(xA,rack.y+RT,WZ1),P(xB,rack.y+RT,WZ1),
+    P(xB,rack.y+RT,WZ0),P(xA,rack.y+RT,WZ0)]),fill:"var(--t-right)","fill-opacity":".9",
+    stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".6"}));
+  for(let i=0;i<PER;i++){
+    const tx=rack.x-rack.w/2+(i+0.5)*rack.w/PER;
+    const rim=ellipseAt(tx,rack.y,rack.h+RH,RT), foot=ellipseAt(tx,rack.y,rack.h,RT*0.5);
+    const silh=pts([[rim.x+rim.rx,rim.y],...arcPts(foot,0,Math.PI,6),
+                    [rim.x-rim.rx,rim.y],...arcPts(rim,Math.PI,2*Math.PI,8)]);
+    g.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".38"}));
+    /* barcoded cDNA, standing at a shoulder — what B8 hands over */
+    const lvl=ellipseAt(tx,rack.y,rack.h+RH*0.5,RT*0.72);
+    g.appendChild(el("polygon",{points:pts([...arcPts(lvl,2*Math.PI,Math.PI,6),
+      ...arcPts(foot,Math.PI,0,6)]),fill:CDNA,"fill-opacity":".6"}));
+    g.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
+      "stroke-width":".7","stroke-opacity":".7"}));
+    g.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,fill:"none",
+      stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".8"}));
+  }
+
+  /* the cycler: a works-skin body, a lid in the tile skin sitting on it, and
+     one lamp. Unlit apart from that — a closed block is not where anything is
+     seen happening, and the glass above it is */
+  const cyc={x:cx, y:cy, w:n.w*0.60, d:n.d*0.52, h:n.h*0.50};
+  paint(g,cyc.x,cyc.y,cyc.w,cyc.d,cyc.h,SKIN.works);
+  const lidTop=cyc.h+n.h*0.14;
+  slab(cyc.x,cyc.y-cyc.d*0.06,cyc.w*0.88,cyc.d*0.78,cyc.h,lidTop,SKIN.tile);
+  const lamp=P(cyc.x-cyc.w*0.30,cyc.y+cyc.d/2,cyc.h*0.55);
+  g.appendChild(el("ellipse",{cx:lamp[0].toFixed(1),cy:lamp[1].toFixed(1),
+    rx:(1.5*SC).toFixed(2),ry:(1.1*SC).toFixed(2),fill:"var(--signal)","fill-opacity":".8"}));
+
+  /* the plate: 96 wells, the left six columns filled and the right six drawn
+     empty, which is the one thing about it a reader can check by counting */
+  const plate={x:cx+n.w*RIGHT, y:cy-n.d*RIGHT, w:n.w*0.78, d:n.d*0.52};
+  const pth=n.h*0.30;
+  const deck=skirtSlab(g,plate,pth,UDI);
+  const wet=[];
+  plateGrid(deck,pth,12,8).forEach(w=>{
+    drawWell(g,w,false);
+    if(w.i<6) wet.push(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
+      ry:(w.e.ry*0.86).toFixed(2),fill:UDI,"fill-opacity":".9"}));
+  });
+  /* after every well, because drawWell lays a --bg disc in each socket and a
+     fill appended as its well is built ends up under the next one's plastic */
+  wet.forEach(f=>g.appendChild(f));
+
+  /* two short flows, strip to cycler and cycler to plate, drawn dim and left
+     still: they say the three belong to one bench, not that anything is
+     moving along them at this scale */
+  [[P(rack.x+rack.w/2,rack.y-rack.d/2,rack.h+RH*0.6), P(cyc.x-cyc.w/2,cyc.y+cyc.d/2,cyc.h*0.7)],
+   [P(cyc.x+cyc.w/2,cyc.y-cyc.d/2,cyc.h*0.7),        P(plate.x-plate.w/2,plate.y+plate.d/2,pth)]]
+    .forEach(([A,B])=>setFanLine(flowLine(g,A,B,FLOW,SC),0.34,0));
+
+  /* the tile the track and the dot arrive at, in front of all of it */
+  paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.tile);
+
+  /* ---- THE MAGNIFICATION --------------------------------------------------
+     A thin solid ellipse with two leaders down to the cycler's lid: the idiom
+     this map uses everywhere for a view drawn larger than life. It hangs
+     straight above the cycler because the request put it above the three, and
+     it hangs HIGH because low is taken: a glass this wide on short leaders
+     lands on B7's plate and tube behind this bench and in the middle of the
+     names B6, B7 and B8 run up the sky. So it goes above where those names
+     run out, the way C2's does, and to the left of C2's own glass, which is
+     the only other thing hanging at that height in this stretch.
+
+     WHAT IS INSIDE IT IS SIZED IN SCREEN PIXELS AND SCALED BY BEING SCALED —
+     a group carrying scale(n.w / .72) — so a resize moves the glass, grows it,
+     and takes the molecule along. */
+  const LX=100, LY=42;
+  const TOP=P(cyc.x,cyc.y,lidTop);
+  const KX=TOP[0], KY=TOP[1]-(LY+116)*SC;
+  [P(cyc.x-cyc.w*0.44,cyc.y+cyc.d*0.33,lidTop), P(cyc.x+cyc.w*0.44,cyc.y-cyc.d*0.45,lidTop)]
+    .forEach(([tx,ty])=>{
+      const vx=tx-KX, vy=ty-KY, u=1/Math.hypot(vx/(LX*SC), vy/(LY*SC));
+      g.appendChild(el("line",{x1:(KX+vx*u).toFixed(1),y1:(KY+vy*u).toFixed(1),
+        x2:tx.toFixed(1),y2:ty.toFixed(1),stroke:"var(--fg2)",
+        "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".4"}));
+    });
+  const lens=el("g",{transform:
+    `translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${SC.toFixed(4)})`});
+  g.appendChild(lens);
+  /* nearly opaque: glass you can read the ground grid through is a hole in the
+     drawing rather than a lens over it */
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,
+    fill:"var(--bg)","fill-opacity":".92"}));
+  /* blocks slide in from past the rim and have to stop existing at it. Uniqued:
+     a checker draws this shape twice, at two sizes, into one document */
+  const cid=`libglass${++UID}`;
+  const cp=el("clipPath",{id:cid});
+  cp.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY}));
+  lens.appendChild(cp);
+  const stage=el("g",{"clip-path":`url(#${cid})`});
+  lens.appendChild(stage);
+  const mol=el("g",{opacity:"1"});
+  stage.appendChild(mol);
+
+  /* ---- THE STRAND AND WHERE IT IS CUT -------------------------------------
+     Pale and wandering up to the first chip and level from there, C1's
+     grammar for a strand whose far end is synthetic. The cuts are not even
+     quarters, and the last one is forced left of the chips: split the barcode
+     chain across two pieces and the fragment that is meant to carry it does
+     not exist. */
+  const HL=50, C0=28, CP=7, CW=3;           // half-length, first chip, pitch, half-width
+  const XLEV=C0-CW;
+  const waveY=v=>v>=XLEV?0:(Math.sin((v-XLEV)*0.21+0.7)-Math.sin(0.7))*2.0;
+  const cuts=[-26,-2,18].map(v=>v+(r()-0.5)*3);
+  cuts[2]=Math.min(cuts[2],XLEV-4);
+  const edge=[-HL,...cuts,HL], NF=4;
+  /* GAPO has to clear two facing Ys, the two caps under them and a little
+     daylight, or the adapters land across the neighbouring piece and four
+     fragments read as one strand with hardware along it */
+  const GAPO=21, CAPR=1.9, ST=3, AX=3.5, AY=3, GAPA=0.8;
+
+  const frags=edge.slice(0,NF).map((a,k)=>{
+    const b=edge[k+1];
+    const grp=el("g",{transform:"translate(0,0)"});
+    mol.appendChild(grp);
+    const N=Math.max(4,Math.round((b-a)/2.5));
+    let d="";
+    for(let i=0;i<=N;i++){ const v=a+(b-a)*i/N;
+      d+=(i?" L ":"M ")+v.toFixed(2)+" "+waveY(v).toFixed(2); }
+    grp.appendChild(el("path",{d,fill:"none",stroke:CDNA,"stroke-width":"1.6",
+      "stroke-opacity":".6","stroke-linecap":"round","stroke-linejoin":"round"}));
+    if(k===NF-1) CHIP.forEach((fill,j)=>grp.appendChild(el("rect",{
+      x:(C0+j*CP-CW).toFixed(1),y:"-2.6",width:(CW*2).toFixed(1),height:"5.2",rx:"1",
+      fill,"fill-opacity":".9",stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".6"})));
+
+    /* a cut end: the fray the cut leaves and the round end that replaces it,
+       both on the part parameter. The molecule's own two termini were never
+       cut and do not get either. */
+    const ends=[], ads=[];
+    [[a,-1,k>0],[b,1,k<NF-1]].forEach(([v,dir,cut])=>{
+      const y=waveY(v);
+      if(cut){
+        const fr=el("path",{d:`M ${v.toFixed(2)} ${y.toFixed(2)}`,fill:"none",stroke:CDNA,
+          "stroke-width":"1.1","stroke-opacity":"0","stroke-linecap":"butt"});
+        const cap=el("circle",{cx:v.toFixed(2),cy:y.toFixed(2),r:(CAPR*0.3).toFixed(2),
+          fill:CDNA,"fill-opacity":"0"});
+        grp.appendChild(fr); grp.appendChild(cap);
+        ends.push(f=>{
+          const L=3.4*(1-f);
+          let d2=`M ${v.toFixed(2)} ${y.toFixed(2)} L ${(v+dir*L).toFixed(2)} ${y.toFixed(2)}`;
+          for(let i=0;i<2;i++){ const tx=v+dir*L*(i+0.4)/2;
+            d2+=` M ${tx.toFixed(2)} ${y.toFixed(2)} L ${tx.toFixed(2)} ${(y+(i?1:-1)*L*0.8).toFixed(2)}`; }
+          fr.setAttribute("d",d2);
+          fr.setAttribute("stroke-opacity",(0.8*(1-f)*clamp(f/0.08)).toFixed(2));
+          cap.setAttribute("r",(CAPR*(0.3+0.7*f)).toFixed(2));
+          cap.setAttribute("fill-opacity",(0.92*f).toFixed(2));
+        });
+      }
+      /* THE Y. Straight lines and a solid stem against a strand that wanders,
+         because it is manufactured oligo and has to look it. Born out at its
+         travel start with real coordinates; the ticker only moves it. */
+      const at=v+dir*(cut?CAPR:0.8);
+      const ad=el("g",{transform:`translate(${(at+dir*10).toFixed(2)},${(y-8).toFixed(2)})`,
+        opacity:"0"});
+      ad.appendChild(el("path",{d:`M 0 0 L ${dir*ST} 0`,fill:"none",stroke:ADPT,
+        "stroke-width":"1.8","stroke-opacity":".95","stroke-linecap":"butt"}));
+      ad.appendChild(el("path",{d:`M ${dir*ST} 0 L ${dir*(ST+AX)} ${-AY} `+
+        `M ${dir*ST} 0 L ${dir*(ST+AX)} ${AY}`,fill:"none",stroke:ADPT,
+        "stroke-width":"1.2","stroke-opacity":".95","stroke-linecap":"butt",
+        "stroke-linejoin":"miter"}));
+      grp.appendChild(ad);
+      ads.push({ad, at, dir, y});
+    });
+    return {grp, ends, ads, mid:(a+b)/2,
+            open:(k-(NF-1)/2)*GAPO, rise:(r()-0.5)*6};
+  });
+
+  /* the score marks stay where the cut was, not where the pieces went: they
+     are the drawing pointing at a break, so they are grey like the leaders */
+  const ticks=cuts.map(v=>{
+    const y=waveY(v);
+    const e=el("line",{x1:v.toFixed(2),y1:(y-5).toFixed(2),x2:v.toFixed(2),
+      y2:(y+5).toFixed(2),stroke:"var(--fg2)","stroke-width":"1.1","stroke-opacity":"0"});
+    mol.appendChild(e); return e;
+  });
+
+  /* ---- THE CONSTRUCT, IN THE REQUEST'S ORDER ------------------------------
+     Ten blocks laid out from one running total, so block and label are read
+     off one ruler. Wide enough that each name fits over its own block on a
+     single row; the insert is the widest block because it is the longest
+     thing in the molecule and the one part that differs from read to read. */
+  const SEG=[["P5",7,"var(--fg3)"],["UDI",6.5,UDI],["R1",7,ADPT],
+             ["cDNA insert",20,CDNA],
+             ["BC1",6,CHIP[0]],["BC2",6,CHIP[1]],["BC3",6,CHIP[2]],
+             ["R2",7,ADPT],["UDI",6.5,UDI],["P7",7,"var(--fg3)"]];
+  const SPAN=SEG.reduce((s,q)=>s+q[1],0);
+  const BW=170, U=BW/SPAN, BY=-4.5, BH=9, SLIDE=16;
+
+  /* ---- TIMING -------------------------------------------------------------
+     Seven beats. The strand whole long enough to be seen as one; the score;
+     the part, carrying the rounding-off with it; the Ys closing; the three
+     plain pieces leaving while the barcoded one comes to the middle; the
+     build, a block at a time; and the hold, the longest of them, because the
+     request asked for the complete construct to be the frame that stays.
+
+     PLACEMENT IS A PURE FUNCTION OF THE CLOCK, so a frame long enough to skip
+     a beat — a tab coming back, a step in trace mode — cannot leave a block
+     halfway into a bar it has already joined. */
+  const WHOLE=1.4, SCORE=0.5, PART=1.4, DOCK=1.5, GATHER=1.0,
+        STEP=0.34, ARR=0.5, HOLD=3.6, CLEAR=0.4;
+  const t1=WHOLE, t2=t1+SCORE, t3=t2+PART, t4=t3+DOCK, t5=t4+GATHER,
+        t6=t5+(SEG.length-1)*STEP+ARR, t7=t6+HOLD, T=t7+CLEAR;
+
+  const parts=[]; let run0=0;
+  SEG.forEach(([name,wid,fill],k)=>{
+    const x0=run0*U-BW/2, ww=wid*U; run0+=wid;
+    const p=el("g",{transform:`translate(${SLIDE},0)`,opacity:"0"});
+    stage.appendChild(p);
+    p.appendChild(el("rect",{x:x0.toFixed(2),y:BY.toFixed(1),width:ww.toFixed(2),
+      height:BH,rx:"1.2",fill,"fill-opacity":".9",
+      stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".55"}));
+    const t=el("text",{x:(x0+ww/2).toFixed(2),y:(BY-2.6).toFixed(1),"text-anchor":"middle",
+      "font-size":"4.8","letter-spacing":".2",fill:"var(--fg2)",opacity:"0"});
+    t.textContent=name; p.appendChild(t);
+    parts.push({g:p, lab:t, at:t5+k*STEP});
+  });
+  /* where the barcoded piece has to end up: under the insert-to-BC3 run of
+     the bar, which is what it is about to be drawn as */
+  const b0=SEG.slice(0,3).reduce((s,q)=>s+q[1],0)*U-BW/2,
+        b1=SEG.slice(0,7).reduce((s,q)=>s+q[1],0)*U-BW/2;
+  const last=frags[NF-1], home=(b0+b1)/2-(last.mid+last.open);
+
+  /* the ring last, over everything, so nothing inside can soften its own edge */
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,fill:"none",
+    stroke:"var(--fg2)","stroke-width":"1.2","stroke-opacity":".8"}));
+
+  const place=t=>{
+    const part=ease(clamp((t-t2)/PART)), dock=ease(clamp((t-t3)/DOCK)),
+          gath=ease(clamp((t-t4)/GATHER)), gone=clamp((t-t7)/CLEAR);
+    /* the loop cuts rather than rewinding: adapters do not fall off and pieces
+       do not rejoin, so the strand fades back in whole at the top */
+    mol.setAttribute("opacity",clamp(t/0.3).toFixed(2));
+    const tk = t<t1 ? 0 : t<t2 ? clamp((t-t1)/(SCORE*0.6)) : clamp(1-part/0.45);
+    ticks.forEach(e=>e.setAttribute("stroke-opacity",(0.75*tk).toFixed(2)));
+    frags.forEach((f,k)=>{
+      const mine=k===NF-1;
+      f.grp.setAttribute("transform",
+        `translate(${(f.open*part+(mine?home*gath:0)).toFixed(2)},`+
+        `${(f.rise*part*(mine?1-gath:1)).toFixed(2)})`);
+      /* the barcoded piece gives way as the insert lands on top of it; the
+         other three are gone before the build starts */
+      f.grp.setAttribute("opacity",(mine ? 1-clamp((t-parts[3].at)/ARR) : 1-gath).toFixed(2));
+      f.ends.forEach(setEnd=>setEnd(part));
+      /* the fork arrives and the last of the gap closes after it has stopped
+         moving, so the nick shows for a beat before it is not there */
+      const away=1-dock, gap=GAPA*(1-clamp((dock-0.72)/0.28));
+      f.ads.forEach(a=>{
+        a.ad.setAttribute("transform",
+          `translate(${(a.at+a.dir*(gap+10*away)).toFixed(2)},${(a.y-8*away).toFixed(2)})`);
+        a.ad.setAttribute("opacity",clamp(dock/0.3).toFixed(2));
+      });
+    });
+    parts.forEach(p=>{
+      const u=ease(clamp((t-p.at)/ARR));
+      p.g.setAttribute("transform",`translate(${(SLIDE*(1-u)).toFixed(2)},0)`);
+      p.g.setAttribute("opacity",(u*(1-gone)).toFixed(2));
+      p.lab.setAttribute("opacity",clamp((u-0.55)/0.4).toFixed(2));
+    });
+  };
+
+  /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion never
+     advances it, so whatever t begins at is the whole station for that reader,
+     and the request named the frame that has to be: the complete construct. */
+  let t=t6+HOLD*0.5;
+  const run=dt=>{ t=(t+dt)%T; place(t); };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.libraryprep = drawLibraryPrep;
+
+/* ------------------------------------------------------------------
    B8a · PCR AMPLIFICATION — the doubling under glass, and nothing else.
 
    ASKED FOR FROM THE PAGE, from the map's own "Add a module" button, and what
