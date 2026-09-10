@@ -5048,9 +5048,13 @@ DRAW.poolsplit = drawPoolSplit;
    match B3's scale and size. So it takes the conical's default proportions
    against the node, and since the two benches
    are authored at one size the tubes now come out identical; the plates are
-   the one difference left between the stations. */
+   the one difference left between the stations.
+
+   THE DONOR PLATE IS B4'S --ch8, as asked from the page. It is the plate B3
+   dealt into and B4 ligated, so it now wears the blue it wore at both of
+   those stations rather than a --ch9 of its own. */
 function drawPoolSplit96(g,n){
-  poolSplitBench(g,n,{src:"var(--ch9)", dst:"var(--ch3)"});
+  poolSplitBench(g,n,{src:"var(--ch8)", dst:"var(--ch3)"});
 }
 DRAW.poolsplit96 = drawPoolSplit96;
 
