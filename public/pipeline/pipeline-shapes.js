@@ -6170,18 +6170,28 @@ function drawCapture(g,n){
     return {g:sg, free:f, held:HELD[i], ph:r()*6.283};
   });
 
-  /* smaller than the four there used to be, so twelve of them crowd the
-     strands without burying them */
+  /* ENOUGH OF IT TO GET IN THE WAY. Asked for from the page: the debris should
+     partly obscure the strands, so there is more of it, some of it larger, and
+     it sits over the strands in the stacking order with a sum of pale it is
+     hard to read through. Each piece has its own density — a lysate is not an
+     even haze, and one flat opacity over twenty blobs reads as a filter laid
+     on the glass rather than as stuff in the tube. The eight added pieces lie
+     over where the strands start and where the two columns end up, so the
+     wash is what uncovers them. */
   const debris=[[-34,-14],[-38,6],[-26,24],[-12,-30],[-5,-2],[6,12],
-                [18,-18],[32,-12],[38,4],[10,33],[-14,35],[30,-28]].map(p=>{
+                [18,-18],[32,-12],[38,4],[10,33],[-14,35],[30,-28],
+                [-20,-8],[-15,15],[14,-4],[20,12],[0,-18],[-2,20],
+                [-28,-24],[26,24]].map(p=>{
     const dg=el("g",{transform:`translate(${p[0]},${p[1]})`});
     stage.appendChild(dg);
-    const q=[];
-    for(let k=0;k<9;k++){ const a=k*6.283/9, rr=2.8+r()*2.8;
+    const q=[], sz=0.9+r()*0.7;
+    for(let k=0;k<9;k++){ const a=k*6.283/9, rr=(2.8+r()*2.8)*sz;
       q.push(`${(Math.cos(a)*rr).toFixed(1)},${(Math.sin(a)*rr*0.8).toFixed(1)}`); }
+    const den=r();
     dg.appendChild(el("polygon",{points:q.join(" "),fill:"var(--fg3)",
-      "fill-opacity":".3",stroke:"var(--fg3)","stroke-width":".8","stroke-opacity":".5"}));
-    return {g:dg, at:p, ph:r()*6.283, dl:r()*0.22};
+      "fill-opacity":(0.22+0.5*den).toFixed(2),stroke:"var(--fg3)",
+      "stroke-width":".8","stroke-opacity":(0.35+0.35*den).toFixed(2)}));
+    return {g:dg, at:p, ph:r()*6.283, dl:r()*0.3};
   });
 
   /* A BEAD IS A FILLED CIRCLE WITH A HOOK CUT OUT OF IT. Streptavidin is a
@@ -6223,8 +6233,14 @@ function drawCapture(g,n){
      alone rather than nudged from where it was, so a frame long enough to skip
      a whole beat — a tab coming back, a step in trace mode — cannot leave a
      bead halfway to a strand it has already left. */
-  const T_IN=1.8, CAPD=1.1, STAG=0.26, T_PULL=3.7, PULLD=2.0, HOLD=1.5, CLEAR=0.7;
-  const TOT=T_PULL+PULLD+HOLD+CLEAR;
+  /* THE SORT FINISHES BEFORE THE WASH BEGINS. Asked for from the page: the
+     strands are in their two columns and still under the debris, and only
+     then does the debris go. Overlapping the two made the columns look like
+     what was left when the rubbish fell away, rather than something the
+     magnet had already done. */
+  const T_IN=1.8, CAPD=1.1, STAG=0.26, T_PULL=3.7, PULLD=2.0;
+  const T_WASH=T_PULL+PULLD+0.5, WASHD=1.8, HOLD=1.5, CLEAR=0.7;
+  const TOT=T_WASH+WASHD+HOLD+CLEAR;
   const rot=(a,x)=>[x*Math.cos(a), x*Math.sin(a)];
 
   const place=(t,ph)=>{
@@ -6253,12 +6269,12 @@ function drawCapture(g,n){
     });
     /* THE DEBRIS IS NEVER TOUCHED AND THEN IT IS GONE. No bead goes near it,
        nothing about it changes while the beads work, and when the magnet comes
-       on it drains straight down and out of the glass. That sequence is the
-       claim the whole station rests on. Each piece leaves on its own small
-       delay, so it goes as a wash rather than as one slab dropping, and the
-       held columns come out from under it. */
+       on and the strands have been sorted it drains straight down and out of
+       the glass. That sequence is the claim the whole station rests on. Each
+       piece leaves on its own small delay, so it goes as a wash rather than as
+       one slab dropping, and the held columns come out from under it. */
     debris.forEach(d=>{
-      const out=ease(clamp((pull-0.12-d.dl)/0.66));
+      const out=ease(clamp(((t-T_WASH)/WASHD-d.dl)/0.7));
       const dx=d.at[0]+Math.cos(ph*0.7+d.ph)*jig*1.2;
       const dy=d.at[1]+Math.sin(ph*0.5+d.ph)*jig*1.2+out*(LY+26);
       d.g.setAttribute("transform",`translate(${dx.toFixed(1)},${dy.toFixed(1)})`);
