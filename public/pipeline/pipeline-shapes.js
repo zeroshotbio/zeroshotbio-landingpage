@@ -5041,17 +5041,14 @@ DRAW.poolsplit = drawPoolSplit;
    advance one round: the royal blue plate B3 dealt into, which round two has
    since ligated, is emptied into round three's yellow one.
 
-   THE TUBE IS THE 50 ML, NOT THE 15. Asked for from the page: the conical here
-   was reading as a 15 ml, and the vessel this pooling actually goes into is the
-   bigger one. A 50 ml is not a scaled-up 15 ml — it is the same length and
-   nearly twice the bore (30 x 115 mm against 17 x 120) — so it is asked for as
-   the ratio of the real two, and the cone widens with the wall because
-   conicalTube cuts its taper from the same w. B3 keeps the 15 ml it was drawn
-   with, which is the one difference between the two stations besides the
-   plates. */
+   THE TUBE IS B3'S SIZE. It was drawn once as a true-bore 50 ml — 30/17 of
+   B3's width at 115/120 of its height — and was then asked from the page to
+   match B3's scale and size. So it takes the conical's default proportions
+   against the node, and since the two benches
+   are authored at one size the tubes now come out identical; the plates are
+   the one difference left between the stations. */
 function drawPoolSplit96(g,n){
-  poolSplitBench(g,n,{src:"var(--ch9)", dst:"var(--ch3)",
-                      tubeW:30/17, tubeH:115/120});
+  poolSplitBench(g,n,{src:"var(--ch9)", dst:"var(--ch3)"});
 }
 DRAW.poolsplit96 = drawPoolSplit96;
 
