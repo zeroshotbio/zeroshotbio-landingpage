@@ -1,0 +1,101 @@
+{
+ "stages": [
+  24,
+  26,
+  28,
+  30,
+  32,
+  34,
+  36,
+  38,
+  40,
+  42,
+  44,
+  46,
+  48
+ ],
+ "tissues": [
+  "Blood",
+  "Bone",
+  "CNS/Neural crest",
+  "Central Nervous System",
+  "Connective Tissue",
+  "Cranial NC",
+  "Ear",
+  "Endocrine",
+  "Endothelial",
+  "Epidermis",
+  "Eye",
+  "Fin",
+  "Germ Line",
+  "Hatching Gland",
+  "Head Mesoderm",
+  "Heart",
+  "Hypochord",
+  "Intestine",
+  "Kidney",
+  "Lateral Line",
+  "Liver",
+  "Muscle",
+  "Notochord",
+  "Olfactory",
+  "Pancreas",
+  "Paraxial Mesoderm",
+  "Peripheral Nervous System",
+  "Pharyngeal Arch",
+  "Pharynx",
+  "Pigment",
+  "Retina",
+  "Swim Bladder",
+  "Tooth"
+ ],
+ "n_cells": 844825,
+ "n_states": 154,
+ "bounds": {
+  "x0": -11.70888888888889,
+  "x1": 10.175555555555556,
+  "y0": -12.698888888888888,
+  "y1": 12.03
+ },
+ "xy_scale": 900.0,
+ "projection": {
+  "of": "ZSCAPE obs umap3d_1..3, the authors' own 3D UMAP",
+  "method": "fixed principal projection to 2D, computed once over these cells",
+  "variance_kept": 0.8387,
+  "mean": [
+   0.29585,
+   0.20897,
+   0.13865
+  ],
+  "basis": [
+   [
+    0.950294,
+    -0.289718
+   ],
+   [
+    0.21063,
+    0.328482
+   ],
+   [
+    0.229293,
+    0.898979
+   ]
+  ]
+ },
+ "cells_per_stage": {
+  "24": 130211,
+  "26": 33807,
+  "28": 30106,
+  "30": 46157,
+  "32": 35909,
+  "34": 31414,
+  "36": 202388,
+  "38": 27081,
+  "40": 17308,
+  "42": 20364,
+  "44": 16563,
+  "46": 22060,
+  "48": 231457
+ },
+ "selection": "gene_target starts with ctrl- (6 control arms), even hpf 24-48"
+}

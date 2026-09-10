@@ -176,6 +176,29 @@ canvas{display:block;width:100%;touch-action:none}
 .xw-bar i{display:block;height:3px;background:var(--ink)}
 .xw-back{font-size:11px;color:var(--ink-3);font-style:italic}
 
+/* Plate III, the landscape. */
+#embHold{height:min(660px,80vh);border-top:1px solid var(--rule-2);
+         border-bottom:1px solid var(--rule-2);cursor:crosshair;overflow:hidden}
+#embPanel{border:1px solid var(--rule-2);background:rgba(255,252,244,.55);padding:16px 17px 18px;
+          min-height:220px}
+#embPanel .p-eyebrow{font-family:var(--sans);font-size:10px;letter-spacing:.22em;
+                     text-transform:uppercase;color:var(--ink-3);margin-bottom:9px}
+#embPanel h3{font-size:17px;font-weight:400;font-style:italic;margin:0 0 10px;line-height:1.3}
+#embPanel .p-empty{color:var(--ink-3);font-style:italic;font-size:14px}
+#embPanel dl{margin:0;font-size:13.5px}
+#embPanel dt{font-family:var(--sans);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;
+             color:var(--ink-3);margin:13px 0 3px}
+#embPanel dd{margin:0;color:var(--ink-2)}
+#embPanel dd b{color:var(--ink);font-weight:600}
+.pert-lab{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:11px;
+          letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);cursor:pointer}
+.pert-lab input{accent-color:#8f2d16}
+.sel{font-family:var(--sans);font-size:11px;color:var(--ink-2);background:transparent;
+     border:1px solid var(--rule);border-radius:2px;padding:5px 8px}
+.sel:disabled{opacity:.45}
+#embLegend .leg{font-size:13px}
+.trail-note{font-size:12px;font-style:italic;color:var(--ink-3);margin-top:10px;line-height:1.45}
+
 /* Plate II. The stack is SVG rather than canvas — fourteen rows is not a data
    mass, and every row carries a citation that ought to be a real link. */
 #srcHold{border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2);
@@ -303,6 +326,45 @@ section.notes li b{color:var(--ink);font-weight:600}
       <figcaption id="cap1">&nbsp;</figcaption>
     </figure>
 
+    <figure class="plate wide" id="plate3">
+      <div class="plate-head">
+        <span class="plate-num">Plate III</span>
+        <h2 class="plate-title">The landscape, hour by hour</h2>
+        <span class="plate-when" id="embWhen">&nbsp;</span>
+      </div>
+
+      <div class="toolbar">
+        <span class="hint" id="embHint">click a cell to hold its state &middot;
+          the trail is expression changing, not cells moving</span>
+        <span class="spacer"></span>
+        <label class="pert-lab"><input type="checkbox" id="embArrows"> perturbation arrows</label>
+        <select id="embTarget" class="sel" disabled></select>
+        <button class="btn" id="embClear">clear</button>
+      </div>
+
+      <div class="scrub">
+        <input type="range" id="embSlider" min="0" max="12" value="0" step="1"
+               aria-label="developmental hour">
+        <span class="read" id="embRead">&nbsp;</span>
+      </div>
+
+      <div class="plate-body">
+        <div class="canvas-hold" id="embHold"><canvas id="emb"></canvas></div>
+        <aside id="embPanel">
+          <div class="p-eyebrow">Held state</div>
+          <div class="p-empty" id="embEmpty">Nothing held. Click a cell in the plate.</div>
+          <div id="embBody" hidden></div>
+        </aside>
+      </div>
+
+      <div class="legend" id="embLegend">
+        <div class="lhead">Tissue &mdash; click to isolate, and the rest stays as a ghost</div>
+      </div>
+
+      <div class="e-foot" id="embAxis" style="margin:10px 0 0"></div>
+      <figcaption id="cap3">&nbsp;</figcaption>
+    </figure>
+
     <figure class="plate wide" id="plate2">
       <div class="plate-head">
         <span class="plate-num">Plate II</span>
@@ -342,6 +404,7 @@ section.notes li b{color:var(--ink);font-weight:600}
 <script src="/fate_map_24_48/pt-graph.js"></script>
 <script src="/fate_map_24_48/pt-enrich.js"></script>
 <script src="/fate_map_24_48/pt-sources.js"></script>
+<script src="/fate_map_24_48/pt-embed.js"></script>
 <script src="/fate_map_24_48/pt-main.js"></script>
 </body>
 </html>

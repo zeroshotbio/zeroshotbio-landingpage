@@ -75,9 +75,15 @@
     return 'emerging — crests after the window, at ' + peak + ' ' + TIMEPOINTS_LABEL;
   }
 
-  PT.load().then(({ graph, meta, enrich, sources, zmap }) => {
+  PT.load().then(({ graph, meta, enrich, sources, zmap, embed, perturb }) => {
     const c = meta.counts;
     const S = PTGraph.STYLE;
+    /* Anything that measures the DOM has to wait until #stage is visible.
+     * A canvas sized inside a hidden ancestor gets clientWidth 0 and paints
+     * nothing — which is exactly how Plate III shipped blank the first time,
+     * while every other part of it worked. Plate I escaped only by accident,
+     * because its resize happens to be the last statement in this function. */
+    const afterVisible = [];
     /* mapping-confidence tallies, counted from the enrichment rather than typed */
     const conf = { unique: 0, dominant: 0, split: 0, thin: 0, unmapped: 0 };
     if (enrich) Object.values(enrich).forEach((e) => { conf[e.zscape.confidence] += 1; });
@@ -251,6 +257,144 @@
     $('fWin').addEventListener('click', () => { winOnly = true; applyFilter(); });
     $('reset').addEventListener('click', () => { view.reset(); });
 
+    /* ---- Plate III: the landscape ---------------------------------------- */
+    if (embed) {
+      const EM = embed.meta, ST = embed.states;
+      $('embWhen').textContent =
+        `${EM.n_cells.toLocaleString()} wild-type cells · ${EM.stages.length} hours · ` +
+        `${EM.n_states} states`;
+      $('cap3').innerHTML =
+        `<b>${EM.n_cells.toLocaleString()} wild-type ZSCAPE cells</b> at ${EM.stages[0]}, ` +
+        `${EM.stages[1]} … ${EM.stages[EM.stages.length - 1]} hpf — every control arm, no ` +
+        `perturbed cell. The scrubber does not move a cell; it moves a window over developmental ` +
+        `time, and the whole window stays behind it as a ground. <b>Nothing here is tracked.</b> ` +
+        `ZSCAPE is 1,860 separate embryos fixed at separate hours, so a state whose trail crosses ` +
+        `the plate is a state whose expression changed, not a population that travelled — which ` +
+        `is why the trail is dotted. The embedding is the authors' own 3D UMAP under a fixed ` +
+        `principal projection keeping ${(EM.projection.variance_kept * 100).toFixed(0)}% of its ` +
+        `variance; UMAP distance is not a quantity.`;
+
+      const view3 = PTEmbed.make($('emb'), $('embHold'), embed, showHeld);
+      const slider = $('embSlider');
+      slider.max = String(EM.stages.length - 1);
+      const readOut = () => {
+        const h = EM.stages[+slider.value];
+        $('embRead').textContent =
+          `${h} hpf · ${(EM.cells_per_stage[h] || 0).toLocaleString()} cells`;
+      };
+      slider.addEventListener('input', () => { view3.setStage(+slider.value); readOut(); });
+      slider.value = '0'; readOut();
+
+      function showHeld(i) {
+        const empty = $('embEmpty'), body = $('embBody');
+        if (i < 0) { empty.hidden = false; body.hidden = true; body.innerHTML = ''; return; }
+        empty.hidden = true; body.hidden = false;
+        const st = ST[i];
+        body.innerHTML = '';
+        const h = document.createElement('h3'); h.textContent = st.name; body.appendChild(h);
+        const dl = document.createElement('dl');
+        const add = (k2, v) => {
+          const dt = document.createElement('dt'); dt.textContent = k2;
+          const dd = document.createElement('dd'); dd.innerHTML = v;
+          dl.append(dt, dd);
+        };
+        add('Tissue', st.tissue || '—');
+        add('Wild-type cells, 24–48 hpf', `<b>${st.n.toLocaleString()}</b>`);
+        const seen = st.trail.map((p, ti) => (p ? EM.stages[ti] : null)).filter((x) => x !== null);
+        add('Hours with enough cells to place',
+            seen.length ? `${seen.length} of ${EM.stages.length} — ${seen[0]} to ${seen[seen.length - 1]} hpf`
+                        : 'none; fewer than 15 cells at every hour');
+        if (st.platt_top) {
+          add('Platt state', `${st.platt_top}<div class="trail-note">` +
+              `${(st.platt_frac_of_zscape * 100).toFixed(0)}% of this ZSCAPE state's cells ` +
+              `carry that Platt label. Crosswalk from Plate I's panel, same cells.</div>`);
+        }
+        body.appendChild(dl);
+        const n2 = document.createElement('div');
+        n2.className = 'trail-note';
+        n2.textContent = 'The dotted trail joins this state\u2019s centroid at each hour. ' +
+          'It is not a path any cell took.';
+        body.appendChild(n2);
+      }
+      $('embClear').addEventListener('click', () => { view3.select(-1); showHeld(-1); });
+
+      /* tissue legend — isolate, never hide */
+      const lg = $('embLegend');
+      let isoT = null;
+      const tButtons = [];
+      const tCount = {};
+      ST.forEach((s2) => { tCount[s2.tissue] = (tCount[s2.tissue] || 0) + s2.n; });
+      EM.tissues.forEach((tname, ti) => {
+        const b2 = document.createElement('button');
+        b2.className = 'leg'; b2.type = 'button'; b2.setAttribute('aria-pressed', 'false');
+        const nm = document.createElement('span'); nm.className = 'leg-name'; nm.textContent = tname;
+        const ct = document.createElement('span'); ct.className = 'leg-n';
+        ct.textContent = (tCount[tname] || 0).toLocaleString();
+        b2.append(nm, ct);
+        b2.addEventListener('click', () => {
+          isoT = (isoT === ti) ? null : ti;
+          tButtons.forEach((q, qi) => q.setAttribute('aria-pressed', String(qi === isoT)));
+          view3.setIso(isoT);
+        });
+        lg.appendChild(b2); tButtons.push(b2);
+      });
+
+      /* perturbation arrows */
+      if (perturb) {
+        view3.setArrows(perturb);
+        const selT = $('embTarget'), chk = $('embArrows');
+        perturb.summary.forEach((r) => {
+          const op = document.createElement('option');
+          op.value = r.target;
+          op.textContent = `${r.target} — ${r.n_arrows} arrows`;
+          selT.appendChild(op);
+        });
+        const axInfo = $('embAxis');
+        const byT = {};
+        (perturb.axis ? perturb.axis.per_target : []).forEach((r) => { byT[r.target] = r; });
+        const sync = () => {
+          selT.disabled = !chk.checked;
+          view3.showArrows(chk.checked, selT.value);
+          const r = byT[selT.value];
+          axInfo.innerHTML = (!chk.checked || !r) ? '' :
+            `<b>${selT.value}</b> — ${r.n} arrows, median displacement ${r.median_d}. ` +
+            `${(r.frac_aligned * 100).toFixed(0)}% run along the shared axis, ` +
+            `${(r.frac_variance_along_axis * 100).toFixed(0)}% of its displacement variance ` +
+            `lies along it. Arrows against the axis are drawn in madder.`;
+        };
+        chk.addEventListener('change', sync);
+        selT.addEventListener('change', sync);
+        $('embHint').innerHTML = 'click a cell to hold its state &middot; the trail is expression ' +
+          'changing, not cells moving &middot; an arrow is control &rarr; perturbed, two ' +
+          'populations of different cells';
+        if (perturb.axis) {
+          $('cap3').innerHTML += ` <b>The perturbation layer.</b> ` +
+            `${perturb.arrows.length.toLocaleString()} arrows over ` +
+            `${new Set(perturb.arrows.map((r) => r.state)).size} states and ` +
+            `${perturb.targets.length} gene targets, each one a perturbed centroid minus its ` +
+            `matched control centroid at the same hour, both from at least ${perturb.min_cells} ` +
+            `cells. <b>An arrow is a difference between two populations of different cells</b> — ` +
+            `not a trajectory, not a velocity, and its length has no unit. Their first principal ` +
+            `component takes ` +
+            `<b>${(perturb.axis.var_explained_centred * 100).toFixed(0)}% of the displacement ` +
+            `variance</b> after centring (${(perturb.axis.var_explained * 100).toFixed(0)}% ` +
+            `before), so twenty-eight different perturbations really do push cells along one ` +
+            `direction in this projection — and the common offset they share is only ` +
+            `${(perturb.axis.mean_share_of_squared_length * 100).toFixed(0)}% of the total, so ` +
+            `that is collinearity rather than a batch shift. It is an axis in a UMAP, not a ` +
+            `gene programme; it cannot name a pathway.`;
+        }
+      } else {
+        $('embArrows').disabled = true;
+      }
+
+      afterVisible.push(() => view3.resize());
+      let rz3;
+      window.addEventListener('resize', () => { clearTimeout(rz3); rz3 = setTimeout(view3.resize, 140); });
+    } else {
+      const p3 = $('plate3'); if (p3) p3.hidden = true;
+    }
+
     /* ---- Plate II: provenance ------------------------------------------- */
     if (sources) {
       const nW = sources.sources.filter((s2) => s2.status === 'wired').length;
@@ -279,8 +423,8 @@
       const render2 = () => {
         view2 = PTSources.draw($('srcHold'), sources, pick);
       };
-      render2();
-      pick('platt');
+      afterVisible.push(render2);
+      afterVisible.push(() => pick('platt'));
       let rz2;
       window.addEventListener('resize', () => {
         clearTimeout(rz2);
@@ -379,6 +523,7 @@
     /* ---- go ------------------------------------------------------------- */
     $('boot').hidden = true;
     $('stage').hidden = false;
+    afterVisible.forEach((fn) => fn());
     view.resize();
     showPanel(-1);
     let rz;

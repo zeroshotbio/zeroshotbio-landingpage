@@ -165,6 +165,14 @@ const nextConfig = {
       // weaker evidence — the panel and the tables say so on every row. Its
       // prerequisites are two pseudobulk passes whose scripts ship beside the page
       // (pseudobulk_platt.py, pseudobulk_zmap.py). zmap.json is optional too.
+      // Plate III is the LANDSCAPE: 844,825 wild-type ZSCAPE cells on a time
+      // scrubber, plus control-vs-perturbed centroid arrows and one shared
+      // response axis. Built by build_fate_map_24_48_embed.py (cells.bin,
+      // states.json, embed_meta.json), _perturb.py (perturb.json) and _axis.py,
+      // in that order — the perturbation pass REUSES the projection stored in
+      // embed_meta.json rather than recomputing it, or every arrow shifts.
+      // Nothing on it is tracked and the plate says so three ways; do not make
+      // the trail a solid line.
       // Plate II is the PROVENANCE stack — fourteen sources on one developmental
       // axis, with only the two that actually feed the page drawn filled. Its
       // record is sources.json, written by scripts/build_fate_map_24_48_sources.py,

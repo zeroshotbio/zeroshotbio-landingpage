@@ -315,6 +315,74 @@ Deliberately different words — `strong`/`clear`/`ambiguous`/`weak`/`thin` agai
 vocabulary would invite the two to be read as comparable, and a fraction of shared cells and a
 z-score against a null are not.
 
+## Plate III (fifth pass, 2026-09-10) — the landscape, hour by hour
+
+**844,825 wild-type ZSCAPE cells** at 24, 26 … 48 hpf — every control arm, no perturbed cell — under
+a scrubber. 6.4 MiB binary, 13 hours, 154 states.
+
+**Nothing on this plate is tracked, and the design says so three ways.** ZSCAPE is 1,860 separate
+embryos fixed at separate hours; a cell at 24 hpf and a cell at 26 hpf are different cells from
+different animals. So a state's trail is **dotted** rather than solid, the toolbar hint says
+*the trail is expression changing, not cells moving*, and the caption says it again. A solid line
+would read as a path and the plate would be lying.
+
+The embedding is the **authors' own 3D UMAP** (`umap3d_1..3`) under a fixed principal projection to
+2D, computed once and written into `embed_meta.json` as a mean and two basis vectors so it is
+reproducible and auditable. It keeps **83.9%** of the 3D UMAP's variance. No new embedding is
+invented. UMAP distance is not a quantity.
+
+### The perturbation layer
+
+**5,011 arrows** over 132 states and 28 gene targets. Each is a perturbed state's centroid minus
+the *same state's* control centroid *at the same hour*, both arms needing at least 25 cells.
+Perturbed cells are projected with the **same** stored basis as the controls — recomputing it over a
+different cell set would silently shift every arrow.
+
+An arrow is a difference between two populations of different cells in a UMAP. Not a trajectory, not
+a velocity, and its length has no unit.
+
+**Arrows are drawn ×8, and the plate says so with two stacked scale bars** — one showing a 0.1
+displacement as drawn, one showing it true size. A median displacement is about 0.6% of the plate's
+width, six pixels, invisible; drawing them unmagnified was the first version and it looked like the
+feature had failed.
+
+### One shared response axis, and it is real
+
+The first principal component of all 5,011 displacement vectors takes **81.8% of the variance after
+centring** (82.8% before). Twenty-eight different genetic perturbations really do push cells along one
+direction in this projection.
+
+**The centred figure is the one that matters and it was nearly not computed.** An un-centred first
+component captures whatever common offset the displacements share, and a systematic
+control-versus-injected batch shift would produce a large one with no biology in it. Here the common
+mean displacement is only **8.0% of total squared length**, and centring costs a single point of
+variance explained — so this is collinearity, not a batch shift. Both numbers are on the page for
+exactly that reason.
+
+Arrows running *against* the axis are drawn in madder; they are the interesting minority. Per-target
+alignment is in `/data/fate_map/zscape_response_axis_by_target.tsv`.
+
+**It is an axis in a UMAP, not a gene programme.** It cannot name a pathway and does not try. A
+gene-level shared response would need a pseudobulk pass over ZSCAPE's expression matrix; that is a
+different job.
+
+### Traps, all of which cost real time
+
+- **A canvas sized inside a hidden ancestor gets `clientWidth` 0 and paints nothing.** Plate III
+  shipped completely blank the first time while every other part of it — legend, slider, panel,
+  caption — worked perfectly. Plate I had escaped this only by accident, because its resize happens
+  to be the last statement in the bootstrap. Anything measuring the DOM now runs from an
+  `afterVisible` queue, after `#stage` is unhidden.
+- **0.5 alpha at 1.6px turned 202,388 cells into solid black blobs.** Technically correct and it
+  said nothing about where cells pile up. 0.16 at 1.3px, per PLATE_STYLE.md §1.1.
+- **Joining a three-level MultiIndex onto a two-level one hung for 33 minutes at 100% CPU** with no
+  output. Merge on columns instead.
+- **The rewrite that expanded categoricals into 2.37M Python strings was OOM-killed with an empty
+  log.** Everything now groups on integer codes with `np.bincount`; the aggregation runs in minutes
+  and never materialises an object array.
+- **The scale-bar block was placed at `H - 52` and its last two rows fell off the canvas.** It is
+  four rows tall.
+
 ## Reusable tables
 
 Written to `/data/fate_map/`, outside the web repo, for the ZMAP and DanioCell layers:
@@ -326,6 +394,8 @@ Written to `/data/fate_map/`, outside the web repo, for the ZMAP and DanioCell l
 | `platt_state_enrichment.json` | 358 | the same, nested, with per-field provenance strings and all matches |
 | `crosswalk_platt_zmap.tsv` / `.parquet` | 8,592 | every (Platt state, ZMAP state) match at four ZMAP levels, with ρ, the z against the state's null, and `method` on every row |
 | `platt_zmap_enrichment.tsv` / `.parquet` / `.json` | 358 | per state: ZMAP fine/tissue/germ-layer calls, confidence, predicted hpf, and the ZSCAPE comparison |
+| `zscape_perturb_displacement.tsv` / `.parquet` | 5,011 | every control→perturbed centroid displacement, with its projection on the shared axis |
+| `zscape_response_axis_by_target.tsv` | 28 | per target: median projection, fraction aligned, fraction of its displacement variance along the shared axis |
 
 The web page loads `enrich.json` (402 KB) and `zmap.json` (840 KB) — the 186 graph states only.
 Both are optional at runtime; the panel degrades block by block if either is absent.

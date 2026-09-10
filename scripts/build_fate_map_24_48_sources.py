@@ -57,8 +57,10 @@ SOURCES = [
          modality="scRNA-seq, 1,860 individually barcoded embryos, 34 gene targets",
          window=[18, 96], evidence="observed",
          scale="3,231,733 cells · 2,374,633 in the window",
-         uses="The crosswalk in every state's panel, joined on shared cell barcodes, and "
-              "the developmental-time distribution. 89.1% of Platt's cells are ZSCAPE cells.",
+         uses="The crosswalk in every state's panel, joined on shared cell barcodes, and the "
+              "developmental-time distribution — 89.1% of Platt's cells are ZSCAPE cells. Its "
+              "844,825 wild-type cells are also the whole of Plate III, and its 28 perturbation "
+              "targets are the arrows and the shared response axis on it.",
          cite="Saunders, Srivatsan, Duran, Dorrity, Ewing, Linbo, Shendure, Raible, Moens, "
               "Kimelman & Trapnell. Embryo-scale reverse genetics at single-cell resolution. "
               "Nature 623 (2023).",

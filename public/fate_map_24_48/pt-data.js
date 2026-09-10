@@ -154,13 +154,31 @@
     let zmap = null;
     try { zmap = await getJSON('zmap.json'); } catch (err) { console.warn('no zmap.json:', err.message); }
 
+    /* Plate III's three files. The 6.4 MiB binary is the only large asset on the
+     * page; if it or its companions are missing the plate is skipped and the
+     * rest of the page is unaffected. */
+    let embed = null;
+    try {
+      const [em, st, cb] = await Promise.all([
+        getJSON('embed_meta.json'), getJSON('states.json'),
+        fetch(BASE + 'cells.bin', { cache: 'no-cache' }).then((r) => {
+          if (!r.ok) throw new Error('cells.bin — HTTP ' + r.status);
+          return r.arrayBuffer();
+        }),
+      ]);
+      embed = { meta: em, states: st, cells: window.PTEmbed.decode(cb) };
+      if (embed.cells.n !== em.n_cells) throw new Error('cells.bin disagrees with embed_meta.json');
+    } catch (err) { console.warn('no embedding:', err.message); embed = null; }
+    let perturb = null;
+    try { perturb = await getJSON('perturb.json'); } catch (err) { console.warn('no perturb.json:', err.message); }
+
     /* Cross-check the two files against each other rather than trusting either.
      * A half-deployed asset set should fail loudly, not draw something
      * plausible — see PLATE_STYLE.md §4. */
     if (graph.nodes.length !== meta.counts.states || graph.edges.length !== meta.counts.edges) {
       throw new Error('graph.json disagrees with meta.json — a stale file is cached');
     }
-    return { graph: layout(graph), meta, enrich, sources, zmap };
+    return { graph: layout(graph), meta, enrich, sources, zmap, embed, perturb };
   }
 
   global.PT = { load, BASE };
