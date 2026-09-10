@@ -5842,8 +5842,11 @@ function magnetRack(g, r){
   const mags=[];
   for(let i=0;i<3;i++){
     const cx=r.x-r.w/2+(i+0.5)*r.w/3, hw=r.w*0.115, z0=r.h*0.22, z1=r.h*0.78;
-    g.appendChild(el("polygon",{points:quad(cx-hw,cx+hw,z0,z1),fill:"var(--m-top)",
-      "fill-opacity":".5",stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".55"}));
+    /* r.mag lets one bench give its plates a hue of their own without every
+       other rack on the map inheriting it */
+    g.appendChild(el("polygon",{points:quad(cx-hw,cx+hw,z0,z1),fill:r.mag||"var(--m-top)",
+      "fill-opacity":r.mag?".9":".5",stroke:"var(--stroke)","stroke-width":r.mag?"1.1":".8",
+      "stroke-opacity":r.mag?".8":".55"}));
     /* the field rides on its own copy of the plate rather than on the plate's
        own fill, so lighting it never has to remember what colour it was */
     const f=el("polygon",{points:quad(cx-hw,cx+hw,z0,z1),fill:"var(--signal)",
@@ -6053,7 +6056,8 @@ function drawCapture(g,n){
      well inside the near face — so the composition against B7 and B9 that the
      throw above buys is untouched. */
   const rack={x:n.x+n.w*0.30, y:n.y+n.d*1.05,
-              w:n.w*1.55, d:n.d*0.56, h:n.h*0.50, tubes:8, strips:2};
+              w:n.w*1.55, d:n.d*0.56, h:n.h*0.50, tubes:8, strips:2,
+              mag:"var(--ch1)"};
   const T=magnetRack(g, rack);
 
   /* ---- THE MAGNIFICATION --------------------------------------------------
@@ -6099,12 +6103,20 @@ function drawCapture(g,n){
      fact seen at two scales rather than as two decorations. */
   /* TWO WALLS, ONE EACH SIDE. Asked for from the page: three strands land on
      one side and three on the other, so the tube is drawn sitting between two
-     plates and the sweep splits rather than all going one way. */
-  const wall=(a)=>[(LX*Math.cos(a)).toFixed(1),(LY*Math.sin(a)).toFixed(1)];
-  [[2.36,3.93],[-0.79,0.79]].forEach(([a0,a1])=>
-    lens.appendChild(el("path",{d:`M ${wall(a0).join(" ")} `+
-      `A ${LX} ${LY} 0 0 1 ${wall(a1).join(" ")}`,fill:"none",
-      stroke:"var(--m-top)","stroke-width":"3.4","stroke-opacity":".45"})));
+     plates and the sweep splits rather than all going one way.
+
+     THE PLATES ARE STRAIGHT, SOLID AND STAND OFF THE RING. Asked for from the
+     page again: pale arcs stroked on the ring itself read as a thickening of
+     the glass, not as a magnet beside the tube. A straight bar cannot be
+     mistaken for a piece of an ellipse, the gap says it is a separate object,
+     and --ch1 is a hue nothing else in the glass wears — the plates on the
+     rack take the same, so the two still read as one fact at two scales. */
+  const MG=2.6, MW=6.2, MH=27;
+  [-1,1].forEach(s=>lens.appendChild(el("rect",{
+    x:(s<0 ? -LX-MG-MW : LX+MG).toFixed(1), y:(-MH).toFixed(1),
+    width:MW.toFixed(1), height:(2*MH).toFixed(1), rx:"1.4",
+    fill:"var(--ch1)","fill-opacity":".95",
+    stroke:"var(--stroke)","stroke-width":"1","stroke-opacity":".7"})));
 
   /* the debris leaves the field of view, which means it has to be able to go
      past the boundary and stop existing there rather than at the edge of the
