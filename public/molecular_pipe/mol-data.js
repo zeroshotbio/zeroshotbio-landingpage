@@ -124,14 +124,17 @@ const NODES = [
    round later, so it carries two barcodes already on the strand and a third
    landing, plus the 48 x 96 x 96 the built text below asserts, which is the
    one thing on this row no single plate can show. The prose stays lifted
-   verbatim. */
-{id:"R3p", key:"B6", group:"In situ barcoding", shape:"ligation3", name:"Round 3 — ligation", x:9.0, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:8, gap:0.05443,
+   verbatim.
+   w, d and h are B4's, because the two ligations were asked to read at one
+   plate size and one scale. The 0.45 is paid out of the gap behind it, not the
+   lane's end; see the note above LANES. */
+{id:"R3p", key:"B6", group:"In situ barcoding", shape:"ligation3", name:"Round 3 — ligation", x:9.0, y:R2, lane:"r2", w:1.45, d:1.16, h:0.42, cols:12, rows:8, gap:0.05443,
  sub:"96 wells · R3_v3 · TruSeq R2 + biotin",
  does:"A third barcode is ligated, and it brings two passengers: the Illumina TruSeq Read 2 sequence, and a biotin. After this round a cell's path through three plates is almost certainly unique — that combination is what will be read as a cell identity, and no droplet was ever involved.",
  built:"Section 1.4. Ligation in a third 96-well plate, barcode set R3_v3. The biotin is why the next section works at all: it is the handle streptavidin beads will grab once the cells are gone. The three rounds give 48 x 96 x 96 = 442,368 addressable paths for roughly 95,000 cells. Microwell-seq builds its barcode the same way — three rounds of split-pool synthesis, 3 x 6 nt in an 18 nt barcode.",
  cond:"Two cells can still collide on the same path. That residual collision rate is the real doublet source, it is set by loading density rather than by this step, and it differs per sublibrary — which is exactly why a single global doublet threshold two rows down cannot be right for all eight."},
 
-{id:"SB", key:"B7", group:"In situ barcoding", shape:"countsplitlyse", name:"Count again, split, lyse", x:10.8, y:R2, lane:"r2", w:0.85, d:0.85, h:0.55,
+{id:"SB", key:"B7", group:"In situ barcoding", shape:"countsplitlyse", name:"Count again, split, lyse", x:10.8, y:R2, lane:"r2", w:0.85, d:0.85, h:0.55, gap:0.05443,
  sub:"8 sublibraries · 12,500 cell ceiling",
  does:"The pool is washed, counted a second time, divided into eight sublibraries, and only then are the cells lysed. Every sublibrary contains cells from every sample. This is the last moment at which anything in the tube is still a cell.",
  built:"Section 1.5. Wash, resuspend in Pre-Lysis Dilution Buffer, count on a haemocytometer, then split by volume using the Sublibrary Generation Table in Appendix A. Lysis is 15 minutes at 65C; lysates keep at -80C for up to six months. Eight sublibraries here (Sublib1 to Sublib8, library IDs LV6001530579 to LV6001530706, submission SO11332); sublibrary membership becomes a first-class obs field and survives to the matrix.",
@@ -523,7 +526,13 @@ const EDGES = [
    gaps gives up 0.45: a weight of 0.6 - 0.45/k with k = 11.63/14.1, which is
    0.05443. Σw rises by 0.9 and k·Σgaps falls by 0.9, so k does not move, and
    neither does any centre on the row, B5's included. The footprints end up
-   nearly touching; the bench was always drawn wider than its footprint. */
+   nearly touching; the bench was always drawn wider than its footprint.
+
+   B6 GREW THE SAME WAY, from 1.0 to B4's 1.45, but the gap in front of it is
+   B5's and was already spent. So the whole 0.45 comes out of the gap behind
+   it, B6 -> B7, at the same weight 0.05443. k holds again and every other
+   centre on the row stays put; B6's own slides 0.225 right, because it grew
+   rightwards into that gap. */
 const LANES = [
   {id:"r2", y:R2, x0:0.7, x1:33.140, dir:+1},
 ];

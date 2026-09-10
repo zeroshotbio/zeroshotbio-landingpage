@@ -3879,7 +3879,10 @@ DRAW.ligation = drawLigation;
    --ch1..12, which are declared on /molecular_pipe and nowhere else; this
    shape is worn by that page alone.
    ------------------------------------------------------------------ */
-function drawLigation3(g,n){
+function drawLigation3(g0,n){
+  /* one group, so the whole bench can be slid onto its box the way B4's is —
+     see ON B4'S SCALE, below */
+  const g=g0.appendChild(el("g",{transform:"translate(0,0)"}));
   const r=rng(2311);
   const clamp=x=>x<0?0:x>1?1:x;
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
@@ -3889,11 +3892,16 @@ function drawLigation3(g,n){
      behind is where the view hangs the name label, and a 96-well deck is
      wide enough to reach it. Depth comes off the grid rather than being
      authored, because square well pitch is the entire requirement and it is
-     just width x rows / cols. */
+     just width x rows / cols.
+
+     B4'S TILE AND B4'S FRACTIONS. The two ligations were asked to read as
+     one plate at one scale, so this tile is B4's size and the plate is cut
+     from it with B4's 0.712 and 0.714 — the same plastic, at the same place
+     on the same box. */
   const COLS=n.cols||12, ROWS=n.rows||8, NW=COLS*ROWS;
-  const PW=n.w*1.032;
+  const PW=n.w*0.712;
   const plate={x:n.x, y:n.y+n.d*0.30, w:PW, d:PW*ROWS/COLS};
-  const pth=n.h;
+  const pth=n.h*0.714;
   const HUE=k=>rampHue(k,NW);
   const deck=skirtSlab(g,plate,pth,"var(--ch3)");
 
@@ -3970,10 +3978,23 @@ function drawLigation3(g,n){
      has to land INSIDE the membrane — it is what a bead grabs at B8, and a
      tag drawn on the wall would say the cell had already gone — and at 17.1
      against a cell half-width of 18.1 it clears by about a base. Everything
-     to the right of the join is measured backwards from that. */
-  const IN=n.w*0.80;
-  const IRX=21*IN, IRY=15*IN, IDX=50*IN;
-  const c0=P(n.x,n.y,n.h), IY=c0[1]-46*IN;
+     to the right of the join is measured backwards from that.
+
+     ON B4'S SCALE, AS ASKED. B4 has since taken B2's unit, glass, spacing
+     and row height, and a lens row left on the old numbers read as a
+     smaller bench beside it. So those are B4's numbers exactly again, the
+     molecule — authored in IN — just has a little more glass round it, and
+     the whole drawing is slid onto the middle of its box the way B4's is. */
+  const IN=n.w*0.54;
+  const IRX=23*IN, IRY=20*IN, IDX=58*IN;
+  const c0=P(n.x,n.y,n.h), IY=c0[1]-60*IN;
+  {
+    const pc=P(plate.x,plate.y,0);
+    const low=P(plate.x+plate.w/2,plate.y+plate.d/2,0)[1];
+    const mid=P(n.x,n.y,n.h/2);
+    g.setAttribute("transform",`translate(${(mid[0]-pc[0]).toFixed(2)},`+
+      `${(mid[1]-(IY-IRY+low)/2).toFixed(2)})`);
+  }
   const RNA0=-15.6, CDNA0=-11.5, CHIP0=-7.0;
   const CHW=3.0, CHP=6.4, CHH=3.2;        // chip half-width, pitch, half-height
   const bcx=k=>CHIP0+CHW+k*CHP;           // the centre of chip k, k = 0,1,2
