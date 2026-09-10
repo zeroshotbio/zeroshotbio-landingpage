@@ -280,13 +280,13 @@ const NODES = [
  built:"Nothing to cite. The request that asked for this station described a picture — a strip of PCR tubes, a flat cassette with a row of narrow lanes, two electrode pins over one lane, and a trace with two or three narrow peaks drawn over it — and named no manual section, no instrument, no kit, no ladder and no size range, so this record names none either.",
  cond:"Asked for from the page rather than read off an artefact, so what it carries is a figure and not a measurement: the peaks are drawn, not read, and the axes carry no units because the request gave none. What it does not settle is how it stands against B9 one station back, whose built line already cites section 2.5 for a fragment-size measurement of this same cDNA. This may be a second view of that measurement rather than a step of its own; the record makes no protocol claim, and nothing downstream depends on which it is."},
 
-/* THE DRAWING LOST ITS MACHINE FROM "EDIT VISUAL" AND THE RECORD DID NOT
-   MOVE, which is the rule for a lifted station: /pipeline owns this prose. The
-   request took the cycler off the bench, kept the black inset the stations
-   before this one wear, and kept the fragmenting as the step. Nothing below
-   ever leaned on the machine — the three sentences cite sections 3.1 to 3.4
-   and a bead chemistry, and none of them names an instrument — so removing the
-   object changed nothing there to change. */
+/* THE DRAWING HAS BEEN REDRAWN FROM "EDIT VISUAL" MORE THAN ONCE AND THE
+   RECORD HAS NOT MOVED, which is the rule for a lifted station: /pipeline owns
+   this prose. The latest request put a cycler back on the bench and stopped
+   the glass at blunt, A-tailed ends, with no adapter drawn — the ligation is
+   left to the next station's picture. The record still names it because the
+   protocol does; nothing below ever leaned on the drawing, and none of the
+   three sentences names an instrument. */
 {id:"FRG", key:"C1", group:"Sequencing library prep", shape:"fragmentligate", name:"Fragment, end-prep, ligate adapters", x:15.6, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
  sub:"double-sided SPRI · TruSeq R1",
  does:"The amplified cDNA is chopped to sequenceable lengths, its ends are repaired and A-tailed, and the Illumina TruSeq Read 1 adapter is ligated to the 5-prime end.",
