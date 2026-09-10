@@ -7380,6 +7380,11 @@ DRAW.pcramplify = drawPcrAmplify;
    handed back rather than driven from here — refusing is the caller's claim to
    make, and a third caller with an archived number should be able to fill them.
 
+   B9 NO LONGER CALLS THEM. "Edit visual" rebuilt B9 as a strip, a cassette
+   and two pins with no machine on the bench, so C3 is the one caller today;
+   the two sections are still the same measurement, and the paragraph above
+   still says why the component is shaped for more than one.
+
    Requires ellipseAt() and arcPts() from the A2 clutch block.
    ================================================================== */
 
@@ -7470,109 +7475,96 @@ function qcScreen(g,n){
 }
 
 /* ------------------------------------------------------------------
-   B9 · QUANTIFY THE cDNA — an instrument, and the trace it draws.
+   B9 · QUANTIFY THE cDNA — a sample set up to be sized, and nothing moving.
 
-   NOTHING MOVES AT THIS STATION and that is the whole composition. B7 splits,
-   B8 captures and cycles, C1 fragments; this box only looks at what B8 handed
-   over. So there is no plate here and no flow line: one aliquot standing in the
-   read port, and the trace that comes off it. A vessel going anywhere would be
-   claiming work the step does not do.
+   REBUILT FROM "EDIT VISUAL", NOT EDITED. The request named three objects and
+   their arrangement and nothing else: a strip of PCR tubes, a flat cassette
+   with a row of narrow lanes across it, and two thin electrode pins over one
+   lane. So the machine, the display and the trace that stood here are gone
+   rather than rearranged; qcBench and qcScreen stay behind for C3.
 
-   THE SAMPLE IS DRAWN IN B8's COLOUR. What is in the port is the same amplified
-   cDNA the station before it released into a fresh reaction, and the trace on
-   the screen is a measurement OF that material rather than a graphic about it —
-   so both wear --ch6 and the bench reads as one tube travelling, not two.
+   NO ANIMATION YET, AND NOTHING WIRED IN. No ticker, no flow from tube to well
+   and no call into B9a's drawing next door, although it draws the same three
+   objects — the request asked for this arrangement standing on its own, and a
+   part shared with a station that animates would bring that station's clock
+   with it. The pins are drawn RAISED: pins that are down are a moment in a run,
+   and a run is the part this drawing has not been asked for.
 
-   WHERE THE DISPLAY STANDS IS FORCED. B8 throws its cycler back of this tile
-   and its magnet rack forward of it, and C1 is the next tile along at row
-   level; the wedge past the cycler's far corner and above C1 is the only clear
-   screen a display this size fits into. Hence the odd-looking offsets below —
-   they are not composition, they are the gap.
+   THE STRIP STANDS BEHIND AND THE WELLS FACE IT. Tubes along y at the back of
+   the tile, lanes along x so a lane reads left to right the way the row does,
+   and every well at the end nearest the strip — the arrangement says where a
+   drop would go without drawing it going.
 
-   THE READOUT NEVER RESOLVES. The concentration measured here is what sets the
-   cycle count in the indexing PCR two boxes along, and it was not archived, so
-   the cells stay dashes however long the instrument runs. Same refusal as B8's
-   hollow pips and for the same reason: the row can show that a measurement
-   happened and still decline to invent what it said.
-
-   The machine and the display are qcBench and qcScreen — see their header. What
-   is left here is this station's own: the trace, and the clock it runs on.
+   Composed at w .72, d .72, h .40; every position is a fraction of the node
+   and every stroke is scaled with it. The tubes hold --ch6, the cDNA colour B8
+   and B8a hand on.
    ------------------------------------------------------------------ */
 function drawQuantify(g,n){
-  const CDNA="var(--ch6)";
-  const clamp=x=>Math.max(0,Math.min(1,x));
+  const SC=n.w/0.72;
+  const SAMPLE="var(--ch6)";
 
-  const M=qcBench(g,n), SC=M.SC;
-  const SCR=qcScreen(g,n);
+  /* ---- THE STRIP ----------------------------------------------------------
+     Eight tubes on the web that makes them one strip, drawn back to front so
+     each tube stands in front of the one behind it. Tapered, because a PCR
+     tube is. */
+  const NT=8, tx=n.x-n.w*0.27, tr=n.d*0.03, th=n.h*0.55;
+  const ty=i=>n.y+n.d*(-0.29+i*0.083);
+  g.appendChild(el("polygon",{points:pts([P(tx-tr*1.1,ty(0),th),P(tx+tr*1.1,ty(0),th),
+    P(tx+tr*1.1,ty(NT-1),th),P(tx-tr*1.1,ty(NT-1),th)]),fill:"var(--g-top)",
+    "fill-opacity":".5",stroke:"var(--stroke)","stroke-width":(0.6*SC).toFixed(2),
+    "stroke-opacity":".5"}));
+  for(let i=0;i<NT;i++){
+    const foot=ellipseAt(tx,ty(i),0,tr*0.55), lvl=ellipseAt(tx,ty(i),th*0.36,tr*0.72),
+          rim=ellipseAt(tx,ty(i),th,tr);
+    g.appendChild(el("polygon",{points:pts([...arcPts(rim,0,Math.PI,10),
+      ...arcPts(foot,Math.PI,0,8)]),fill:"var(--g-top)","fill-opacity":".45",
+      stroke:"var(--stroke)","stroke-width":(0.6*SC).toFixed(2),"stroke-opacity":".5"}));
+    g.appendChild(el("polygon",{points:pts([...arcPts(lvl,0,Math.PI,10),
+      ...arcPts(foot,Math.PI,0,8)]),fill:SAMPLE,"fill-opacity":".55"}));
+    g.appendChild(el("ellipse",{cx:rim.x.toFixed(1),cy:rim.y.toFixed(1),
+      rx:rim.rx.toFixed(2),ry:rim.ry.toFixed(2),fill:"var(--bg)","fill-opacity":".35",
+      stroke:"var(--stroke)","stroke-width":(0.6*SC).toFixed(2),"stroke-opacity":".55"}));
+  }
 
-  /* THE TRACE IS THE ONE A cDNA TAPE ACTUALLY GIVES: two sharp marker peaks
-     from the ladder at either end of the run, and the broad smear between them
-     that is the library. Three gaussians rather than a drawn squiggle, because
-     the shape of the middle peak — wide, not sharp — is the whole reading. */
-  const PEAKS=[[0.10,0.024,0.78],[0.55,0.110,0.95],[0.92,0.026,0.68]];
-  const sig=u=>{ let v=0.04;
-    PEAKS.forEach(([m,s,a])=>{ v+=a*Math.exp(-((u-m)*(u-m))/(2*s*s)); });
-    return v; };
-  const N=120;
-  let peak=0; for(let i=0;i<=N;i++) peak=Math.max(peak,sig(i/N));
-  const PT=(u,v)=>SCR.at(u, v/peak);
-  const base0=SCR.base0, base1=SCR.base1;
+  /* ---- THE CASSETTE -------------------------------------------------------
+     Low and flat, in front of the strip. RUN is the lane the pins are over:
+     fourth of six, so it is one of the row rather than its edge, and it is
+     drawn a shade firmer so the eye finds it before it finds the pins. */
+  const cas={x:n.x+n.w*0.10, y:n.y+n.d*0.01, w:n.w*0.50, d:n.d*0.64, h:n.h*0.14};
+  paint(g,cas.x,cas.y,cas.w,cas.d,cas.h,SKIN.tile);
+  const top=(x0,x1,y0,y1)=>pts([P(x0,y0,cas.h),P(x1,y0,cas.h),P(x1,y1,cas.h),P(x0,y1,cas.h)]);
+  const NL=6, RUN=3;
+  const lx0=cas.x-cas.w*0.42, lx1=cas.x+cas.w*0.43, lhw=cas.d*0.032, WW=cas.w*0.09;
+  const laneY=j=>cas.y-cas.d/2+cas.d*(0.13+j*0.74/(NL-1));
+  for(let j=0;j<NL;j++){
+    const ly=laneY(j), so=j===RUN?".75":".45";
+    g.appendChild(el("polygon",{points:top(lx0,lx1,ly-lhw,ly+lhw),
+      fill:"var(--bg)","fill-opacity":".7",stroke:"var(--stroke)",
+      "stroke-width":(0.5*SC).toFixed(2),"stroke-opacity":so}));
+    g.appendChild(el("polygon",{points:top(lx0,lx0+WW,ly-lhw*1.4,ly+lhw*1.4),
+      fill:"var(--bg)","fill-opacity":".9",stroke:"var(--stroke)",
+      "stroke-width":(0.6*SC).toFixed(2),"stroke-opacity":so}));
+  }
 
-  const tp=[]; for(let i=0;i<=N;i++){ const u=i/N; tp.push(PT(u,sig(u))); }
-  const fill=el("polygon",{points:pts([...tp,base1,base0]),
-    fill:CDNA,"fill-opacity":"0"});
-  g.appendChild(fill);
-  /* the sweep is a dash offset rather than a rewritten point list: the curve is
-     born whole and complete, and the only thing the ticker owns is how much of
-     it has been drawn yet */
-  let len=0;
-  for(let i=1;i<tp.length;i++)
-    len+=Math.hypot(tp[i][0]-tp[i-1][0], tp[i][1]-tp[i-1][1]);
-  const trace=el("polyline",{points:pts(tp),fill:"none",stroke:CDNA,
-    "stroke-width":(1.5*SC).toFixed(2),"stroke-linecap":"round",
-    "stroke-linejoin":"round","stroke-dasharray":`${len.toFixed(1)} ${len.toFixed(1)}`,
-    "stroke-dashoffset":len.toFixed(1)});
-  g.appendChild(trace);
-
-  const sTop=PT(0,peak);
-  const scan=el("line",{x1:base0[0].toFixed(1),y1:base0[1].toFixed(1),
-    x2:sTop[0].toFixed(1),y2:sTop[1].toFixed(1),stroke:"var(--signal)",
-    "stroke-width":".9","stroke-opacity":"0"});
-  g.appendChild(scan);
-  const pen=el("circle",{cx:tp[0][0].toFixed(1),cy:tp[0][1].toFixed(1),
-    r:(2*SC).toFixed(2),fill:CDNA,"fill-opacity":"0"});
-  g.appendChild(pen);
-
-  /* ---- timing ------------------------------------------------------------
-     A tape run is minutes and the hold afterwards is as long as somebody looks
-     at it, so neither number here is the bench's. What the beats have to keep
-     is the order: the trace cannot be complete before the run is, and the
-     readout cannot be blank until the instrument has finished and had nothing
-     to write. */
-  const RUN=3.4, HOLD=2.6, CLEAR=0.8, T=RUN+HOLD+CLEAR;
-  let t=0;
-  const run=dt=>{
-    t=(t+dt)%T;
-    const running=t<RUN, u=clamp(t/RUN);
-    trace.setAttribute("stroke-dashoffset",(len*(1-u)).toFixed(1));
-    trace.setAttribute("stroke-opacity",
-      (t<RUN+HOLD ? 1 : 1-clamp((t-RUN-HOLD)/CLEAR)).toFixed(2));
-    const i=Math.min(N,Math.round(u*N));
-    const b=PT(i/N,0), c=PT(i/N,peak);
-    scan.setAttribute("x1",b[0].toFixed(1)); scan.setAttribute("y1",b[1].toFixed(1));
-    scan.setAttribute("x2",c[0].toFixed(1)); scan.setAttribute("y2",c[1].toFixed(1));
-    scan.setAttribute("stroke-opacity",running?".5":"0");
-    pen.setAttribute("cx",tp[i][0].toFixed(1)); pen.setAttribute("cy",tp[i][1].toFixed(1));
-    pen.setAttribute("fill-opacity",running?".9":"0");
-    fill.setAttribute("fill-opacity",
-      (t<RUN ? 0 : 0.16*(t<RUN+HOLD ? clamp((t-RUN)/0.5) : 1-clamp((t-RUN-HOLD)/CLEAR))).toFixed(2));
-    M.setLamp(running ? 0.35+0.55*Math.abs(Math.sin(t*3.2)) : 0.15);
-    /* the dashes come UP when the run ends. Nothing lands in them — that is the
-       point — but they have to be legible at the moment a number would be. */
-    M.setCells(running?0.3:0.75);
-  };
-  run(0);
-  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+  /* ---- THE PINS -----------------------------------------------------------
+     One over RUN's well and one over its far end, the two places a run is
+     driven between. Under each a faint drop to the lane, because in this
+     projection a pin hanging over a lane and a pin standing on the lane behind
+     it draw in the same place, and the drop is what says which. */
+  const ry=laneY(RUN), UP=n.h*0.45, PL=n.h*0.75;
+  [lx0+WW*0.5, lx1-cas.w*0.05].forEach(px=>{
+    const s=P(px,ry,cas.h), a=P(px,ry,cas.h+UP), b=P(px,ry,cas.h+UP+PL),
+          c=P(px,ry,cas.h+UP+PL*0.7);
+    g.appendChild(el("line",{x1:s[0].toFixed(1),y1:s[1].toFixed(1),x2:a[0].toFixed(1),
+      y2:a[1].toFixed(1),stroke:"var(--fg3)","stroke-width":(0.6*SC).toFixed(2),
+      "stroke-opacity":".6","stroke-dasharray":`${(1.2*SC).toFixed(2)} ${(1.6*SC).toFixed(2)}`}));
+    g.appendChild(el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),x2:b[0].toFixed(1),
+      y2:b[1].toFixed(1),stroke:"var(--fg2)","stroke-width":(0.9*SC).toFixed(2),
+      "stroke-linecap":"round"}));
+    g.appendChild(el("line",{x1:c[0].toFixed(1),y1:c[1].toFixed(1),x2:b[0].toFixed(1),
+      y2:b[1].toFixed(1),stroke:"var(--fg2)","stroke-width":(2.4*SC).toFixed(2),
+      "stroke-linecap":"round"}));
+  });
 }
 DRAW.quantify = drawQuantify;
 
@@ -7722,8 +7714,9 @@ function drawSizeRun(g,n){
      backing panel, because a trace read against the ground grid is a trace
      read against the wrong lines.
 
-     IT IS SMALL BECAUSE THE AIR ABOVE THE CASSETTE IS. B9 throws its display
-     back over this tile, B9's own box stands to the left, and this station's
+     IT IS SMALL BECAUSE THE AIR ABOVE THE CASSETTE WAS. B9 threw its display
+     back over this tile — it has since been rebuilt without one, and the graph
+     was left where it had been cut to fit — B9's own box stands to the left, and this station's
      name starts at the tile's back edge and runs up-right — so what is left
      straight above the cassette is a pocket about forty pixels by twenty-five
      at the authored size, and the panel is cut to it. That is also why the
@@ -8526,6 +8519,11 @@ DRAW.indexpcr = drawIndexPcr;
    component and runs its clock at B9's rate. Every choice here is "whatever B9
    did", because the one thing this frame has to say is what CHANGED, and a
    difference is only legible against a background that did not move.
+
+   B9 HAS SINCE BEEN REDRAWN from "Edit visual" as a strip, a cassette and two
+   pins, so on /molecular_pipe the two stations no longer share a picture. The
+   argument above is still what this frame is built on; B9 is no longer the
+   frame it is being read against there.
 
    THE CURVE IS THE WHOLE CONTENT. B9 drew a broad low hump — un-fragmented cDNA
    spread over every size the amplification made. Between there and here C1 cut

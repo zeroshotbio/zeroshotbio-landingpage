@@ -238,6 +238,12 @@ const NODES = [
  built:"Nothing to cite. The request that asked for this station described an object and a motion — a thermal cycler with the lid down and one indicator lit, a connector in from the magnetic rack, and a magnified strand doubling twice — and named no manual section, no cycle count, no polymerase, no volume and no instrument, so this record names none either. A second request from the page later replaced what is under the glass with three strands, an enzyme on each and a cloud, and a fourth removed the cycler altogether, leaving the glass as the whole station; neither named a protocol either, and the object that is gone was never evidence of one. The amplification this row does carry is B8's, off sections 2.1 to 2.4, and the cycle table that governs it is on that record.",
  cond:"Asked for from the page rather than read off an artefact, so what it carries is a figure and not a measurement. Three strands start the picture and a cloud ends it, and neither number is a number: an amplification is billions of molecules, so the three are there to be followed and the cloud is there to say more than can be drawn. The gold drop at each tip is B8's biotin, drawn on every strand because this glass and the one next door draw the same molecule the same way — it marks the molecule, not a claim about which end-tags survive into a copy. What the request does not settle is whether this is a step of its own or a second view of the word amplify already in B8's name — B8's built line is where the amplification is described, this record makes no protocol claim, and nothing downstream depends on which it is."},
 
+/* THE DRAWING WAS REBUILT FROM "EDIT VISUAL" AND THE RECORD DID NOT MOVE —
+   /pipeline owns this prose. The request asked for a strip of PCR tubes, a
+   cassette of narrow lanes and two electrode pins over one lane, standing
+   still, and that is what DRAW.quantify now draws. The record still cites
+   section 2.5 for both measurements; the picture shows the size half of it
+   being set up, and draws no Qubit, which it was never asked for. */
 {id:"QCD", key:"B9", group:"cDNA capture and amplification", shape:"quantify", name:"Quantify the cDNA", x:14.1, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
  sub:"Qubit + TapeStation · sets the cycle count",
  does:"Concentration and fragment-size distribution are measured. This is not bookkeeping: the number recorded here is what sets the number of PCR cycles in the indexing reaction three boxes along.",
