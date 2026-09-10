@@ -469,6 +469,119 @@ First principal component of the state-by-drug matrix of compositional log fold-
   ChemFish cells carry no `cell_type`; they are dropped, not folded into a bin, which would have
   invented a state.
 
+## Plate IV, second cut (seventh pass, 2026-09-10) — you can walk on it now
+
+Three things were wrong with the first cut, and the reader found all three.
+
+**1. It could not be examined.** A 200-column field on an 1100px canvas is four
+pixels a column and no way in. Scroll now zooms about the cursor and a drag pans,
+to a limit of ×9. The view transform is applied to POSITIONS ONLY, never to a
+line width, so the engraving keeps its weight at every scale and a ridge at ×6 is
+the same ridge, not a fatter one.
+
+The scroll is not a trap: at ×1 a further scroll-out is left alone and falls
+through to the page, so nobody gets stuck inside the figure trying to read past
+it. Double-click resets, and so does *clear*.
+
+Two things broke under zoom and both were invisible until the plate was enlarged:
+
+- **The 24 and 48 hpf rules were nailed to the margins.** They stayed put while
+  the terrain slid under them, so at ×5.8 a hairline across the top was still
+  captioned 24 hpf. They belong to the data and are now drawn at `hourY()`.
+- **The hachures thinned out**, because they step every two COLUMNS and the
+  columns spread apart. The step now scales with `1/sqrt(zoom)`.
+
+**2. The shared response was a cloud of discs, and it did not say why a
+wild-type terrain had a drug response at all.** That was a fair question with an
+answer the plate never gave: *the terrain is wild type, the water is not.* The
+tint is computed entirely from the seven drug arms and painted onto the
+unperturbed landscape it describes — these are the basins that move when a drug
+is applied, drawn where they sit when none is.
+
+So the discs are gone and the valleys are tinted instead, on a diverging ramp
+built out of PLATE_STYLE.md's categorical set: verdigris to indigo where a basin
+loses cells, ochre to the madder TINT where it gains them, paper-deep in the
+middle. `--select` is not in the ramp and stays reserved for the channel you
+chose.
+
+Getting it to read as landscape rather than as a stain took three goes:
+
+    fill from the waterline down to the profile   what water actually does, and
+                                                  eleven rows of it stacked into
+                                                  a comb of vertical spikes
+    fill the row's whole polygon, clipped to      no spikes, but hard vertical
+    the columns below the waterline               edges: a rectangular stain
+    fill the whole polygon, masked by the         soft pools that sit IN the
+    gradient's own ALPHA         <- shipped       valleys and fade out as the
+                                                  ground climbs
+
+The last one works because the tint is filled over the SAME polygon as the paper
+above it, so the nearer rows paint over all of it but the strip belonging to that
+row, and the colour survives as a ribbon hugging the surface. Alpha falls with
+the height of the ground toward the waterline and with ChemFish's coverage of
+that part of the axis.
+
+**Where there is no water, ChemFish never measured.** It reaches
+39% of axis 1 at 36 hpf and 43% at 48; on
+axis 2, 60% and 62%. A dry valley is an
+unmeasured one, not one that failed to respond, and nothing is tinted above the
+first measured hour — there is a labelled rule across the plate saying so.
+
+**3. The drug layer was little up-and-down arrows on a landscape.** Marks on top
+of a metaphor rather than the metaphor doing the work. A drug now DEFORMS the
+terrain, which is both prettier and closer to the arithmetic:
+
+    P_arm(x) = sum over states of  frac_arm(state) * K(x - x_state)
+    L(x)     = log2( P_drug(x) / P_vehicle(x) )
+
+Each arm gets an occupancy profile — every scored state's cell fraction smeared
+along the axis with the terrain's OWN kernel, which is the only way the two stay
+commensurate — and the surface is displaced by the log ratio, down where the drug
+puts more cells and up where it puts fewer. It is the same `lfc` as the published
+table, read as a function of position instead of as a list of states. The
+wild-type line stays as a dashed ghost and the sliver between them is inked, so
+the AREA is the size of the change.
+
+**This is the reader's own idea, with one correction.** The suggestion was that
+the undulations of the line are the changes in 2D position you would otherwise
+see in the UMAP. They are not — they are changes in OCCUPANCY. ChemFish cells
+reach this axis by which state they are, through the Platt-to-ZSCAPE crosswalk;
+they were never embedded themselves. A drug can make a basin deeper or shallower
+here. It cannot move one sideways, and the caption says so.
+
+Two more things the deformation needed:
+
+- **Only the row at the measured hour carries the ghost, the sliver and the
+  hachures.** The band is about eleven drawing rows wide, and eleven identical
+  slivers stacked into an opaque block that destroyed the relief exactly where
+  the argument was.
+- **That measured profile is inked hard only across the part of the axis
+  ChemFish reached.** Run bold from edge to edge, it claimed a measurement
+  everywhere.
+
+### And the surface itself got its depths back
+
+The rank transform gave every hour the full amplitude, and gave every valley the
+same depth — a rank is uniform by construction, so the terrain came out as smooth
+rolling waves. Elevation now adds a second term carrying the actual density
+contrast:
+
+    e_rank = 1 - (within-hour percentile rank of density)
+    e_dens = 1 - (density / hour's densest column) ** 0.35
+    elev   = 0.55 * e_rank + 0.45 * e_dens
+
+**Both terms are monotone decreasing in density, so their sum is too**, and the
+plate's only ordering claim survives untouched: at a given hour, lower ground
+always holds more cells than higher ground. What changes is that a basin holding
+a tenth of the hour's cells is now visibly deeper than one holding a fiftieth.
+
+Relief went from 7 row-spacings to 11, and the near ridges are inked harder than
+the far ones (0.14 to 0.34). That last one is **aerial perspective, a drawing
+convention carrying no number** — every profile is still drawn at the same scale
+and the data is entirely in their shape. At 16 row-spacings with hachures on
+every column the plate turned into corduroy; 11 is where it stops being wallpaper
+and starts being a range.
+
 ## Reusable tables
 
 Written to `/data/fate_map/`, outside the web repo, for the ZMAP and DanioCell layers:

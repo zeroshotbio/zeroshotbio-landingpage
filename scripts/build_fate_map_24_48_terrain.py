@@ -2,9 +2,9 @@
 """Plate IV — the 24 to 48 hpf terrain, and a ChemFish perturbation layer.
 
 WHAT THE TERRAIN IS, AND IS NOT. It is a rendering of where wild-type cells
-ACCUMULATE in transcriptomic state space, hour by hour. Elevation is the negative
-log of cell density, so a basin is a state many cells occupy and a ridge is a
-sparsely occupied region between two of them. That is a Waddington-style
+ACCUMULATE in transcriptomic state space, hour by hour. Elevation is the inverted
+within-hour RANK of cell density, so a basin is a state many cells occupy and a
+ridge is a sparsely occupied region between two of them. That is a Waddington-style
 metaphor drawn from real counts — and it is a metaphor. The terrain is not
 anatomy, no cell rolls down it, and nothing on it is a tracked lineage.
 
@@ -89,6 +89,110 @@ def gauss1d(a: np.ndarray, sigma: float) -> np.ndarray:
     return np.apply_along_axis(lambda v: np.convolve(v, k, mode="valid"), -1, pad)
 
 
+def state_kernels(xs: np.ndarray, lo: float, hi: float) -> np.ndarray:
+    """Gaussian kernel of each state's position over the terrain's column grid.
+
+    A state is a point on this axis, and the terrain is a continuous profile, so
+    every per-state quantity has to be smeared before the two can be compared.
+    The kernel is the SAME width as the one that smoothed the terrain itself,
+    which is the only way the deformation and the surface stay commensurate.
+
+    Args:
+        xs (np.ndarray): state positions in embedding units, shape (S,).
+        lo (float): left edge of the terrain's x range.
+        hi (float): right edge.
+
+    Returns:
+        np.ndarray: shape (S, NX), each row a gaussian bump summing to 1.
+    """
+    j = np.arange(NX)[None, :]
+    js = ((xs - lo) / (hi - lo) * NX - 0.5)[:, None]
+    k = np.exp(-0.5 * ((j - js) / SMOOTH) ** 2)
+    return k / np.maximum(k.sum(1, keepdims=True), 1e-12)
+
+
+def perturbation_fields(cf: pd.DataFrame, shared: dict, axis: str,
+                        lo: float, hi: float, hours: list) -> tuple[dict, dict, dict]:
+    """Project ChemFish onto the terrain's x axis as continuous profiles.
+
+    THIS IS THE ONE-DIMENSIONAL VERSION OF WHAT A DRUG DOES TO THE EMBEDDING.
+    Each arm gets an occupancy profile — every scored state's cell fraction
+    smeared along the axis with the terrain's own kernel — and the deformation is
+    the log ratio of the two profiles, column by column:
+
+        P_arm(x) = sum_s  frac_arm(s) * K(x - x_s)
+        L(x)     = log2( P_drug(x) / P_vehicle(x) )
+
+    L is positive where the drug arm puts MORE of its cells than the vehicle arm
+    does, which is a basin that deepens. It is the same quantity as the `lfc`
+    column of the published table, read as a function of position instead of as a
+    list of states.
+
+    What it is NOT is a change in position. ChemFish cells are placed on this axis
+    by WHICH STATE THEY ARE, through the Platt-to-ZSCAPE crosswalk — they were
+    never embedded themselves. A drug can make a basin deeper or shallower here.
+    It cannot move one sideways.
+
+    Args:
+        cf (pd.DataFrame): the per drug/hour/state composition table.
+        shared (dict): the per-hour PC1 result, keyed by str(hour).
+        axis (str): "e1" or "e2".
+        lo (float): left edge of this axis's range.
+        hi (float): right edge.
+        hours (list): measured ChemFish hours inside the window.
+
+    Returns:
+        tuple[dict, dict, dict]: drug fields {drug: {hour: [NX]}}, shared field
+            {hour: [NX]}, coverage {hour: [NX]}.
+    """
+    xcol = "x_" + axis
+    dfield: dict = {}
+    sfield: dict = {}
+    cov: dict = {}
+    for h in hours:
+        hh = cf[cf.hpf == h]
+        if hh.empty:
+            continue
+        # coverage: where on the axis ChemFish has any scored cells at all. The
+        # deformation is blanked outside it rather than drawn as a flat zero,
+        # which would claim "measured, and no change".
+        w = hh.groupby("state").apply(
+            lambda g: float((g.n_drug + g.n_vehicle).mean()), include_groups=False)
+        pos = hh.groupby("state")[xcol].first().reindex(w.index)
+        K = state_kernels(pos.to_numpy(float), lo, hi)
+        c = (w.to_numpy(float)[:, None] * K).sum(0)
+        cov[str(h)] = c / max(c.max(), 1e-12)
+
+        for drug, g in hh.groupby("drug"):
+            Kd = state_kernels(g[xcol].to_numpy(float), lo, hi)
+            pd_ = (g.frac_drug.to_numpy(float)[:, None] * Kd).sum(0)
+            pv_ = (g.frac_vehicle.to_numpy(float)[:, None] * Kd).sum(0)
+            pd_ /= max(pd_.sum(), 1e-12)
+            pv_ /= max(pv_.sum(), 1e-12)
+            floor = 1e-3 * max(pv_.max(), 1e-12)
+            L = np.log2((pd_ + floor) / (pv_ + floor))
+            L[cov[str(h)] < 0.02] = 0.0
+            dfield.setdefault(drug, {})[str(h)] = [round(float(v), 4) for v in L]
+
+        # the shared axis, as a field: a kernel-weighted mean of the PC1 state
+        # scores. Derived entirely from the DRUG arms — the wild-type terrain
+        # underneath it knows nothing about this number.
+        sc = (shared.get(str(h)) or {}).get("state_scores") or {}
+        keep = [i for i, st in enumerate(w.index) if st in sc]
+        if keep:
+            vals = np.array([sc[w.index[i]] for i in keep])
+            Ks = K[keep] * w.to_numpy(float)[keep][:, None]
+            num = (Ks * vals[:, None]).sum(0)
+            den = Ks.sum(0)
+            sv = np.where(den > 1e-12, num / np.maximum(den, 1e-12), 0.0)
+            # A weighted mean is defined wherever the kernel reaches, including
+            # far outside anywhere ChemFish has cells. Blank it there rather than
+            # publish an extrapolation: the renderer floods only what is covered.
+            sv[cov[str(h)] < 0.02] = 0.0
+            sfield[str(h)] = [round(float(v), 4) for v in sv]
+    return dfield, sfield, cov
+
+
 def read_cells() -> tuple[dict, dict, list]:
     """Read Plate III's binary and its companions.
 
@@ -163,14 +267,27 @@ def main() -> None:
         # the row maximum left most columns near 1, so each profile was flat with
         # a few narrow notches. What the eye needs is the row's values spread
         # over the full amplitude, which is a RANK transform: elevation is one
-        # minus the within-hour percentile rank of density.
+        # minus the within-hour percentile rank of density, blended with the
+        # within-hour normalised density so the depths mean something.
         #
         # It is monotone in density, so every ordering claim the plate makes is
         # still true — a lower point always has more cells than a higher one at
         # the same hour. What it is NOT is proportional: the depth of a valley is
         # a rank, not a cell count, and the plate says so.
+        # The rank ALONE gives every hour the full amplitude, but it also gives
+        # every valley the same depth: a rank is uniform by construction, so the
+        # surface came out as smooth rolling waves rather than a range with real
+        # peaks and canyons. The fix is to add back a term that carries the
+        # actual density contrast, so a basin holding a tenth of the hour's cells
+        # is visibly deeper than one holding a fiftieth.
+        #
+        # Both terms are monotone DECREASING in density, so their sum is too, and
+        # the plate's only ordering claim survives intact: at a given hour, lower
+        # ground always holds more cells than higher ground.
         order = np.argsort(np.argsort(dens, axis=1), axis=1)
-        elev = 1.0 - order / (NX - 1.0)
+        e_rank = 1.0 - order / (NX - 1.0)
+        e_dens = 1.0 - (dens / np.maximum(dens.max(axis=1, keepdims=True), 1e-12)) ** 0.35
+        elev = 0.55 * e_rank + 0.45 * e_dens
         elev = gauss1d(elev, 1.5)
         fields[axis_name] = {
             "lo": round(lo, 4), "hi": round(hi, 4),
@@ -314,6 +431,17 @@ def main() -> None:
         print(f"  shared structure at {h} hpf: PC1 {var[0]:.1%} over "
               f"{piv.shape[0]} states x {piv.shape[1]} drugs")
 
+    # ---- ChemFish as fields over the terrain's x axis ----------------------
+    for axis_name in ("e1", "e2"):
+        d_f, s_f, c_f = perturbation_fields(
+            cf, shared, axis_name, fields[axis_name]["lo"], fields[axis_name]["hi"], HOURS)
+        fields[axis_name]["dfield"] = d_f
+        fields[axis_name]["sfield"] = s_f
+        fields[axis_name]["cov"] = {k: [round(float(v), 4) for v in vv] for k, vv in c_f.items()}
+        rng = [abs(v) for dd in d_f.values() for vv in dd.values() for v in vv]
+        print(f"  {axis_name}: deformation |log2| max {max(rng):.2f}, "
+              f"p99 {float(np.percentile(rng, 99)):.2f}")
+
     doc = {
         "stages": STAGES,
         "nx": NX,
@@ -326,10 +454,12 @@ def main() -> None:
             "rows": cf.to_dict(orient="records"),
             "shared": shared,
         },
-        "caveat": "Elevation is -log density of wild-type cells, normalised within each "
-                  "hour. A basin is where cells accumulate. It is an interpretive "
-                  "rendering of transcriptomic state space — not anatomy, not a tracked "
-                  "lineage, and nothing rolls down it.",
+        "caveat": "Elevation blends the within-hour RANK of wild-type cell density "
+                  "with the within-hour normalised density, both inverted, so a basin "
+                  "is where cells accumulate. Monotone but not "
+                  "proportional, and not comparable between hours. It is an "
+                  "interpretive rendering of transcriptomic state space — not anatomy, "
+                  "not a tracked lineage, and nothing rolls down it.",
     }
     (WEB / "terrain.json").write_text(json.dumps(doc, separators=(",", ":")))
     TABLES.mkdir(parents=True, exist_ok=True)

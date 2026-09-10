@@ -402,13 +402,14 @@
 
       $('cap4').innerHTML =
         `<b>Time runs down the page, 24 hpf at the top rule to 48 at the bottom.</b> The surface ` +
-        `is the within-hour rank of wild-type cell density along one axis of the same embedding ` +
-        `Plate III draws, inverted — so it <b>rises where few cells are and dips where many ` +
-        `are</b>. A rank rather than a count, because two attempts on the raw log density ` +
-        `rendered as ruled lines: the empty tails of each hour set the scale and the structure ` +
-        `vanished. The transform is monotone, so a lower point always holds more cells than a ` +
-        `higher one at the same hour, but depth is not proportional to number. Cells sit in the ` +
-        `valleys, and a channel is a valley that persists ` +
+        `blends the within-hour rank of wild-type cell density with the within-hour normalised ` +
+        `density, along one axis of the same embedding Plate III draws, inverted — so it ` +
+        `<b>rises where few cells are and dips where many are</b>. A rank because two attempts on ` +
+        `the raw log density rendered as ruled lines; the density term because a rank alone is ` +
+        `uniform by construction and gave every valley the same depth. <b>Both terms fall as ` +
+        `density rises, so the blend does too</b>: a lower point always holds more cells than a ` +
+        `higher one at the same hour. Depth is still not proportional to number, and not ` +
+        `comparable between hours. Cells sit in the valleys, and a channel is a valley that persists ` +
         `down the page. The ${terrain.channels.length} dotted routes are state centroids, hour by ` +
         `hour. <b>This is an interpretive rendering of transcriptomic state space, not anatomy ` +
         `and not a tracked lineage.</b> Nothing rolls down it, no cell crosses a ridge, and a ` +
@@ -416,9 +417,16 @@
         `cells per bin per hour and nothing else. <b>The drug layer is ChemFish</b>, not ZSCAPE: ` +
         `${Object.keys(CF.pathway).length} small molecules each blocking one named pathway, ` +
         `against their matched vehicle, at ${CF.hours.join(' and ')} hpf — the only hours ChemFish ` +
-        `shares with this window. A drug does not move a cell across the terrain here; it changes ` +
-        `how many cells sit in each basin, so a filled wedge marks a state whose basin <b>deepens</b> ` +
-        `and an open one a basin that <b>fills in</b>.`;
+        `shares with this window. Choosing one <b>re-cuts the terrain at those two hours</b>: the ` +
+        `surface is displaced by the log ratio of drug to vehicle occupancy along the axis, the ` +
+        `wild-type line is left behind as a ghost, and the inked area between them is the size of ` +
+        `the change. <b>That is a change in occupancy, not in position.</b> ChemFish cells reach ` +
+        `this axis by which state they are, through the crosswalk — they were never embedded ` +
+        `themselves — so a drug can make a basin deeper or shallower here, but it cannot move one ` +
+        `sideways. <b>Turn on the shared response and the valleys flood</b>, tinted warm where a ` +
+        `basin gains cells under the drugs and cool where it loses them. The water is drawn from ` +
+        `the seven drug arms; the terrain beneath it is wild type and knows nothing about it. ` +
+        `<b>Scroll to zoom, drag to move.</b>`;
 
       const sel4 = $('trDrug');
       const opt0 = document.createElement('option');
@@ -439,7 +447,8 @@
         const bot = rows.slice().sort((a, b) => a.lfc - b.lfc);
         return `<dl><dt>${d} — ${CF.pathway[d]} blockade</dt>` +
           `<dd>against ${CF.vehicle[d]}, ${rows.length} state-hours scored at a floor of ` +
-          `${CF.min_cells} cells.</dd>` +
+          `${CF.min_cells} cells. The terrain is re-cut at ${CF.hours.join(' and ')} hpf and ` +
+          `nowhere else — the brackets in the margin are where the measurement is.</dd>` +
           `<dt>Basins that deepen</dt><dd>${up.length} states enriched. Most: ` +
           `<b>${top[0] ? top[0].state : '—'}</b>${top[0] ? ` (+${top[0].lfc.toFixed(2)} at ${top[0].hpf} hpf)` : ''}.</dd>` +
           `<dt>Basins that fill in</dt><dd>${dn.length} states depleted. Most: ` +
@@ -455,20 +464,31 @@
             `<b>${ld[0][0]}</b> (${CF.pathway[ld[0][0]]}, ${ld[0][1].toFixed(2)}), least on ` +
             `${ld[ld.length - 1][0]} (${ld[ld.length - 1][1].toFixed(2)}).</dd>`;
         });
-        return `<dl><dt>The shared response</dt><dd>First principal component of the ` +
-          `state-by-drug matrix of compositional log fold-change. A filled disc is a state that ` +
-          `moves <i>with</i> the shared direction, an open one against it; size is the score.</dd>` +
+        return `<dl><dt>Why a drug response on a wild-type terrain</dt>` +
+          `<dd><b>The terrain is wild type. The water is not.</b> The tint is the first principal ` +
+          `component of the state-by-drug matrix of compositional log fold-change — it marks the ` +
+          `basins that <i>change when any of the seven drugs is applied</i>, painted onto the ` +
+          `unperturbed landscape they change. Warm water gains cells, cool water loses them, and ` +
+          `the depth of colour is the size of the score.</dd>` +
+          `<dt>Where there is no water</dt><dd>ChemFish reaches under half of this axis. A dry ` +
+          `valley is one it never measured, not one that failed to respond, and nothing is tinted ` +
+          `above the first measured hour.</dd>` +
           parts.join('') + `</dl>`;
       }
 
       const baseBlurb =
         '<h3>What the surface is</h3>' +
-        '<p><b>Elevation is −log cell density</b>, normalised within each hour. High ground is ' +
-        'where few wild-type cells are; the valley floors are where they pile up.</p>' +
+        '<p><b>Elevation blends the within-hour rank of cell density with the within-hour ' +
+        'normalised density, both inverted.</b> High ground is where few wild-type cells are; the ' +
+        'valley floors are where they pile up, and the deeper floors hold more. Monotone, so a ' +
+        'lower point always holds more cells than a higher one at the same hour \u2014 but not ' +
+        'proportional, and not comparable between hours.</p>' +
         '<p><b>A channel</b> is a valley that persists down the page. The dotted lines are state ' +
-        'centroids at each hour — routes, not paths anything travelled.</p>' +
+        'centroids at each hour \u2014 routes, not paths anything travelled.</p>' +
         '<p><b>The metaphor is Waddington\u2019s and it stops there.</b> No cell rolls, nothing ' +
-        'crosses a ridge, and no height here is an energy or a probability.</p>';
+        'crosses a ridge, and no height here is an energy or a probability.</p>' +
+        '<p class="tr-move"><b>Scroll to zoom</b> on the point under the cursor, drag to move, ' +
+        'double-click to reset. Scroll out past the start and the page carries on.</p>';
 
       function showChannel(i) {
         const extra = (sel4.value ? drugBlurb(sel4.value) : '') +
@@ -502,7 +522,8 @@
       });
       $('trClear').addEventListener('click', () => {
         view4.select(-1); sel4.value = ''; view4.setDrug(null);
-        $('trShared').checked = false; view4.setShared(false); showChannel(-1);
+        $('trShared').checked = false; view4.setShared(false);
+        view4.resetView(); showChannel(-1);
       });
 
       showChannel(-1);

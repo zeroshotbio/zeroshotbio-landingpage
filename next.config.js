@@ -173,15 +173,26 @@ const nextConfig = {
       // embed_meta.json rather than recomputing it, or every arrow shifts.
       // Nothing on it is tracked and the plate says so three ways; do not make
       // the trail a solid line.
-      // Plate IV is the TERRAIN: time down the page 24->48 hpf, the surface the
-      // within-hour RANK of wild-type cell density (not the raw log — two
-      // attempts on that rendered as ruled lines), plus a ChemFish drug layer.
+      // Plate IV is the TERRAIN: time down the page 24->48 hpf, the surface a
+      // blend of the within-hour RANK of wild-type cell density and the
+      // within-hour normalised density (the raw log alone rendered as ruled
+      // lines; the rank alone gave every valley the same depth). Both terms are
+      // monotone DECREASING in density, so their sum is, and the plate's only
+      // ordering claim holds. Plus a ChemFish drug layer, scroll-zoom and pan.
       // Built by build_fate_map_24_48_terrain.py, which needs Plate III's
       // cells.bin and the Platt-ZSCAPE crosswalk. It sets HDF5_USE_FILE_LOCKING
       // off because minifin_query serves the same chemfish.h5ad and h5py blocks
       // for ever on the open otherwise. The terrain is an INTERPRETIVE rendering
       // of transcriptomic state space; the plate says so in the caption, the
       // panel and the notes. Do not let it be described as anatomy or lineage.
+      // The drug layer DEFORMS the surface by log2(drug occupancy / vehicle
+      // occupancy) along the axis, at 36 and 48 hpf and nowhere else. That is a
+      // change in OCCUPANCY, not in position — ChemFish cells reach the axis by
+      // which state they are, never by their own coordinates, so a drug cannot
+      // move a basin sideways here. The shared-response tint in the valleys is
+      // computed from the seven drug arms and painted on the wild-type surface;
+      // an untinted valley is one ChemFish never reached, not one that did not
+      // respond. Both sentences must survive any edit to this plate.
       // Plate II is the PROVENANCE stack — fourteen sources on one developmental
       // axis, with only the two that actually feed the page drawn filled. Its
       // record is sources.json, written by scripts/build_fate_map_24_48_sources.py,
