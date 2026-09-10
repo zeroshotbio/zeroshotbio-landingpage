@@ -5026,9 +5026,11 @@ function poolSplitBench(g,n,OPT){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 /* B3 · the first pool: round one's green plate emptied into round two's
-   royal blue one. */
+   blue one. The receiving plate is B4's --ch8 rather than a blue of its
+   own, because it IS B4's plate — the one round two ligates next — and a
+   reader following the row should see the same plastic arrive there. */
 function drawPoolSplit(g,n){
-  poolSplitBench(g,n,{src:"var(--ch5)", dst:"var(--ch9)"});
+  poolSplitBench(g,n,{src:"var(--ch5)", dst:"var(--ch8)"});
 }
 DRAW.poolsplit = drawPoolSplit;
 
