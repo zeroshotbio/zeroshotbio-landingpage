@@ -582,6 +582,140 @@ and the data is entirely in their shape. At 16 row-spacings with hachures on
 every column the plate turned into corduroy; 11 is where it stops being wallpaper
 and starts being a range.
 
+## Plate IV, third cut (eighth pass, 2026-09-10) — it follows the drugs now
+
+**The window moved.** The plate ran 24 to 48 hpf like its siblings, which threw away two
+thirds of ChemFish: the screen samples **36, 48, 72 hpf**, and 48
+alone carries 1.58M of its 2.07M cells. Plate IV now runs 36 to
+72 hpf — ChemFish's own window — and every drug arm the screen has can appear
+on it. Plates I, II and III still run 24-48; the page keeps its name.
+
+**An eighth drug came with it.** A8301 was in the object all along and had been left out.
+It blocks ALK5, the same receptor as SB505124, which turns out to matter — see below.
+
+### The axis is broken, and the plate draws the break
+
+ZSCAPE samples 36, 38, 40, 42, 44, 46, 48 — and then nothing at all until 72:
+
+| hpf | 36 | 38 | 40 | 42 | 44 | 46 | 48 | 72 |
+|---|---|---|---|---|---|---|---|---|
+| control cells | 202,388 | 27,081 | 17,308 | 20,364 | 16,563 | 22,060 | 231,457 | 141,905 |
+
+So the terrain is a continuous range from 36 to 48, a hatched band labelled *24 hours ZSCAPE
+does not sample*, and then the single far ridge of 72 hpf. **Nothing is interpolated across
+the gap**, and the channels break there too — joining a state's 48 hpf centroid to its 72 hpf
+one would draw a route through twenty-four hours nobody looked at.
+
+Laying 24 of the window's 36 hours out as a blank band is already generous to the gap; it gets
+about a sixth of the plot height, not two thirds.
+
+The wild-type surface no longer comes from Plate III's `cells.bin`, which is a 24-48 hpf
+object. It is read from ZSCAPE directly — but through **the projection stored in
+`embed_meta.json`**, not a fresh one, so a state sits at the same x on Plate III and Plate IV
+even though the two windows no longer agree.
+
+### The shared response got much stronger, and the panel says which kind it is
+
+| hpf | PC1 | states | loadings, strongest first |
+|---|---|---|---|
+| 36 | 41% | 68 | LY411575 +0.83, WntC59 +0.34, SU5402 +0.22, DEAB +0.08, Cyclopamine +0.06, DMH1 -0.05, A8301 -0.25, SB505124 -0.27 |
+| 48 | 63% | 214 | LY411575 +0.11, DEAB +0.06, DMH1 +0.03, WntC59 +0.02, Cyclopamine +0.01, SU5402 -0.01, SB505124 -0.15, A8301 -0.98 |
+| 72 | 49% | 125 | SB505124 +0.73, A8301 +0.53, DEAB +0.29, Cyclopamine +0.24, WntC59 +0.14, SU5402 +0.09, DMH1 +0.08, LY411575 +0.08 |
+
+**63% at 48 hpf across eight drugs** is a much stronger shared
+direction than the 45% the 24-48 build reported over seven, and it comes with the hour that
+has the cells. At 72 the axis reverses its allegiance: SB505124 leads and LY411575 barely
+loads at all.
+
+It is a shared **compositional** response, and the legend now says so in as many words. A
+shared *program* — stress, apoptosis, the COMPASS-style directions — is a fact about gene
+expression. Every number on this plate is a count of cells per state, so a drug could switch a
+stress program on in every cell in the embryo and move nothing here.
+
+### Apparent stage: what a delayed lineage looks like
+
+New, and it answers a question the plate could not: does an arm merely have different
+proportions, or does it look YOUNGER than the clock? Take the vehicle's log-composition at
+each sampled hour as an anchor, then find where along the piecewise line through those anchors
+the drug arm's composition projects.
+
+    A8301     36 hpf -> at or before 36     48 -> 38.22     72 -> 41.78
+    SB505124  36 hpf -> at or before 36     48 -> 46.08     72 -> 39.25
+    DMH1      36 -> 36.0                    48 -> 48.0     72 -> 71.42
+    SU5402    36 -> 38.66                   48 -> 48.0     72 -> 72.0
+
+**The two ALK5 inhibitors agree with each other and with nothing else.** At 72 hpf the
+SB505124 arm's composition sits at 39 apparent hpf and
+the A8301 arm at 42 — a delay of about
+33 and 30 hours. Two
+chemically distinct molecules hitting the same receptor, scored independently, landing in the
+same place. Nothing else in the panel moves more than a few hours.
+
+**It is a resemblance, not a clock**, and the panel reports the residual with the number. An
+arm can look younger because a program genuinely stalled, or because the drug wiped out the
+states that arrive late without holding anything back — this fit cannot tell those apart. The
+residuals for the delayed arms are large (47%
+and 54% of the vehicle's own
+36-72 travel), so "younger" is part of the story and not all of it.
+
+Written to `/data/fate_map/chemfish_apparent_stage.tsv`.
+
+### The reader asked for a widening terrain. It does not widen, and here is why
+
+The intuition is good — more cell types later, so a wider range. But **x is a fixed embedding
+coordinate**: the width of the plate is set by the projection, and stretching it would move
+every position on the map and break the only thing the x axis is for.
+
+So the question was measured instead of drawn:
+
+| hpf | 36 | 38 | 40 | 42 | 44 | 46 | 48 | 72 |
+|---|---|---|---|---|---|---|---|---|
+| named states | 130 | 100 | 96 | 101 | 94 | 100 | 136 | 129 |
+| effective states | 60 | 37 | 57 | 56 | 58 | 58 | 56 | 56 |
+
+The effective count — `exp(Shannon entropy)` of the state fractions, how many equally abundant
+states would give the same diversity — is **flat**: 60 at
+36 hpf, 56 at 72. The named count does
+rise, from 130 to 129, but it tracks sampling depth: the two
+hours with the most states are the two with 200k+ cells. In ZSCAPE's own annotation the embryo
+does not get more *various* between 36 and 72 hpf so much as it gets more *resolved*.
+
+The measurement is drawn as a bar per hour in the right margin, which is the honest place for
+it. The occupied support of the axis was checked too and is flat as well — 95% of axis 1 at 36
+hpf, 96% at 72.
+
+### The legend, which is the real addition
+
+Ten rows under the map, each saying what a mark IS and what it is **a claim about**: normal
+development, a cell state and its share, a state coming into or fading out of existence, a
+route through transcriptomic space, cell-proportion change after a drug, developmental delay,
+and the shared response direction.
+
+**Two of the ten rows say NOT SHOWN HERE**, and they are the ones worth the space, because a
+terrain invites every reading in developmental biology and this plate cannot support most of
+them:
+
+- **Merging, splitting, transitions between states.** Two valleys running together on this
+  axis are two states that happen to sit near each other, not two states that became one.
+  Fate lives on Plate I, and even there the transitions are inferred rather than observed.
+- **Stress, apoptosis and any other transcriptional signature.** The expression channel is
+  never opened on this plate.
+
+### Interaction, after the reader used it
+
+- **The zoom was far too sensitive.** One notch moved the scale 22% and applied it instantly.
+  The step is now taken from the event's own `deltaY` and normalised across all three
+  `deltaMode` units, so a trackpad and a notched wheel feel the same, and the view EASES
+  toward its target instead of snapping. Fourteen small notches now give about ×1.6 where they
+  used to give ×5.8.
+- **The map is full width** — the only plate on the page that breaks the measure — and
+  everything written about it, the panel included, sits underneath.
+- **The flood is the default.** The plate's argument is about drugs, so it opens with the
+  water in it, and *clear* returns it to that rather than to the bare surface.
+- **The two axis buttons needed a sentence.** They are the first and second principal
+  directions of ONE projection — two cuts through the same space, not two spaces — and the
+  toolbar now says so.
+
 ## Reusable tables
 
 Written to `/data/fate_map/`, outside the web repo, for the ZMAP and DanioCell layers:
@@ -596,7 +730,8 @@ Written to `/data/fate_map/`, outside the web repo, for the ZMAP and DanioCell l
 | `zscape_perturb_displacement.tsv` / `.parquet` | 5,011 | every control→perturbed centroid displacement, with its projection on the shared axis |
 | `zscape_response_axis_by_target.tsv` | 28 | per target: median projection, fraction aligned, fraction of its displacement variance along the shared axis |
 | `chemfish_state_composition_lfc.tsv` / `.parquet` | 1,959 | per drug, hour and state: cell counts on both arms, fractions, compositional log fold-change, and the state's terrain position |
-| `chemfish_shared_axis_loadings.tsv` | 14 | drug loadings on the shared response axis at each hour |
+| `chemfish_shared_axis_loadings.tsv` | 24 | drug loadings on the shared response axis at each hour |
+| `chemfish_apparent_stage.tsv` | 24 | per drug and hour: where the arm's composition projects onto its vehicle's own trajectory, with the residual |
 
 The web page loads `enrich.json` (402 KB) and `zmap.json` (840 KB) — the 186 graph states only.
 Both are optional at runtime; the panel degrades block by block if either is absent.

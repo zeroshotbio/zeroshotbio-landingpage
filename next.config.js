@@ -173,7 +173,15 @@ const nextConfig = {
       // embed_meta.json rather than recomputing it, or every arrow shifts.
       // Nothing on it is tracked and the plate says so three ways; do not make
       // the trail a solid line.
-      // Plate IV is the TERRAIN: time down the page 24->48 hpf, the surface a
+      // Plate IV does NOT run 24-48 like the rest of the page. It runs 36-72,
+      // which is ChemFish's own window, and its y axis is BROKEN: ZSCAPE samples
+      // every second hour 36->48 and then nothing until 72, so the plate draws a
+      // labelled 24-hour gap and interpolates nothing across it. Channels break
+      // there too. Its wild-type surface is read from ZSCAPE directly rather
+      // than from Plate III's cells.bin (a 24-48 object), but through the
+      // projection stored in embed_meta.json, so a state sits at the same x on
+      // both plates. Do not "fix" the window to match the URL.
+      // Plate IV is the TERRAIN: time down the page, the surface a
       // blend of the within-hour RANK of wild-type cell density and the
       // within-hour normalised density (the raw log alone rendered as ruled
       // lines; the rank alone gave every valley the same depth). Both terms are
@@ -193,6 +201,13 @@ const nextConfig = {
       // computed from the seven drug arms and painted on the wild-type surface;
       // an untinted valley is one ChemFish never reached, not one that did not
       // respond. Both sentences must survive any edit to this plate.
+      // The shared axis is a shared COMPOSITIONAL response, not a shared
+      // transcriptional program: every number on the plate is a count of cells
+      // per state. The apparent-stage fit is a resemblance to an earlier control
+      // and not a clock, and its residual is published beside it. The legend
+      // under the map carries both caveats plus two rows that say NOT SHOWN —
+      // transitions between states, and any expression-channel signature. Those
+      // rows are load-bearing; do not trim them for space.
       // Plate II is the PROVENANCE stack — fourteen sources on one developmental
       // axis, with only the two that actually feed the page drawn filled. Its
       // record is sources.json, written by scripts/build_fate_map_24_48_sources.py,

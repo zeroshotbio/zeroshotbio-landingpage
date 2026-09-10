@@ -1,52 +1,65 @@
 #!/usr/bin/env python3
-"""Plate IV — the 24 to 48 hpf terrain, and a ChemFish perturbation layer.
+"""Plate IV — the terrain across ChemFish's own window, 36 to 72 hpf.
 
-WHAT THE TERRAIN IS, AND IS NOT. It is a rendering of where wild-type cells
-ACCUMULATE in transcriptomic state space, hour by hour. Elevation is the inverted
-within-hour RANK of cell density, so a basin is a state many cells occupy and a
-ridge is a sparsely occupied region between two of them. That is a Waddington-style
-metaphor drawn from real counts — and it is a metaphor. The terrain is not
-anatomy, no cell rolls down it, and nothing on it is a tracked lineage.
+THE PLATE FOLLOWS THE DRUGS NOW. It used to run 24 to 48 hpf like its siblings,
+which threw away two thirds of ChemFish: the screen samples 36, 48 and 72 hpf,
+and 48 alone carries 1.58M of its 2.07M cells. The window is now 36 to 72 so
+every drug arm ChemFish has can appear on it.
 
-Axes, and this is the whole point of the plate:
+That comes at a price the plate has to be honest about: ZSCAPE samples 36, 38,
+40, 42, 44, 46, 48 and then nothing at all until 72. So the terrain is drawn as
+a continuous range from 36 to 48, then a BREAK — twenty-four hours nobody
+sampled — and then the single far ridge of 72 hpf. Nothing is interpolated
+across the gap, and the plate draws the gap rather than hiding it.
 
-    y = developmental time, 24 hpf at the TOP and 48 hpf at the BOTTOM
-    x = one axis of the existing wild-type embedding (the fixed principal
-        projection of ZSCAPE's own 3D UMAP, already used by Plate III)
+WHAT THE TERRAIN IS, AND IS NOT. A rendering of where wild-type cells ACCUMULATE
+in transcriptomic state space, hour by hour. Elevation blends the inverted
+within-hour RANK of cell density with the inverted within-hour normalised
+density; both fall as density rises, so the blend does, and the plate's only
+ordering claim holds: lower ground holds more cells at that hour. It is a
+Waddington-style metaphor drawn from real counts, and it is a metaphor — not
+anatomy, nothing rolls down it, nothing on it is a tracked lineage.
 
-Density is normalised WITHIN each hour. Sampling depth varies 16-fold across the
-window, so an un-normalised terrain would draw the sequencing schedule as a
-mountain range.
+    y = developmental time, 36 hpf at the TOP and 72 at the BOTTOM, broken
+    x = one axis of the wild-type embedding — the SAME fixed principal
+        projection Plate III uses, read out of embed_meta.json so the two
+        plates put a cell in the same place
 
-THE PERTURBATION LAYER IS CHEMFISH, NOT ZSCAPE. Seven small molecules, each
+Density is normalised WITHIN each hour. Sampling depth varies more than 13-fold
+across this window, so an un-normalised terrain would draw the sequencing
+schedule as a mountain range.
+
+THE PERTURBATION LAYER IS CHEMFISH, NOT ZSCAPE. Eight small molecules, each
 blocking one named signalling pathway, against their matched vehicle:
 
     DEAB        retinoic acid       vs DMSO
     LY411575    Notch               vs DMSO
-    SB505124    TGF-beta            vs DMSO
+    SB505124    TGF-beta (ALK5)     vs DMSO
+    A8301       TGF-beta (ALK5)     vs DMSO
     WntC59      Wnt                 vs DMSO
     DMH1        BMP                 vs DMSO
     SU5402      FGF                 vs DMSO
     Cyclopamine Shh                 vs ETHANOL, not DMSO
 
-ChemFish covers 36, 48 and 72 hpf, so only 36 and 48 fall in this window. Its
-cell_type vocabulary is the Platt one, so states reach the terrain's x axis
+Its cell_type vocabulary is the Platt one, so states reach the terrain's x axis
 through the verified Platt-to-ZSCAPE cell-level crosswalk rather than by name.
 
 A drug does not move a cell across the terrain here — it changes how many cells
-sit in each basin. So a perturbation DEFORMS the landscape: basins deepen where
-a state is enriched and fill in where it is depleted.
+sit in each basin. So a perturbation DEFORMS the landscape: basins deepen where a
+state is enriched and fill in where it is depleted.
+
+AND IT CAN BE LATE. The apparent-stage fit asks a different question of the same
+numbers: does this drug arm's composition look like its vehicle at its own hour,
+or like the vehicle at an earlier one?
 
 Run:  python3 scripts/build_fate_map_24_48_terrain.py
 """
 
 from __future__ import annotations
 
-import collections
 import json
 import os
 import pathlib
-import struct
 import sys
 
 os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")   # the file is served live
@@ -58,16 +71,20 @@ import pandas as pd
 WEB = pathlib.Path(__file__).resolve().parent.parent / "public" / "fate_map_24_48"
 TABLES = pathlib.Path("/data/fate_map")
 CF = "/data/chemfish/chemfish.h5ad"
+ZS = "/data/datasets/zebrafish/ZSCAPE/zscape_perturb_reference_merged_dedubled.h5ad"
 
+STAGES = [36, 38, 40, 42, 44, 46, 48, 72]
+GAP = (48, 72)      # ZSCAPE samples nothing between these; the plate draws a break
 NX = 200            # terrain columns across the embedding axis
 SMOOTH = 3.0        # gaussian sigma in columns
 MIN_STATE = 400     # cells in the window before a state gets a channel
 MIN_CELLS_CF = 60   # cells per (drug, hour) arm before a state is scored
+TAIL = 0.005        # fraction of each hour's cells trimmed off each end of its support
 
-VEHICLE = {"DEAB": "DMSO", "LY411575": "DMSO", "SB505124": "DMSO",
+VEHICLE = {"DEAB": "DMSO", "LY411575": "DMSO", "SB505124": "DMSO", "A8301": "DMSO",
            "WntC59": "DMSO", "DMH1": "DMSO", "SU5402": "DMSO",
            "Cyclopamine": "EtOH"}
-PATHWAY = {"DEAB": "RA", "LY411575": "Notch", "SB505124": "TGFb",
+PATHWAY = {"DEAB": "RA", "LY411575": "Notch", "SB505124": "TGFb", "A8301": "TGFb",
            "WntC59": "Wnt", "DMH1": "BMP", "SU5402": "FGF",
            "Cyclopamine": "Shh"}
 
@@ -87,6 +104,74 @@ def gauss1d(a: np.ndarray, sigma: float) -> np.ndarray:
     k /= k.sum()
     pad = np.pad(a, [(0, 0)] * (a.ndim - 1) + [(r, r)], mode="reflect")
     return np.apply_along_axis(lambda v: np.convolve(v, k, mode="valid"), -1, pad)
+
+
+def obs_col(o: h5py.Group, k: str, numeric: bool = False):
+    """Read an obs column, resolving the categorical-string encoding.
+
+    Every numeric column in the ZSCAPE object is stored as a string categorical
+    (it came out of R), so anything numeric has to be parsed rather than read.
+
+    Args:
+        o (h5py.Group): the obs group.
+        k (str): column name.
+        numeric (bool, optional): parse the categories as floats.
+
+    Returns:
+        np.ndarray: values, one per cell.
+    """
+    n = o[k]
+    if isinstance(n, h5py.Group):
+        cats = [x.decode() if isinstance(x, bytes) else str(x) for x in n["categories"][:]]
+        if numeric:
+            return np.asarray([float(c) for c in cats], dtype=np.float64)[n["codes"][:]]
+        return np.asarray(cats, dtype=object)[n["codes"][:]]
+    d = n[:]
+    if d.dtype.kind in "SO":
+        v = np.asarray([x.decode() if isinstance(x, bytes) else str(x) for x in d], dtype=object)
+        return v.astype(np.float64) if numeric else v
+    return d
+
+
+def read_zscape() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Read ZSCAPE controls over this plate's window and project them to 2D.
+
+    The projection is NOT recomputed: mean and basis come out of Plate III's
+    embed_meta.json, so a state sits at the same x on both plates even though the
+    two windows no longer agree.
+
+    Returns:
+        tuple: xy (n, 2), stage index per cell, cell_type_sub, tissue.
+
+    Raises:
+        SystemExit: If ZSCAPE or Plate III's meta is missing.
+    """
+    meta_p = WEB / "embed_meta.json"
+    if not meta_p.exists():
+        sys.exit(f"missing {meta_p} — run build_fate_map_24_48_embed.py first")
+    proj = json.loads(meta_p.read_text())["projection"]
+    mu = np.asarray(proj["mean"], dtype=np.float64)
+    basis = np.asarray(proj["basis"], dtype=np.float64)
+
+    if not pathlib.Path(ZS).exists():
+        sys.exit(f"missing {ZS}")
+    f = h5py.File(ZS, "r")
+    o = f["obs"]
+    tp = obs_col(o, "timepoint", numeric=True)
+    tgt = obs_col(o, "gene_target")
+    keep = np.isin(tp, STAGES) & np.char.startswith(tgt.astype(str), "ctrl-")
+    u = np.column_stack([obs_col(o, f"umap3d_{i}", numeric=True)[keep] for i in (1, 2, 3)])
+    sub = obs_col(o, "cell_type_sub")[keep]
+    tis = obs_col(o, "tissue")[keep]
+    st = tp[keep].astype(int)
+    f.close()
+
+    xy = (u - mu) @ basis
+    ti = np.asarray([STAGES.index(int(x)) for x in st], dtype=np.int16)
+    print(f"  ZSCAPE controls, {STAGES[0]}-{STAGES[-1]} hpf: {len(xy):,} cells")
+    for h in STAGES:
+        print(f"    {h:>3} hpf  {int((st == h).sum()):>8,}")
+    return xy, ti, sub, tis
 
 
 def state_kernels(xs: np.ndarray, lo: float, hi: float) -> np.ndarray:
@@ -193,31 +278,89 @@ def perturbation_fields(cf: pd.DataFrame, shared: dict, axis: str,
     return dfield, sfield, cov
 
 
-def read_cells() -> tuple[dict, dict, list]:
-    """Read Plate III's binary and its companions.
+def apparent_stage(comp: dict, ct_c: np.ndarray, hours: list) -> dict:
+    """Fit each drug arm onto the VEHICLE's own developmental trajectory.
+
+    A drug that holds a lineage back does not only change proportions — it makes
+    the arm look YOUNGER than the clock says. This asks exactly that, and asks it
+    entirely inside ChemFish so the protocol is matched:
+
+        take the vehicle's log-composition at each sampled hour as an anchor,
+        then find where along the piecewise line through those anchors the drug
+        arm's log-composition projects.
+
+    The answer is an apparent hour. Less than the real one is a delay.
+
+    IT IS A RESEMBLANCE, NOT A CLOCK. An arm can look younger because a program
+    genuinely stalled, or because the drug wiped out the states that arrive late
+    without holding anything back. This number cannot tell those apart; it says
+    the composition resembles an earlier control, which is a claim about the
+    composition. The residual is reported alongside so a poor fit shows.
+
+    Args:
+        comp (dict): counts per (arm, hour), each a vector over ct_c.
+        ct_c (np.ndarray): the Platt cell-type vocabulary.
+        hours (list): sampled ChemFish hours, ascending.
 
     Returns:
-        tuple[dict, dict, list]: cells, embed meta, states.
-
-    Raises:
-        SystemExit: If Plate III's assets are missing.
+        dict: {drug: {hour: {apparent_hpf, shift, residual, ...}}}.
     """
-    for p in ("cells.bin", "embed_meta.json", "states.json"):
-        if not (WEB / p).exists():
-            sys.exit(f"missing {WEB/p} — run build_fate_map_24_48_embed.py first")
-    buf = (WEB / "cells.bin").read_bytes()
-    if buf[:4] != b"ZCEL":
-        sys.exit("cells.bin: bad magic")
-    ver, n, nstage = struct.unpack("<III", buf[4:16])
-    o = 16
-    x = np.frombuffer(buf, "<i2", n, o); o += 2 * n
-    y = np.frombuffer(buf, "<i2", n, o); o += 2 * n
-    c = np.frombuffer(buf, "<u2", n, o); o += 2 * n
-    t = np.frombuffer(buf, "<u1", n, o); o += n
-    s = np.frombuffer(buf, "<u1", n, o)
-    meta = json.loads((WEB / "embed_meta.json").read_text())
-    states = json.loads((WEB / "states.json").read_text())
-    return {"n": n, "x": x, "y": y, "c": c, "t": t, "s": s}, meta, states
+    out: dict = {}
+    if len(hours) < 2:
+        return out
+
+    def logcomp(v):
+        v = np.asarray(v, dtype=np.float64)
+        f = (v + 1.0) / (v.sum() + len(ct_c))
+        return np.log(f)
+
+    for drug, veh in VEHICLE.items():
+        anchors = {}
+        for h in hours:
+            if (veh, h) in comp:
+                anchors[h] = logcomp(comp[(veh, h)])
+        hs = [h for h in hours if h in anchors]
+        if len(hs) < 2:
+            continue
+        for h in hours:
+            if (drug, h) not in comp or h not in anchors:
+                continue
+            d = logcomp(comp[(drug, h)])
+            # only states the vehicle series actually holds, so an arm is not
+            # placed by the noise in states nobody has
+            keep = np.ones(len(ct_c), dtype=bool)
+            for hh in hs:
+                keep &= comp[(veh, hh)] >= 20
+            keep &= comp[(drug, h)] >= 0
+            if keep.sum() < 20:
+                continue
+            best = None
+            for a, b in zip(hs[:-1], hs[1:]):
+                va, vb = anchors[a][keep], anchors[b][keep]
+                dv = vb - va
+                den = float(dv @ dv)
+                if den <= 1e-12:
+                    continue
+                t = float((d[keep] - va) @ dv / den)
+                tc = min(1.0, max(0.0, t))
+                res = float(np.linalg.norm((d[keep] - va) - tc * dv))
+                if best is None or res < best[0]:
+                    best = (res, a + tc * (b - a), t < -1e-9 or t > 1 + 1e-9)
+            if best is None:
+                continue
+            res, app, clipped = best
+            # how far the vehicle itself travels per hour, as the yardstick the
+            # shift is worth reading against
+            span = float(np.linalg.norm(anchors[hs[-1]][keep] - anchors[hs[0]][keep]))
+            out.setdefault(drug, {})[str(h)] = {
+                "apparent_hpf": round(app, 2),
+                "shift": round(app - h, 2),
+                "residual": round(res, 3),
+                "vehicle_span": round(span, 3),
+                "off_trajectory": bool(clipped),
+                "n_states": int(keep.sum()),
+            }
+    return out
 
 
 def main() -> None:
@@ -226,15 +369,12 @@ def main() -> None:
     Raises:
         SystemExit: If a prerequisite is missing.
     """
-    cells, meta, states = read_cells()
-    SC = meta["xy_scale"]
-    STAGES = meta["stages"]
-    xs = cells["x"].astype(np.float64) / SC
-    ys = cells["y"].astype(np.float64) / SC
-
     xw_path = TABLES / "crosswalk_platt_zscape.tsv"
     if not xw_path.exists():
         sys.exit(f"missing {xw_path}")
+
+    xy, ti_cell, sub, tis = read_zscape()
+    xs, ys = xy[:, 0], xy[:, 1]
 
     # ---- the terrain field ------------------------------------------------
     # Two axes offered, exactly as /fate_map_wang_2026 Plate II offers two
@@ -245,76 +385,103 @@ def main() -> None:
         lo, hi = float(np.percentile(vals, 0.2)), float(np.percentile(vals, 99.8))
         edges = np.linspace(lo, hi, NX + 1)
         dens = np.zeros((len(STAGES), NX))
-        for ti in range(len(STAGES)):
-            m = cells["t"] == ti
+        for k in range(len(STAGES)):
+            m = ti_cell == k
             h, _ = np.histogram(vals[m], bins=edges)
-            # normalise WITHIN the hour: depth varies 16-fold across the window
-            dens[ti] = h / max(1, h.sum())
+            # normalise WITHIN the hour: depth varies 13-fold across the window
+            dens[k] = h / max(1, h.sum())
         dens = gauss1d(dens, SMOOTH)
+
         # Elevation: high density is LOW ground. A basin is where cells sit.
         #
-        # The first version took -log10(density) and min-max normalised the whole
-        # field. It rendered as ruled lines: the empty tails of every hour drove
-        # the maximum, so all the real structure was squeezed into a narrow band
-        # and the relief was invisible. Normalising WITHIN each hour against that
-        # hour's own densest column, with a compressive exponent, gives every
-        # hour the full amplitude and the terrain its shape. The trade is that
-        # elevation is comparable across x within an hour, but NOT between hours
-        # — which is the same trade the within-hour density normalisation
-        # already made, and is stated on the plate.
-        # Two attempts before this one rendered as ruled lines. -log10 min-max
-        # over the whole field let the empty tails set the maximum; dividing by
-        # the row maximum left most columns near 1, so each profile was flat with
-        # a few narrow notches. What the eye needs is the row's values spread
-        # over the full amplitude, which is a RANK transform: elevation is one
-        # minus the within-hour percentile rank of density, blended with the
-        # within-hour normalised density so the depths mean something.
+        # Three attempts before this one. -log10(density) min-max over the whole
+        # field let the empty tails of every hour set the maximum and rendered as
+        # ruled lines; dividing by the row maximum left most columns near 1, flat
+        # with a few narrow notches; the within-hour RANK gave every hour the
+        # full amplitude but, being uniform by construction, gave every valley
+        # the same depth and the terrain came out as rolling waves.
         #
-        # It is monotone in density, so every ordering claim the plate makes is
-        # still true — a lower point always has more cells than a higher one at
-        # the same hour. What it is NOT is proportional: the depth of a valley is
-        # a rank, not a cell count, and the plate says so.
-        # The rank ALONE gives every hour the full amplitude, but it also gives
-        # every valley the same depth: a rank is uniform by construction, so the
-        # surface came out as smooth rolling waves rather than a range with real
-        # peaks and canyons. The fix is to add back a term that carries the
-        # actual density contrast, so a basin holding a tenth of the hour's cells
-        # is visibly deeper than one holding a fiftieth.
-        #
-        # Both terms are monotone DECREASING in density, so their sum is too, and
-        # the plate's only ordering claim survives intact: at a given hour, lower
-        # ground always holds more cells than higher ground.
+        # So elevation adds a second term carrying the actual density contrast,
+        # and a basin holding a tenth of the hour's cells is now visibly deeper
+        # than one holding a fiftieth. BOTH TERMS ARE MONOTONE DECREASING IN
+        # DENSITY, so their sum is too, and the plate's only ordering claim
+        # survives intact: at a given hour, lower ground always holds more cells
+        # than higher ground. What it is not is proportional, and elevation is
+        # not comparable between hours.
         order = np.argsort(np.argsort(dens, axis=1), axis=1)
         e_rank = 1.0 - order / (NX - 1.0)
         e_dens = 1.0 - (dens / np.maximum(dens.max(axis=1, keepdims=True), 1e-12)) ** 0.35
         elev = 0.55 * e_rank + 0.45 * e_dens
         elev = gauss1d(elev, 1.5)
+
+        # ---- the occupied support, hour by hour ---------------------------
+        # Does the terrain WIDEN as development runs? Trim TAIL of each hour's
+        # cells off each end and report what is left. The silhouette is drawn to
+        # this, so if the range widens it is because the occupied part of the
+        # axis widened — nothing is stretched to make it look that way.
+        support = []
+        for k in range(len(STAGES)):
+            c = np.cumsum(dens[k]) / max(dens[k].sum(), 1e-12)
+            a = int(np.searchsorted(c, TAIL))
+            b = int(np.searchsorted(c, 1.0 - TAIL))
+            support.append([a, min(NX - 1, max(a + 1, b))])
+        widths = [(b - a) / (NX - 1.0) for a, b in support]
+        print(f"  {axis_name}: occupied support {widths[0]:.0%} at {STAGES[0]} hpf -> "
+              f"{widths[-1]:.0%} at {STAGES[-1]} hpf"
+              + ("  (widens)" if widths[-1] > widths[0] else "  (does NOT widen)"))
+
         fields[axis_name] = {
             "lo": round(lo, 4), "hi": round(hi, 4),
             "elev": [[round(float(v), 4) for v in row] for row in elev],
+            "support": support,
             "dens_max": round(float(dens.max()), 6),
         }
-        print(f"  terrain {axis_name}: {len(STAGES)} x {NX}, x range [{lo:.2f}, {hi:.2f}]")
 
     # ---- wild-type channels ----------------------------------------------
     # One channel per state that is big enough to place: its x centroid at each
     # hour. These are the routes the terrain's basins lie along.
+    names = sorted(set(sub.tolist()))
     channels = []
-    for st in states:
-        if st["n"] < MIN_STATE:
+    for sname in names:
+        m_state = sub == sname
+        n = int(m_state.sum())
+        if n < MIN_STATE:
             continue
-        m_state = cells["c"] == st["i"]
-        row = {"state": st["name"], "tissue": st["tissue"], "n": st["n"], "pts": []}
-        for ti in range(len(STAGES)):
-            m = m_state & (cells["t"] == ti)
-            k = int(m.sum())
-            row["pts"].append(None if k < 15 else
+        tt = pd.Series(tis[m_state]).value_counts()
+        row = {"state": sname, "tissue": (tt.index[0] if len(tt) else None), "n": n, "pts": []}
+        for k in range(len(STAGES)):
+            m = m_state & (ti_cell == k)
+            cnt = int(m.sum())
+            row["pts"].append(None if cnt < 15 else
                               [round(float(xs[m].mean()), 4),
-                               round(float(ys[m].mean()), 4), k])
+                               round(float(ys[m].mean()), 4), cnt])
         if sum(1 for p in row["pts"] if p) >= 3:
             channels.append(row)
     channels.sort(key=lambda r: -r["n"])
     print(f"  channels: {len(channels)} states with 3+ placeable hours")
+
+    # ---- how many distinct states, hour by hour ---------------------------
+    # The reader's intuition is that the range ought to WIDEN as development
+    # runs, because there are more cell types later. The terrain cannot show
+    # that: x is a fixed embedding coordinate, so its width is fixed by
+    # construction and stretching it would move every position on the plate.
+    #
+    # So the growth is measured instead of drawn into the relief. Two numbers per
+    # hour: how many states are present at all, and the EFFECTIVE number —
+    # exp(Shannon entropy) of the state fractions, which is how many equally
+    # abundant states would give the same diversity. The second is the honest
+    # one; the first rises with sampling depth as much as with biology.
+    diversity = []
+    for k, hpf in enumerate(STAGES):
+        m = ti_cell == k
+        vc = pd.Series(sub[m]).value_counts()
+        frac = (vc / vc.sum()).to_numpy(float)
+        eff = float(np.exp(-(frac * np.log(frac)).sum()))
+        diversity.append({"hpf": hpf, "n_cells": int(m.sum()),
+                          "n_states": int((vc >= 15).sum()),
+                          "effective_states": round(eff, 2)})
+        print(f"    {hpf:>3} hpf  {int(m.sum()):>8,} cells  "
+              f"{int((vc >= 15).sum()):>3} states  effective {eff:5.1f}")
 
     # ---- ChemFish --------------------------------------------------------
     if not pathlib.Path(CF).exists():
@@ -335,7 +502,7 @@ def main() -> None:
     f.close()
     print(f"  chemfish: {len(tp):,} cells, timepoints {sorted(set(tp.tolist()))}")
 
-    HOURS = [h for h in (36, 48) if h in set(tp.tolist())]
+    HOURS = [h for h in sorted(set(tp.tolist())) if h in STAGES]
     pert = pert_c[pert_k]
 
     # composition per (arm, hour) over the Platt vocabulary.
@@ -350,23 +517,22 @@ def main() -> None:
             m = (pert == arm) & (tp == h) & labelled
             if not m.any():
                 continue
-            cnt = np.bincount(ct_k[m], minlength=len(ct_c))
-            comp[(arm, h)] = cnt
+            comp[(arm, h)] = np.bincount(ct_k[m], minlength=len(ct_c))
 
     # x position of a Platt state on the terrain, via the CELL-LEVEL crosswalk:
     # a Platt state inherits the x of the ZSCAPE states its cells actually carry,
     # weighted by how many. Many-to-many is preserved as a weighted mean rather
     # than resolved to a winner.
     xw = pd.read_csv(xw_path, sep="\t")
-    st_x = {s["name"]: s for s in states}
+    ch_x = {c["state"]: c for c in channels}
     place = {}
     for pstate, g in xw.groupby("platt_state"):
         num1 = num2 = wsum = 0.0
         for r in g.itertuples():
-            s = st_x.get(r.zscape_state)
+            s = ch_x.get(r.zscape_state)
             if not s:
                 continue
-            pts = [p for p in s["trail"] if p]
+            pts = [p for p in s["pts"] if p]
             if not pts:
                 continue
             w = float(r.n_cells)
@@ -404,9 +570,13 @@ def main() -> None:
 
     # ---- one shared perturbation structure --------------------------------
     # A state x drug matrix of compositional log fold-change, per hour, then the
-    # first principal component ACROSS DRUGS. If seven different pathway
+    # first principal component ACROSS DRUGS. If eight different pathway
     # blockades reshape the landscape the same way, that shows up here; if they
     # do not, PC1 explains little and the page says so.
+    #
+    # It is a shared COMPOSITIONAL response. A shared transcriptional program —
+    # stress, apoptosis and the rest — lives in the expression channel, which
+    # this plate never opens.
     shared = {}
     for h in HOURS:
         piv = cf[cf.hpf == h].pivot_table(index="state", columns="drug", values="lfc")
@@ -431,6 +601,11 @@ def main() -> None:
         print(f"  shared structure at {h} hpf: PC1 {var[0]:.1%} over "
               f"{piv.shape[0]} states x {piv.shape[1]} drugs")
 
+    stage_fit = apparent_stage(comp, ct_c, HOURS)
+    for d in sorted(stage_fit):
+        bits = ", ".join(f"{h}->{v['apparent_hpf']:.1f}" for h, v in sorted(stage_fit[d].items()))
+        print(f"  apparent stage  {d:<12} {bits}")
+
     # ---- ChemFish as fields over the terrain's x axis ----------------------
     for axis_name in ("e1", "e2"):
         d_f, s_f, c_f = perturbation_fields(
@@ -444,22 +619,25 @@ def main() -> None:
 
     doc = {
         "stages": STAGES,
+        "gap": list(GAP),
         "nx": NX,
         "fields": fields,
-        "channels": channels[:44],
+        "channels": channels[:56],
+        "diversity": diversity,
         "chemfish": {
             "hours": HOURS,
             "vehicle": VEHICLE, "pathway": PATHWAY,
             "min_cells": MIN_CELLS_CF,
             "rows": cf.to_dict(orient="records"),
             "shared": shared,
+            "stage_fit": stage_fit,
         },
         "caveat": "Elevation blends the within-hour RANK of wild-type cell density "
                   "with the within-hour normalised density, both inverted, so a basin "
-                  "is where cells accumulate. Monotone but not "
-                  "proportional, and not comparable between hours. It is an "
-                  "interpretive rendering of transcriptomic state space — not anatomy, "
-                  "not a tracked lineage, and nothing rolls down it.",
+                  "is where cells accumulate. Monotone but not proportional, and not "
+                  "comparable between hours. It is an interpretive rendering of "
+                  "transcriptomic state space — not anatomy, not a tracked lineage, "
+                  "and nothing rolls down it.",
     }
     (WEB / "terrain.json").write_text(json.dumps(doc, separators=(",", ":")))
     TABLES.mkdir(parents=True, exist_ok=True)
@@ -471,6 +649,10 @@ def main() -> None:
                       for d, v in s["drug_loadings"].items()]
                      ).to_csv(TABLES / "chemfish_shared_axis_loadings.tsv",
                               sep="\t", index=False)
+    if stage_fit:
+        pd.DataFrame([dict(drug=d, hpf=int(h), **v)
+                      for d, hh in stage_fit.items() for h, v in hh.items()]
+                     ).to_csv(TABLES / "chemfish_apparent_stage.tsv", sep="\t", index=False)
     print(f"  wrote {WEB/'terrain.json'} "
           f"({(WEB/'terrain.json').stat().st_size/1024:.0f} KB) and the ChemFish tables")
 

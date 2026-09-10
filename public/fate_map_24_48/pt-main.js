@@ -399,33 +399,33 @@
     if (terrain) {
       const CF = terrain.chemfish;
       const view4 = PTTerrain.make($('terr'), $('trHold'), terrain, showChannel);
+      const ST = terrain.stages, GAP = terrain.gap;
+      const nDrug = Object.keys(CF.pathway).length;
+      $('tr4When').innerHTML = `${ST[0]} &ndash; ${ST[ST.length - 1]} hpf`;
 
       $('cap4').innerHTML =
-        `<b>Time runs down the page, 24 hpf at the top rule to 48 at the bottom.</b> The surface ` +
-        `blends the within-hour rank of wild-type cell density with the within-hour normalised ` +
-        `density, along one axis of the same embedding Plate III draws, inverted — so it ` +
-        `<b>rises where few cells are and dips where many are</b>. A rank because two attempts on ` +
-        `the raw log density rendered as ruled lines; the density term because a rank alone is ` +
-        `uniform by construction and gave every valley the same depth. <b>Both terms fall as ` +
-        `density rises, so the blend does too</b>: a lower point always holds more cells than a ` +
-        `higher one at the same hour. Depth is still not proportional to number, and not ` +
-        `comparable between hours. Cells sit in the valleys, and a channel is a valley that persists ` +
-        `down the page. The ${terrain.channels.length} dotted routes are state centroids, hour by ` +
-        `hour. <b>This is an interpretive rendering of transcriptomic state space, not anatomy ` +
-        `and not a tracked lineage.</b> Nothing rolls down it, no cell crosses a ridge, and a ` +
-        `ridge's height is not an energy, a barrier or a probability — underneath it is a count of ` +
-        `cells per bin per hour and nothing else. <b>The drug layer is ChemFish</b>, not ZSCAPE: ` +
-        `${Object.keys(CF.pathway).length} small molecules each blocking one named pathway, ` +
-        `against their matched vehicle, at ${CF.hours.join(' and ')} hpf — the only hours ChemFish ` +
-        `shares with this window. Choosing one <b>re-cuts the terrain at those two hours</b>: the ` +
-        `surface is displaced by the log ratio of drug to vehicle occupancy along the axis, the ` +
-        `wild-type line is left behind as a ghost, and the inked area between them is the size of ` +
-        `the change. <b>That is a change in occupancy, not in position.</b> ChemFish cells reach ` +
-        `this axis by which state they are, through the crosswalk — they were never embedded ` +
-        `themselves — so a drug can make a basin deeper or shallower here, but it cannot move one ` +
-        `sideways. <b>Turn on the shared response and the valleys flood</b>, tinted warm where a ` +
-        `basin gains cells under the drugs and cool where it loses them. The water is drawn from ` +
-        `the seven drug arms; the terrain beneath it is wild type and knows nothing about it. ` +
+        `<b>This plate follows the drugs, not the other plates.</b> It runs ` +
+        `${ST[0]}&ndash;${ST[ST.length - 1]} hpf because that is ChemFish's own window: the screen ` +
+        `samples ${CF.hours.join(', ')} hpf, and 48 alone carries three quarters of its 2.07M ` +
+        `cells. <b>Time runs down the page and the axis is broken.</b> ZSCAPE samples every ` +
+        `second hour from ${ST[0]} to ${GAP ? GAP[0] : 48}, then nothing at all until ` +
+        `${GAP ? GAP[1] : 72} — so the terrain is a continuous range, a labelled gap across ` +
+        `${GAP ? GAP[1] - GAP[0] : 24} unsampled hours, and then the single far ridge of ` +
+        `${GAP ? GAP[1] : 72} hpf. Nothing is interpolated across it. The surface blends the ` +
+        `within-hour rank of wild-type cell density with the within-hour normalised density, ` +
+        `inverted, so it <b>rises where few cells are and dips where many are</b>; both terms ` +
+        `fall as density rises, so a lower point always holds more cells than a higher one at the ` +
+        `same hour, though depth is not proportional to number and hours are not comparable. ` +
+        `<b>This is an interpretive rendering of transcriptomic state space, not anatomy and not ` +
+        `a tracked lineage.</b> Nothing rolls down it, no cell crosses a ridge, and a ridge's ` +
+        `height is not an energy, a barrier or a probability. <b>The drug layer is ChemFish</b>: ` +
+        `${nDrug} small molecules each blocking one named pathway against its matched vehicle. ` +
+        `Choosing one <b>re-cuts the terrain</b> at the measured hours — the surface is displaced ` +
+        `by the log ratio of drug to vehicle occupancy along the axis, the wild-type line stays ` +
+        `as a ghost, and the inked area between them is the size of the change. <b>That is a ` +
+        `change in occupancy, not in position.</b> ChemFish cells reach this axis by which state ` +
+        `they are, through the crosswalk — they were never embedded themselves — so a drug can ` +
+        `make a basin deeper or shallower here, but it cannot move one sideways. ` +
         `<b>Scroll to zoom, drag to move.</b>`;
 
       const sel4 = $('trDrug');
@@ -439,53 +439,195 @@
         sel4.appendChild(o2);
       });
 
+      /* ---- the biology legend, under the map ------------------------------
+       * Two columns for each row on purpose: what the mark IS, and what it is a
+       * claim about. The rows that say NOT SHOWN are the ones worth the space —
+       * a terrain invites every reading in developmental biology, and most of
+       * them this plate cannot support. */
+      const mk = (inner) => `<svg width="74" height="26" viewBox="0 0 74 26">${inner}</svg>`;
+      const BIO = [
+        { m: mk('<path d="M2 20 C10 20 12 9 20 9 C28 9 30 19 38 19 C46 19 48 7 56 7 ' +
+                'C64 7 66 18 72 18" fill="none" stroke="#2b2219" stroke-width="1" opacity=".8"/>' +
+                '<path d="M2 24 C10 24 12 14 20 14 C28 14 30 23 38 23 C46 23 48 12 56 12 ' +
+                'C64 12 66 22 72 22" fill="none" stroke="#2b2219" stroke-width="1" opacity=".35"/>'),
+          t: 'The stacked profiles',
+          w: 'Where wild-type cells sit along this axis, one profile per hour, near hours in front.',
+          b: 'Normal development — the unperturbed landscape everything else is measured against.' },
+        { m: mk('<path d="M2 8 C12 8 16 21 28 21 C40 21 44 8 54 8 L72 8" fill="none" ' +
+                'stroke="#2b2219" stroke-width="1.1"/>' +
+                '<path d="M14 21 C20 21 22 21 34 21 C42 21 44 18 48 16 L48 22 L14 22 Z" ' +
+                'fill="#2b2219" opacity=".14"/>'),
+          t: 'A valley, and its depth',
+          w: 'A stretch of the axis many cells occupy. Deeper means a larger share of that hour ' +
+             'sits there.',
+          b: 'A cell state, or a few neighbouring ones, and how much of the embryo is in it.' },
+        { m: mk('<path d="M2 6 C12 6 14 6 24 6 C34 6 36 18 46 18 C56 18 60 20 72 21" ' +
+                'fill="none" stroke="#2b2219" stroke-width="1" opacity=".75"/>' +
+                '<circle cx="24" cy="6" r="2" fill="#8f2d16"/><circle cx="66" cy="20.6" r="2" fill="#8f2d16"/>'),
+          t: 'A valley that deepens or fills in down the page',
+          w: 'The same stretch of axis, hour after hour, gaining or losing its share.',
+          b: 'A cell type coming into existence or fading out of it — with the caveat that ' +
+             'sampling depth varies, which is why depth is only compared within an hour.' },
+        { m: mk('<path d="M6 3 L18 12 L30 15 L44 17 L60 23" fill="none" stroke="#5f5344" ' +
+                'stroke-width="1" stroke-dasharray="2 3"/><circle cx="6" cy="3" r="1.8" fill="#5f5344"/>'),
+          t: 'A dotted route',
+          w: 'One named state’s centroid on this axis, hour by hour. Click it to follow it.',
+          b: 'Where a cell type sits in transcriptomic space over time. A route, not a path ' +
+             'anything travelled: no cell in this plate was tracked.' },
+        { m: mk('<path d="M8 6 L28 6 M8 20 L28 20" stroke="#8b7d69" stroke-width="1"/>' +
+                '<path d="M32 13 L44 13" stroke="#8b7d69" stroke-width="1" stroke-dasharray="2 2"/>' +
+                '<path d="M50 5 L66 21 M50 21 L66 5" stroke="#8b7d69" stroke-width="1.1"/>'),
+          t: 'Merging, splitting, transitions between states',
+          w: 'NOT SHOWN HERE. Two valleys running together on this axis are two states that ' +
+             'happen to sit near each other, not two states that became one.',
+          b: 'Fate. It lives on Plate I — and even there the transitions are inferred from ' +
+             'the Platt reference, not observed. No dataset in this corpus tracks a cell from ' +
+             '36 to 72 hpf.',
+          no: true },
+        { m: mk('<path d="M2 12 C14 12 16 6 28 6 C40 6 44 14 56 14 L72 14" fill="none" ' +
+                'stroke="#5f5344" stroke-width="0.8" stroke-dasharray="2 2"/>' +
+                '<path d="M2 12 C14 12 16 17 28 17 C40 17 44 11 56 11 L72 11" fill="none" ' +
+                'stroke="#2b2219" stroke-width="1.2"/>' +
+                '<path d="M16 8 C20 6 24 6 28 6 C36 6 40 12 48 13.4 L48 12 C40 10.6 36 5 28 5 ' +
+                'C24 5 20 5 16 7 Z" fill="#2b2219" opacity=".2"/>'),
+          t: 'The re-cut profile, with its ghost',
+          w: 'Pick a drug and the measured hours are displaced by log₂(drug occupancy / ' +
+             'vehicle occupancy). The dashed line is where wild type was.',
+          b: 'Cell-proportion change after a drug — which basins take a larger or smaller ' +
+             'share of the embryo when a pathway is blocked.' },
+        { m: mk('<path d="M4 20 L70 20" stroke="#c3b6a0" stroke-width="0.8"/>' +
+                '<path d="M12 20 L12 6" stroke="#2b2219" stroke-width="1"/>' +
+                '<path d="M52 20 L52 6" stroke="#2b2219" stroke-width="1" opacity=".35"/>' +
+                '<path d="M50 13 L18 13 M22 10 L18 13 L22 16" fill="none" stroke="#8f2d16" ' +
+                'stroke-width="1.1"/>'),
+          t: 'The apparent stage, in the panel',
+          w: 'Where a drug arm’s composition projects onto its own vehicle’s ' +
+             'trajectory through the sampled hours.',
+          b: 'Developmental delay — a lineage held back rather than merely re-proportioned. ' +
+             'It is a resemblance to an earlier control, not a clock, and the residual is ' +
+             'reported with it.' },
+        { m: mk('<defs><linearGradient id="bkg" x1="0" x2="1"><stop offset="0" ' +
+                'stop-color="#57688a" stop-opacity=".75"/><stop offset=".5" stop-color="#eae2d2" ' +
+                'stop-opacity=".5"/><stop offset="1" stop-color="#a8442a" stop-opacity=".75"/>' +
+                '</linearGradient></defs>' +
+                '<path d="M2 7 C14 7 16 20 30 20 C44 20 46 8 58 8 L72 8 L72 25 L2 25 Z" ' +
+                'fill="url(#bkg)"/>' +
+                '<path d="M2 7 C14 7 16 20 30 20 C44 20 46 8 58 8 L72 8" fill="none" ' +
+                'stroke="#2b2219" stroke-width="1"/>'),
+          t: 'The tinted water in the valleys',
+          w: 'The first principal component of the state-by-drug matrix of compositional log ' +
+             'fold-change. Warm gains cells, cool loses them, and dry means ChemFish never ' +
+             'reached that part of the axis.',
+          b: 'A shared response program — the direction the landscape moves in when any ' +
+             'pathway is blocked, rather than one drug’s signature.' },
+        { m: mk('<path d="M8 5 L30 5 M8 11 L30 11 M8 17 L30 17 M8 23 L30 23" stroke="#8b7d69" ' +
+                'stroke-width="1"/><path d="M44 5 L64 21 M44 21 L64 5" stroke="#8b7d69" ' +
+                'stroke-width="1.1"/>'),
+          t: 'Stress, apoptosis, and any other transcriptional signature',
+          w: 'NOT SHOWN HERE. Every number on this plate is a COUNT OF CELLS PER STATE. The ' +
+             'shared axis above is a shared compositional response, not a shared program of ' +
+             'gene expression.',
+          b: 'Those live in the expression channel, which this plate never opens. A drug can ' +
+             'switch on a stress program in every cell and move nothing on this map.',
+          no: true },
+        { m: mk('<path d="M6 4 L46 4 M6 10 L40 10 M6 16 L44 16 M6 22 L42 22" stroke="#5f5344" ' +
+                'stroke-width="3" opacity=".3" stroke-linecap="butt"/>'),
+          t: 'The bars in the right margin',
+          w: 'The effective number of states at each hour — exp(Shannon entropy) of the ' +
+             'state fractions, which is how many equally abundant states would give the same ' +
+             'diversity.',
+          b: 'Whether the embryo is getting more various. It is the honest answer to why the ' +
+             'terrain does not widen with time.' },
+      ];
+      $('trBio').innerHTML = BIO.map((r) =>
+        `<div class="bio-row${r.no ? ' no' : ''}">${r.m}<div>` +
+        `<div class="bio-what"><b>${r.t}.</b> ${r.w}</div>` +
+        `<div class="bio-bio">${r.b}</div></div></div>`).join('');
+
+      const dv = terrain.diversity || [];
+      const dv0 = dv.length ? dv[0] : null, dv1 = dv.length ? dv[dv.length - 1] : null;
+      $('trBioFoot').innerHTML =
+        '<b>Should the terrain widen with time?</b> It cannot: x is a fixed embedding ' +
+        'coordinate, so the width of the plate is set by the projection and stretching it would ' +
+        'move every position on the map. So the question was measured instead of drawn. ' +
+        (dv0 && dv1
+          ? `The effective number of states is <b>${dv0.effective_states.toFixed(0)}</b> at ` +
+            `${dv0.hpf} hpf and <b>${dv1.effective_states.toFixed(0)}</b> at ${dv1.hpf} hpf — ` +
+            `flat across the window. The raw count of named states does rise (${dv0.n_states} to ` +
+            `${dv1.n_states}), but it rises with sampling depth too, and the two deep hours are ` +
+            `the two with the most states. In ZSCAPE's own annotation, the embryo does not get ` +
+            'more <i>various</i> between 36 and 72 hpf so much as it gets more <i>resolved</i>.'
+          : '');
+
       function drugBlurb(d) {
         if (!d) return '';
         const rows = CF.rows.filter((r) => r.drug === d);
         const up = rows.filter((r) => r.lfc > 0.5), dn = rows.filter((r) => r.lfc < -0.5);
         const top = rows.slice().sort((a, b) => b.lfc - a.lfc);
         const bot = rows.slice().sort((a, b) => a.lfc - b.lfc);
+        const fit = (CF.stage_fit || {})[d] || {};
+        const fitRows = Object.keys(fit).map(Number).sort((a, b) => a - b).map((h) => {
+          const v = fit[String(h)];
+          const late = v.shift <= -1.5, early = v.shift >= 1.5;
+          const q = v.residual / Math.max(v.vehicle_span, 1e-9);
+          const lo = CF.hours[0], hi = CF.hours[CF.hours.length - 1];
+          const edge = v.off_trajectory
+            ? (v.apparent_hpf <= lo + 0.01 ? ` — the fit ran off the young end, so read it as “${lo} hpf or earlier”`
+               : v.apparent_hpf >= hi - 0.01 ? ` — the fit ran off the old end, so read it as “${hi} hpf or later”`
+               : '')
+            : '';
+          return `<dd><b>${h} hpf</b> looks like <b>${v.apparent_hpf.toFixed(1)} hpf</b>${edge}. ` +
+            `${late ? `<b>${(-v.shift).toFixed(1)} h behind the clock</b>`
+                    : early ? `${v.shift.toFixed(1)} h ahead of it` : 'On the clock'}. ` +
+            `Residual ${(q * 100).toFixed(0)}% of the vehicle's own ${CF.hours[0]}–` +
+            `${CF.hours[CF.hours.length - 1]} hpf travel.</dd>`;
+        }).join('');
         return `<dl><dt>${d} — ${CF.pathway[d]} blockade</dt>` +
           `<dd>against ${CF.vehicle[d]}, ${rows.length} state-hours scored at a floor of ` +
-          `${CF.min_cells} cells. The terrain is re-cut at ${CF.hours.join(' and ')} hpf and ` +
+          `${CF.min_cells} cells. The terrain is re-cut at ${CF.hours.join(', ')} hpf and ` +
           `nowhere else — the brackets in the margin are where the measurement is.</dd>` +
           `<dt>Basins that deepen</dt><dd>${up.length} states enriched. Most: ` +
           `<b>${top[0] ? top[0].state : '—'}</b>${top[0] ? ` (+${top[0].lfc.toFixed(2)} at ${top[0].hpf} hpf)` : ''}.</dd>` +
           `<dt>Basins that fill in</dt><dd>${dn.length} states depleted. Most: ` +
           `<b>${bot[0] ? bot[0].state : '—'}</b>${bot[0] ? ` (${bot[0].lfc.toFixed(2)} at ${bot[0].hpf} hpf)` : ''}.</dd>` +
+          (fitRows ? `<dt>Apparent stage</dt>${fitRows}` : '') +
           `</dl>`;
       }
 
       function sharedBlurb() {
-        const parts = Object.entries(CF.shared || {}).map(([h, s]) => {
-          const ld = Object.entries(s.drug_loadings).sort((a, b) => b[1] - a[1]);
-          return `<dt>${h} hpf — PC1 takes ${(s.var_explained * 100).toFixed(0)}%</dt>` +
-            `<dd>over ${s.n_states} states and ${s.n_drugs} drugs. Loads hardest on ` +
-            `<b>${ld[0][0]}</b> (${CF.pathway[ld[0][0]]}, ${ld[0][1].toFixed(2)}), least on ` +
-            `${ld[ld.length - 1][0]} (${ld[ld.length - 1][1].toFixed(2)}).</dd>`;
-        });
+        const parts = Object.entries(CF.shared || {})
+          .sort((a, b) => (+a[0]) - (+b[0])).map(([h, s]) => {
+            const ld = Object.entries(s.drug_loadings).sort((a, b) => b[1] - a[1]);
+            return `<dt>${h} hpf — PC1 takes ${(s.var_explained * 100).toFixed(0)}%</dt>` +
+              `<dd>over ${s.n_states} states and ${s.n_drugs} drugs. Loads hardest on ` +
+              `<b>${ld[0][0]}</b> (${CF.pathway[ld[0][0]]}, ${ld[0][1].toFixed(2)}), least on ` +
+              `${ld[ld.length - 1][0]} (${ld[ld.length - 1][1].toFixed(2)}).</dd>`;
+          });
         return `<dl><dt>Why a drug response on a wild-type terrain</dt>` +
           `<dd><b>The terrain is wild type. The water is not.</b> The tint is the first principal ` +
           `component of the state-by-drug matrix of compositional log fold-change — it marks the ` +
-          `basins that <i>change when any of the seven drugs is applied</i>, painted onto the ` +
-          `unperturbed landscape they change. Warm water gains cells, cool water loses them, and ` +
-          `the depth of colour is the size of the score.</dd>` +
+          `basins that <i>change when any of the ${nDrug} drugs is applied</i>, painted onto the ` +
+          `unperturbed landscape they change. Warm water gains cells, cool loses them, and the ` +
+          `depth of colour is the size of the score.</dd>` +
+          `<dt>It is compositional, not transcriptional</dt><dd>A shared <i>program</i> — stress, ` +
+          `apoptosis — is a fact about gene expression. Everything here is a count of cells per ` +
+          `state, so this axis says the drugs reshape the population the same way, and says ` +
+          `nothing about what those cells are transcribing.</dd>` +
           `<dt>Where there is no water</dt><dd>ChemFish reaches under half of this axis. A dry ` +
-          `valley is one it never measured, not one that failed to respond, and nothing is tinted ` +
-          `above the first measured hour.</dd>` +
+          `valley is one it never measured, not one that failed to respond.</dd>` +
           parts.join('') + `</dl>`;
       }
 
       const baseBlurb =
         '<h3>What the surface is</h3>' +
         '<p><b>Elevation blends the within-hour rank of cell density with the within-hour ' +
-        'normalised density, both inverted.</b> High ground is where few wild-type cells are; the ' +
-        'valley floors are where they pile up, and the deeper floors hold more. Monotone, so a ' +
-        'lower point always holds more cells than a higher one at the same hour \u2014 but not ' +
+        'normalised density, both inverted.</b> High ground is where few wild-type cells are; ' +
+        'the valley floors are where they pile up, and the deeper floors hold more. Monotone, so ' +
+        'a lower point always holds more cells than a higher one at the same hour — but not ' +
         'proportional, and not comparable between hours.</p>' +
         '<p><b>A channel</b> is a valley that persists down the page. The dotted lines are state ' +
-        'centroids at each hour \u2014 routes, not paths anything travelled.</p>' +
-        '<p><b>The metaphor is Waddington\u2019s and it stops there.</b> No cell rolls, nothing ' +
+        'centroids at each hour — routes, not paths anything travelled.</p>' +
+        '<p><b>The metaphor is Waddington’s and it stops there.</b> No cell rolls, nothing ' +
         'crosses a ridge, and no height here is an energy or a probability.</p>' +
         '<p class="tr-move"><b>Scroll to zoom</b> on the point under the cursor, drag to move, ' +
         'double-click to reset. Scroll out past the start and the page carries on.</p>';
@@ -499,7 +641,8 @@
         $('trBody').innerHTML =
           `<h3>${ch.state}</h3>` +
           `<dl><dt>Tissue</dt><dd>${ch.tissue || '—'}</dd>` +
-          `<dt>Wild-type cells, 24–48 hpf</dt><dd><b>${ch.n.toLocaleString()}</b></dd>` +
+          `<dt>Wild-type cells, ${ST[0]}–${ST[ST.length - 1]} hpf</dt>` +
+          `<dd><b>${ch.n.toLocaleString()}</b></dd>` +
           `<dt>Hours it can be placed</dt><dd>${seen.length} of ${terrain.stages.length}` +
           `${seen.length ? ` — ${seen[0]} to ${seen[seen.length - 1]} hpf` : ''}</dd></dl>` +
           extra;
@@ -520,12 +663,16 @@
       $('trShared').addEventListener('change', () => {
         view4.setShared($('trShared').checked); showChannel(-1);
       });
+      /* clear returns the plate to its OPENING state, which now has the water in
+       * it — the flood is the default because the plate's argument is about
+       * drugs, not about the wild-type surface on its own. */
       $('trClear').addEventListener('click', () => {
         view4.select(-1); sel4.value = ''; view4.setDrug(null);
-        $('trShared').checked = false; view4.setShared(false);
+        $('trShared').checked = true; view4.setShared(true);
         view4.resetView(); showChannel(-1);
       });
 
+      view4.setShared($('trShared').checked);
       showChannel(-1);
       afterVisible.push(() => view4.resize());
       let rz4;
@@ -540,13 +687,15 @@
       const nL = sources.sources.filter((s2) => s2.band === 'lineage').length;
       $('srcWhen').textContent =
         `${sources.sources.length} sources · ${nW} wired · ${sources.bands.length} bands`;
+      const wiredNames = sources.sources.filter((s2) => s2.status === 'wired').map((s2) => s2.name);
       $('cap2').innerHTML =
-        `<b>Fourteen sources, two of them load-bearing.</b> Every bar is a real holding in ` +
-        `the silver warehouse, drawn across the developmental window it covers. Filled bars ` +
-        `feed this page — Platt supplies all ${sources.live.graph_edges} arrows on Plate I, ` +
-        `ZSCAPE supplies the crosswalk and timing in ` +
+        `<b>${sources.sources.length} sources, ${nW} of them load-bearing.</b> Every bar is a ` +
+        `real holding in the silver warehouse, drawn across the developmental window it covers. ` +
+        `Filled bars feed this page — ${wiredNames.join(', ')} — Platt supplying all ` +
+        `${sources.live.graph_edges} arrows on Plate I and ZSCAPE the crosswalk and timing in ` +
         `${(sources.live.crosswalked_states || 0)} of ${sources.live.enriched_states} state ` +
-        `panels. The other twelve are held and unwired. <b>Read down the shaded column:</b> ` +
+        `panels. The other ${sources.sources.length - nW} are held and unwired. ` +
+        `<b>Read down the shaded column:</b> ` +
         `six bars cross 24–48 hpf with transcriptomes and none of the ${nL} lineage sources ` +
         `does — two stop at 24 hpf, one is unplaceable on this axis, and one is probably a ` +
         `different stage altogether. That absence is the argument of this page, drawn.`;
@@ -644,8 +793,8 @@
 
       `<b>What is deliberately absent, and Plate II is the audit of it.</b> ZMAP, DanioCell, ` +
       `Zebrahub, the spatial layers and the anatomy are acquired, verified and sitting in the ` +
-      `warehouse <i>unwired</i>. Plate II draws all fourteen sources on one developmental axis and ` +
-      `fills in only the two that feed this page, so a held source cannot be misread as an ` +
+      `warehouse <i>unwired</i>. Plate II draws every source on one developmental axis and ` +
+      `fills in only the ones that feed this page, so a held source cannot be misread as an ` +
       `integrated one. It is also where the window's real hole is visible: nothing in the ` +
       `observed-lineage band crosses 24–48 hpf.`,
     ];

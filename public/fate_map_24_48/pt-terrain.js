@@ -1,22 +1,25 @@
-/* pt-terrain.js — Plate IV, the terrain.
+/* pt-terrain.js — Plate IV, the terrain, over ChemFish's own window.
  *
- * Time runs DOWN the page, 24 hpf at the top rule to 48 hpf at the bottom, after
+ * Time runs DOWN the page, 36 hpf at the top rule to 72 at the bottom, after
  * /fate_map_wang_2026 Plate II. The horizontal axis is one axis of the wild-type
  * embedding, switchable, exactly as that plate switches between two spherical
- * coordinates.
+ * coordinates — the two are the first and second principal directions of the
+ * SAME projection, so they are two cuts through one space, not two spaces.
+ *
+ * THE AXIS IS BROKEN, ON PURPOSE. ZSCAPE samples 36, 38, 40, 42, 44, 46, 48 and
+ * then nothing until 72. So the plate draws a continuous range from 36 to 48, a
+ * labelled BREAK across twenty-four hours nobody sampled, and then the single
+ * far ridge of 72 hpf. Nothing is interpolated across the gap.
  *
  * THE SURFACE IS DENSITY, INVERTED. Elevation blends the within-hour RANK of
  * wild-type cell density with the within-hour normalised density, so the surface
  * RISES where few cells are and DIPS where many are. A rank because two attempts
- * on the raw log density
- * rendered as ruled lines — the empty tails of each hour set the scale and the
- * structure disappeared; the density term because a rank alone is uniform by
- * construction and gave every valley the same depth. Both terms fall as density
- * rises, so the blend is monotone and every ordering claim holds, but a valley
- * twice as deep does not hold twice as many cells. Cells
- * therefore sit in the valleys, which is the Waddington convention and the reason
- * the word "channel" means anything here: a channel is a valley that persists
- * down the page, and a state's route runs along its floor.
+ * on the raw log density rendered as ruled lines; the density term because a rank
+ * alone is uniform by construction and gave every valley the same depth. Both
+ * terms fall as density rises, so the blend is monotone and every ordering claim
+ * holds, but a valley twice as deep does not hold twice as many cells. Cells sit
+ * in the valleys, which is the Waddington convention and the reason the word
+ * "channel" means anything here.
  *
  * IT IS AN INTERPRETIVE RENDERING AND NOT A MEASUREMENT OF ANYTHING PHYSICAL.
  * Not anatomy. Not a tracked lineage. No cell rolls down it, no cell crosses a
@@ -24,18 +27,16 @@
  * What is real underneath it is a count of cells per bin per hour, normalised
  * within the hour — nothing more.
  *
- * THREE LAYERS SIT ON THE SURFACE, and they are drawn as landscape rather than
- * as marks on top of landscape, because the metaphor is the argument:
+ * THREE LAYERS SIT ON THE SURFACE, drawn as landscape rather than as marks on
+ * top of landscape, because the metaphor is the argument:
  *
  *   channels     dotted routes: a state's centroid on this axis at each hour.
- *   water        when the shared-response layer is on, the valleys below the
- *                waterline flood, tinted by how hard ANY drug moves that basin.
- *                The tint comes from the seven drug arms; the terrain under it
- *                is wild type and knows nothing about it.
- *   deformation  when one drug is chosen, the two hours ChemFish measures are
- *                re-cut: the profile is displaced by the log ratio of the drug
- *                and vehicle occupancy along the axis, with the wild-type line
- *                left behind as a ghost.
+ *   water        the valleys below the waterline are tinted by how hard ANY drug
+ *                moves that basin. The tint comes from the eight drug arms; the
+ *                terrain under it is wild type and knows nothing about it.
+ *   deformation  when one drug is chosen, the hours ChemFish measures are re-cut:
+ *                the profile is displaced by the log ratio of drug and vehicle
+ *                occupancy along the axis, wild type left behind as a ghost.
  *
  * Per PLATE_STYLE.md §1.1 the mass is one ink and density does the work. The
  * colour budget is spent in exactly one place — the water — and madder stays
@@ -47,25 +48,28 @@
   const INK = '#2b2219', INK2 = '#5f5344', INK3 = '#8b7d69';
   const RULE = '#c3b6a0', RULE2 = '#d9cfbb', PAPER = '#f3ede1', SELECT = '#8f2d16';
   /* The top margin has to clear the relief itself: a profile rises by up to
-   * AMP row-spacings above its own row, and at r = 0 that put the 24 hpf crest
-   * off the canvas entirely. The bottom margin carries the keys. */
-  const M = { l: 64, r: 26, t: 104, b: 58 };
-  const NROWS = 130;            /* interpolated profiles between 24 and 48 hpf */
-  const AMP = 11.0;             /* relief height, in row spacings              */
+   * AMP row-spacings above its own row. The bottom margin carries the keys. */
+  const M = { l: 66, r: 92, t: 104, b: 58 };
+  const NROWS = 112;            /* interpolated profiles across the sampled run */
+  const AMP = 11.0;             /* relief height, in row spacings               */
   /* Aerial perspective: the near ridges are inked harder than the far ones. It
    * is a drawing convention and carries no number — the data is entirely in the
    * shape of the profiles, which are all drawn at the same scale. */
   const FAR = 0.14, NEAR = 0.34;
 
-  /* Water. The elevation field IS a within-hour rank, so a waterline at 0.32 is
-   * exactly "the densest 38% of the axis at this hour" — no calibration, no
-   * fitted threshold, and the sentence on the plate is literally true. */
+  /* The broken axis, as fractions of the plot height. */
+  const SEG_A = 0.70;           /* the continuously sampled run, top to bottom  */
+  const Y_LATE = 0.97;          /* where the single late ridge sits             */
+
+  /* Water. The elevation field is a rank blended with a normalised density, so a
+   * waterline at 0.38 is close to "the densest 38% of the axis at this hour" and
+   * needs no calibration. */
   const WATERLINE = 0.38;
 
   /* Deformation. One log2 fold of compositional change displaces the surface by
    * DEF_PER_LOG2 elevation units; beyond DEF_CLIP the displacement saturates so
    * a single thin state cannot punch through the relief. */
-  const DEF_PER_LOG2 = 0.30, DEF_CLIP = 1.5;
+  const DEF_PER_LOG2 = 0.26, DEF_CLIP = 1.8;
   /* ChemFish measures at whole hours. The deformation is applied to a band
    * BAND_HPF either side of a measured hour and to nothing else, with a short
    * feather for the antialiasing only. The hard edge is deliberate: it is where
@@ -90,43 +94,57 @@
     return 'rgba(' + r + ',' + g + ',' + b + ',' + Math.max(0, alpha).toFixed(3) + ')';
   }
   const smooth = (x) => { const t = Math.max(0, Math.min(1, x)); return t * t * (3 - 2 * t); };
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
   function make(canvas, hold, T, onPick) {
     const ctx = canvas.getContext('2d');
-    let W = 0, H = 0, dpr = 1, raf = 0;
-    let axis = 'e1', sel = -1, drug = null, showShared = false, hour = null;
-    /* the view: a scale about the plot's top-left plus a pan, both in screen px */
-    let k = 1, panX = 0, panY = 0, dragging = false;
+    let W = 0, H = 0, dpr = 1, raf = 0, anim = 0;
+    let axis = 'e1', sel = -1, drug = null, showShared = true, hour = null;
+    /* the view: a scale about the plot's top-left plus a pan, both in screen px.
+     * Current and target are separate so the wheel can ease rather than jump. */
+    let k = 1, panX = 0, panY = 0;
+    let kT = 1, panXT = 0, panYT = 0;
+    let dragging = false;
 
     const stages = T.stages;
     const NX = T.nx;
-    const H0 = stages[0], H1 = stages[stages.length - 1];
+    const GAP = T.gap || null;                       /* [48, 72] */
+    /* the continuously sampled run is everything up to the gap */
+    const RUN = GAP ? stages.filter((h) => h <= GAP[0]) : stages.slice();
+    const LATE = GAP ? stages.filter((h) => h > GAP[0]) : [];
+    const H0 = RUN[0], H1 = RUN[RUN.length - 1];
     const CFH = (T.chemfish && T.chemfish.hours) || [];
 
-    /* Interpolate the 13 measured hours to NROWS drawing rows. Linear, and only
-     * between real hours — nothing is extrapolated past 24 or 48. */
+    /* Interpolate the sampled hours of the run to NROWS drawing rows, then add
+     * one row per late hour. Linear, and only between real hours — nothing is
+     * extrapolated and nothing crosses the gap. */
     function rows() {
-      const f = T.fields[axis], E = f.elev;
-      const out = new Array(NROWS);
+      const E = T.fields[axis].elev;
+      const out = [];
       for (let r = 0; r < NROWS; r++) {
-        const u = (r / (NROWS - 1)) * (stages.length - 1);
-        const i = Math.min(stages.length - 2, Math.floor(u)), w = u - i;
+        const u = (r / (NROWS - 1)) * (RUN.length - 1);
+        const i = Math.min(RUN.length - 2, Math.floor(u)), w = u - i;
         const a = E[i], b = E[i + 1], v = new Float32Array(NX);
         for (let j = 0; j < NX; j++) v[j] = a[j] * (1 - w) + b[j] * w;
-        out[r] = v;
+        out.push({ hpf: H0 + (r / (NROWS - 1)) * (H1 - H0), v: v, late: false, i: r });
       }
+      LATE.forEach((h) => {
+        out.push({ hpf: h, v: Float32Array.from(E[stages.indexOf(h)]), late: true, i: out.length });
+      });
       return out;
     }
     let R = rows();
 
-    const rowHour = (r) => H0 + (r / (NROWS - 1)) * (H1 - H0);
     const plotW = () => W - M.l - M.r;
     const plotH = () => H - M.t - M.b;
 
-    /* layout coordinates, before the view transform */
-    const lRowY = (r) => M.t + (r / (NROWS - 1)) * plotH();
+    /* layout coordinates, before the view transform. The y map is PIECEWISE:
+     * linear across the sampled run, then a break, then the late ridge. */
+    const lHourY = (h) => {
+      if (h <= H1) return M.t + ((h - H0) / (H1 - H0)) * SEG_A * plotH();
+      return M.t + Y_LATE * plotH();
+    };
     const lColX = (j) => M.l + (j / (NX - 1)) * plotW();
-    const lHourY = (h) => M.t + ((h - H0) / (H1 - H0)) * plotH();
     const lWx = (v) => {
       const f = T.fields[axis];
       return M.l + ((v - f.lo) / (f.hi - f.lo)) * plotW();
@@ -135,40 +153,48 @@
      * engraving keeps its weight at every zoom. */
     const tx = (x) => M.l + (x - M.l) * k + panX;
     const ty = (y) => M.t + (y - M.t) * k + panY;
-    const rowY = (r) => ty(lRowY(r));
     const colX = (j) => tx(lColX(j));
     const hourY = (h) => ty(lHourY(h));
     const wx = (v) => tx(lWx(v));
 
-    function clampPan() {
+    function clampTarget() {
       const pw = plotW(), ph = plotH();
-      panX = Math.min(0, Math.max(pw * (1 - k), panX));
-      panY = Math.min(0, Math.max(ph * (1 - k), panY));
+      panXT = clamp(panXT, pw * (1 - kT), 0);
+      panYT = clamp(panYT, ph * (1 - kT), 0);
     }
-    function zoomAt(nk, mx, my) {
-      nk = Math.max(1, Math.min(9, nk));
-      /* keep the point under the cursor fixed */
-      const lx = (mx - M.l - panX) / k, ly = (my - M.t - panY) / k;
-      k = nk;
-      panX = mx - M.l - lx * k;
-      panY = my - M.t - ly * k;
-      clampPan(); draw();
+    /* Ease toward the target rather than snapping to it. The first cut applied
+     * the wheel straight to the scale, which at one notch per 22% was both too
+     * coarse and visibly steppy. */
+    function tick() {
+      const dk = kT - k, dx = panXT - panX, dy = panYT - panY;
+      if (Math.abs(dk) < 0.0015 && Math.abs(dx) < 0.4 && Math.abs(dy) < 0.4) {
+        k = kT; panX = panXT; panY = panYT; anim = 0; paint(); return;
+      }
+      k += dk * 0.26; panX += dx * 0.26; panY += dy * 0.26;
+      paint();
+      anim = requestAnimationFrame(tick);
     }
-    function resetView() { k = 1; panX = 0; panY = 0; draw(); }
+    function run() { if (!anim) anim = requestAnimationFrame(tick); }
 
-    /* ---- the ChemFish fields, as functions of hour and column -------------
-     * dfield[drug][hour] is log2(drug occupancy / vehicle occupancy) along this
-     * axis. sfield[hour] is the kernel-weighted mean PC1 score. Both are built
-     * by scripts/build_fate_map_24_48_terrain.py; both are absent for an older
-     * terrain.json, and every use below is guarded. */
+    function zoomTo(nk, mx, my) {
+      nk = clamp(nk, 1, 9);
+      /* keep the point under the cursor fixed, measured against the TARGET */
+      const lx = (mx - M.l - panXT) / kT, ly = (my - M.t - panYT) / kT;
+      kT = nk;
+      panXT = mx - M.l - lx * kT;
+      panYT = my - M.t - ly * kT;
+      clampTarget(); run();
+    }
+    function resetView() { kT = 1; panXT = 0; panYT = 0; run(); }
+
+    /* ---- the ChemFish fields, as functions of hour and column ------------- */
     const F = () => T.fields[axis] || {};
     function sharedHours() {
       const sf = F().sfield;
       return sf ? Object.keys(sf).map(Number).sort((a, b) => a - b) : [];
     }
     /* a per-hour field, interpolated between the measured hours and NOT extended
-     * above the first of them. Used for both the shared response and ChemFish's
-     * coverage of the axis. */
+     * above the first of them */
     function fieldAt(obj, h) {
       const hs = sharedHours();
       if (!obj || !hs.length) return null;
@@ -190,8 +216,9 @@
      * is left DRY rather than flooded with a neutral colour, so the water's
      * footprint is the measurement's footprint and nothing more. */
     const COV_MIN = 0.02;
-    /* the strength scale for the tint: the 98th percentile of |score| over both
-     * measured hours, so the ramp uses its full range without one outlier state
+
+    /* the strength scale for the tint: the 98th percentile of |score| over every
+     * measured hour, so the ramp uses its full range without one outlier state
      * setting it. */
     let SREF = 1;
     function calcSref() {
@@ -204,8 +231,6 @@
     }
     calcSref();
 
-    /* how much of the deformation applies at this hour: 1 inside the measured
-     * band, 0 outside it */
     function bandWeight(h) {
       let best = 0, bh = null;
       for (let i = 0; i < CFH.length; i++) {
@@ -219,7 +244,6 @@
       }
       return { w: best, hour: bh };
     }
-    /* the elevation displacement at a row, or null where there is none */
     function deformAt(h) {
       if (!drug) return null;
       const df = F().dfield;
@@ -231,7 +255,7 @@
       if (!L) return null;
       const out = new Float32Array(NX);
       for (let j = 0; j < NX; j++) {
-        const c = Math.max(-DEF_CLIP, Math.min(DEF_CLIP, L[j]));
+        const c = clamp(L[j], -DEF_CLIP, DEF_CLIP);
         /* enriched (L > 0) means MORE cells, and more cells is LOWER ground */
         out[j] = -c * DEF_PER_LOG2 * bw.w;
       }
@@ -244,49 +268,50 @@
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
       canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      clampPan();
+      clampTarget(); k = kT; panX = panXT; panY = panYT;
       draw();
     }
     function draw() {
-      if (raf) return;
+      if (raf || anim) return;
       raf = requestAnimationFrame(() => { raf = 0; paint(); });
     }
 
     function paint() {
       ctx.clearRect(0, 0, W, H);
-      const rs = (plotH() / (NROWS - 1)) * k, amp = rs * AMP;
+      const rs = (SEG_A * plotH() / (NROWS - 1)) * k, amp = rs * AMP;
       const sHours = sharedHours();
-      /* the drawing rows that land on a measured ChemFish hour. Only these
-       * carry the ghost line and the inked sliver; the rest of the band is
-       * displaced but drawn plainly, or ten identical slivers stack up into an
-       * opaque block and the plate loses its relief exactly where it matters. */
+      /* the drawing rows that land on a measured ChemFish hour. Only these carry
+       * the ghost line and the inked sliver; the rest of the band is displaced
+       * but drawn plainly, or eleven identical slivers stack into an opaque
+       * block and the plate loses its relief exactly where it matters. */
       const keyRows = {};
       CFH.forEach((mh) => {
-        keyRows[Math.round(((mh - H0) / (H1 - H0)) * (NROWS - 1))] = true;
+        let bi = -1, bd = 1e9;
+        R.forEach((row, i) => {
+          const d = Math.abs(row.hpf - mh);
+          if (d < bd) { bd = d; bi = i; }
+        });
+        if (bi >= 0 && bd < 1.5) keyRows[bi] = true;
       });
 
       ctx.save();
-      /* everything below is landscape and stays inside the plot; the top of the
-       * clip sits under the two running heads so a zoomed crest cannot climb
-       * over them */
       ctx.beginPath();
       ctx.rect(M.l - 1, 24, plotW() + 2, H - M.b - 24 + 1);
       ctx.clip();
 
-      /* ---- the relief ---------------------------------------------------
-       * Far rows first. Each profile is filled with paper down to the next
-       * row, so it hides the one behind it and the stack gains depth without
-       * a single fabricated shadow. */
-      for (let r = 0; r < NROWS; r++) {
-        const v = R[r], y0 = rowY(r), h = rowHour(r);
-        if (y0 < 24 - amp * 1.2 || y0 > H - M.b + rs * 8) continue;   /* off-screen */
+      /* ---- the relief ----------------------------------------------------
+       * Far rows first. Each profile is filled with paper down to the next row,
+       * so it hides the one behind it and the stack gains depth without a single
+       * fabricated shadow. */
+      for (let r = 0; r < R.length; r++) {
+        const row = R[r], v = row.v, h = row.hpf, y0 = hourY(h);
+        if (y0 < 24 - amp * 1.3 || y0 > H - M.b + rs * 9) continue;
         const dz = deformAt(h);
         const keyRow = (dz && keyRows[r]) ? r : -1;
         const vd = dz ? new Float32Array(NX) : v;
-        if (dz) for (let j = 0; j < NX; j++) vd[j] = Math.max(0, Math.min(1.15, v[j] + dz[j]));
+        if (dz) for (let j = 0; j < NX; j++) vd[j] = clamp(v[j] + dz[j], 0, 1.2);
+        const bottom = y0 + rs * (row.late ? 10 : 6);
 
-        const bottom = y0 + rs * 6;
-        /* paper fill under the profile the reader is meant to believe */
         ctx.beginPath();
         ctx.moveTo(colX(0), y0 - vd[0] * amp);
         for (let j = 1; j < NX; j++) ctx.lineTo(colX(j), y0 - vd[j] * amp);
@@ -295,27 +320,19 @@
         ctx.closePath();
         ctx.fillStyle = PAPER; ctx.globalAlpha = 1; ctx.fill();
 
-        /* ---- water ------------------------------------------------------
+        /* ---- water -------------------------------------------------------
          * Tint the ground below the waterline by the shared drug response.
          *
          * Filled over the SAME polygon as the paper above, and for the same
          * reason: the nearer rows then paint over all of it but the strip that
          * belongs to this row, so the colour survives as a ribbon hugging the
-         * surface instead of as a stack of overlapping bands. The first attempt
-         * filled only from the waterline down to the profile, which is what
-         * water does — and eleven rows of it piled up into a comb of spikes.
-         *
-         * One horizontal gradient per row, sampled from the field, so the
-         * colour is a property of POSITION on the axis and reads as a spectrum
-         * run into the valleys rather than as a set of marks. */
+         * surface instead of as a stack of overlapping bands. Masked by the
+         * gradient's own ALPHA rather than by clipping — cutting the fill at a
+         * threshold gave hard vertical edges and the tint read as a rectangular
+         * stain rather than as something lying in a valley. */
         if (showShared && sHours.length) {
           const S = fieldAt(F().sfield, h), CV = fieldAt(F().cov, h);
           if (S && CV) {
-            /* The colour is masked by the gradient's own ALPHA rather than by
-             * clipping the fill: it fades out as the ground climbs towards the
-             * waterline and as ChemFish's coverage runs out. Cutting the fill at
-             * a threshold instead gave hard vertical edges and the tint read as
-             * a rectangular stain rather than as something lying in a valley. */
             const grad = ctx.createLinearGradient(colX(0), 0, colX(NX - 1), 0);
             for (let q = 0; q <= 80; q++) {
               const j = Math.round((q / 80) * (NX - 1));
@@ -335,12 +352,12 @@
           }
         }
 
-        /* ---- deformation ------------------------------------------------
+        /* ---- deformation -------------------------------------------------
          * The wild-type line is left behind as a ghost and the sliver between
-         * the two is inked, so the AREA between them is the size of the
-         * change. Deepening gets hachures as well, which is the engraver's
-         * way of saying a face was cut. */
-        if (dz && keyRow === r) {
+         * the two is inked, so the AREA between them is the size of the change.
+         * Deepening gets hachures as well, which is the engraver's way of
+         * saying a face was cut. */
+        if (keyRow === r) {
           ctx.beginPath();
           ctx.moveTo(colX(0), y0 - v[0] * amp);
           for (let j = 1; j < NX; j++) ctx.lineTo(colX(j), y0 - v[j] * amp);
@@ -358,8 +375,8 @@
             ctx.beginPath();
             for (let j = 1; j < NX; j += 2) {
               if (dz[j] >= -0.012) continue;              /* only where it deepens */
-              const yA = y0 - v[j] * amp, yB = y0 - vd[j] * amp;
-              ctx.moveTo(colX(j), yA); ctx.lineTo(colX(j), yB);
+              ctx.moveTo(colX(j), y0 - v[j] * amp);
+              ctx.lineTo(colX(j), y0 - vd[j] * amp);
             }
             ctx.strokeStyle = INK; ctx.globalAlpha = 0.34; ctx.lineWidth = 0.5; ctx.stroke();
           }
@@ -371,9 +388,9 @@
         ctx.moveTo(colX(0), y0 - vd[0] * amp);
         for (let j = 1; j < NX; j++) ctx.lineTo(colX(j), y0 - vd[j] * amp);
         ctx.strokeStyle = INK;
-        const near = FAR + (NEAR - FAR) * (r / (NROWS - 1));
-        ctx.globalAlpha = near + ((r % 5 === 0) ? 0.18 : 0);
-        ctx.lineWidth = (r % 5 === 0) ? 0.85 : 0.6;
+        const near = FAR + (NEAR - FAR) * (r / (R.length - 1));
+        ctx.globalAlpha = row.late ? 0.62 : (near + ((r % 5 === 0) ? 0.18 : 0));
+        ctx.lineWidth = row.late ? 1.0 : ((r % 5 === 0) ? 0.85 : 0.6);
         ctx.stroke();
 
         /* The measured profile is inked hard, but ONLY across the part of the
@@ -383,31 +400,30 @@
           const CVk = fieldAt(F().cov, h);
           ctx.strokeStyle = INK; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.2;
           ctx.beginPath();
-          let run = false;
+          let go = false;
           for (let j = 0; j < NX; j++) {
-            const ok = !CVk || CVk[j] >= COV_MIN;
-            if (!ok) { run = false; continue; }
+            if (CVk && CVk[j] < COV_MIN) { go = false; continue; }
             const X = colX(j), Y = y0 - vd[j] * amp;
-            run ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
-            run = true;
+            go ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
+            go = true;
           }
           ctx.stroke();
         }
       }
       ctx.globalAlpha = 1;
 
-      /* ---- hachures: short strokes down the steep faces ------------------
+      /* ---- hachures: short strokes down the steep faces -------------------
        * The engraver's way of showing slope, and the whole texture budget of
        * this plate. Furniture-adjacent but computed from the field, never
        * jittered. Dropped mid-drag, where they cost more than they say. */
       if (!dragging) {
         ctx.strokeStyle = INK; ctx.globalAlpha = 0.15; ctx.lineWidth = 0.5;
         ctx.beginPath();
-        const hs = Math.max(1, Math.round(2 / Math.sqrt(k)));
-        for (let r = hs; r < NROWS; r += hs) {
-          const v = R[r], y0 = rowY(r);
-          if (y0 < 24 - amp * 1.2 || y0 > H - M.b + rs * 8) continue;
-          for (let j = 2; j < NX - 2; j += hs) {
+        const hstep = Math.max(1, Math.round(2 / Math.sqrt(k)));
+        for (let r = 0; r < R.length; r += hstep) {
+          const row = R[r], v = row.v, y0 = hourY(row.hpf);
+          if (y0 < 24 - amp * 1.3 || y0 > H - M.b + rs * 9) continue;
+          for (let j = 2; j < NX - 2; j += hstep) {
             const g = Math.abs(v[j + 2] - v[j - 2]);
             if (g < 0.040) continue;
             const len = Math.min(rs * 2.8, g * amp * 1.1);
@@ -419,31 +435,33 @@
         ctx.globalAlpha = 1;
       }
 
-      /* ---- wild-type channels -------------------------------------------
+      /* ---- wild-type channels --------------------------------------------
        * A state's route down the page: its centroid on this axis at each hour.
-       * Drawn dotted for the same reason Plate III's trail is — it is not a
-       * path anything travelled. */
+       * Drawn dotted for the same reason Plate III's trail is — it is not a path
+       * anything travelled. The line BREAKS at the gap; joining 48 to 72 would
+       * draw a route through twenty-four unsampled hours. */
       const useY = axis === 'e1' ? 0 : 1;
       ctx.setLineDash([2, 3]);
       T.channels.forEach((ch, ci) => {
         const on = sel === ci;
         ctx.strokeStyle = on ? SELECT : INK2;
-        ctx.globalAlpha = on ? 0.95 : 0.34;
+        ctx.globalAlpha = on ? 0.95 : 0.30;
         ctx.lineWidth = on ? 1.5 : 0.7;
         ctx.beginPath();
-        let started = false;
+        let go = false;
         ch.pts.forEach((p, ti) => {
-          if (!p) return;
-          const X = wx(p[useY]), Y = hourY(stages[ti]);
-          started ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
-          started = true;
+          const h = stages[ti];
+          if (!p) { go = false; return; }
+          if (GAP && h > GAP[0] && go) go = false;      /* break across the gap */
+          const X = wx(p[useY]), Y = hourY(h);
+          go ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
+          go = true;
         });
         ctx.stroke();
       });
       ctx.setLineDash([]);
       if (sel >= 0) {
-        const ch = T.channels[sel];
-        ch.pts.forEach((p, ti) => {
+        T.channels[sel].pts.forEach((p, ti) => {
           if (!p) return;
           ctx.beginPath();
           ctx.arc(wx(p[useY]), hourY(stages[ti]), 2.6, 0, Math.PI * 2);
@@ -451,31 +469,33 @@
         });
       }
       ctx.globalAlpha = 1;
-
-      /* the boundary of the drug evidence, drawn where it actually is */
-      if ((showShared && sHours.length) || drug) {
-        const top = (drug ? Math.min.apply(null, CFH) - BAND_HPF : sHours[0]);
-        const Y = hourY(top);
-        if (Y > 24 && Y < H - M.b) {
-          ctx.setLineDash([1, 4]);
-          ctx.strokeStyle = INK3; ctx.globalAlpha = 0.7; ctx.lineWidth = 0.8;
-          ctx.beginPath(); ctx.moveTo(M.l, Y); ctx.lineTo(W - M.r, Y); ctx.stroke();
-          ctx.setLineDash([]);
-          ctx.font = 'italic 10.5px "Iowan Old Style", Palatino, Georgia, serif';
-          ctx.fillStyle = INK3; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
-          ctx.fillText('no drug measured above this line', W - M.r - 6, Y - 3);
-          ctx.globalAlpha = 1;
-        }
-      }
       ctx.restore();
 
+      /* ---- the break ------------------------------------------------------
+       * Twenty-four hours ZSCAPE never sampled, drawn rather than hidden. */
+      if (LATE.length) {
+        const yA = hourY(H1) + rs * 1.5, yB = hourY(LATE[0]) - amp * 1.15;
+        if (yB > yA + 14) {
+          ctx.strokeStyle = RULE2; ctx.lineWidth = 0.8; ctx.globalAlpha = 1;
+          [yA, yB].forEach((Y) => {
+            ctx.beginPath();
+            for (let x = M.l; x < W - M.r; x += 9) {
+              ctx.moveTo(x, Y + 3); ctx.lineTo(x + 5, Y - 3);
+            }
+            ctx.stroke();
+          });
+          ctx.font = 'italic 11px "Iowan Old Style", Palatino, Georgia, serif';
+          ctx.fillStyle = INK3; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(GAP[0] + ' to ' + GAP[1] + ' hpf — ' + (GAP[1] - GAP[0])
+            + ' hours ZSCAPE does not sample', (M.l + W - M.r) / 2, (yA + yB) / 2);
+          ctx.textAlign = 'left';
+        }
+      }
+
       /* ---- furniture ------------------------------------------------------ */
-      /* The 24 and 48 hpf rules belong to the DATA and move with it. Drawn at
-       * the margins instead, they stayed nailed in place while the terrain slid
-       * under them, and the top rule went on claiming to be 24 hpf at ×5.8. */
       ctx.strokeStyle = RULE; ctx.lineWidth = 0.8; ctx.globalAlpha = 1;
       ctx.beginPath();
-      [H0, H1].forEach((h) => {
+      [H0, H1].concat(LATE).forEach((h) => {
         const Y = hourY(h);
         if (Y < M.t - 0.5 || Y > H - M.b + 0.5) return;
         ctx.moveTo(M.l, Y); ctx.lineTo(W - M.r, Y);
@@ -489,14 +509,17 @@
         ctx.strokeStyle = RULE2; ctx.globalAlpha = 0.75;
         ctx.beginPath(); ctx.moveTo(M.l - 6, Y); ctx.lineTo(M.l - 2, Y); ctx.stroke();
         ctx.globalAlpha = 1;
-        if (h % 4 === 0 || h === H0 || h === H1) ctx.fillText(h + (h === H0 ? ' hpf' : ''), M.l - 10, Y);
+        if (h % 4 === 0 || h === H0 || h === stages[stages.length - 1]) {
+          ctx.fillText(h + (h === H0 ? ' hpf' : ''), M.l - 10, Y);
+        }
       });
       /* the measured bands, bracketed in the margin where the deformation is */
       if (drug) {
         ctx.strokeStyle = INK2; ctx.globalAlpha = 0.8; ctx.lineWidth = 1.2;
         CFH.forEach((mh) => {
-          const a = Math.max(M.t, hourY(mh - BAND_HPF)), b = Math.min(H - M.b, hourY(mh + BAND_HPF));
-          if (b < M.t || a > H - M.b) return;
+          const a = clamp(hourY(mh - BAND_HPF), M.t, H - M.b);
+          const b = clamp(hourY(mh + BAND_HPF), M.t, H - M.b);
+          if (b - a < 1.5) return;
           ctx.beginPath();
           ctx.moveTo(M.l - 3, a); ctx.lineTo(M.l - 6, a);
           ctx.lineTo(M.l - 6, b); ctx.lineTo(M.l - 3, b);
@@ -504,6 +527,40 @@
         });
         ctx.globalAlpha = 1;
       }
+
+      /* ---- the diversity gauge, in the right margin -----------------------
+       * The range does NOT widen with time, and this is why: x is a fixed
+       * embedding coordinate, so the width of the plate is fixed by
+       * construction. What could have grown is the number of distinct states,
+       * so it is measured and drawn here instead of stretched into the relief.
+       * The effective count — exp(Shannon entropy) of the state fractions — is
+       * the honest one; the raw count rises with sampling depth as much as with
+       * biology. */
+      if (T.diversity && T.diversity.length) {
+        const maxE = Math.max.apply(null, T.diversity.map((d) => d.effective_states));
+        const gx = W - M.r + 12, gw = M.r - 46;
+        ctx.font = '9px ui-sans-serif, system-ui, sans-serif';
+        ctx.fillStyle = INK3; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+        ctx.fillText('states', gx, M.t - 16);
+        ctx.fillText('(effective)', gx, M.t - 6);
+        ctx.textBaseline = 'middle';
+        T.diversity.forEach((d) => {
+          const Y = hourY(d.hpf);
+          if (Y < M.t - 2 || Y > H - M.b + 2) return;
+          const w2 = (d.effective_states / maxE) * gw;
+          ctx.fillStyle = INK2; ctx.globalAlpha = 0.30;
+          ctx.fillRect(gx, Y - 2.2, w2, 4.4);
+          ctx.globalAlpha = 1;
+        });
+        const first = T.diversity[0], last = T.diversity[T.diversity.length - 1];
+        ctx.fillStyle = INK3;
+        [first, last].forEach((d) => {
+          const Y = hourY(d.hpf);
+          if (Y < M.t - 2 || Y > H - M.b + 2) return;
+          ctx.fillText(Math.round(d.effective_states), gx + gw + 3, Y);
+        });
+      }
+
       ctx.textAlign = 'left'; ctx.textBaseline = 'top';
       ctx.font = 'italic 11px "Iowan Old Style", Palatino, Georgia, serif';
       ctx.fillStyle = INK3;
@@ -537,12 +594,12 @@
         kx += 300;
       }
       if (drug) {
-        const dy = kyT + 5, hgt = DEF_PER_LOG2 * amp;
+        const dy = kyT + 6, hgt = Math.min(DEF_PER_LOG2 * amp, 12);
         ctx.strokeStyle = INK; ctx.globalAlpha = 0.8; ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(kx + 6, dy - Math.min(hgt, 12) / 2); ctx.lineTo(kx + 6, dy + Math.min(hgt, 12) / 2);
-        ctx.moveTo(kx, dy - Math.min(hgt, 12) / 2); ctx.lineTo(kx + 12, dy - Math.min(hgt, 12) / 2);
-        ctx.moveTo(kx, dy + Math.min(hgt, 12) / 2); ctx.lineTo(kx + 12, dy + Math.min(hgt, 12) / 2);
+        ctx.moveTo(kx + 6, dy - hgt / 2); ctx.lineTo(kx + 6, dy + hgt / 2);
+        ctx.moveTo(kx, dy - hgt / 2); ctx.lineTo(kx + 12, dy - hgt / 2);
+        ctx.moveTo(kx, dy + hgt / 2); ctx.lineTo(kx + 12, dy + hgt / 2);
         ctx.stroke(); ctx.globalAlpha = 1;
         ctx.font = 'italic 10.5px "Iowan Old Style", Palatino, Georgia, serif';
         ctx.fillStyle = INK2;
@@ -556,8 +613,8 @@
       ctx.textAlign = 'left';
     }
 
-    /* nearest channel to the pointer, measured at the nearest hour. wx/hourY
-     * already carry the view transform, so this needs no undoing. */
+    /* nearest channel to the pointer. wx/hourY already carry the view transform,
+     * so this needs no undoing. */
     function pick(mx, my) {
       const useY = axis === 'e1' ? 0 : 1;
       let best = -1, bd = 22 * 22;
@@ -573,15 +630,20 @@
     }
 
     /* ---- zoom and pan -----------------------------------------------------
-     * Scroll zooms about the cursor. When the plate is already fully zoomed
-     * out, a further scroll-out is NOT swallowed — it falls through to the
-     * page, so the reader can never be trapped inside the figure. */
+     * Scroll zooms about the cursor, eased. The step is taken from the event's
+     * own delta and normalised across the three deltaMode units, so a trackpad
+     * and a notched wheel feel the same. When the plate is already fully zoomed
+     * out, a further scroll-out is NOT swallowed — it falls through to the page,
+     * so the reader can never be trapped inside the figure. */
     canvas.addEventListener('wheel', (ev) => {
-      const dir = ev.deltaY < 0 ? 1 : -1;
-      if (dir < 0 && k <= 1.0001) return;
+      let d = ev.deltaY;
+      if (ev.deltaMode === 1) d *= 16;
+      else if (ev.deltaMode === 2) d *= 400;
+      if (d > 0 && kT <= 1.0001) return;
       ev.preventDefault();
       const r = canvas.getBoundingClientRect();
-      zoomAt(k * Math.exp(dir * 0.22), ev.clientX - r.left, ev.clientY - r.top);
+      const f = clamp(Math.exp(-d * 0.0016), 0.72, 1.38);
+      zoomTo(kT * f, ev.clientX - r.left, ev.clientY - r.top);
     }, { passive: false });
 
     let down = null;
@@ -597,20 +659,17 @@
       down.moved = Math.max(down.moved, Math.abs(dx) + Math.abs(dy));
       if (down.moved < 4) return;
       if (!dragging) { dragging = true; hold.classList.add('dragging'); }
-      panX = down.px + dx; panY = down.py + dy;
-      clampPan(); draw();
+      panXT = down.px + dx; panYT = down.py + dy;
+      clampTarget(); panX = panXT; panY = panYT;
+      if (anim) { cancelAnimationFrame(anim); anim = 0; }
+      draw();
     });
     function endDrag(ev) {
       if (!down) return;
-      const wasDrag = down.moved >= 4;
-      const c = down; down = null;
+      const wasDrag = down.moved >= 4, c = down;
+      down = null;
       if (dragging) { dragging = false; hold.classList.remove('dragging'); draw(); }
-      if (!wasDrag) {
-        const hit = pick(c.cx, c.cy);
-        sel = (hit === sel) ? -1 : hit;
-        onPick(sel);
-        draw();
-      }
+      if (!wasDrag) { const hit = pick(c.cx, c.cy); sel = (hit === sel) ? -1 : hit; onPick(sel); draw(); }
       if (ev && ev.pointerId !== undefined && canvas.hasPointerCapture(ev.pointerId)) {
         canvas.releasePointerCapture(ev.pointerId);
       }

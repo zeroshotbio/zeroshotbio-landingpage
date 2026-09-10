@@ -199,12 +199,34 @@ canvas{display:block;width:100%;touch-action:none}
 #embLegend .leg{font-size:13px}
 .trail-note{font-size:12px;font-style:italic;color:var(--ink-3);margin-top:10px;line-height:1.45}
 
-/* Plate IV, the terrain. Taller than the others because time is an axis here. */
-#trHold{height:min(820px,92vh);border-top:1px solid var(--rule-2);
+/* Plate IV, the terrain. Taller than the others because time is an axis here,
+   and the only plate on the page that breaks the measure: the map runs the full
+   width of the window and everything written about it sits underneath. */
+#stage>figure.plate.full{max-width:none;width:100vw;margin-left:calc(50% - 50vw);
+                         margin-right:calc(50% - 50vw);padding:0 40px}
+#trHold{height:min(880px,94vh);border-top:1px solid var(--rule-2);
         border-bottom:1px solid var(--rule-2);cursor:grab;overflow:hidden;touch-action:none}
 #trHold.dragging{cursor:grabbing}
+.tr-under{display:grid;grid-template-columns:minmax(0,1.05fr) 336px;gap:34px;
+          align-items:start;margin-top:20px}
+@media (max-width:1000px){.tr-under{grid-template-columns:minmax(0,1fr)}}
 #trPanel .tr-move{font-size:12.5px;font-style:italic;color:var(--ink-3);
                   border-top:1px solid var(--rule-2);padding-top:10px;margin-top:12px}
+/* the biology legend: what each part of the picture is a claim about */
+.bio-key{border-top:1px solid var(--rule);padding-top:14px;max-width:940px}
+.bio-key .lhead{font-family:var(--sans);font-size:10px;letter-spacing:.22em;
+                text-transform:uppercase;color:var(--ink-3);margin-bottom:12px}
+.bio-row{display:grid;grid-template-columns:74px minmax(0,1fr);gap:14px;
+         padding:9px 0;border-top:1px solid var(--rule-2);align-items:start}
+.bio-row:first-of-type{border-top:none}
+.bio-row svg{display:block;margin-top:2px}
+.bio-row b{color:var(--ink);font-weight:600}
+.bio-row .bio-what{font-size:13.5px;color:var(--ink-2);line-height:1.5}
+.bio-row .bio-bio{font-size:13px;color:var(--ink-2);line-height:1.5;font-style:italic}
+.bio-row.no b,.bio-row.no .bio-what{color:var(--ink-3)}
+.bio-row.no{background:rgba(139,125,105,.045)}
+.bio-foot{font-size:12.5px;font-style:italic;color:var(--ink-3);line-height:1.5;
+          margin-top:14px;border-top:1px solid var(--rule-2);padding-top:12px}
 #trPanel{border:1px solid var(--rule-2);background:rgba(255,252,244,.55);padding:16px 17px 18px}
 #trPanel .p-eyebrow{font-family:var(--sans);font-size:10px;letter-spacing:.22em;
                     text-transform:uppercase;color:var(--ink-3);margin-bottom:9px}
@@ -219,7 +241,7 @@ canvas{display:block;width:100%;touch-action:none}
         color:var(--ink-3);font-style:italic}
 .tr-key svg{flex:0 0 auto}
 
-/* Plate II. The stack is SVG rather than canvas — fourteen rows is not a data
+/* Plate II. The stack is SVG rather than canvas — fifteen rows is not a data
    mass, and every row carries a citation that ought to be a real link. */
 #srcHold{border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2);
          padding:8px 0 4px}
@@ -385,11 +407,11 @@ section.notes li b{color:var(--ink);font-weight:600}
       <figcaption id="cap3">&nbsp;</figcaption>
     </figure>
 
-    <figure class="plate wide" id="plate4">
+    <figure class="plate full" id="plate4">
       <div class="plate-head">
         <span class="plate-num">Plate IV</span>
         <h2 class="plate-title">The terrain, and what a drug does to it</h2>
-        <span class="plate-when">24 &ndash; 48 hpf</span>
+        <span class="plate-when" id="tr4When">36 &ndash; 72 hpf</span>
       </div>
 
       <div class="toolbar">
@@ -397,17 +419,24 @@ section.notes li b{color:var(--ink);font-weight:600}
           <button id="trA1" aria-pressed="true">embedding axis 1</button>
           <button id="trA2" aria-pressed="false">axis 2</button>
         </div>
-        <span class="hint">time runs down the page &middot; the surface dips where cells
-          accumulate &middot; scroll to zoom, drag to move &middot; click a channel to follow it</span>
+        <span class="hint">two cuts through the <i>same</i> space &mdash; the first and second
+          principal directions of one projection of ZSCAPE&rsquo;s 3D UMAP. Switching re-slices
+          the terrain; it does not change the data.</span>
         <span class="spacer"></span>
-        <label class="pert-lab" title="Tints the valleys by how hard the seven drugs move each basin">
-          <input type="checkbox" id="trShared"> flood the valleys &mdash; shared drug response</label>
+        <label class="pert-lab" title="Tints the valleys by how hard the eight drugs move each basin">
+          <input type="checkbox" id="trShared" checked> flood the valleys &mdash; shared drug response</label>
         <select id="trDrug" class="sel"></select>
         <button class="btn" id="trClear">clear</button>
       </div>
 
-      <div class="plate-body">
-        <div class="canvas-hold" id="trHold"><canvas id="terr"></canvas></div>
+      <div class="canvas-hold" id="trHold"><canvas id="terr"></canvas></div>
+
+      <div class="tr-under">
+        <div class="bio-key">
+          <div class="lhead">What each part of this picture is a claim about</div>
+          <div id="trBio"></div>
+          <div class="bio-foot" id="trBioFoot"></div>
+        </div>
         <aside id="trPanel">
           <div class="p-eyebrow">Reading the terrain</div>
           <div id="trBody"></div>
@@ -430,9 +459,9 @@ section.notes li b{color:var(--ink);font-weight:600}
         <aside id="srcCard" class="sc"></aside>
         <div class="src-key">
           <div class="lhead">Reading the plate</div>
-          <p><b>A filled bar feeds this page.</b> Two of the fourteen do. The rest are
-             acquired, verified and sitting in the warehouse unwired — drawn as an open bar
-             so a held source cannot be mistaken for an integrated one.</p>
+          <p><b>A filled bar feeds this page.</b> The rest are acquired, verified and sitting
+             in the warehouse unwired &mdash; drawn as an open bar so a held source cannot be
+             mistaken for an integrated one. The count is in the head of the plate.</p>
           <p><b>Bands run from interpreted to observed.</b> Inferred transitions at the top,
              a cell actually followed at the bottom.</p>
           <p><b>The shaded column is 24–48 hpf.</b> Read down it: the transcriptomic bands
