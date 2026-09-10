@@ -44,7 +44,7 @@ svg.appendChild(root);
    which is worth showing rather than hiding.
    ============================================================ */
 (function grid() {
-  const X0 = -6, X1 = 82, Y0 = -8, Y1 = 88;
+  const X0 = -36, X1 = 82, Y0 = -8, Y1 = 88;   /* X0 clears the open-source lane (zone from -32.5) */
   for (let x = X0; x <= X1; x += 2) {
     const major = x % 10 === 0;
     add(gGrid, "line", {
@@ -333,10 +333,23 @@ function labelTier() {
   const want = cam.z < FINE_Z;
   if (want !== coarse) { coarse = want; svg.classList.toggle("coarse", want); }
 }
+/* RESERVE THE READER. Selecting a station opens the reader, and the map deliberately does not re-fit
+   while something is selected - so whatever the reader opens over is simply hidden. That cost nothing
+   while the plan was height-bound and left slack on the right. The open-source lane made it wide
+   enough to be width-bound, and the first click then buried the zsb-medallion rail. So while the
+   reader is shut, fit into the stage minus the width it will open at: opening it covers empty
+   stage, never the plan. The phone layout is exempt; there the reader is a bottom sheet. */
+function readerReserve() {
+  if (window.matchMedia("(max-width:900px)").matches) return 0;
+  const grip = document.getElementById("gripR");
+  if (!grip || !grip.classList.contains("shut")) return 0;
+  return parseFloat(reader.dataset.wopen) || 360;
+}
 function fit() {
   const r = svg.getBoundingClientRect(), b = contentBox();
-  cam.z = Math.min(r.width / b.w, r.height / b.h);
-  cam.x = (r.width - b.w * cam.z) / 2 - b.x * cam.z;
+  const W = r.width - readerReserve();
+  cam.z = Math.min(W / b.w, r.height / b.h);
+  cam.x = (W - b.w * cam.z) / 2 - b.x * cam.z;
   cam.y = (r.height - b.h * cam.z) / 2 - b.y * cam.z;
   apply();
 }
@@ -647,6 +660,8 @@ const MOVED = 4;   /* px of travel that separates a drag from a click */
     const setW = v => { w = v; document.documentElement.style.setProperty(varName, v + "px"); };
     const shut = () => {
       if (w > 8) wOpen = w;            /* remember where to come back to */
+      /* and say so on the panel, so fit() can keep that much stage free (see readerReserve) */
+      panel.dataset.wopen = wOpen < 56 ? def : wOpen;
       grip.classList.add("shut"); panel.style.display = "none"; setW(0); refresh();
     };
     const open = () => {

@@ -440,6 +440,61 @@ a reason to open. The pins are now a `pins` command in two repos — ask the
 machine — but the prose has no such check, and `check-fit.mjs` cannot read.
 
 
+## The state of the data — 2026-09-10, later. A second S3 lane: open-source datasets get a bucket.
+
+```
+new bucket  s3://zsb-open-source   44 obj · 50.58 GiB   zscape/ + chemfish/ (2 of 23 acquired)
+silver      unchanged              959 obj · 538.20 GiB — every copied object is still there
+```
+
+**Datasets somebody else published are moving out of silver into their own bucket**,
+`zsb-open-source`, created by hand in the console. The copy is server-side and key-identical,
+each object confirmed by size and full-object CRC64NVME against its source, and each dataset's
+root `README.md` there carries its custody record (provenance, per-file SHA-256, acquisition,
+verification) — the zsb-bronze custody PRs are no longer the vehicle. Silver still holds every
+copied object, because a delete is a human console act; it is drawn as the bucket actually is.
+
+**The map now has three enclosures, not two.** Left to right: `AWS S3 Open Source Datasets`
+(new, `x0 -32.5 … x1 -3.5`), `AWS S3 ZSB Datasets` (the old `AWS S3`, renamed, unmoved), `GitHub`.
+The new vault is `OPEN`, at `COL_OPEN = -18`, level with SILVER and the same size, in silver's
+tier colouring. It is its own lane rather than a fourth tier because it is not a stage: no hop reads
+it and nothing in it was made here, so it has no conduits. The grid's `X0` moved from -6 to -36 so
+the lane sits on paper. The *Layout* and *Zones* sections above still describe two enclosures;
+read them with that in mind.
+
+**Its tiles are generated, unlike silver's.** `gen_open_source_panel.py` builds both the reader
+panel and the treemap groups from a live listing, and `--splice` writes `groups`, `right` and
+`panel` into the OPEN node only (found by id, bounded by the next node). Each dataset inherits its
+accent and modality band from SILVER's tiles, so a dataset keeps its colour across both vaults and
+the next batch needs no hand edits. Refresh after every batch:
+
+```bash
+aws s3 ls s3://zsb-open-source/ --recursive | awk '{s=$3; $1=$2=$3=""; sub(/^ +/,""); print s"\t"$0}' > <dir>/open_source.tsv
+cp <silver panel_style.txt> <dir>/      # everything up to the first </style> of the SILVER panel
+python3 gen_open_source_panel.py <dir> --splice
+```
+
+The panel's rows are a generic two-level tree, marks the one stray object (`chemfish/2025_03_release/Paper/`,
+excluded from the move and let through by a filter bug) in the pending-deletion red, and closes
+with **Not moved yet · 21 of 23** so the migration reads as partial rather than being inferred.
+
+**The wider plan broke selection, and `fit()` now reserves the reader.** Selecting a station opens
+the reader, and the map does not re-fit while something is selected. That was free while the plan was
+height-bound; the new lane made it width-bound, and the first click then buried the zsb-medallion
+rail under the reader — `check-clicks` caught it (`"zsb-medallion" -> reader showed "the starter
+notebooks"`). `fit()` now fits into the stage minus the reader's reopening width while it is shut
+(`readerReserve()`, fed by `shut()` recording that width on the panel), so opening it covers empty
+stage. The price is an empty strip on the right at first load on width-bound screens. The phone
+layout is exempt. The *no fly-to* and *no re-fit while selected* rules are untouched.
+
+The group eyebrow is plain `Open Source`, not `⓪ Open Source`: the page font has ①–⑤ and no ⓪,
+which rendered as a missing-glyph box — and it is not a numbered stage anyway.
+
+**Checks.** `check-overlaps` 0 pairs (144 text nodes). `check-clicks` passes, **18** stations.
+`check-fit` the same 7 failures as before, now reported against the renamed zone. Word counts
+unchanged (the six pre-existing over-cap briefs; `OVERVIEW.how` 95 after its edit). No new console
+errors beyond the five known negative-`<rect>` ones.
+
 ## The state of the data — 2026-09-10. `human/` opens, and one prefix is most of silver.
 
 ```
