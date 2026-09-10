@@ -7384,18 +7384,21 @@ function drawPcrAmplify(g,n){
   };
   /* one job per copy: which strand it is read off, which side it is written
      on, which row it ends in, and which generation it belongs to. The second
-     generation's enzymes come in from the side their strand is leaving by */
+     generation's enzymes come in from the side their strand is leaving by.
+     Each family and each job draws its own seeded jitter here, spent below as
+     a start time */
   const fams=FAM.map((f,i)=>{
     const k=i*1.9;
-    const F={f, k, ph:r()*6.283, T:strand(L_STR,k,tr(f[0],f[1],f[2]),"1")};
+    const F={f, k, ph:r()*6.283, T:strand(L_STR,k,tr(f[0],f[1],f[2]),"1"),
+             jit:r()};
     F.jobs=[
-      {from:"T", to:"C1", side: 1, row: 0.5, gen:0, lag:0,
+      {from:"T", to:"C1", side: 1, row: 0.5, gen:0,
        enter:[f[0]*1.6, -LY-12]},
-      {from:"T", to:"C2a",side:-1, row:-1.5, gen:1, lag:0,
+      {from:"T", to:"C2a",side:-1, row:-1.5, gen:1,
        enter:[f[0]*1.5, -LY-12]},
-      {from:"C1",to:"C2b",side: 1, row: 1.5, gen:1, lag:0.15,
+      {from:"C1",to:"C2b",side: 1, row: 1.5, gen:1,
        enter:[f[0]*1.5, LY+12]}];
-    F.jobs.forEach(j=>{ j.c=written(k,f,j.side); j.pol=enzyme(j.enter); });
+    F.jobs.forEach(j=>{ j.jit=r(); j.c=written(k,f,j.side); j.pol=enzyme(j.enter); });
     return F;
   });
 
@@ -7408,18 +7411,29 @@ function drawPcrAmplify(g,n){
      each an enzyme landing, a walk that writes the copy, and a peel; then
      the fill. The walk is the slow part and it is linear — an enzyme that
      eased in and out along a strand would read as sliding into place rather
-     than travelling. The families stagger by a fraction of a beat so the
-     pass reads as enzymes working rather than one event in triplicate, and
-     in the second generation the copy's enzyme lands a moment after the
-     template's, so the eye sees a new strand being picked up.
+     than travelling.
+
+     ASKED FOR AN EIGHTH TIME: "make the replication a bit faster, and it can
+     be asynchronous — different strands can amplify at slightly different
+     times." So the beats are shorter, and the lockstep is gone. It used to be
+     a fixed stagger, family by family, with the second generation starting
+     everywhere at once; now each family starts at its own seeded moment and
+     each second-generation copy at its own moment after that, so one family
+     can be into its doubling while another is still being copied. The only
+     order kept is the one the chemistry keeps: a strand is not copied before
+     it exists, so a family's second generation waits for its first copy to
+     peel off. The cloud comes once the last copy is written.
 
      PLACEMENT IS A PURE FUNCTION OF THE CLOCK. Everything is stated from t
      alone rather than nudged from where it was, so a frame long enough to skip
      a whole beat — a tab coming back, a step in trace mode — cannot leave an
      enzyme halfway down a template it has already finished. */
-  const T_G1=1.2, BINDD=0.8, SYND=2.0, MOVD=0.8, STAG=0.25,
-        GEN=BINDD+SYND+MOVD, T_G2=T_G1+GEN+2*STAG+0.2,
-        T_CLOUD=T_G2+GEN+2*STAG, CWAVE=0.45, CFADE=0.9, HOLD=3.4;
+  const T_G1=0.9, BINDD=0.5, SYND=1.3, MOVD=0.55, GEN=BINDD+SYND+MOVD,
+        ASYNC=1.4, JIT=0.9, GAP=0.1, CWAVE=0.45, CFADE=0.9, HOLD=3.0;
+  let T_CLOUD=0;
+  fams.forEach(F=>{ const t0=T_G1+F.jit*ASYNC;
+    F.jobs.forEach(j=>{ j.t0=j.gen ? t0+GEN+GAP+j.jit*JIT : t0;
+      T_CLOUD=Math.max(T_CLOUD, j.t0+GEN+GAP); }); });
   const TOT=T_CLOUD+2*CWAVE+CFADE+HOLD;
   const rot=(a,x,y)=>[x*Math.cos(a)-y*Math.sin(a), x*Math.sin(a)+y*Math.cos(a)];
   /* where each chip starts, so it lands as the enzyme's channel reaches it */
@@ -7431,7 +7445,7 @@ function drawPcrAmplify(g,n){
       /* the family drifts as one, so a copy being written stays in register
          with the strand it is being written off */
       const dx=Math.cos(ph*0.8+F.ph)*1.0, dy=Math.sin(ph*0.6+F.ph)*1.0;
-      const beat=j=>{ const t0=(j.gen?T_G2:T_G1)+i*STAG+j.lag;
+      const beat=j=>{ const t0=j.t0;
         return [ease(clamp((t-t0)/BINDD)), clamp((t-t0-BINDD)/SYND),
                 ease(clamp((t-t0-BINDD-SYND)/MOVD))]; };
       /* the template moves up half a row as its first copy leaves, so the
