@@ -8748,23 +8748,20 @@ DRAW.sizecheck = drawSizeCheck;
    Still no arm and no moving parts: whatever character it has comes from the
    housing and the lights on its front, not from anything moving over it.
 
-   ONE CYCLE IS FIVE BEATS — flash, hold, scan, dim, dark — and every dot is
-   on the same beat. So the coloured dots share one group and the beat is
-   that group's opacity: a frame writes one attribute rather than one per
-   cluster, and no cluster can drift out of step with its neighbours.
-
-   THE STATUS LIGHTS ARE IN THAT SAME GROUP, for the same reason. Four, one
-   per base, each lettered, so they flash and dim in the same frame as the
-   field; a light on its own clock would read as the housing doing something
-   the flow cell is not.
+   ONE CYCLE IS FOUR BEATS — scan, hold, dim, dark. A sixth request turned
+   the field's single flash into a stadium of flashbulbs: each cluster goes
+   off as the scan's line reaches it, a little late by a lag of its own, so
+   the flashes pop in a scatter behind the line rather than as a wipe. The
+   lags are drawn once and kept, so every cycle fires the same pattern.
 
    EACH CYCLE READS ANOTHER BASE, so while the field is dark every cluster is
-   recoloured, always to a base other than the one it just showed — the
-   pattern visibly changes rather than happening to repeat.
+   recoloured, always to a base other than the one it just showed — the same
+   flashes go off next time, each in a colour it did not flash last time.
 
-   THE SCAN IS THE CAMERA, NOT THE CHEMISTRY. One line crosses the whole
-   cell, top to bottom on the screen, while the field is lit; the dots do not
-   answer it as it passes, because one exposure takes the whole surface.
+   THE DIMMING IS STILL ONE GROUP'S OPACITY, and the status lights share
+   it: the field goes out together and the lights with it, so the housing
+   never reads as doing something the flow cell is not. Only the going-off
+   is per cluster, because only the going-off was asked to be.
 
    A FIFTH REQUEST made it read as a flow chip: the cell is an ellipse
    rather than a pane, its grid is the lattice the clusters sit in and drawn
@@ -8775,7 +8772,10 @@ DRAW.sizecheck = drawSizeCheck;
 function drawReadCycle(g,n){
   /* EVERY OFFSET IS A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC, since
      a resize is the only reason this runs again. Composed at w 1.60, d 1.30,
-     h .46 — the height is the housing's, and the well is a fraction of it. */
+     h .68 — the height is the housing's, and the well is a fraction of it.
+     It was .46 until the front wall was asked to be bigger for its lights
+     and letters; the well's fraction shrank with it, so the glass sits as
+     deep as it did. */
   const SC=n.w/1.60;
   const X=f=>n.x+f*n.w, Y=f=>n.y+f*n.d;
   const r=rng(52817);
@@ -8796,11 +8796,11 @@ function drawReadCycle(g,n){
   const h=n.h, x0=X(-0.5), x1=X(0.5), y0=Y(-0.5), y1=Y(0.5);
   /* THE CHIP IS AN ELLIPSE, asked for from the page as "a bit more
      elliptical", with a rim of about a twelfth of the node at its narrowest
-     and a floor a sixth of the way down. Everything on the glass is placed in
+     and a floor a ninth of the way down. Everything on the glass is placed in
      the unit disk and mapped out to it, so the grid, the clusters and the
      scan are clipped by arithmetic rather than by a clipPath — a clip needs
      an id, and a node that redraws on every resize would mint a new one. */
-  const ex=0.42*n.w, ey=0.40*n.d, zc=h*0.84;
+  const ex=0.42*n.w, ey=0.40*n.d, zc=h*0.89;
   const at=(u,v,z)=>P(n.x+u*ex, n.y+v*ey, z===undefined?zc:z);
   const ring=z=>{ const a=[]; for(let i=0;i<56;i++){ const t=i/56*Math.PI*2;
     a.push(at(Math.cos(t),Math.sin(t),z)); } return a; };
@@ -8857,35 +8857,54 @@ function drawReadCycle(g,n){
     face(pts([c(s0,1),c(s1,1),c(s1,-1),c(s0,-1)]),"var(--fg)",o); };
   strip(-0.34,-0.12,.06); strip(0.02,0.09,.045);
 
+  /* ---- TIMING: the scan crosses in a second and a half, slow enough that
+     the flashes behind it read one by one; LAG is the most any cluster
+     trails the line, FLARE how long a bulb takes to die back to its dot,
+     then half a second each of hold, dim and dark. */
+  const SCAN=1.5, LAG=0.35, FLARE=0.4, HOLD=0.5, DIM=0.5, DARK=0.5;
+  const CYC=SCAN+LAG+HOLD+DIM+DARK;
+
+  /* THE SCAN LINE'S DIRECTION, needed by the clusters as well as the line:
+     the line is level ON THE SCREEN, which on this plane is a line of
+     constant x + y, and in the unit disk that is a chord at distance d from
+     the centre along (ex, ey). A cluster at (u, v) is reached when d passes
+     u·NN + v·NN. */
+  const L=Math.hypot(ex,ey), NN=[ex/L,ey/L], TT=[ey/L,-ex/L];
+
   /* ---- THE CLUSTERS ---------------------------------------------------------
      One to a grid cell, jittered a little inside it, and only the cells that
-     lie wholly inside the ellipse. Each is drawn twice at the same point: a
-     dim grey dot that is always there, and its coloured twin in the lit
-     group, which is the only thing the cycle fades. */
-  const rest=el("g",{}), lit=el("g",{opacity:"0"}), dot=[];
+     lie wholly inside the ellipse. Each is drawn three times at the same
+     point: a dim grey dot that is always there, and in the lit group its
+     coloured twin, which comes on when it fires, and a wide bloom of the same
+     colour under it, which is the flashbulb and dies back as it fades. */
+  const rest=el("g",{}), lit=el("g",{opacity:"0"}), bloom=el("g",{}), dot=[];
   g.appendChild(rest);
   /* a faint wash over the whole cell, so the flash is the surface lighting
      and not only its dots */
   add(lit,el("polygon",{points:pts(rimC),fill:"var(--fg)","fill-opacity":".05"}));
+  lit.appendChild(bloom);
   g.appendChild(lit);
+  /* the lags come off a stream of their own, so the clusters' places and
+     first colours are the ones they always had */
+  const rl=rng(7193);
   for(let a=0;a<NU;a++)for(let b=0;b<NV;b++){
     const u=-1+2*(a+0.5+(r()-0.5)*0.3)/NU, v=-1+2*(b+0.5+(r()-0.5)*0.3)/NV, k=Math.floor(r()*4);
     if(u*u+v*v>0.86) continue;
-    const p=at(u,v);
-    add(rest,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(0.85*SC),fill:"var(--fg)","fill-opacity":".18"}));
+    const p=at(u,v), cx=f1(p[0]), cy=f1(p[1]);
+    add(rest,el("circle",{cx,cy,r:f2(0.85*SC),fill:"var(--fg)","fill-opacity":".18"}));
+    const flare=add(bloom,el("circle",{cx,cy,r:f2(3.6*SC),fill:BASE[k],"fill-opacity":".55",opacity:"0"}));
     /* a hair of the page ground round each lit dot, so yellow still has an
        edge on the pale glass of the light theme */
-    dot.push({k, node:add(lit,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(1.45*SC),fill:BASE[k],
-      stroke:"var(--bg)","stroke-width":f2(0.35*SC),"stroke-opacity":".6"}))});
+    const node=add(lit,el("circle",{cx,cy,r:f2(1.45*SC),fill:BASE[k],opacity:"0",
+      stroke:"var(--bg)","stroke-width":f2(0.35*SC),"stroke-opacity":".6"}));
+    dot.push({k, node, flare, on:"0", fl:"0",
+      due:SCAN*(u*NN[0]+v*NN[1]+1)/2 + LAG*rl()});
   }
 
-  /* ---- THE SCAN LINE, a bright core over a wide faint one. It is level ON
-     THE SCREEN, which on this plane is a line of constant x + y, so it runs
-     top to bottom as the page sees it — the request's words — rather than
-     along one of the chip's own axes, which the projection turns into a
-     sideways slide. In the unit disk that is a chord at distance d from the
-     centre along (ex, ey); born at the top of the ellipse, invisible. */
-  const L=Math.hypot(ex,ey), NN=[ex/L,ey/L], TT=[ey/L,-ex/L];
+  /* ---- THE SCAN LINE, a bright core over a wide faint one, running top to
+     bottom as the page sees it — the request's words — rather than along
+     one of the chip's own axes, which the projection turns into a sideways
+     slide. Born at the top of the ellipse, invisible. */
   const chord=d=>{ const q=Math.sqrt(Math.max(0,1-d*d));
     return [at(d*NN[0]+q*TT[0],d*NN[1]+q*TT[1]), at(d*NN[0]-q*TT[0],d*NN[1]-q*TT[1])]; };
   const scan=[[3.5,".18"],[0.9,"1"]].map(([wd,o])=>{
@@ -8905,8 +8924,10 @@ function drawReadCycle(g,n){
      its own colour even while the field is dark, and flares — bloom, core
      and a hot white centre — on the beat. The flare is its own group after
      the lid, so the bloom is not cut off at the wall's top edge; it is
-     written in the same frame and to the same value as the field's. */
-  const zl=h*0.58, lamp=el("g",{opacity:"0"});
+     written in the same frame and to the same value as the field's. Set a
+     little above the wall's middle, so each letter has the lower third to
+     itself. */
+  const zl=h*0.64, lamp=el("g",{opacity:"0"});
   BASE.forEach((c,i)=>{
     const p=P(X(0.10+i*0.105),y1,zl), cx=f1(p[0]), cy=f1(p[1]);
     add(g,el("circle",{cx,cy,r:f2(2.6*SC),fill:c,"fill-opacity":".3",
@@ -8930,6 +8951,19 @@ function drawReadCycle(g,n){
   edge([P(x1,y1,h),P(x1,y1,0)],".9",1.2);
   edge([...rimH,rimH[0]],".75",1);
 
+  /* ---- THE DOOR, on the right wall, asked for so the reads have somewhere
+     to come out of. It stands on the ground in the wall's front half, the
+     half turned away from C4, so nothing of C4's box is painted over it.
+     A doorway rather than a door: the opening in shadow with a haze of the
+     reads' grey in it, and its back jamb — the one reveal the viewer can see
+     into — cut off where the lintel hides it. The strands themselves are
+     C4's, drawn from this opening; see A in drawDemux. */
+  const ya=Y(0.04), yb=Y(0.30), hd=h*0.78, dep=n.w*0.06;
+  const door=quad(P(x1,ya,0),P(x1,yb,0),P(x1,yb,hd),P(x1,ya,hd));
+  face(door,"var(--bg)",.9); face(door,"var(--fg2)",.12);
+  face(quad(P(x1,ya,0),P(x1-dep,ya,0),P(x1,ya+dep,hd),P(x1,ya,hd)),SKIN.works.left);
+  edge([P(x1,ya,0),P(x1,ya,hd),P(x1,yb,hd),P(x1,yb,0)],".9",1.1);
+
   /* ---- SURFACE TAGS, asked for from the page so a later request can name a
      face by number rather than by describing it. Each sits on the face it
      names, drawn last so no part of the box covers it, and haloed in the page
@@ -8943,33 +8977,38 @@ function drawReadCycle(g,n){
   tag(P(X(-0.40),Y(-0.40),h),"1 TOP");
   tag(P(X(0.5+m),Y(0.5+m),0).map((v,i)=>v+(i?4.5*SC:0)),"2 BOTTOM");
   tag(P(X(-0.27),y1,h*0.5),"3 LEFT");
-  tag(P(x1,Y(0),h*0.5),"4 RIGHT");
+  tag(P(x1,Y(-0.36),h*0.25),"4 RIGHT");     // low and back, clear of the door and its strands
   const wa=at(-0.62,-0.78,(h+zc)/2), wt=at(-0.40,-0.42);
   add(g,el("line",{x1:f1(wa[0]),y1:f1(wa[1]),x2:f1(wt[0]),y2:f1(wt[1]-2.2*SC),
     stroke:"var(--fg)","stroke-width":f2(0.6*SC),"stroke-opacity":".8"}));
   tag(wt,"5 WELL WALL");
   tag(at(0.15,0.35),"6 GLASS");
 
-  /* ---- TIMING: flash under half a second, then half a second each of hold,
-     scan, dim and dark. The flash eases out so it arrives as a flash; the
+  /* ---- THE CYCLE. The field comes up over the scan's first moment and
+     goes down together after the hold; inside it, each cluster is written
+     only when it changes — on when it fires, and its bloom while it dies
+     back — so a frame touches the handful going off, not all of them. The
      scan is linear because a camera's pass is. */
-  const FLASH=0.3, HOLD=0.5, SCAN=0.5, DIM=0.5, DARK=0.5;
-  const CYC=FLASH+HOLD+SCAN+DIM+DARK;
   const ease=u=>u<0.5?2*u*u:1-2*(1-u)*(1-u);
   let t=0, litO="0", scanU=-1;
   const run=dt=>{
     t+=Math.min(dt,0.1);
     if(t>=CYC){ t%=CYC;
-      dot.forEach(d=>{ d.k=(d.k+1+Math.floor(r()*3))%4; d.node.setAttribute("fill",BASE[d.k]); });
+      dot.forEach(d=>{ d.k=(d.k+1+Math.floor(r()*3))%4;
+        d.node.setAttribute("fill",BASE[d.k]); d.flare.setAttribute("fill",BASE[d.k]); });
     }
-    const s=FLASH+HOLD, e=s+SCAN;
-    const o = t<FLASH ? 1-(1-t/FLASH)*(1-t/FLASH)
-            : t<e ? 1
-            : t<e+DIM ? 1-ease((t-e)/DIM) : 0;
+    const e=SCAN+LAG+HOLD;
+    const o = t<e ? Math.min(1,t/0.15) : t<e+DIM ? 1-ease((t-e)/DIM) : 0;
     const os=o.toFixed(2);
     if(os!==litO){ litO=os; lit.setAttribute("opacity",os); lamp.setAttribute("opacity",os); }
+    dot.forEach(d=>{
+      const a=t-d.due, on=a<0?"0":"1";
+      const fl=a<0||a>=FLARE ? "0" : ((1-a/FLARE)*(1-a/FLARE)).toFixed(2);
+      if(on!==d.on){ d.on=on; d.node.setAttribute("opacity",on); }
+      if(fl!==d.fl){ d.fl=fl; d.flare.setAttribute("opacity",fl); }
+    });
 
-    const u = t>=s && t<e ? (t-s)/SCAN : -1;
+    const u = t<SCAN ? t/SCAN : -1;
     if(u<0 && scanU<0) return;
     scanU=u;
     const [a,b]=chord(-1+2*Math.max(u,0));
@@ -8981,9 +9020,10 @@ function drawReadCycle(g,n){
     });
   };
   /* THE FIRST FRAME IS MID-SCAN. A reader with motion off never advances the
-     clock, so this is the whole station for them: the field and the lights
-     lit in one base's pattern and the camera's line partway across it. */
-  for(let i=0;i<30;i++) run((FLASH+HOLD+SCAN*0.45)/30);
+     clock, so this is the whole station for them: the camera's line partway
+     across, the clusters above it lit and the ones it has just passed still
+     going off. */
+  for(let i=0;i<30;i++) run(SCAN*0.55/30);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.readcycle = drawReadCycle;
@@ -9011,8 +9051,8 @@ DRAW.readcycle = drawReadCycle;
    as an unbroken line of grey strands, piling up some way off into a
    rotating cloud that keeps on building. So the connector is now the stream
    itself — dashes moving along it, one arriving every quarter second — and it
-   starts above Sa's lid, which is where A has been since Sa went in between
-   the sequencer and this station. Where it ends, E, is still the only place
+   starts at the door in Sa's right wall, which is where A has been since a
+   request asked for the strands to come out of one. Where it ends, E, is still the only place
    a read ever appears: each one leaves E as a strand arrives, already
    moving, and eases out to its place in the sphere while the sphere turns
    under it. Innermost places fill first, so the cloud is seen to thicken
@@ -9094,7 +9134,14 @@ function drawDemux(g,n){
      as a dashed rule, and a faint undashed rail under it keeps the route on
      screen between strands. The dot at E makes the end a mouth rather than a
      line that ran out. */
-  const A=P(n.x-n.w*1.80, n.y-n.d*0.30, n.h*2.40);
+  /* A IS SA'S DOOR. A later request cut a doorway in Sa's right wall for
+     the strands to come out of, so the stream now leaves from its threshold
+     rather than from the air over Sa's lid: Sa's right wall stands 1.02 of
+     this tile back, the door's middle 0.23 of it forward, and the strand
+     leaves a little under half way up the opening. Like the lid it replaced,
+     it is placed off this tile at the row's authored layout — a shape draws
+     only its own node — so a resize of Sa alone moves the door off it. */
+  const A=P(n.x-n.w*1.02, n.y+n.d*0.23, n.h*0.53);
   const E=[C[0]-CU[0]*RS*0.55*SC, C[1]-CU[1]*RS*0.55*SC];
   const dx=E[0]-A[0], dy=E[1]-A[1], len=Math.hypot(dx,dy), nx=-dy/len, ny=dx/len, bow=7*SC;
   const d=`M${f1(A[0])} ${f1(A[1])}C${f1(A[0]+dx/3+nx*bow)} ${f1(A[1]+dy/3+ny*bow)} `+
@@ -9112,6 +9159,20 @@ function drawDemux(g,n){
   /* one group for everything in the air, so the end of the cycle is a single
      opacity rather than eighty of them */
   const sky=el("g",{}); g.appendChild(sky);
+
+  /* ---- THE NEBULA, asked for with the door: the reads gather into "a
+     nebula of fastq files", so behind the sphere hangs a haze of the same
+     grey — three faint ellipses, off-centre and turned against each other so
+     no edge reads as drawn. It thickens as the cloud builds and goes with
+     it at the seam. No larger than the sphere's own width, so the corridor
+     between the two names still holds it. */
+  const haze=el("g",{opacity:"0"}); sky.appendChild(haze);
+  [[-6,3,1.15,0.80,-20,".07"],[5,-4,0.95,0.70,25,".09"],[0,1,0.60,0.50,-5,".12"]]
+    .forEach(([ox,oy,a,b,rot,o])=>{
+      const cx=f1(C[0]+ox*SC), cy=f1(C[1]+oy*SC);
+      haze.appendChild(el("ellipse",{cx,cy,rx:(RS*a*SC).toFixed(1),ry:(RS*b*SC).toFixed(1),
+        transform:`rotate(${rot} ${cx} ${cy})`,fill:"var(--fg2)","fill-opacity":o}));
+    });
 
   /* ---- THE READS ----------------------------------------------------------
      Each has a home in a unit ball, y its spin axis, with the radius filled
@@ -9169,10 +9230,12 @@ function drawDemux(g,n){
      a world width shrinks with the tile and stops being legible long before
      the drawing does. It sits under the cloud, in the wedge between the
      sphere, the stream and this station's own emission point, which is empty
-     at every zoom and directly under what it names. */
+     at every zoom and directly under what it names. Since the stream came
+     to leave from Sa's door it rises through the wedge's left side, so the
+     word sits nine pixels further right than it did, off the strands. */
   const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
   const FS=7.0*SC;
-  const cap=el("text",{x:(TOP[0]-11*SC).toFixed(1),y:(TOP[1]-32*SC).toFixed(1),
+  const cap=el("text",{x:(TOP[0]-2*SC).toFixed(1),y:(TOP[1]-32*SC).toFixed(1),
     "text-anchor":"middle","font-family":MONO,"font-size":FS.toFixed(2),
     "letter-spacing":(FS*0.12).toFixed(2),fill:"var(--fg2)","fill-opacity":".8"});
   cap.textContent="FASTQ"; sky.appendChild(cap);
@@ -9207,12 +9270,14 @@ function drawDemux(g,n){
      advances it, so whatever t begins at is the whole station for that reader —
      and for this one that has to be the finished cloud, which is the frame the
      request asks the row to end on. Half way through the hold. */
-  let t=t1+HOLD*0.45, ph=0, off=0, skyO="1";
+  let t=t1+HOLD*0.45, ph=0, off=0, skyO="1", hazeO="0";
   const run=dt=>{
     t=(t+dt)%t3; ph=(ph+dt*SPIN)%(Math.PI*2); off=(off+V*dt)%(BW+SP);
     flow.setAttribute("stroke-dashoffset",(-off*SC).toFixed(2));
     const so=(t<t2 ? 1 : 1-clamp((t-t2)/FADE)).toFixed(3);   // nothing leaves — it dims where it is
     if(so!==skyO){ skyO=so; sky.setAttribute("opacity",so); }
+    const ho=clamp(t/t1).toFixed(2);
+    if(ho!==hazeO){ hazeO=ho; haze.setAttribute("opacity",ho); }
     for(const R of read) put(R, t<t1 ? (t<R.t0 ? -1 : clamp((t-R.t0)/R.fly)) : 1, ph);
   };
   run(0);
