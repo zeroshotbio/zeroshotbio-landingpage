@@ -21,6 +21,11 @@ import collections, json, pathlib, re, sys
 SP = pathlib.Path(sys.argv[1])
 DS = pathlib.Path(__file__).resolve().parent
 rows = [(int(a), b) for a, b in (l.rstrip("\n").split("\t", 1) for l in open(SP / "open_source.tsv") if l.strip())]
+# A prefix starting with "_" is not a dataset - `_access_check/` is a write-probe another session left
+# on 2026-09-11. It is skipped here by rule rather than filtered out of the listing by hand, so a
+# refresh can never draw it as a tile.
+IGNORED = [(s, k) for s, k in rows if k.startswith("_")]
+rows = [(s, k) for s, k in rows if not k.startswith("_")]
 TOT = sum(s for s, _ in rows) or 1
 gib = lambda b: b / 1024**3
 def esc(t): return t.replace("\\", "\\\\").replace('"', '\\"')
@@ -47,6 +52,10 @@ NOTES = {
     "zscape/GSE202639/zperturb_full/": "the perturbation atlas - 804 embryos, 98 conditions",
     "zscape/GSE202639/zperturb_pilot/": "the pilot that preceded the full run",
     "zcl2/analysis/": "OURS, not the origin's - the Table S1 annotation reconciliation, kept beside the release",
+    "human/replogle/figshare_20029387/": "4 of the Figshare+ record's 12 files - K562 genome-wide + essential, RPE1 essential",
+    "human/nadig/GSE264667/": "the authors' two assembled objects from GEO - HepG2 and Jurkat, 2,393 targets each",
+    "human/xatlas-orion/53a5bc98/": "Hugging Face commit - the gene table, dataset card and licence (CC BY-NC-SA)",
+    "human/xatlas-orion/figshare_29190726/": "the guide library only - the 559 GB of cells are NOT held here",
 }
 README_NOTE = "provenance, the per-file SHA-256 table, how it was acquired, how to verify"
 
@@ -60,6 +69,19 @@ for m in re.finditer(r'\{label:"([^"]+)", tiles:\[(.*?)\]\}', silver, re.S):
     if band not in ORDER: ORDER.append(band)
     for t in re.finditer(r'key:"([^"]+)"[^}]*?accent:"(#[0-9A-Fa-f]{6})"', m.group(2)):
         BAND[t.group(1)], ACC[t.group(1)] = band, t.group(2)
+
+# FIRST APPEARANCE. A prefix the OPEN node has never drawn gets its band and accent here, once; after
+# the first splice it is in the node and the node is the palette, like every other dataset. Without
+# an entry a new prefix still draws - grey, in "Other" - so this is wording, never a gate.
+NEW = {
+    "human/replogle/":     ("Human scRNA-seq", "#E08A4F"),   # the three COMPASS sources, 2026-09-11
+    "human/nadig/":        ("Human scRNA-seq", "#E04FA8"),
+    "human/xatlas-orion/": ("Human scRNA-seq", "#9F6BE0"),
+}
+for _p, (_b, _c) in NEW.items():
+    if _p not in BAND:
+        BAND[_p], ACC[_p] = _b, _c
+        if _b not in ORDER: ORDER.append(_b)
 
 def top(k): return "human/" + k.split("/")[1] + "/" if k.startswith("human/") else k.split("/")[0] + "/"
 by = collections.defaultdict(list)

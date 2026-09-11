@@ -440,6 +440,31 @@ a reason to open. The pins are now a `pins` command in two repos — ask the
 machine — but the prose has no such check, and `check-fit.mjs` cannot read.
 
 
+## The state of the data — 2026-09-11, later. Three human datasets arrive, straight to open source.
+
+```
+zsb-open-source  903 obj · 566.22 GiB   26 datasets + the _access_check/ probe (drawn: 902 · 566.22)
+silver            79 obj ·  65.64 GiB   megafin/ · megafin-1/ · minifin/ — unchanged
+```
+
+**The three COMPASS sources landed in `zsb-open-source` without passing through silver**, each with a
+custody README, uploaded by another session: `human/replogle/` (Figshare+ 20029387, 4 of its 12 files,
+79.69 GiB), `human/nadig/` (GEO GSE264667, 13.95 GiB) and `human/xatlas-orion/` (annotation only — the
+Hugging Face gene table and the Figshare guide library, 4 MiB; the 559 GB of cells are not held, and
+the licence is CC BY-NC-SA). They join Tahoe in the **Human scRNA-seq** band.
+
+**`gen_open_source_panel.py` gained two rules.** `NEW` gives a prefix the node has never drawn its band
+and accent on first appearance only — after the splice the OPEN node is the palette, as before; a
+prefix with no entry still draws, grey, in "Other". And any prefix starting with `_` is skipped: the
+`_access_check/` write-probe is no longer filtered out of the listing by hand before each splice.
+
+**Three rendered sentences that assumed 23 were rewritten:** BACQ's kv (`19 of 26`), its panel item
+(now *seven with no module at all* — keller, zfap, tomoseq, tahoe and the three new ones, 77 objects,
+419.1 GiB), and SILVER's closing section, in both `ds-data.js` and `gen_silver_panel.py`. OPEN's
+`built` / `cond` still say 23; they are dated records and are not rendered.
+
+Checks: `check-overlaps` 0 pairs (140 text nodes), `check-clicks` 18, `check-fit` the known 7.
+
 ## The state of the data — 2026-09-11. Silver's copies are deleted; silver is ours again.
 
 ```

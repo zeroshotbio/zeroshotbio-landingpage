@@ -121,9 +121,10 @@ out.append(sec("Parse (Our Data)",
 for k in ('minifin/','megafin/','megafin-1/'):
     out.append(B[k])
 out.append(sec("Acquired (Open Source) \u00b7 moved out",
-               "all 23 datasets somebody else published now live in s3://zsb-open-source, the OPEN "
-               "vault in the left lane: copied key for key 2026-09-10, silver's copies deleted "
-               "2026-09-11. What is left here is only what this account made"))
+               "every dataset somebody else published lives in s3://zsb-open-source, the OPEN vault in "
+               "the left lane: 23 copied here key for key 2026-09-10 and deleted from silver 2026-09-11, "
+               "and 3 more (Replogle, Nadig, X-Atlas/Orion) uploaded straight there 2026-09-11. What is "
+               "left here is only what this account made"))
 
 style=open(f'{SP}/panel_style.txt').read()
 panel=style+''.join(out)
