@@ -9185,8 +9185,10 @@ function drawReadCycle(g,n){
       fill:"var(--fg2)","fill-opacity":o}))}));
   /* asked to be denser with reads: 240 bars were spread through a ball ten
      times RS across, and this one stops at five, so the same volume holds
-     far more of them */
-  const rn=rng(90417), neb=[], BL=n.w*0.045, NB=420;
+     far more of them. Asked again, so 420 became 960: the bars join in
+     draw order, so the full ball is simply denser at every stage of its
+     growth, and the seed is unchanged so the first 420 sit where they did */
+  const rn=rng(90417), neb=[], BL=n.w*0.045, NB=960;
   for(let i=0;i<NB;i++){
     const rad=RS*Math.pow(0.15+0.85*rn(),0.4), cz=2*rn()-1, th=rn()*Math.PI*2;
     const bar=add(g,el("line",{x1:f1(C[0]),y1:f1(C[1]),x2:f1(C[0]+1),y2:f1(C[1]),
