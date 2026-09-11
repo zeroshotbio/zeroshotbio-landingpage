@@ -320,12 +320,15 @@
    is as tall as its treemap needs to be — so a solver would only fight the
    drawing.
    ============================================================ */
-const COL_BUCKET = 13, COL_REPO = 63, COL_RAIL = 83.5, CORRIDOR = 38;
+/* 2026-09-11: both S3 lanes moved 10 units right, 37% closer to GitHub (zone gap 23 -> 14.5).
+   CORRIDOR is where every conduit turns: tucked against the GitHub side of the gap, so each
+   caption sits wholly between the two enclosures instead of straddling the S3 edge. */
+const COL_BUCKET = 23, COL_REPO = 63, COL_RAIL = 83.5, CORRIDOR = 49.5;
 /* x = -18   THE OPEN-SOURCE LANE. A second bucket column to the left of the first, for
                s3://zsb-open-source: datasets somebody else published. It is its own S3 zone
                rather than a fourth tier because it is not a stage - nothing reads it into a
                hop, and nothing in it was made here. */
-const COL_OPEN = -18;
+const COL_OPEN = -8;
 
 /* ============================================================
    ZONES — the two systems the map spans.
@@ -348,9 +351,9 @@ const ZONES = [
   /* Two S3 lanes since 2026-09-10: what other people published, and what we made. Same account,
      split because the difference between them is the one a reader most needs first. */
   { name: "AWS S3 Open Source Datasets", sub: "account 423623857952 · s3://zsb-open-source",
-    x0: -32.5, y0: -3.6, x1: -3.5, y1: 83.5 },
+    x0: -22.5, y0: -3.6, x1: 6.5, y1: 83.5 },
   { name: "AWS S3 ZSB Datasets", sub: "account 423623857952 · buckets",
-    x0: -1.5, y0: -3.6, x1: 27.5, y1: 83.5 },
+    x0: 8.5, y0: -3.6, x1: 36, y1: 83.5 },
   { name: "GitHub", sub: "github.com/zeroshotbio · repositories",
     x0: 50.5, y0: 6.6, x1: 89, y1: 83.5 },
 ];
@@ -637,22 +640,22 @@ const NODES = [
 const EDGES = [
   /* bronze → zsb-bronze → silver */
   {a:{n:"BRONZE", s:"r", dy:-4}, b:{n:"BREPO", s:"l", dy:-2.95}, kind:"live",
-   label:"132 keys · 947 MiB", sub:"size + etag verified"},
+   at:CORRIDOR, label:"132 keys · 947 MiB", sub:"size + etag verified"},
   /* One hop, not two. This used to route through a bay that sat in the corridor
      describing MiniFin's three releases; the bay is gone and the write it was
      standing in the middle of is not, so the conduit joins up directly. */
   {a:{n:"BREPO", s:"l", dy:8}, b:{n:"SILVER", s:"r", dy:2}, kind:"live",
-   label:"publish · 5 releases", sub:"5 runs · 60.5 GiB"},
+   at:CORRIDOR, label:"publish · 5 releases", sub:"5 runs · 60.5 GiB"},
 
   /* silver → zsb-silver → gold */
   {a:{n:"SILVER", s:"r", dy:6}, b:{n:"SREPO", s:"l", dy:0}, kind:"live",
-   label:"fetch · both", sub:"gold built from it"},
+   at:CORRIDOR, label:"fetch · both", sub:"gold built from it"},
   {a:{n:"SREPO", s:"l", dy:5}, b:{n:"GOLD", s:"r", dy:-2}, kind:"live",
-   label:"publish_gold()", sub:"14 obj · 93.85 GiB"},
+   at:CORRIDOR, label:"publish_gold()", sub:"14 obj · 93.85 GiB"},
 
   /* gold → zsb-gold */
   {a:{n:"GOLD", s:"r", dy:3}, b:{n:"GREPO", s:"l", dy:0}, kind:"cold",
-   label:"fetch_release()", sub:"no read shown"},
+   at:CORRIDOR, label:"fetch_release()", sub:"no read shown"},
 ];
 
 /* one carry: the map runs out at the bottom, into everything gold feeds */

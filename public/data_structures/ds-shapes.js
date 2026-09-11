@@ -100,11 +100,22 @@ DRAW.vault = (g, n) => {
   /* Tile captions: one key size and one figure size for every tile in every vault, and a pitch
      tighter than lineH's 1.45 - a two-row caption is one object, not two lines of prose. */
   const CAP_KEY = 8.6, CAP_SIZE = 7.6;
+  /* below this key size a tile's caption goes on ONE line, "key  size": stacked rows that small
+     have glyph boxes taller than their pitch and collide at the overview zoom */
+  const TWO_ROW_MIN = 7;
   const capH_ = size => size * TYPE * 1.22 / S;   /* 1.15 let glyph boxes touch by 0.2px */
   const TILE_WIDE = Math.max(1, parseFloat(new URLSearchParams(location.search).get("wide")) || 3);
   const layoutWide = (tiles, x0, y0, w0, h0) =>
     squarify(tiles, x0, 0, w0, h0 * TILE_WIDE)
       .map(L => ({ item: L.item, x: L.x, y: y0 + L.y / TILE_WIDE, w: L.w, h: L.h / TILE_WIDE }));
+
+  /* TILE WALLS HOLD THEIR SCREEN WIDTH (2026-09-11). A wall used to be sw in grid units, so it
+     scaled with the zoom: at fit a 4.2 outline was ~1.5px, but zoomed in on a small tile it grew
+     until it covered the caption it framed. Walls are now non-scaling (sw in screen pixels) and
+     sized by the tile's short side: `cap` px on a tile at least 1.8 grid units across, down to
+     half a pixel on a sliver. Zooming in therefore makes every wall thinner relative to its tile,
+     and the full caption of even the smallest dataset reads once you are close enough. */
+  const wallPx = (w, h, cap) => Math.max(0.5, Math.min(cap, cap * Math.min(w, h) / 1.8));
 
   const drawTiles = (tiles, x0, y0, w0, h0, max) => {
     layoutWide(tiles, x0, y0, w0, h0).forEach(L => {
@@ -113,7 +124,7 @@ DRAW.vault = (g, n) => {
          tiles of equal bytes are still distinguishable when one is a single
          16 GB zip and the other is 256 FASTQs */
       const heat = 0.10 + 0.30 * Math.sqrt(it.value / max);
-      plate(g, L.x, L.y, L.w - 0.07, L.h - 0.07, { fill: ink, fo: heat, stroke: ink, sw: 0.9, so: 0.6 });
+      plate(g, L.x, L.y, L.w - 0.07, L.h - 0.07, { fill: ink, fo: heat, stroke: ink, sw: wallPx(L.w, L.h, 0.6), so: 0.6, nss: true });
 
       /* A tile may be split: the part of a prefix that belongs to the
          aspirational six-stage layout, and the part still in the legacy
@@ -133,7 +144,7 @@ DRAW.vault = (g, n) => {
            "retained, not what to build on" whichever bucket you are looking at,
            and it survives the accent rule being drawn over the pair below. */
         plate(g, lx, ly, lw, lh,
-          { fill: "var(--fg3)", fo: 0.20, stroke: "var(--fg3)", sw: 1.8, so: 0.75, dash: "6 4" });
+          { fill: "var(--fg3)", fo: 0.20, stroke: "var(--fg3)", sw: wallPx(lw, lh, 1.1), so: 0.75, dash: "4 3", nss: true });
 
         /* the aspirational half is whatever the band does not cover */
         const aw = horiz ? w - lw : w;
@@ -172,7 +183,7 @@ DRAW.vault = (g, n) => {
 
         /* the dataset's own outline, drawn last so it sits over both halves */
         plate(g, L.x, L.y, w, h,
-          { fill: "none", stroke: it.accent || ink, sw: 4.2, so: 1 });
+          { fill: "none", stroke: it.accent || ink, sw: wallPx(w, h, 1.6), so: 1, nss: true });
         return;   /* both halves captioned; skip the single-caption path */
       }
 
@@ -182,7 +193,7 @@ DRAW.vault = (g, n) => {
       if (it.stale) {
         plate(g, L.x, L.y, L.w - 0.07, L.h - 0.07, { fill: "url(#pHl)", stroke: "none" });
         plate(g, L.x, L.y, Math.max(L.w - 0.07, 0.1), Math.max(L.h - 0.07, 0.1),
-          { fill: "none", stroke: "var(--drop)", sw: 1.6, so: 0.95 });
+          { fill: "none", stroke: "var(--drop)", sw: wallPx(L.w, L.h, 1.2), so: 0.95, nss: true });
       }
 
       /* FIT, ALWAYS.
@@ -235,7 +246,15 @@ DRAW.vault = (g, n) => {
          honest end of the ladder is the key alone. A one-line tile is a swatch
          saying "something is here, and the panel will tell you what", which is
          a better answer than two unreadable lines on top of each other. */
-      while (base[0].z * k < 6 && base.length > 1) { base.length -= 1; k = fit(base); }
+      /* No shedding any more (2026-09-11). Rows used to be dropped once the key fell below 6pt at
+         draw time, so a small tile kept only its key - and zooming in could never bring its size
+         back. Now walls hold their screen width and the map is meant to be zoomed into, so every
+         tile keeps its key AND its size. A tile too small for two readable rows sets them on one
+         line instead: one line cannot collide with itself, and wide tiles suit it. */
+      if (base[0].z * k < TWO_ROW_MIN) {
+        base.splice(0, 2, { t: `${base[0].t}  ${base[1].t}`, z: CAP_KEY, c: base[0].c });
+        k = fit(base);
+      }
       const rows = base.map(r => ({ t: r.t, z: r.z * k, c: r.c }));
 
       const total = rows.reduce((a, b) => a + capH_(b.z), 0);
@@ -251,8 +270,8 @@ DRAW.vault = (g, n) => {
       if (it.accent || wholly) {
         plate(g, L.x, L.y, L.w - 0.30, L.h - 0.30,
           wholly
-            ? { fill: "none", stroke: "var(--fg3)", sw: 2.4, so: 0.8, dash: "7 5" }
-            : { fill: "none", stroke: it.accent, sw: 4.2, so: 1 });
+            ? { fill: "none", stroke: "var(--fg3)", sw: wallPx(L.w, L.h, 1.2), so: 0.8, dash: "4 3", nss: true }
+            : { fill: "none", stroke: it.accent, sw: wallPx(L.w, L.h, 1.6), so: 1, nss: true });
       }
     });
   };

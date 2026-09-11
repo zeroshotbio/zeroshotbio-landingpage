@@ -46,7 +46,10 @@ function plate(g, x, y, w, h, s) {
     fill: s.fill || "none", "fill-opacity": s.fo === undefined ? 1 : s.fo,
     stroke: s.stroke || "var(--stroke)", "stroke-width": s.sw === undefined ? 1 : s.sw,
     "stroke-opacity": s.so === undefined ? 1 : s.so,
-    "stroke-dasharray": s.dash || "none"
+    "stroke-dasharray": s.dash || "none",
+    /* nss: the wall keeps its on-screen width at every zoom (sw is then in screen pixels), so
+       zooming in makes it thinner relative to what it encloses instead of swamping it */
+    ...(s.nss ? { "vector-effect": "non-scaling-stroke" } : {})
   });
 }
 

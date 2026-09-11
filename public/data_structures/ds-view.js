@@ -44,7 +44,7 @@ svg.appendChild(root);
    which is worth showing rather than hiding.
    ============================================================ */
 (function grid() {
-  const X0 = -36, X1 = 82, Y0 = -8, Y1 = 88;   /* X0 clears the open-source lane (zone from -32.5) */
+  const X0 = -26, X1 = 82, Y0 = -8, Y1 = 88;   /* X0 clears the open-source lane (zone from -22.5) */
   for (let x = X0; x <= X1; x += 2) {
     const major = x % 10 === 0;
     add(gGrid, "line", {

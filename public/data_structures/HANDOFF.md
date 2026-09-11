@@ -465,6 +465,42 @@ prefix with no entry still draws, grey, in "Other". And any prefix starting with
 
 Checks: `check-overlaps` 0 pairs (140 text nodes), `check-clicks` 18, `check-fit` the known 7.
 
+## The S3 lanes moved in, and tile walls hold their screen width — 2026-09-11
+
+**Both S3 lanes are 10 units further right**, 37% closer to GitHub: `COL_OPEN -18 → -8`,
+`COL_BUCKET 13 → 23`, the two S3 zones `x0/x1` +10 (`-22.5…6.5` and `8.5…36`; the ZSB zone's right
+margin is now 1 unit off the bucket walls rather than 2.5), grid `X0 -36 → -26`. The zone gap to GitHub
+went from 23 to 14.5 units.
+
+**Every conduit now turns at `CORRIDOR = 49.5`** (the constant existed and was unused; each EDGE has
+`at: CORRIDOR`). `route()` used to put the dogleg halfway between the ports, and a caption sits beside
+the conduit's longest run - so the vertical-run captions hung left across the S3 zone's edge, which was
+five of `check-fit`'s seven failures. Turned against the GitHub side, the longest run of every conduit
+is its horizontal leg across the gap, and every caption lands wholly between the two enclosures.
+`check-fit` is down to the two pre-existing SPUB/GFETCH crowding failures.
+
+**Treemap tile walls are non-scaling.** `plate()` takes `nss: true` (→ `vector-effect:
+non-scaling-stroke`, `sw` then in screen pixels). `drawTiles` uses it for every wall it draws — the
+tile edge, the accent outline, the split-tile legacy band, the wholly-legacy dashed rule and the stale
+overlay — with `wallPx(w, h, cap)`: `cap` px on a tile at least 1.8 grid units across, down to 0.5 px on
+a sliver. Before, a wall was `sw` grid units (the accent outline 4.2), so it scaled with the zoom and on a
+small tile grew until it covered the caption; now zooming in makes every wall thinner relative to its
+tile, and the full caption of the smallest dataset reads once you are close. At fit, big tiles look as
+they did (4.2 units ≈ 1.5 px then, 1.6 px now). Dash patterns are now in pixels (`4 3`).
+
+**No tile sheds a caption row.** `drawTiles` used to drop the size row once the key fell below 6pt at
+draw time, so `celloracle/`, `raj/`, `wagner/` and every smaller tile showed only a key — and no amount
+of zooming brought the size back. With non-scaling walls the map is meant to be zoomed into, so every
+tile keeps key and size. A tile whose two-row key would fall below `TWO_ROW_MIN = 7` sets both on one
+line, `key  size` (e.g. `farrell/  123 MiB`): at the overview, glyph boxes that small are taller than
+their pitch, and forcing two rows put six key/size pairs ~1 px into each other (`check-overlaps` caught
+it). One line cannot collide with itself, and the wide tile layout suits it. Specks at the overview,
+complete up close.
+
+**Checks.** `check-overlaps` 0 pairs (139 text nodes). `check-clicks` 17/17. `check-fit` **2** failures
+(was 7). `check-pinch` 3.000x about a fixed midpoint, floor 0.600x fit, 0 hidden; the iPad-sized fit
+zoom rose 0.213 → 0.232 because the plan is narrower.
+
 ## The open-source vault is 1.6x taller, and its bands say which organism — 2026-09-11
 
 **OPEN is `h 30 → 48`**, centre `y 40.5 → 49.5`, so its top edge stays level with SILVER's at 25.5 and
