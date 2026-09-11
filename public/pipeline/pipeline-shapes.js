@@ -9294,12 +9294,17 @@ function drawReadCycle(g,n){
      tied to CYC, so they never stop for the dark. */
   const LFL=0.3, rq=rng(3301), gap=()=>0.08+0.5*rq();
   lamps.forEach(L=>{ L.a=LFL+rq()*0.4; L.gap=gap(); });
-  let t=0, litO="0", fo=0, ph=0, acc=0.85;
+  /* THE READ WAITS FOR THE LID, asked for from the page: a round starts
+     only on a cover that has closed and settled for SET, and only if it has
+     time to finish before the cover draws back, so nothing on the chip
+     lights while the pane is moving or open. Between rounds the field is
+     dark with t parked at CYC. */
+  const SET=0.15;
+  let t=CYC, live=false, litO="0", fo=0, ph=0, acc=0.85;
   /* the strands and the nebula run on their own clocks, through every beat
      of the cycle: the reads never stop leaving */
   grow(acc); turn(0);
   const run=dt=>{
-    t+=Math.min(dt,0.1);
     fo=(fo+VEL*Math.min(dt,0.1))%(BW+SPc); flow.setAttribute("stroke-dashoffset",f2(-fo*SC));
     acc+=Math.min(dt,0.1)/GROW; if(acc>=1+FULL/GROW) acc=0;
     grow(Math.min(acc,1));
@@ -9314,9 +9319,12 @@ function drawReadCycle(g,n){
     cc=(cc+Math.min(dt,0.1))%CCY;
     const cu=cc<CSL ? ease(cc/CSL) : cc<CSL+CHC ? 1 : cc<2*CSL+CHC ? 1-ease((cc-CSL-CHC)/CSL) : 0;
     setCover(cx0+(cx1-cx0)*cu);
-    if(t>=CYC){ t%=CYC;
-      dot.forEach(d=>{ d.k=(d.k+1+Math.floor(r()*3))%4;
-        d.node.setAttribute("fill",BASE[d.k]); d.flare.setAttribute("fill",BASE[d.k]); });
+    if(!live && cc>=CSL+SET && cc+CYC<=CSL+CHC){ live=true; t=0; }
+    if(live){ t+=Math.min(dt,0.1);
+      if(t>=CYC){ t=CYC; live=false;
+        dot.forEach(d=>{ d.k=(d.k+1+Math.floor(r()*3))%4;
+          d.node.setAttribute("fill",BASE[d.k]); d.flare.setAttribute("fill",BASE[d.k]); });
+      }
     }
     const e=SCAN+LAG+HOLD;
     const o = t<e ? Math.min(1,t/0.1) : t<e+DIM ? 1-ease((t-e)/DIM) : 0;
@@ -9330,10 +9338,11 @@ function drawReadCycle(g,n){
     });
   };
   /* THE FIRST FRAME IS MID-SCAN. A reader with motion off never advances the
-     clock, so this is the whole station for them: the sweep partway across,
-     the clusters above it lit and the ones it has just reached still going
-     off. */
-  for(let i=0;i<30;i++) run(SCAN*0.55/30);
+     clock, so this is the whole station for them: the cover closed, the
+     sweep partway across, the clusters above it lit and the ones it has just
+     reached still going off. The cover's clock starts at its closed rest, so
+     SET is the only wait before the round. */
+  for(let i=0;i<30;i++) run((SET+SCAN*0.55)/30);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.readcycle = drawReadCycle;
