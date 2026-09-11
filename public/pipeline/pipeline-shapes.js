@@ -6096,9 +6096,8 @@ function drawCapture(g,n){
 
   /* ---- THE HANDOVER -------------------------------------------------------
      Asked for from the page: a connection to the next module. The lane's track
-     cannot be it — the rack is thrown forward off this node, so the track
-     leaves from bare ground and the plastic that does the work never touches
-     it. What B8′ draws first is a strip of tubes standing at a shoulder, which
+     cannot be it — it runs ground to ground from under the block, and what
+     goes on is what is in the tubes. What B8′ draws first is a strip of tubes standing at a shoulder, which
      its own note calls what B8 hands over, and it stands just up the page
      from this rack. So one arc runs from the back strip's last tube into that
      strip: the same line and chevron B8′ and the pool-and-split benches use
@@ -6112,11 +6111,22 @@ function drawCapture(g,n){
      Neutral ink, and lit only once the wash has cleared the glass: what goes
      on is the held cDNA, not the lysate, so the bead cannot leave before the
      debris does. The line stays faintly drawn the rest of the loop, because
-     the connection is a fact about the station and not only about that beat. */
+     the connection is a fact about the station and not only about that beat.
+
+     ASKED FOR AGAIN — "draw a connector to the next step" — BECAUSE IT WAS
+     NOT BEING SEEN. The ends are right: laid out, the far end lands on B8′'s
+     strip to within half a pixel. The weight was wrong. At 0.22 and a hair
+     stroke, an arc this short reads as a scratch among the rims of sixteen
+     tubes, so it rests at REST and draws heavier, scaled with the node — the
+     same answer B8a's handover got for the same complaint. */
+  const REST=0.55;
   const from=T.rims[rack.tubes-1];
   const hand=flowLine(g, [from.x, from.y-from.ry],
     P(n.x-n.w*0.57, n.y-n.d*0.94, n.h*0.62), "var(--fg2)", SC);
-  setFanLine(hand, 0.22, 0);
+  hand.line.setAttribute("stroke-width",(1.6*SC).toFixed(2));
+  /* the chevron already carries scale(SC), so its width is written unscaled */
+  hand.chev.setAttribute("stroke-width","1.6");
+  setFanLine(hand, REST, 0);
 
   /* ---- THE MAGNIFICATION --------------------------------------------------
      A thin solid ellipse with two leaders back to one tube: the idiom this map
@@ -6354,7 +6364,7 @@ function drawCapture(g,n){
     T.setField(clamp((t-T_PULL+0.3)/0.5)*(1-clamp((t-(TOT-CLEAR))/CLEAR)));
     /* the handover runs through the hold, when the held columns are all that
        is left in the glass */
-    setFanLine(hand, 0.22, (t-T_WASH-WASHD)/HOLD);
+    setFanLine(hand, REST, (t-T_WASH-WASHD)/HOLD);
   };
 
   let t=0, ph=0;
