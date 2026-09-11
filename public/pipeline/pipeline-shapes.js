@@ -8912,6 +8912,31 @@ function drawReadCycle(g,n){
   face(padG,"var(--bg)"); face(padG,SKIN.glass.top,.7); face(padG,"var(--fg)",.1);
   edge([...padT,padT[0]],".85",0.8);
 
+  /* ---- THE STATUS LIGHTS, on the pad's glass, asked for from the page off
+     side 3's screen and onto this raised one, and to light only while the
+     wells do. From the front the pad is a thin strip, far shallower than
+     the wall's screen was tall, so the lights run along it with each
+     letter beside its light rather than under it. Each socket holds its
+     colour while the field is dark, and the letter stays as the key; the
+     flare — bloom, core and a hot white centre — is one group the cycle
+     fades up and down with the chip's own field, so they flash together. */
+  const pz=hm+pdh, pcy=(py0+py1)/2, lc=(px0+px1)/2, lsp=(px1-px0)*0.23, lamp=el("g",{opacity:"0"});
+  BASE.forEach((c,i)=>{
+    const lx=lc+(i-1.62)*lsp, p=P(lx,pcy,pz), cx=f1(p[0]), cy=f1(p[1]);
+    add(g,el("circle",{cx,cy,r:f2(1.5*SC),fill:c,"fill-opacity":".3",
+      stroke:"var(--fg)","stroke-width":f2(0.4*SC),"stroke-opacity":".5"}));
+    add(lamp,el("circle",{cx,cy,r:f2(4.0*SC),fill:c,"fill-opacity":".22"}));
+    add(lamp,el("circle",{cx,cy,r:f2(2.6*SC),fill:c,"fill-opacity":".4"}));
+    add(lamp,el("circle",{cx,cy,r:f2(1.45*SC),fill:c}));
+    add(lamp,el("circle",{cx,cy,r:f2(0.55*SC),fill:"var(--fg)","fill-opacity":".85"}));
+    const q=P(lx+lsp*0.36,pcy,pz);
+    const t=add(g,el("text",{x:f1(q[0]),y:f1(q[1]+1.1*SC),"text-anchor":"middle",
+      "font-size":f2(3.0*SC),"font-weight":"700",fill:c,stroke:"var(--bg)",
+      "stroke-width":f2(0.6*SC),"stroke-opacity":".7","paint-order":"stroke"}));
+    t.textContent=NT[i];
+  });
+  g.appendChild(lamp);
+
   /* ---- THE HOUSING'S WALLS. The rim and the lid go on after everything in
      the well, so they can simply cover the front of the floor rather than
      every piece in the well having to stop at the rim. */
@@ -9003,7 +9028,7 @@ function drawReadCycle(g,n){
     fill:SKIN.works.top,"fill-rule":"evenodd"}));
 
   /* ---- THE TOUCHSCREEN, on side 3, asked for from the page: a third of the
-     wall's width in its left half. The status lights now live on it. Recessed by
+     wall's width in its left half. Its lights moved up to the pad. Recessed by
      showing the pocket's shadow along its top and left, the two reveals a
      viewer looking down from the front-left can see into; the glass is
      inset from them and glows by the housing's own trick of faint wide
@@ -9016,35 +9041,6 @@ function drawReadCycle(g,n){
     stroke:SKIN.glass.top,"stroke-width":f2(wd*SC),"stroke-opacity":o,"stroke-linejoin":"round"})));
   face(scr,"var(--bg)"); face(scr,SKIN.glass.top,.6); face(scr,"var(--fg)",.07);
   edge([P(sx0,y1,sz1),P(sx1,y1,sz1),P(sx1,y1,sz0),P(sx0,y1,sz0),P(sx0,y1,sz1)],".5",0.7);
-
-  /* ---- THE STATUS LIGHTS, on the touchscreen's glass, asked for from the
-     page in place of the row they had along the wall's right half, with
-     the same random flaring. Each socket holds its own colour even while
-     the field is dark, and flares — bloom, core and a hot white centre — on
-     its own beat. The flare is its own group after the screen, so the
-     bloom spills past the glass's edge rather than being cut off by it;
-     each light has a group of its own inside it, so they go off one after
-     another. The glass is a third of the width the row had, so the lights
-     are closer and a little smaller, set high so each letter has the
-     screen's lower part to itself. */
-  const zl=h*0.60, lamp=el("g",{}), lamps=[], lc=(sx0+rv+sx1)/2-n.x, lsp=n.w*0.075;
-  BASE.forEach((c,i)=>{
-    const p=P(n.x+lc+(i-1.5)*lsp,y1,zl), cx=f1(p[0]), cy=f1(p[1]);
-    add(g,el("circle",{cx,cy,r:f2(2.0*SC),fill:c,"fill-opacity":".3",
-      stroke:"var(--fg)","stroke-width":f2(0.45*SC),"stroke-opacity":".5"}));
-    const one=add(lamp,el("g",{opacity:"0"}));
-    lamps.push({e:one, o:"0"});
-    add(one,el("circle",{cx,cy,r:f2(5.0*SC),fill:c,"fill-opacity":".22"}));
-    add(one,el("circle",{cx,cy,r:f2(3.2*SC),fill:c,"fill-opacity":".4"}));
-    add(one,el("circle",{cx,cy,r:f2(1.85*SC),fill:c}));
-    add(one,el("circle",{cx,cy,r:f2(0.7*SC),fill:"var(--fg)","fill-opacity":".85"}));
-    /* the letter under each light is the key: it stays when the field goes
-       dark, so which colour is which base is never left to be guessed */
-    const t=add(g,el("text",{x:cx,y:f1(p[1]+6.2*SC),"text-anchor":"middle",
-      "font-size":f2(3.8*SC),"font-weight":"700",fill:c}));
-    t.textContent=NT[i];
-  });
-  g.appendChild(lamp);
 
   /* ---- THE CARTRIDGE SLOT, on side 4, in the wall's back half so the door
      keeps the front: a seam level in the world, with the recess under it
@@ -9109,8 +9105,12 @@ function drawReadCycle(g,n){
   };
   setCover(cx1);
   /* slide out, rest closed, slide back, rest open — the clock starts at the
-     rest, so the first thing a reader sees is the pane already across */
-  const CSL=2.2, CHC=3.5, CHO=1.6, CCY=2*CSL+CHC+CHO;
+     rest, so the first thing a reader sees is the pane already across. The
+     closed rest is as long as NR rounds of the read and a settle of SET
+     either side, asked for from the page as "close, flash five times,
+     open": the cover waits for the fifth round rather than the rounds
+     fitting whatever wait the cover had. */
+  const SET=0.15, NR=5, CSL=2.2, CHC=2*SET+NR*CYC, CHO=1.6, CCY=2*CSL+CHC+CHO;
   let cc=CSL;
 
   /* ---- THE DOOR, on the right wall, asked for so the reads have somewhere
@@ -9290,19 +9290,13 @@ function drawReadCycle(g,n){
      back — so a frame touches the handful going off, not all of them. The
      scan is linear because a camera's pass is. */
   const ease=u=>u<0.5?2*u*u:1-2*(1-u)*(1-u);
-  /* the lights' own beat, asked to be random and constant rather than a
-     chase: each light waits a gap of its own, drawn fresh every time from a
-     stream of its own, flares and dies back over LFL, and waits again. Not
-     tied to CYC, so they never stop for the dark. */
-  const LFL=0.3, rq=rng(3301), gap=()=>0.08+0.5*rq();
-  lamps.forEach(L=>{ L.a=LFL+rq()*0.4; L.gap=gap(); });
-  /* THE READ WAITS FOR THE LID, asked for from the page: a round starts
-     only on a cover that has closed and settled for SET, and only if it has
-     time to finish before the cover draws back, so nothing on the chip
-     lights while the pane is moving or open. Between rounds the field is
-     dark with t parked at CYC. */
-  const SET=0.15;
-  let t=CYC, live=false, litO="0", fo=0, ph=0, acc=0.85;
+  /* THE READ WAITS FOR THE LID, asked for from the page: the NR rounds run
+     back to back on a cover that has closed and settled for SET, so nothing
+     on the chip or the pad lights while the pane is moving or open. They
+     are counted off the cover's own clock rather than started frame by
+     frame, so a slow frame cannot cost the last round its place. Outside
+     them the field is dark with t parked at CYC. */
+  let t=CYC, round=-1, litO="0", fo=0, ph=0, acc=0.85;
   /* the strands and the nebula run on their own clocks, through every beat
      of the cycle: the reads never stop leaving */
   grow(acc); turn(0);
@@ -9311,27 +9305,22 @@ function drawReadCycle(g,n){
     acc+=Math.min(dt,0.1)/GROW; if(acc>=1+FULL/GROW) acc=0;
     grow(Math.min(acc,1));
     ph=(ph+SPIN*Math.min(dt,0.1))%(Math.PI*2); turn(ph);
-    lamps.forEach(L=>{
-      L.a+=Math.min(dt,0.1);
-      if(L.a>=L.gap+LFL){ L.a=0; L.gap=gap(); }
-      const a=L.a;
-      const o=a<LFL ? ((1-a/LFL)*(1-a/LFL)).toFixed(2) : "0";
-      if(o!==L.o){ L.o=o; L.e.setAttribute("opacity",o); }
-    });
     cc=(cc+Math.min(dt,0.1))%CCY;
     const cu=cc<CSL ? ease(cc/CSL) : cc<CSL+CHC ? 1 : cc<2*CSL+CHC ? 1-ease((cc-CSL-CHC)/CSL) : 0;
     setCover(cx0+(cx1-cx0)*cu);
-    if(!live && cc>=CSL+SET && cc+CYC<=CSL+CHC){ live=true; t=0; }
-    if(live){ t+=Math.min(dt,0.1);
-      if(t>=CYC){ t=CYC; live=false;
-        dot.forEach(d=>{ d.k=(d.k+1+Math.floor(r()*3))%4;
-          d.node.setAttribute("fill",BASE[d.k]); d.flare.setAttribute("fill",BASE[d.k]); });
-      }
+    const tc=cc-CSL-SET, rd=tc>=0&&tc<NR*CYC ? Math.min(NR-1,Math.floor(tc/CYC)) : -1;
+    /* each round reads another base, so the clusters change colour in the
+       dark as one round gives way to the next or to the open cover */
+    if(rd!==round){
+      if(round>=0) dot.forEach(d=>{ d.k=(d.k+1+Math.floor(r()*3))%4;
+        d.node.setAttribute("fill",BASE[d.k]); d.flare.setAttribute("fill",BASE[d.k]); });
+      round=rd;
     }
+    t=rd<0 ? CYC : tc-rd*CYC;
     const e=SCAN+LAG+HOLD;
     const o = t<e ? Math.min(1,t/0.1) : t<e+DIM ? 1-ease((t-e)/DIM) : 0;
     const os=o.toFixed(2);
-    if(os!==litO){ litO=os; lit.setAttribute("opacity",os); }
+    if(os!==litO){ litO=os; lit.setAttribute("opacity",os); lamp.setAttribute("opacity",os); }
     dot.forEach(d=>{
       const a=t-d.due, on=a<0?"0":"1";
       const fl=a<0||a>=FLARE ? "0" : ((1-a/FLARE)*(1-a/FLARE)).toFixed(2);
