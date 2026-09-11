@@ -8562,8 +8562,15 @@ function drawIndexPcr(g,n){
      molecule has no world size to be authored in, so it goes in a group
      carrying scale(n.w / .72) and every coordinate under it is written for the
      size this node happens to be authored at. A resize moves the glass, grows
-     it, and takes the whole construct along. */
-  const LX=106, LY=33;
+     it, and takes the whole construct along.
+
+     THE RING IS B8a's RING, AT A REQUEST FROM THE PAGE: "make this a circle
+     like in B8a." It was a flat lozenge cut to the bar's length, which read
+     as a different instrument from the round glasses at B8a and C1 two and
+     one stations back. So the radii are B8a's own — 52 by 40 at its zoom of
+     1.32 — as C1's are. The bar is wider than that ring, so it is set in
+     at FIT below rather than the ring being stretched back out to meet it. */
+  const LX=52*1.32, LY=40*1.32;
   const MID=P(n.x,n.y,n.h/2);
   const KX=MID[0], KY=MID[1];
   const lens=el("g",{transform:
@@ -8618,7 +8625,14 @@ function drawIndexPcr(g,n){
         COMP=0.7, HOLD=2.6, CLEAR=0.7;
   const t1=SCAN, t2=t1+TAKE;
 
-  const comp=el("g",{opacity:"0"}); stage.appendChild(comp);
+  /* THE BAR IS SET IN, NOT CUT DOWN. It is read off its own extent — the
+     complement's outer corners, which reach furthest — against the ring less
+     a margin, so the thirteen blocks keep their widths against each other and
+     one number shrinks the lot. Inside the clip rather than around it, so the
+     ring still stops a sliding block at the ring's edge and not at the bar's. */
+  const EDGE=6, FIT=1/Math.hypot((BW/2)/(LX-EDGE), (BY+BH+9)/(LY-EDGE));
+  const bar=el("g",{transform:`scale(${FIT.toFixed(4)})`}); stage.appendChild(bar);
+  const comp=el("g",{opacity:"0"}); bar.appendChild(comp);
   const parts=[]; let run0=0, core=0;
   SEG.forEach(([name,wid,fill,arm],k)=>{
     const x0=run0*U-BW/2, ww=wid*U; run0+=wid;
@@ -8630,7 +8644,7 @@ function drawIndexPcr(g,n){
     const sl=Math.sign(arm)*SLIDE;
     const at=arm ? t2+PAUSE+(Math.abs(arm)-1)*STEP : core++*LAG;
     const p=el("g",{transform:`translate(${sl},0)`,opacity:"0"});
-    stage.appendChild(p);
+    bar.appendChild(p);
     p.appendChild(el("rect",{x:x0.toFixed(2),y:BY.toFixed(1),
       width:ww.toFixed(2),height:BH,rx:"1.2",fill,"fill-opacity":".9",
       stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".55"}));
