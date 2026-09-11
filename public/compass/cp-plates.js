@@ -290,17 +290,18 @@ function drawReliability(cv) {
 function drawCount(cv) {
   const { ctx, W, H } = setup(cv);
   const M = CP.meta, E = M.external, Z = M.zeroshot;
-  const rows = [['CRISPRi, per line', M.anchor.ensembl], ['Tahoe, per line', Math.round(E.tahoe.n_perturbations)],
-    ['MegaFin, per cell type', Math.round(M.fin.hvg.megafin.per_context_median.n_perturbations)], ['ChemFish, per tissue', Math.round(E.chemfish.n_perturbations)],
-    ['MiniFin, drugs', Z.MiniFin.perturbations]];
-  const L = 156, R = 60, T = 26, rh = (H - T - 30) / rows.length, pitch = (W - L - R) / rows[0][1];
+  // same rows, same order and same row height as the strength panel beside it
+  const rows = [['CRISPRi, per line', M.anchor.ensembl, INK.ink], ['Tahoe, per line', Math.round(E.tahoe.n_perturbations), INK.ink],
+    ['ChemFish, per tissue', Math.round(E.chemfish.n_perturbations), INK.ink],
+    ['MegaFin, per cell type', Math.round(M.fin.hvg.megafin.per_context_median.n_perturbations), INK.t6], ['MiniFin, drugs', Z.MiniFin.perturbations, INK.t2]];
+  const L = 156, R = 60, T = 26, rh = (H - T - 46) / rows.length, pitch = (W - L - R) / rows[0][1];
   // one pitch for every row: a smaller screen is a shorter row, never a stretched one
-  rows.forEach(([name, n], i) => {
+  rows.forEach(([name, n, col], i) => {
     const y = T + rh * i + 6;
     text(ctx, name, L - 10, y + rh * 0.42, { font: font.serif(12.5, true), align: 'right' });
     ctx.beginPath();
     for (let k = 0; k < n; k++) { const x = L + k * pitch; ctx.moveTo(x, y); ctx.lineTo(x, y + rh * 0.62); }
-    ctx.strokeStyle = rgba(INK.ink, 0.5); ctx.lineWidth = 0.5; ctx.stroke();
+    ctx.strokeStyle = rgba(col, 0.55); ctx.lineWidth = 0.5; ctx.stroke();
     text(ctx, nf(n), L + n * pitch + 6, y + rh * 0.42, { font: font.serif(12.5), color: INK.ink });
   });
   [30, 100].forEach((t) => {
@@ -311,24 +312,46 @@ function drawCount(cv) {
 }
 
 function drawStrength(cv) {
+  // Rows line up with the perturbation-count panel beside it: same order, same top and bottom margins, same row height.
   const { ctx, W, H } = setup(cv);
-  const P = CP.plates.p5, ed = P.ratio_edges, L = 20, R = 16, T = 18, B = H - 42;
+  const P = CP.plates.p5, ed = P.ratio_edges, L = 20, R = 16, T = 26, B = H - 46;
   const sx = lin(ed[0], ed[ed.length - 1], L, W - R);
-  const sets = [['crispr', 'CRISPRi knockdowns', INK.ink], ['tahoe', 'Tahoe drug-doses', INK.ink], ['chemfish', 'ChemFish drug conditions', INK.ink],
-    ['megafin', 'MegaFin drug wells', INK.t6], ['megafin_wells', 'MegaFin, against the noise between wells', INK.t6]];
-  const rh = (B - T) / sets.length;
-  sets.forEach(([k, name, col], i) => {
-    const d = P[k], tot = d.counts.reduce((a, b) => a + b, 0), mxv = Math.max(...d.counts) / tot, y0 = T + rh * (i + 1) - 4;
-    ctx.beginPath(); ctx.moveTo(sx(ed[0]), y0);
-    d.counts.forEach((c, j) => { const h = (c / tot / mxv) * (rh - 16); ctx.lineTo(sx(ed[j]), y0 - h); ctx.lineTo(sx(ed[j + 1]), y0 - h); });
-    ctx.lineTo(sx(ed[ed.length - 1]), y0); ctx.closePath();
-    ctx.fillStyle = rgba(col, 0.16); ctx.fill(); ctx.strokeStyle = rgba(col, 0.75); ctx.lineWidth = 0.8; ctx.stroke();
-    text(ctx, name, W - R, y0 - rh + 26, { font: font.serif(12, true), align: 'right' });
-    text(ctx, `median ${f2(d.median)}×  ·  ${Math.round(d.above_2x * 100)}% above 2×`, W - R, y0 - rh + 40, { font: font.serif(11), color: INK['ink-2'], align: 'right' });
+  const rows = [['crispr', 'CRISPRi knockdowns', INK.ink], ['tahoe', 'Tahoe drug-doses', INK.ink], ['chemfish', 'ChemFish drug conditions', INK.ink],
+    ['megafin', 'MegaFin drug wells', INK.t6], ['minifin', 'MiniFin', INK.t2]];
+  const rh = (B - T) / rows.length;
+  const frac = (x) => { const t = x.counts.reduce((a, b) => a + b, 0); return x.counts.map((c) => c / t); };
+  rows.forEach(([k, name, col], i) => {
+    const y0 = T + rh * (i + 1) - 6;
+    penLine(ctx, L, y0, W - R, y0, 600 + i, rgba(col, 0.45), 0.6);
+    text(ctx, name, W - R, y0 - rh + 24, { font: font.serif(12, true), align: 'right', color: col });
+    if (k === 'minifin') {
+      const v = CP.meta.fin.hvg.minifin.Sorafenib.median_single_well_over_null;
+      dot(ctx, sx(Math.log10(v)), y0 - 5, 4.5, col);
+      text(ctx, 'three drugs: too few to draw a spread', W - R, y0 - rh + 38, { font: font.serif(10.5), color: INK['ink-2'], align: 'right' });
+      text(ctx, `a Sorafenib well: ${f2(v)}× the noise between wells`, W - R, y0 - rh + 51, { font: font.serif(10.5), color: INK['ink-2'], align: 'right' });
+      return;
+    }
+    const a = frac(P[k]), b = k === 'megafin' ? frac(P.megafin_wells) : null, mx = Math.max(...a, ...(b || [0]));
+    const trace = (fr, fill, dash) => {
+      ctx.save(); if (dash) ctx.setLineDash(dash);
+      ctx.beginPath(); ctx.moveTo(sx(ed[0]), y0);
+      fr.forEach((f, j) => { const h = (f / mx) * (rh - 22); ctx.lineTo(sx(ed[j]), y0 - h); ctx.lineTo(sx(ed[j + 1]), y0 - h); });
+      ctx.lineTo(sx(ed[ed.length - 1]), y0);
+      if (fill) { ctx.closePath(); ctx.fillStyle = rgba(col, 0.16); ctx.fill(); }
+      ctx.strokeStyle = rgba(col, 0.8); ctx.lineWidth = dash ? 1.2 : 0.8; ctx.stroke(); ctx.restore();
+    };
+    trace(a, true, null);
+    if (b) {
+      trace(b, false, [3, 2]);
+      text(ctx, `filled: against halves of the controls, ${f2(P[k].median)}×`, W - R, y0 - rh + 38, { font: font.serif(10.5), color: INK['ink-2'], align: 'right' });
+      text(ctx, `dashed: against the noise between wells, ${f2(P.megafin_wells.median)}×`, W - R, y0 - rh + 51, { font: font.serif(10.5), color: INK['ink-2'], align: 'right' });
+    } else {
+      text(ctx, `median ${f2(P[k].median)}×  ·  ${Math.round(P[k].above_2x * 100)}% above 2×`, W - R, y0 - rh + 38, { font: font.serif(10.5), color: INK['ink-2'], align: 'right' });
+    }
   });
-  const x2 = sx(Math.log10(2)); guide(ctx, x2, T, x2, B, INK.select);
-  caps(ctx, '2× noise', x2 + 4, T + 8, { size: 8.5, color: INK.select });
-  axisX(ctx, sx, B + 4, [-0.5, 0, 0.5, 1, 1.5, 2], { fmt: (v) => (Math.pow(10, v) < 10 ? Math.pow(10, v).toFixed(1) : Math.round(Math.pow(10, v))) + '×', label: 'response size ÷ difference between two halves of the controls', range: [L, W - R] });
+  const x2 = sx(Math.log10(2)); guide(ctx, x2, T - 8, x2, B, INK.select);
+  caps(ctx, '2× noise', x2 + 4, T - 2, { size: 8.5, color: INK.select });
+  axisX(ctx, sx, B + 4, [-0.5, 0, 0.5, 1, 1.5, 2], { fmt: (v) => (Math.pow(10, v) < 10 ? Math.pow(10, v).toFixed(1) : Math.round(Math.pow(10, v))) + '×', label: 'response size ÷ the noise (halves of the controls, unless marked)', range: [L, W - R] });
 }
 
 function drawDepth(cv) {
@@ -341,7 +364,7 @@ function drawDepth(cv) {
   // the same medians the comparison table prints
   const CC = C['cells per perturbation x context (median)'];
   const cells = [['CRISPRi', num(CC[col])], ['Tahoe', num(CC['Tahoe-100M'])], ['ChemFish', num(CC['ChemFish 2026_09'])],
-    ['MegaFin', Math.round(M.fin.hvg.megafin.per_context_median.median_cells)]];
+    ['MegaFin', Math.round(CP.meta.fin.cells_pair_median.MegaFin)]];
   const L = Math.min(150, W * 0.12), R = 30, sx = logs(20, 30000, L, W - R);
   [[umis, 'molecules per cell', H * 0.28], [cells, 'cells per perturbation, per context', H * 0.60]].forEach(([rows, lab, y]) => {
     caps(ctx, lab, L, y - 48, { size: 9 });

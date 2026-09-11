@@ -275,13 +275,15 @@ function writeProse() {
     `random halves of the control cells look from each other. 1× means you can't tell it from noise. Nearly every knockdown is above ` +
     `2× (median ${f2(cr.median)}×); Tahoe's median is ${f2(ta.median)}×; ChemFish's is ${f2(cf.median)}×, with most conditions under 2×. ` +
     `MegaFin's drug wells, in plum, reach ${f2(mfw.median)}× on that yardstick. But each MegaFin drug sits in a single well, and the fair ` +
-    `yardstick for a single well is the noise between wells: against that they reach only ${f2(mfn.median)}× (the bottom row). ` +
+    `yardstick for a single well is the noise between wells: against that they reach only ${f2(mfn.median)}× (the dashed outline). ` +
+    `MiniFin's three drugs are too few to draw a spread; a single Sorafenib well sits at ` +
+    `${f2(M.fin.hvg.minifin.Sorafenib.median_single_well_over_null)}× the noise between wells. The rows line up with the counts beside them. ` +
     `The knockdowns are strong partly because many hit genes a cell cannot live without — a quarter of the targets, against about ` +
     `3.5% of all genes.</p>` +
     `<p><b>3. Plenty of measurement</b> (bottom left). About ${nf(num(M.comparison['UMIs per cell (median, protein-coding)'][CRc]))} ` +
     `molecules read per cell, and a median of ${num(M.comparison['cells per perturbation x context (median)'][CRc])} cells per ` +
     `knockdown in each line. MegaFin sits between Tahoe and the CRISPRi screens on both: about ${nf(Z.MegaFin.median_umis)} molecules ` +
-    `per cell and a median of ${nf(Math.round(MF.per_context_median.median_cells))} cells per drug well and cell type.</p>` +
+    `per cell and a median of ${nf(Math.round(CP.meta.fin.cells_pair_median.MegaFin))} cells per drug well and cell type.</p>` +
     `<p><b>4. Controls in the same place</b> (bottom right, a sketch). In a CRISPRi screen the control cells are mixed into the same ` +
     `pool as everything else, so they go through exactly the same handling. In Tahoe the controls sit in their own wells; in ` +
     `ChemFish, in separate embryos; in MegaFin, in one DMSO well per dose on each plate, beside two wells that were never dosed. ` +
@@ -318,7 +320,7 @@ function writeProse() {
     `leak into every response.</p>` +
     `<p><b>The short version:</b> about ${kMin} or more cells per perturbation in each cell type, a few dozen perturbations including ` +
     `strong ones, and controls pooled across batches. MegaFin meets the first two — about ` +
-    `${nf(Math.round(M.fin.hvg.megafin.per_context_median.median_cells))} cells per drug well and cell type, and a median of ` +
+    `${nf(Math.round(CP.meta.fin.cells_pair_median.MegaFin))} cells per drug well and cell type, and a median of ` +
     `${Math.round(M.fin.hvg.megafin.per_context_median.n_perturbations)} usable drug wells per cell type. Its controls are where it falls ` +
     `short: one DMSO well per dose on each plate (Plate VIII).</p>`;
 
@@ -450,7 +452,7 @@ function writeTable() {
     ['contexts', 'in what', () => Z.MegaFin.context, () => Z.MiniFin.context],
     ['control design', 'control cells', () => Z.MegaFin.controls, () => Z.MiniFin.controls],
     ['independent replication', 'repeats', () => Z.MegaFin.replicates, () => Z.MiniFin.replicates],
-    ['cells per perturbation x context (median)', 'cells per perturbation, per line or tissue', () => `${nf(Math.round(mf.per_context_median.median_cells))} per drug well and cell type (${nf(mf.composition.median_cells_per_drug_well)} per well)`, () => `${nf(mn.composition.median_cells_per_drug_well)} per well`],
+    ['cells per perturbation x context (median)', 'cells per perturbation, per line or tissue', () => `${nf(Math.round(CP.meta.fin.cells_pair_median.MegaFin))} per drug well and cell type (${nf(mf.composition.median_cells_per_drug_well)} per well)`, () => `${nf(mn.composition.median_cells_per_drug_well)} per well`],
     ['effect size: median ||z|| / control-noise ||z||', 'response size ÷ control noise (typical line or tissue)', () => `${f2(mf.effect_vs_single_well_null.median_effect_over_control_split)} · but ${f2(mf.effect_vs_single_well_null.median_effect_over_null)} against the noise between wells`, () => `a Sorafenib well: ${f2(mn.Sorafenib.median_single_well_over_null)} against the noise between wells`],
     ['shared-axis strength: energy on axis (median over contexts)', 'share of a response that is the shared part', () => f2(mf.per_context_median.energy_on_axis), () => '— (3 drugs)'],
     ['beta conservation across contexts (Kendall W)', 'lines or tissues agree on which perturbations are strong', () => `${f2(mf.conservation_pooled_ref.kendalls_W_beta)} (${mf.conservation_pooled_ref.W_block_contexts} clusters × ${mf.conservation_pooled_ref.W_block_perturbations} drug-doses; mean pairwise Spearman ${f2(mf.conservation_pooled_ref.mean_pairwise_spearman_from_W)})`, () => '—'],
