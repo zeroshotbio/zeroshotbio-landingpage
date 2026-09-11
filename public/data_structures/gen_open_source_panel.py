@@ -8,9 +8,10 @@ open_source_panel.txt and open_source_groups.txt.
 
 Unlike silver's, this panel's tiles are generated too. Silver's tiles are hand-maintained literals
 and that is where the page has drifted from the bucket every time; this bucket is being filled a
-batch at a time, so a literal would be wrong after every batch. Each dataset takes its accent and
-its modality band from the SILVER node's tiles in ds-data.js - the same dataset keeps the same
-colour in both vaults, and a prefix that is new to the map falls into "Other" rather than vanishing.
+batch at a time, so a literal would be wrong after every batch. Each dataset keeps the accent and
+modality band its tile already has in the OPEN node of ds-data.js (inherited from SILVER's tiles
+while the datasets sat in both buckets; silver's acquired tiles went with its copies on 2026-09-11),
+and a prefix that is new to the map falls into "Other" rather than vanishing.
 
 Rows are a generic two-level tree - the dataset root, its folders, and their folders - so a dataset
 needs no block written for it here. NOTES only improves the wording of folders already known.
@@ -26,8 +27,12 @@ def esc(t): return t.replace("\\", "\\\\").replace('"', '\\"')
 
 # Objects that are in the bucket but should not be: the exclusions the move declared, which one
 # filter bug let through. Shown, marked, never hidden - a delete is a human console act.
-STRAY = re.compile(r"^(chemfish/2025_03_release/Paper/|micdropseq/GSE315445/GSE315445_family[.]soft[.]txt$"
-                   r"|zebrahub/timepoints/|zebrahub/zebrahub_base[.]h5ad$)")
+STRAY = re.compile(r"^(chemfish/2025_03_release/Paper/|micdropseq/GSE315445/GSE315445_family[.]soft[.]txt$)")
+# Pre-convention files kept on purpose: zebrahub's 2026-07-27 extractions, copied in from silver on
+# 2026-09-11 (verified against the instance's local copies) so the silver delete lost nothing anyone
+# might want later. Drawn as legacy, not stray - keeping them was a decision, not an accident.
+LEGACY = re.compile(r"^(zebrahub/timepoints/|zebrahub/zebrahub_base[.]h5ad$)")
+LEGACY_NOTE = "pre-convention extraction (2026-07-27), kept on purpose - the Figshare .zip beside it is canonical"
 
 # Better wording for folders already known; anything else reads "N objects".
 NOTES = {
@@ -45,9 +50,10 @@ NOTES = {
 }
 README_NOTE = "provenance, the per-file SHA-256 table, how it was acquired, how to verify"
 
-# ---- accents and bands, read from the SILVER node so both vaults colour a dataset the same way
+# ---- accents and bands, read from this vault's own tiles so a refresh keeps every dataset's colour
 src = (DS / "ds-data.js").read_text()
-silver = src[src.index('{id:"SILVER"'):src.index('{id:"SREPO"')]
+_a = src.index('{id:"OPEN"')
+silver = src[_a:src.index('{id:"', _a + 1)]
 BAND, ACC, ORDER = {}, {}, []
 for m in re.finditer(r'\{label:"([^"]+)", tiles:\[(.*?)\]\}', silver, re.S):
     band = m.group(1)
@@ -87,19 +93,23 @@ def block(p):
         b.append(row("README.md", next(s for s, k in items if k == p + "README.md"), "ok", README_NOTE))
     for f, (fn, fb, fst) in folders(p, items).items():
         whole_stray = all(STRAY.search(k) for _, k in items if k.startswith(f))
-        kind = "del" if whole_stray else "ok"
+        whole_leg = all(LEGACY.search(k) for _, k in items if k.startswith(f))
+        kind = "del" if whole_stray else "leg" if whole_leg else "ok"
         note = ("stray copy - excluded from the move, landed through a filter bug since fixed; "
-                "awaiting delete in the console") if whole_stray else NOTES.get(f, f"{fn} objects")
+                "awaiting delete in the console") if whole_stray else LEGACY_NOTE if whole_leg \
+            else NOTES.get(f, f"{fn} objects")
         b.append(row(f[len(p):], fb, kind, note))
         for g, (gn, gb, gst) in folders(f, [(s, k) for s, k in items if k.startswith(f)]).items():
-            gk = "del" if all(STRAY.search(k) for _, k in items if k.startswith(g)) else "ok"
+            gks = [k for _, k in items if k.startswith(g)]
+            gk = "del" if all(STRAY.search(k) for k in gks) else "leg" if all(LEGACY.search(k) for k in gks) else "ok"
             gnote = ("stray copy - awaiting delete in the console" if gk == "del"
-                     else NOTES.get(g, f"{gn} objects"))
+                     else LEGACY_NOTE if gk == "leg" else NOTES.get(g, f"{gn} objects"))
             b.append(row(g[len(f):], gb, gk, gnote, 2))
     for s, k in items:
         rest = k[len(p):]
         if "/" not in rest and rest != "README.md":
-            b.append(row(rest, s, "del" if STRAY.search(k) else "ok", "at the dataset root"))
+            rk = "del" if STRAY.search(k) else "leg" if LEGACY.search(k) else "ok"
+            b.append(row(rest, s, rk, LEGACY_NOTE if rk == "leg" else "at the dataset root"))
     acc = ACC.get(p, "#8A8A8A")
     return (f'<div class=\\"fkds\\" style=\\"--acc:{acc}\\"><h5>{p}<s>{n:,} obj · {gib(size):,.2f} GiB '
             f'· {100 * size / TOT:.1f}%{tag}</s></h5><div class=\\"fkw\\">'
@@ -110,11 +120,12 @@ def sec(t, note): return f'<div class=\\"fksec\\"><b>{esc(t)}</b><span>{esc(note
 
 out = []
 kinds = [("ok", "In place — key-identical to where silver held it, confirmed by size and CRC64"),
-         ("del", "Stray — should not be here; the delete has not been made")]
+         ("del", "Stray — should not be here; the delete has not been made"),
+         ("leg", "Legacy — kept on purpose, not what to build on")]
 out.append('<div class=\\"fkl\\">' + "".join(f'<b><i class=\\"sw {k}\\"></i>{esc(t)}</b>' for k, t in kinds) + "</div>")
 out.append(sec("s3://zsb-open-source",
                "every dataset somebody else published, held as its origin released it. Nothing here is "
-               "ours except zcl2/analysis/, a derived reconciliation kept beside its release. Keys are identical to silver's, and each dataset's root README.md is the custody "
+               "ours except zcl2/analysis/, a derived reconciliation kept beside its release. Keys are identical to where silver held them until its copies were deleted on 2026-09-11, and each dataset's root README.md is the custody "
                "record: provenance, a per-file SHA-256 table, how it was acquired, and how to verify it"))
 # PROJECTED="…" draws the bucket as a copy in flight will leave it, and says so first. A projection
 # is only ever drawn with this line on it; the next splice from a live listing removes it.

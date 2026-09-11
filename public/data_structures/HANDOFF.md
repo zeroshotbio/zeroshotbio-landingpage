@@ -440,6 +440,48 @@ a reason to open. The pins are now a `pins` command in two repos — ask the
 machine — but the prose has no such check, and `check-fit.mjs` cannot read.
 
 
+## The state of the data — 2026-09-11. Silver's copies are deleted; silver is ours again.
+
+```
+silver            79 obj ·  65.64 GiB   megafin/ · megafin-1/ · minifin/ — nothing else
+zsb-open-source  879 obj · 472.57 GiB   all 23 acquired datasets — now the only copy
+```
+
+**A person deleted the 23 acquired prefixes from silver in the console.** Checked from the instance
+afterwards against a listing taken just before: silver holds exactly the 79 objects of `megafin/` (5),
+`megafin-1/` (61) and `minifin/` (13), every one unchanged in key, size and ETag; `zsb-open-source`
+is unchanged at 879. Before the delete, all 819 shared non-README files matched across the two buckets
+on size and ETag. The only files that exist nowhere now are 24 superseded silver READMEs (the
+open-source ones replaced them) and `micdropseq/GSE315445/GSE315445_family.soft.txt`, our
+decompression of a `.gz` the new bucket holds. zebrahub's 12 pre-convention files (10.36 GiB) were
+copied to `zsb-open-source` first and verified against the instance's local copies, so the delete
+lost no data file.
+
+**SILVER is one column again.** The `Acquired (Open Source)` group and its 23 tiles are gone; the
+`Parse (Our Data)` group stays, captioned. `right`, `built` and `cond` are rewritten.
+`gen_silver_panel.py` lost its 23 hand-written acquired blocks (in git history, last in `fa9034e7`)
+and ends with one pointer section, `Acquired (Open Source) · moved out`. It no longer indexes any key
+outside ours, so it runs against the post-delete listing.
+
+**`gen_open_source_panel.py` reads its palette from the OPEN node now**, not SILVER's tiles; those
+tiles were the only place the accents and bands lived, and they went with the delete. Its `STRAY`
+list lost zebrahub: `timepoints/` and `zebrahub_base.h5ad` are drawn with the `leg` class ("kept on
+purpose"), because keeping them was a decision, not a filter bug. A `leg` row joined the legend.
+chemfish's stray `2025_03_release/Paper/` is still red.
+
+**Prose that said silver was the big tier** is corrected: GOLD's brief ("under a fifth of silver" is
+now "larger than silver, 93.85 GiB against 65.64"), GOLD's two zebrahub twin sentences, and the
+OVERVIEW line ("more than five times gold"). `BACQ` says what the delete did to it: its 19 modules
+pin silver keys that no longer exist, and the custody record moved into each dataset's README.
+
+**Not drawn:** `zsb-open-source/_access_check/claude-20260911T003824.txt`, a write-probe another
+session left at 00:38 UTC. It is not a dataset; it was filtered out of the listing before the splice.
+Delete it in the console when convenient.
+
+**Checks.** `check-overlaps` 0 pairs (135 text nodes, down from 167 with silver's tiles gone).
+`check-clicks` 18/18. `check-fit` 7 failures, none in either vault — SPUB/GFETCH crowding and five
+zone-boundary straddles, as before.
+
 ## Tile captions are two rows at one size — 2026-09-11
 
 **A tile caption is its key and its size, nothing else.** The object count is gone from the tiles
