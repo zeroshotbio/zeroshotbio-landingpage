@@ -8981,6 +8981,33 @@ function drawReadCycle(g,n){
   edge([P(x1,y1,h),P(x1,y1,0)],".9",1.2);
   edge([...rimH,rimH[0]],".75",1);
 
+  /* ---- THE DOCKED SCREEN, asked for from the page as a unit of its own on
+     the lid's right edge rather than another thing painted on a wall. It
+     takes the lid's back-right corner, the one patch the ellipse leaves wide
+     enough, and stops a hair short of the right wall so its face does not
+     run on into the housing's and read as the same box. Drawn after the
+     housing's edges, so no line of the lid crosses it.
+     Its shadow is cast leftward along the back margin and kept off the glass
+     by the same arithmetic as the well: every corner of it lies outside the
+     ellipse. The screen is its top face, lit by the housing's wide faint
+     strokes rather than a filter. */
+  const bx0=X(0.34), bx1=X(0.49), by0=Y(-0.48), by1=Y(-0.30), bt=h*1.28;
+  const sh=n.w*0.06, cs=n.w*0.02;
+  face(quad(P(bx0-sh,by0,h),P(bx1,by0,h),P(bx1,by1,h),P(bx0-sh,by1,h)),"var(--bg)",.3);
+  face(quad(P(bx0-cs,by0,h),P(bx1,by0,h),P(bx1,by1+cs,h),P(bx0-cs,by1+cs,h)),"var(--bg)",.35);
+  face(quad(P(bx0,by1,bt),P(bx1,by1,bt),P(bx1,by1,h),P(bx0,by1,h)),SKIN.works.left);
+  face(quad(P(bx1,by0,bt),P(bx1,by1,bt),P(bx1,by1,h),P(bx1,by0,h)),SKIN.works.right);
+  face(quad(P(bx0,by0,bt),P(bx1,by0,bt),P(bx1,by1,bt),P(bx0,by1,bt)),SKIN.works.top);
+  const bi=0.14, BX=f=>bx0+f*(bx1-bx0), BY=f=>by0+f*(by1-by0);
+  const glass=quad(P(BX(bi),BY(bi),bt),P(BX(1-bi),BY(bi),bt),P(BX(1-bi),BY(1-bi),bt),P(BX(bi),BY(1-bi),bt));
+  [[6,".06"],[3,".1"]].forEach(([wd,o])=>add(g,el("polygon",{points:glass,fill:"none",
+    stroke:SKIN.glass.top,"stroke-width":f2(wd*SC),"stroke-opacity":o,"stroke-linejoin":"round"})));
+  face(glass,"var(--bg)"); face(glass,SKIN.glass.top,.7); face(glass,"var(--fg)",.1);
+  edge([P(bx0,by1,h),P(bx0,by1,bt),P(bx0,by0,bt),P(bx1,by0,bt),P(bx1,by0,h),P(bx1,by1,h),
+        P(bx0,by1,h)],".85",0.9);
+  edge([P(bx0,by1,bt),P(bx1,by1,bt),P(bx1,by0,bt)],".85",0.9);
+  edge([P(bx1,by1,bt),P(bx1,by1,h)],".85",0.9);
+
   /* ---- THE DOOR, on the right wall, asked for so the reads have somewhere
      to come out of. It stands on the ground in the wall's front half, the
      half turned away from C4, so nothing of C4's box is painted over it.
