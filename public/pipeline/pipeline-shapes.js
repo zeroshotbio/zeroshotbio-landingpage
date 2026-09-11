@@ -9296,19 +9296,28 @@ function drawReadCycle(g,n){
      are counted off the cover's own clock rather than started frame by
      frame, so a slow frame cannot cost the last round its place. Outside
      them the field is dark with t parked at CYC. */
-  let t=CYC, round=-1, litO="0", fo=0, ph=0, acc=0.85;
-  /* the strands and the nebula run on their own clocks, through every beat
-     of the cycle: the reads never stop leaving */
-  grow(acc); turn(0);
+  let t=CYC, round=-1, litO="0", fo=0, ph=0, acc=0.85, fq=0, fqS="";
+  /* THE READS LEAVE ONLY WHILE THEY ARE BEING READ, asked for from the page:
+     the strands start once the cover has closed and the wells are lighting,
+     run through the dark between rounds, and stop when the last round ends,
+     so the cover never moves over a stream. The cloud grows only while they
+     feed it; it keeps turning in between, since the file is still there. */
+  grow(acc); turn(0); flow.setAttribute("stroke-opacity","0");
   const run=dt=>{
-    fo=(fo+VEL*Math.min(dt,0.1))%(BW+SPc); flow.setAttribute("stroke-dashoffset",f2(-fo*SC));
-    acc+=Math.min(dt,0.1)/GROW; if(acc>=1+FULL/GROW) acc=0;
-    grow(Math.min(acc,1));
-    ph=(ph+SPIN*Math.min(dt,0.1))%(Math.PI*2); turn(ph);
-    cc=(cc+Math.min(dt,0.1))%CCY;
+    const dq=Math.min(dt,0.1);
+    cc=(cc+dq)%CCY;
     const cu=cc<CSL ? ease(cc/CSL) : cc<CSL+CHC ? 1 : cc<2*CSL+CHC ? 1-ease((cc-CSL-CHC)/CSL) : 0;
     setCover(cx0+(cx1-cx0)*cu);
     const tc=cc-CSL-SET, rd=tc>=0&&tc<NR*CYC ? Math.min(NR-1,Math.floor(tc/CYC)) : -1;
+    fq=Math.max(0,Math.min(1,fq+(rd>=0?dq:-dq)/0.25));
+    const qs=(0.75*fq).toFixed(2);
+    if(qs!==fqS){ fqS=qs; flow.setAttribute("stroke-opacity",qs); }
+    if(rd>=0){
+      fo=(fo+VEL*dq)%(BW+SPc); flow.setAttribute("stroke-dashoffset",f2(-fo*SC));
+      acc+=dq/GROW; if(acc>=1+FULL/GROW) acc=0;
+      grow(Math.min(acc,1));
+    }
+    ph=(ph+SPIN*dq)%(Math.PI*2); turn(ph);
     /* each round reads another base, so the clusters change colour in the
        dark as one round gives way to the next or to the open cover */
     if(rd!==round){
