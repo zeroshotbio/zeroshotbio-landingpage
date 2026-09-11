@@ -8999,7 +8999,7 @@ DRAW.readcycle = drawReadCycle;
    Everything to the left of here is material somebody could pipette; from
    here on it is a file. So this is the last object on the row that is drawn
    as a thing happening, and what it has to leave the reader with is the
-   output — hundreds of reads, and nothing you can do with a pipette.
+   output — a cloud of reads, and nothing you can do with a pipette.
 
    THE SEQUENCER IS NOT REDRAWN. It stands one gap back at 2.2 across and it
    is already the biggest object on the row; a second one here would be the
@@ -9008,30 +9008,35 @@ DRAW.readcycle = drawReadCycle;
    inside it — this node is drawn after the machine, so anything overlapping
    it is painted on top of it and reads as part of it.
 
-   THE RESOLUTION IS THE WHOLE MOTION. A read leaves the instrument as a pale
-   flash with no shape to it — raw fluorescence, scattered off the line it
-   will end up on — and becomes a discrete grey bar somewhere over the
-   connector. The flash is --signal, which is the token the machine's own lamp
-   and camera pass are drawn in, so what comes out of it is the same light it
-   images with; the bar it becomes is grey, and that is where colour stops.
-   The jitter each flash is born with decays to nothing by the end of the
-   connector, so the scatter TIGHTENS into the line rather than being replaced
-   by it.
+   THE ACCUMULATION IS THE WHOLE MOTION. About sixty fragments come up one
+   after another, starting at the cloud's left end — the end the connector
+   runs into — and filling it steadily towards the right, so the cloud is
+   seen to GROW out of the machine's line rather than arrive in one piece.
+   Nothing flies: each fragment appears where it will hang, with only a short
+   settle in from the left, because a read that travels says it came from
+   somewhere in particular and these did not.
 
    THE READS ARE ANONYMOUS, AND THAT IS THE CLAIM. This station used to draw
    the run folder splitting into eight coloured files, which put the
    sublibraries apart in the picture at the moment a FASTQ carries nothing
    that tells them apart: a read here is sequence and quality scores, and what
    is in it is read out rows away from here. So every fragment is the same
-   neutral grey, the same length, with no detail on it — only the opacity
-   varies, and that is depth in a cloud rather than anything about a read. The
+   neutral grey at the same opacity, the same size, with no detail on it and
+   no light behind it — not even the machine's --signal, which an earlier cut
+   flashed each read in and which spent colour the step does not earn. The
    eight are still what the record says came out; the drawing stops short of
    the point where a picture would have to say which read went into which.
 
-   IT ENDS ON THE CLOUD. The build is the longest beat by a distance and the
-   hold is the second longest, and nothing leaves the frame: no files written,
-   no handoff, no next object. The fade at the end is the loop's seam and not
-   an event — the reads do not go anywhere, the figure simply starts again.
+   THE LABEL STAYS "FASTQ". A request once raised that the instrument's direct
+   output is base calls, not FASTQ, and that is right of the instrument — but
+   this station is the conversion AND the split, so what leaves it is exactly
+   the FASTQ the name says. Relabel it only if the station stops including
+   the demultiplex.
+
+   IT ENDS ON THE CLOUD. Twelve seconds of build, four of the full cloud, and
+   nothing leaves the frame: no files written, no handoff, no next object. The
+   short fade at the end is the loop's seam and not an event — the reads do
+   not go anywhere, the figure simply starts again.
 
    THE CLOUD LIES ALONG THE MAP'S OWN AXIS, and that is not a taste decision
    either. The free sky here is a CORRIDOR: the sequencer's name leaves its
@@ -9039,13 +9044,13 @@ DRAW.readcycle = drawReadCycle;
    its own back edge on exactly the same bearing, and between the two — and
    clear of the machine's right face at the bottom of it — is a band about a
    hundred and thirty pixels wide and parallel to both. A round cloud big
-   enough to hold hundreds of reads does not fit in it and lands on one name
+   enough to read as dense does not fit in it and lands on one name
    or the other, so this one is an ellipse lying ALONG the corridor. Every
    offset that keeps it there is a screen length times SC, so the clearances
    survive a resize.
 
    The shape key is still `demux` — it is the node's, and this node wears it
-   alone. Spends no hue: --fg2 for a read, one faint --signal for the flash.
+   alone. Spends no hue: --fg2 for a read and for everything else.
    ------------------------------------------------------------------ */
 function drawDemux(g,n){
   /* EVERY OFFSET IS EITHER A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC,
@@ -9054,7 +9059,7 @@ function drawDemux(g,n){
      tile, so the three stations at the end of this row keep one size. */
   const SC=n.w/0.95;
   const clamp=x=>x<0?0:x>1?1:x;
-  const NREAD=260;
+  const NREAD=60;
   const r=rng(48211);
 
   paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
@@ -9086,17 +9091,18 @@ function drawDemux(g,n){
   const C=[TOP[0]+CDX*SC, TOP[1]-CUP*SC];
 
   /* one group for everything in the air, so the end of the cycle is a single
-     opacity rather than two hundred and sixty of them */
+     opacity rather than sixty of them */
   const sky=el("g",{}); g.appendChild(sky);
 
   /* ---- THE READS ----------------------------------------------------------
-     One group per read, born at the mouth of the connector with real
+     One group per read, born at its own place in the cloud with real
      coordinates, so the ticker only ever moves something that already knows
      where it is. The bar is authored in screen pixels — a read at this size is
      a glyph and cannot be cut from a world width — and it grows by being
      scaled: every group carries scale(SC), which is n.w over the width it was
-     drawn for. */
-  const BW=7.0, BH=1.8, FR=2.2, JIT=13;
+     drawn for. Square-cornered, because the request asked for fragments and a
+     rounded bar reads as a pill. */
+  const BW=9.0, BH=2.4, SET=7;
   const at=(x,y,a)=>`translate(${x.toFixed(1)},${y.toFixed(1)}) `+
     `rotate(${a.toFixed(1)}) scale(${SC.toFixed(4)})`;
   const read=[];
@@ -9104,23 +9110,18 @@ function drawDemux(g,n){
     const th=r()*Math.PI*2, rad=Math.pow(r(),0.62);
     const cu=Math.cos(th)*RU*rad*SC, cv=Math.sin(th)*RV*rad*SC;
     const T=[C[0]+cu*CU[0]+cv*CV[0], C[1]+cu*CU[1]+cv*CV[1]];
-    const J=[(r()*2-1)*JIT*SC, (r()*2-1)*JIT*SC];
-    const ang=(r()*2-1)*18;                    // no two lie the same way: a storm
-    const grp=el("g",{transform:at(A[0]+J[0],A[1]+J[1],ang)});
-    const flash=el("circle",{cx:"0",cy:"0",r:FR.toFixed(2),
-      fill:"var(--signal)","fill-opacity":"0"});
+    const ang=(r()*2-1)*18;                    // no two lie the same way
+    const grp=el("g",{transform:at(T[0],T[1],ang)});
     const bar=el("rect",{x:(-BW/2).toFixed(2),y:(-BH/2).toFixed(2),
-      width:BW.toFixed(2),height:BH.toFixed(2),rx:(BH/2).toFixed(2),
+      width:BW.toFixed(2),height:BH.toFixed(2),
       fill:"var(--fg2)","fill-opacity":"0"});
-    grp.appendChild(flash); grp.appendChild(bar); sky.appendChild(grp);
-    /* the control point sits over the mouth at the read's own height, so the
-       climb off the connector is steep and the drift out to a place in the
-       cloud is what is left — a read rises out of the machine's line before it
-       has anywhere in particular to be */
-    read.push({g:grp, flash, bar, T, J, ang, f:-1,
-      Q:[M[0]+(T[0]-M[0])*0.15, M[1]-(M[1]-T[1])*0.80],
-      dim:0.50+r()*0.35});
+    grp.appendChild(bar); sky.appendChild(grp);
+    read.push({g:grp, bar, T, ang, f:-1});
   }
+  /* THE ORDER OF ARRIVAL IS LEFT TO RIGHT ON THE SCREEN, so the fill starts at
+     the connector's end of the cloud and sweeps away from it. Sorted after the
+     draws rather than drawn in order, so the scatter is the same cloud it was. */
+  read.sort((a,b)=>a.T[0]-b.T[0]);
 
   /* ---- THE LABEL ----------------------------------------------------------
      Authored in screen pixels and sized off SC, the way C7's is: type cut from
@@ -9140,37 +9141,23 @@ function drawDemux(g,n){
   cap.textContent="FASTQ"; sky.appendChild(cap);
 
   /* ---- TIMING -------------------------------------------------------------
-     Slow, and the beats say which part of it is the figure: BUILD is the
-     resolution and the accumulation and it takes fifteen seconds, HOLD is the
-     finished cloud, FADE is the seam. AWIN is how much of the build one read
-     occupies — an eighth, so about thirty are in the air at once and hundreds
-     of them read as a storm coming rather than as hundreds of things taking
-     turns. */
-  const BUILD=15.0, HOLD=7.5, FADE=2.4, AWIN=0.13;
+     The beats the request named: BUILD is the accumulation and takes twelve
+     seconds, HOLD is the finished cloud for four, FADE is the seam and is kept
+     short enough not to read as a beat of its own. AWIN is how much of the
+     build one read occupies — a small slice, so only two or three are ever
+     mid-arrival and the fill reads as steady rather than as a wave. */
+  const BUILD=12.0, HOLD=4.0, FADE=0.6, AWIN=0.04;
   const t1=BUILD, t2=t1+HOLD, t3=t2+FADE;
-  const LEG=0.42;                              // of the flight, spent on the connector
-  /* A READ THAT HAS NOT MOVED IS NOT REWRITTEN. Two hundred and sixty groups
-     is a lot of DOM to touch sixty times a second, and for all but the beat
-     itself nearly every one of them is parked — so the flight fraction is
-     kept and a repeat is dropped here rather than in the caller. */
+  const DIM=0.70;                              // one opacity for every read
+  /* A READ THAT HAS NOT MOVED IS NOT REWRITTEN. For all but the beat itself
+     nearly every group is parked, so the arrival fraction is kept and a repeat
+     is dropped here rather than in the caller. */
   const put=(i,f)=>{
     const R=read[i];
     if(R.f===f) return; R.f=f;
-    let px,py;
-    if(f<LEG){
-      const u=f/LEG;
-      px=A[0]+(M[0]-A[0])*u + R.J[0]*(1-u);
-      py=A[1]+(M[1]-A[1])*u + R.J[1]*(1-u);
-    }else{
-      const p=fanBez(M,R.Q,R.T,(f-LEG)/(1-LEG)); px=p[0]; py=p[1];
-    }
-    R.g.setAttribute("transform",at(px,py,R.ang));
-    /* the flash is gone before the bar is fully up, and both changes happen
-       over the connector: the resolution is the event, so it is not allowed to
-       finish somewhere the reader is not looking */
-    R.flash.setAttribute("fill-opacity",
-      (0.50*clamp(f/0.05)*(1-clamp((f-0.16)/0.22))).toFixed(3));
-    R.bar.setAttribute("fill-opacity",(R.dim*clamp((f-0.26)/0.20)).toFixed(3));
+    const e=1-(1-f)*(1-f);                     // eases in, so it settles rather than stops
+    R.g.setAttribute("transform",at(R.T[0]-SET*SC*(1-e),R.T[1],R.ang));
+    R.bar.setAttribute("fill-opacity",(DIM*f).toFixed(3));
   };
 
   /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion never
@@ -9191,7 +9178,7 @@ function drawDemux(g,n){
     const m = t<t1?0 : t<t2?1 : 2;
     if(m!==mode) enter(m);
 
-    if(m===0){                          // the build: flashes out, reads in, more of them
+    if(m===0){                          // the build: left to right, one read after another
       const u=t/BUILD;
       for(let i=0;i<NREAD;i++) put(i, clamp((u-i*(1-AWIN)/(NREAD-1))/AWIN));
       return;
@@ -9200,7 +9187,7 @@ function drawDemux(g,n){
       sky.setAttribute("opacity",(1-clamp((t-t2)/FADE)).toFixed(3));
       return;
     }
-    /* held: hundreds of reads over the grid, and not one of them saying what
+    /* held: a cloud of reads over the grid, and not one of them saying what
        is in it or which of the eight it belongs to */
   };
   run(0);
