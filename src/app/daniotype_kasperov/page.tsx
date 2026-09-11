@@ -13,6 +13,7 @@
 import KasperovClient from "./KasperovClient";
 import DatasetSpecCards from "./components/DatasetSpecCards";
 import PaperUploadSection from "./components/PaperUploadSection";
+import WrapSheetSection from "./components/WrapSheetSection";
 import DATASET_CARDS from "./dataset_cards.json";
 
 // Built here, server-side, so the upload section's dataset tags stay in lockstep with the cards
@@ -33,6 +34,7 @@ export default function DaniotypeKasperovPage() {
       <KasperovClient />
       <DatasetSpecCards />
       <PaperUploadSection datasets={UPLOAD_TARGETS} />
+      <WrapSheetSection />
     </>
   );
 }

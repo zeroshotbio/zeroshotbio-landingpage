@@ -63,7 +63,7 @@ const DATASETS: DatasetDef[] = [
     name: "MiniFin",
     tagline: "Parse Evercode · 48 hpf · 94.6k cells · 54 de-novo clusters",
     blurb:
-      "Our in-house zebrafish reference (Parse Biosciences Evercode, 43 drug samples). Re-clustered de-novo at Leiden res 1.0 (54 clusters) on a Harmony-integrated embedding (HVG→PCA→Harmony on sample) — same method as MegaFin Part 1, replacing Parse's vendor partition. No external cell-type labels, so the wizard names clusters without a ground-truth score. Provisional — to be regenerated on the de-novo + LOKO STARsolo rebuild.",
+      "Our in-house zebrafish reference (Parse Biosciences Evercode; DMSO + 3 drugs × 12 wells, 43 sample names). Re-clustered de-novo at Leiden res 1.0 (54 clusters) on a Harmony-integrated embedding (HVG→PCA→Harmony on sample) — same method as MegaFin Part 1, replacing Parse's vendor partition. No external cell-type labels, so the wizard names clusters without a ground-truth score. Provisional — to be regenerated on the de-novo + LOKO STARsolo rebuild.",
     dataUrl: `${ASSET_BASE}/minifin/umap.json`,
     archivistBase: `${ASSET_BASE}/minifin/archivist`,
     groundTruthUrl: null,
@@ -140,7 +140,7 @@ const DATASETS: DatasetDef[] = [
     name: "Parse MegaFin Part 1",
     tagline: "Parse Evercode pipeline · 48 hpf · 540.9k cells · 77 Leiden clusters",
     blurb:
-      "MegaFin Part 1 — our large-scale drug-screen atlas (96 conditions: 45 small molecules + Sorafenib positive control, each at 1 & 5 µM, plus DMSO-vehicle and egg-water controls; 93 samples after 3 QC removals; 48 hpf TuWT whole embryos, 6 embryos/well, treated 24→48 hpf), as processed by the Parse/Trailmaker pipeline (ENSDARG namespace). De-novo Leiden res 3.0 (77 clusters) on the Parse Harmony embedding. No external cell-type labels — internal, intuition-building. Compare against the Manual build of the same library.",
+      "MegaFin Part 1 — our large-scale drug-screen atlas (plate CP01 of two: 45 small molecules + Sorafenib positive control, each at 1 & 5 µM in one well, plus dose-matched DMSO and two undispensed no-vehicle wells; 93 of the plate's 96 wells, 3 dropped from this Trailmaker build; 48 hpf TuWT whole embryos, 6 embryos/well, treated 24→48 hpf), as processed by the Parse/Trailmaker pipeline (ENSDARG namespace). De-novo Leiden res 3.0 (77 clusters) on the Parse Harmony embedding. No external cell-type labels — internal, intuition-building. Compare against the Manual build of the same library.",
     dataUrl: `${ASSET_BASE}/megafin/umap.json`,
     archivistBase: `${ASSET_BASE}/megafin/archivist`,
     groundTruthUrl: null,
@@ -152,7 +152,7 @@ const DATASETS: DatasetDef[] = [
     name: "Manual MegaFin Part 1",
     tagline: "Manual .h5ad (Lawson) · 48 hpf · 537.9k cells · 384 recursive leaves → 147 nodes",
     blurb:
-      "MegaFin Part 1 — the same drug-screen library (96 conditions: 45 small molecules + Sorafenib positive control at 1 & 5 µM, plus DMSO-vehicle and egg-water controls; 93 samples after 3 QC removals; 48 hpf TuWT) built from the manually-created denoised .h5ad (Lawson LL → ZFIN namespace). De-novo GOLDEN RECURSIVE partition: coarse Leiden 0.1 → per-compartment local-2000-HVG → fresh local PCA(50) → 15-NN → local Leiden 0.8 (384 leaves @ 0.953 marker-coherence, beating the flat pass's 0.929), labelled by run_leaf_v2 v1.2 (Lawson :5007 grounding, no web-search) and consolidated to 147 nodes. The earlier flat res-2.0 (84-cluster) pass and the global HVG→PCA→Harmony re-embed (coherence collapsed 0.93→0.67) are superseded/rejected earlier attempts, kept as lineage ancestors. No external cell-type labels (Lawson namespace has no applicable GT — judging stays honestly dark) — broad correctness inherits from MiniFin.",
+      "MegaFin Part 1 — the same drug-screen library (plate CP01 of two: 45 small molecules + Sorafenib positive control at 1 & 5 µM, plus dose-matched DMSO and two undispensed no-vehicle wells; 93 of the plate's 96 wells; 48 hpf TuWT) built from the manually-created denoised .h5ad (Lawson LL → ZFIN namespace). De-novo GOLDEN RECURSIVE partition: coarse Leiden 0.1 → per-compartment local-2000-HVG → fresh local PCA(50) → 15-NN → local Leiden 0.8 (384 leaves @ 0.953 marker-coherence, beating the flat pass's 0.929), labelled by run_leaf_v2 v1.2 (Lawson :5007 grounding, no web-search) and consolidated to 147 nodes. The earlier flat res-2.0 (84-cluster) pass and the global HVG→PCA→Harmony re-embed (coherence collapsed 0.93→0.67) are superseded/rejected earlier attempts, kept as lineage ancestors. No external cell-type labels (Lawson namespace has no applicable GT — judging stays honestly dark) — broad correctness inherits from MiniFin.",
     dataUrl: `${ASSET_BASE}/megafin_rebuild/umap.json`,
     archivistBase: `${ASSET_BASE}/megafin_rebuild/archivist`,
     groundTruthUrl: null,
