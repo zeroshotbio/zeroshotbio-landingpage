@@ -8951,6 +8951,29 @@ function drawReadCycle(g,n){
   });
   g.appendChild(lamp);
 
+  /* ---- THE TOUCHSCREEN, on side 3, asked for from the page: a third of the
+     wall's width in its left half, which the lights leave empty. Recessed by
+     showing the pocket's shadow along its top and left, the two reveals a
+     viewer looking down from the front-left can see into; the glass is
+     inset from them and glows by the housing's own trick of faint wide
+     strokes, not a filter. */
+  const sx0=X(-0.44), sx1=X(-0.11), sz0=h*0.24, sz1=h*0.80;
+  const rv=n.w*0.012, rz=h*0.035;
+  face(quad(P(sx0,y1,sz1),P(sx1,y1,sz1),P(sx1,y1,sz0),P(sx0,y1,sz0)),"var(--bg)",.55);
+  const scr=quad(P(sx0+rv,y1,sz1-rz),P(sx1,y1,sz1-rz),P(sx1,y1,sz0),P(sx0+rv,y1,sz0));
+  [[7,".05"],[3.5,".08"]].forEach(([wd,o])=>add(g,el("polygon",{points:scr,fill:"none",
+    stroke:SKIN.glass.top,"stroke-width":f2(wd*SC),"stroke-opacity":o,"stroke-linejoin":"round"})));
+  face(scr,"var(--bg)"); face(scr,SKIN.glass.top,.6); face(scr,"var(--fg)",.07);
+  edge([P(sx0,y1,sz1),P(sx1,y1,sz1),P(sx1,y1,sz0),P(sx0,y1,sz0),P(sx0,y1,sz1)],".5",0.7);
+
+  /* ---- THE CARTRIDGE SLOT, on side 4, in the wall's back half so the door
+     keeps the front: a seam level in the world, with the recess under it
+     drawn as a darker strip and a faint lower lip. Nothing is shown in it. */
+  const ky0=Y(-0.44), ky1=Y(-0.06), kz=h*0.56, kd=h*0.07;
+  face(quad(P(x1,ky0,kz),P(x1,ky1,kz),P(x1,ky1,kz-kd),P(x1,ky0,kz-kd)),"var(--bg)",.45);
+  edge([P(x1,ky0,kz-kd),P(x1,ky1,kz-kd)],".3",0.6);
+  edge([P(x1,ky0,kz),P(x1,ky1,kz)],".85",0.9);
+
   /* ---- THE EDGES, over everything they bound. The well's rim is fainter
      than the box's, so the housing is drawn once and the opening inside it. */
   edge([P(x0,y1,h),P(x0,y0,h),P(x1,y0,h),P(x1,y1,h),P(x0,y1,h),P(x0,y1,0),P(x1,y1,0),
