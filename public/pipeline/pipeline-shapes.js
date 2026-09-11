@@ -8853,7 +8853,7 @@ DRAW.sizecheck = drawSizeCheck;
    cluster, and no cluster can drift out of step with its neighbours.
 
    THE STATUS LIGHTS ARE IN THAT SAME GROUP, for the same reason. Four, one
-   per base in S's order, so they flash and dim in the same frame as the
+   per base, each lettered, so they flash and dim in the same frame as the
    field; a light on its own clock would read as the housing doing something
    the flow cell is not.
 
@@ -8872,7 +8872,11 @@ function drawReadCycle(g,n){
   const SC=n.w/1.60;
   const X=f=>n.x+f*n.w, Y=f=>n.y+f*n.d;
   const r=rng(52817);
-  const BASE=["var(--signal)","var(--drop)","var(--ok)","var(--c-top)"];
+  /* FOUR PURE HUES, ONE PER BASE — blue, green, red, yellow, the trace
+     colours a reader already knows (C, A, T, G). The map's own accents put
+     two blues side by side here and no yellow, so the field read as three
+     colours; these are the page's --nt-* and belong to this drawing alone. */
+  const BASE=["var(--nt-c)","var(--nt-a)","var(--nt-t)","var(--nt-g)"], NT="CATG";
   const add=(gg,e)=>{ gg.appendChild(e); return e; };
   const f1=v=>v.toFixed(1), f2=v=>v.toFixed(2);
   const quad=(a,b,c,d)=>pts([a,b,c,d]);
@@ -8955,7 +8959,10 @@ function drawReadCycle(g,n){
     const u=IN+((a+0.5+(r()-0.5)*0.6)/NU)*(1-2*IN), v=IN+((b+0.5+(r()-0.5)*0.6)/NV)*(1-2*IN);
     const p=at(u,v), k=Math.floor(r()*4);
     add(rest,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(0.85*SC),fill:"var(--fg)","fill-opacity":".18"}));
-    dot.push({k, node:add(lit,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(1.2*SC),fill:BASE[k]}))});
+    /* a hair of the page ground round each lit dot, so yellow still has an
+       edge on the pale glass of the light theme */
+    dot.push({k, node:add(lit,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(1.45*SC),fill:BASE[k],
+      stroke:"var(--bg)","stroke-width":f2(0.35*SC),"stroke-opacity":".6"}))});
   }
 
   /* ---- THE STATUS LIGHTS, along the front wall's right half, where the eye
@@ -8968,6 +8975,11 @@ function drawReadCycle(g,n){
       stroke:"var(--fg)","stroke-width":f2(0.5*SC),"stroke-opacity":".35"}));
     add(lit,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(3.6*SC),fill:c,"fill-opacity":".28"}));
     add(lit,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(1.6*SC),fill:c}));
+    /* the letter under each light is the key: it stays when the field goes
+       dark, so which colour is which base is never left to be guessed */
+    const t=add(g,el("text",{x:f1(p[0]),y:f1(p[1]+5.4*SC),"text-anchor":"middle",
+      "font-size":f2(3.6*SC),"font-weight":"700",fill:c}));
+    t.textContent=NT[i];
   });
 
   /* ---- THE EDGES, over everything they bound. The well's rim is fainter
