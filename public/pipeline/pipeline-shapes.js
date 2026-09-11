@@ -8822,6 +8822,53 @@ function drawReadCycle(g,n){
     fill:"none",stroke:"var(--fg)","stroke-width":f2(wd*SC),"stroke-opacity":o,
     "stroke-linejoin":"round"})));
 
+  /* ---- THE BACK MODULE, asked for from the page: a box of its own against
+     the face c1, c2 and c7 bound, the side the housing turns away from the
+     viewer, as wide and as tall as the housing so it meets all three. Drawn
+     before the housing, which stands in front of it and hides the face they
+     share — so that face stays square and every edge left free is rounded:
+     the corners in plan, and the top's rim by a quarter-round stepped up in
+     MK bands, each band the plan outline inset and raised a step. */
+  const md=n.d*0.30, mr=Math.min(n.w,n.d)*0.10, mf=h*0.15, ym0=y0-md, MK=3;
+  /* a rounded rectangle in plan, seven points a corner whatever the radius,
+     so the outlines of every band line up point for point. Corners run back
+     left, back right, front right, front left. */
+  const rrect=(xa,xb,ya,yb,rs,z)=>{ const a=[];
+    [[xa,ya,1,1],[xb,ya,-1,1],[xb,yb,-1,-1],[xa,yb,1,-1]].forEach(([cx,cy,sx,sy],c)=>{
+      const r=rs[c]; for(let i=0;i<=6;i++){ const t=Math.PI*(1+c/2)+i/6*Math.PI/2;
+        a.push(P(cx+sx*r+r*Math.cos(t), cy+sy*r+r*Math.sin(t), z)); } });
+    return a; };
+  const band=j=>{ const th=j/MK*Math.PI/2, s=mf*(1-Math.cos(th));
+    return rrect(x0+s,x1-s,ym0+s,y0,[Math.max(mr-s,0),Math.max(mr-s,0),0,0],h-mf+mf*Math.sin(th)); };
+  const mb=[]; for(let j=0;j<=MK;j++) mb.push(band(j));
+  /* the free path, front-left round to front-right; index 10 is the back
+     right round at forty-five degrees, where the wall turns away */
+  const FREE=[27,...Array.from({length:15},(_,i)=>i)], SIL=10;
+  const floor0=rrect(x0,x1,ym0,y0,[mr,mr,0,0],0);
+  face(pts([...floor0.slice(SIL,15),...mb[0].slice(SIL,15).reverse()]),SKIN.works.right);
+  for(let j=0;j<MK;j++){
+    const strip=pts([...FREE.map(i=>mb[j][i]),...FREE.map(i=>mb[j+1][i]).reverse()]);
+    face(strip,SKIN.works.right); face(strip,SKIN.works.top,(j+0.5)/MK);
+  }
+  face(pts(mb[MK]),SKIN.works.top);
+  edge(FREE.map(i=>mb[MK][i]),".35",0.7);
+  edge([...FREE.slice(0,SIL+2).map(i=>mb[1][i]),mb[0][SIL],floor0[SIL],...floor0.slice(SIL+1,15)],".9",1.2);
+
+  /* THE PAD on its top, a touchscreen raised a hair off it in the left two
+     thirds, clear of the docked screen that stands in front on the lid. A
+     rounded tablet: its near rim is the outline from the back-right round's
+     turn to the front-left's, and its glass glows by the housing's wide faint
+     strokes rather than a filter. */
+  const pdh=h*0.04, pdr=md*0.14, px0=X(-0.42), px1=X(0.20), py0=ym0+md*0.22, py1=y0-md*0.18;
+  const padB=rrect(px0,px1,py0,py1,[pdr,pdr,pdr,pdr],h), padT=rrect(px0,px1,py0,py1,[pdr,pdr,pdr,pdr],h+pdh);
+  face(pts([...padB.slice(SIL,25),...padT.slice(SIL,25).reverse()]),SKIN.works.left);
+  face(pts(padT),SKIN.works.top); face(pts(padT),"var(--bg)",.35);
+  const pdi=md*0.07, pdg=pdr-pdi, padG=pts(rrect(px0+pdi,px1-pdi,py0+pdi,py1-pdi,[pdg,pdg,pdg,pdg],h+pdh));
+  [[6,".06"],[3,".1"]].forEach(([wd,o])=>add(g,el("polygon",{points:padG,fill:"none",
+    stroke:SKIN.glass.top,"stroke-width":f2(wd*SC),"stroke-opacity":o,"stroke-linejoin":"round"})));
+  face(padG,"var(--bg)"); face(padG,SKIN.glass.top,.7); face(padG,"var(--fg)",.1);
+  edge([...padT,padT[0]],".85",0.8);
+
   /* ---- THE HOUSING'S TWO WALLS. The lid goes on after everything in the
      well, so it can simply cover the front of the floor rather than every
      piece in the well having to stop at the rim. */
@@ -8980,6 +9027,37 @@ function drawReadCycle(g,n){
         P(x1,y0,0),P(x1,y0,h)],".9",1.2);
   edge([P(x1,y1,h),P(x1,y1,0)],".9",1.2);
   edge([...rimH,rimH[0]],".75",1);
+
+  /* ---- THE SLIDING COVER, asked for from the page: a translucent pane that
+     runs out across the lid from its left edge, c4-c1, until it reaches the
+     right, c3-c2, so the chip and its flashes are seen through it. It rests
+     closed, draws back and runs out again, on a clock of its own. Laid on
+     the lid under the docked screen, which is drawn after it and so stands
+     up through the pane. Born closed, so a reader with motion off sees the
+     station covered; only xl, its leading edge, ever moves. */
+  const cth=h*0.05, czt=h+cth;
+  const cTop=add(g,el("polygon",{points:"",fill:SKIN.glass.top,"fill-opacity":".22"}));
+  const cSheen=add(g,el("polygon",{points:"",fill:"var(--fg)","fill-opacity":".05"}));
+  const cFront=add(g,el("polygon",{points:"",fill:SKIN.glass.top,"fill-opacity":".4"}));
+  const cLead=add(g,el("polygon",{points:"",fill:SKIN.glass.top,"fill-opacity":".4"}));
+  const cRim=add(g,el("path",{d:"",fill:"none",stroke:"var(--fg)","stroke-width":f2(0.8*SC),
+    "stroke-opacity":".6","stroke-linejoin":"round"}));
+  const pathOf=ps=>`M${ring2d(ps)}`;
+  let coverX="";
+  const setCover=xl=>{
+    const k=f1(xl*S); if(k===coverX) return; coverX=k;
+    const top=quad(P(x0,y0,czt),P(xl,y0,czt),P(xl,y1,czt),P(x0,y1,czt));
+    cTop.setAttribute("points",top); cSheen.setAttribute("points",top);
+    cFront.setAttribute("points",quad(P(x0,y1,czt),P(xl,y1,czt),P(xl,y1,h),P(x0,y1,h)));
+    cLead.setAttribute("points",quad(P(xl,y0,czt),P(xl,y1,czt),P(xl,y1,h),P(xl,y0,h)));
+    cRim.setAttribute("d",pathOf([P(x0,y0,czt),P(xl,y0,czt),P(xl,y1,czt),P(x0,y1,czt)])+
+      pathOf([P(x0,y1,h),P(xl,y1,h),P(xl,y1,czt)])+pathOf([P(xl,y1,h),P(xl,y0,h)]));
+  };
+  setCover(x1);
+  /* slide out, rest closed, slide back, rest open — the clock starts at the
+     rest, so the first thing a reader sees is the pane already across */
+  const CSL=2.2, CHC=3.5, CHO=1.6, CCY=2*CSL+CHC+CHO;
+  let cc=CSL;
 
   /* ---- THE DOCKED SCREEN, asked for from the page as a unit of its own on
      the lid's right edge rather than another thing painted on a wall. It
@@ -9201,6 +9279,9 @@ function drawReadCycle(g,n){
       const o=a<LFL ? ((1-a/LFL)*(1-a/LFL)).toFixed(2) : "0";
       if(o!==L.o){ L.o=o; L.e.setAttribute("opacity",o); }
     });
+    cc=(cc+Math.min(dt,0.1))%CCY;
+    const cu=cc<CSL ? ease(cc/CSL) : cc<CSL+CHC ? 1 : cc<2*CSL+CHC ? 1-ease((cc-CSL-CHC)/CSL) : 0;
+    setCover(x0+(x1-x0)*cu);
     if(t>=CYC){ t%=CYC;
       dot.forEach(d=>{ d.k=(d.k+1+Math.floor(r()*3))%4;
         d.node.setAttribute("fill",BASE[d.k]); d.flare.setAttribute("fill",BASE[d.k]); });
