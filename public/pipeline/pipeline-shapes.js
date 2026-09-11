@@ -8958,13 +8958,18 @@ DRAW.readcycle = drawReadCycle;
    inside it — this node is drawn after the machine, so anything overlapping
    it is painted on top of it and reads as part of it.
 
-   THE ACCUMULATION IS THE WHOLE MOTION. About sixty fragments come up one
-   after another, starting at the cloud's left end — the end the connector
-   runs into — and filling it steadily towards the right, so the cloud is
-   seen to GROW out of the machine's line rather than arrive in one piece.
-   Nothing flies: each fragment appears where it will hang, with only a short
-   settle in from the left, because a read that travels says it came from
-   somewhere in particular and these did not.
+   THE ACCUMULATION IS THE WHOLE MOTION, AND IT HAS ONE SOURCE. The
+   connector ends inside the cloud, at the near edge of its dense core, and
+   that end is the only place a read ever appears. About sixty come out of it
+   one at a time on a fixed quarter-second beat, each already moving, and
+   drift outward to where it will hang, slowing as it settles among the rest.
+   A later request asked for exactly that, and it overturned an earlier cut
+   in which every read materialised in place: that one said the reads came
+   from nowhere in particular, which read as the cloud arriving in one piece.
+   The source says only that they came out of the machine's line — every
+   read leaves the same point, so the stream still says nothing about which
+   read is which. Nearest places are filled first, so the mass is seen to
+   grow outward from the source rather than sweep across the frame.
 
    THE READS ARE ANONYMOUS, AND THAT IS THE CLAIM. This station used to draw
    the run folder splitting into eight coloured files, which put the
@@ -8983,10 +8988,11 @@ DRAW.readcycle = drawReadCycle;
    the FASTQ the name says. Relabel it only if the station stops including
    the demultiplex.
 
-   IT ENDS ON THE CLOUD. Twelve seconds of build, four of the full cloud, and
-   nothing leaves the frame: no files written, no handoff, no next object. The
-   short fade at the end is the loop's seam and not an event — the reads do
-   not go anywhere, the figure simply starts again.
+   IT ENDS ON THE CLOUD. The stream runs for nearly the whole loop — the
+   request asked that it never visibly stop — then a beat of the full cloud,
+   and nothing leaves the frame: no files written, no handoff, no next
+   object. The short fade at the end is the loop's seam and not an event —
+   the reads do not go anywhere, the figure simply starts again.
 
    THE CLOUD LIES ALONG THE MAP'S OWN AXIS, and that is not a taste decision
    either. The free sky here is a CORRIDOR: the sequencer's name leaves its
@@ -9014,20 +9020,6 @@ function drawDemux(g,n){
 
   paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
 
-  /* ---- THE CONNECTOR ------------------------------------------------------
-     A stub from the machine's right face to a point over this tile, and it
-     holds well above the ground: the lane's own track already draws the run
-     from station to station, and a second line beside it on the floor would
-     say the reads came by two routes. A is 1.80 tiles back and up at the
-     sequencer's deck height, which puts it just outside the 2.2-wide body
-     rather than under it. */
-  const A=P(n.x-n.w*1.80, n.y-n.d*0.30, n.h*2.40);
-  const M=P(n.x-n.w*0.18, n.y-n.d*0.06, n.h*1.45);
-  g.appendChild(el("line",{x1:A[0].toFixed(1),y1:A[1].toFixed(1),
-    x2:M[0].toFixed(1),y2:M[1].toFixed(1),stroke:"var(--fg2)",
-    "stroke-width":(1.7*SC).toFixed(2),"stroke-opacity":".45",
-    "stroke-linecap":"round"}));
-
   /* ---- WHERE THE CLOUD HANGS ---------------------------------------------
      In the corridor between the two names — see the note above — measured from
      this tile's own top so it rides the box at any size, and lying along the
@@ -9039,6 +9031,26 @@ function drawDemux(g,n){
   const CU=[C30,-0.5], CV=[0.5,C30];        // along the corridor, and across it
   const CDX=34, CUP=91, RU=72, RV=38;
   const C=[TOP[0]+CDX*SC, TOP[1]-CUP*SC];
+
+  /* ---- THE CONNECTOR AND ITS SOURCE ---------------------------------------
+     A line from the machine's right face into the cloud, held well above the
+     ground: the lane's own track already draws the run from station to
+     station, and a second line beside it on the floor would say the reads
+     came by two routes. A is 1.80 tiles back and up at the sequencer's deck
+     height, which puts it just outside the 2.2-wide body rather than under
+     it. E is where the line stops and every read starts — on the cloud's long
+     axis, 0.45 of the way from the centre back toward the machine, which is
+     where the packing the radius power gives it starts to tell. The dot is
+     there so the end of the line reads as a mouth rather than a line that
+     ran out. */
+  const A=P(n.x-n.w*1.80, n.y-n.d*0.30, n.h*2.40);
+  const E=[C[0]-CU[0]*RU*0.45*SC, C[1]-CU[1]*RU*0.45*SC];
+  g.appendChild(el("line",{x1:A[0].toFixed(1),y1:A[1].toFixed(1),
+    x2:E[0].toFixed(1),y2:E[1].toFixed(1),stroke:"var(--fg2)",
+    "stroke-width":(1.7*SC).toFixed(2),"stroke-opacity":".45",
+    "stroke-linecap":"round"}));
+  g.appendChild(el("circle",{cx:E[0].toFixed(1),cy:E[1].toFixed(1),
+    r:(2.2*SC).toFixed(2),fill:"var(--fg2)","fill-opacity":".55"}));
 
   /* one group for everything in the air, so the end of the cycle is a single
      opacity rather than sixty of them */
@@ -9052,7 +9064,7 @@ function drawDemux(g,n){
      scaled: every group carries scale(SC), which is n.w over the width it was
      drawn for. Square-cornered, because the request asked for fragments and a
      rounded bar reads as a pill. */
-  const BW=9.0, BH=2.4, SET=7;
+  const BW=9.0, BH=2.4;
   const at=(x,y,a)=>`translate(${x.toFixed(1)},${y.toFixed(1)}) `+
     `rotate(${a.toFixed(1)}) scale(${SC.toFixed(4)})`;
   const read=[];
@@ -9066,12 +9078,23 @@ function drawDemux(g,n){
       width:BW.toFixed(2),height:BH.toFixed(2),
       fill:"var(--fg2)","fill-opacity":"0"});
     grp.appendChild(bar); sky.appendChild(grp);
-    read.push({g:grp, bar, T, ang, f:-1});
+    read.push({g:grp, bar, T, ang, f:null});
   }
-  /* THE ORDER OF ARRIVAL IS LEFT TO RIGHT ON THE SCREEN, so the fill starts at
-     the connector's end of the cloud and sweeps away from it. Sorted after the
-     draws rather than drawn in order, so the scatter is the same cloud it was. */
-  read.sort((a,b)=>a.T[0]-b.T[0]);
+  /* THE ORDER OF ARRIVAL IS NEAREST THE SOURCE FIRST, so the mass grows
+     outward from E instead of sweeping across the frame. Sorted after the
+     draws rather than drawn in order, so the scatter is the same cloud it was.
+     Each read's flight is timed off its distance so that every one leaves E
+     at the same speed — a near read given the same flight as a far one would
+     crawl out, and the stream would look like it stuttered. V0 is that launch
+     speed in unscaled pixels a second; distance is divided back by SC, so
+     the timing is the same at any size. */
+  const V0=80, FMIN=0.6;
+  for(const R of read){
+    const dx=R.T[0]-E[0], dy=R.T[1]-E[1];
+    R.dist=Math.hypot(dx,dy);
+    R.fly=Math.max(FMIN, 2*R.dist/SC/V0);      // ease-out below launches at 2×dist/fly
+  }
+  read.sort((a,b)=>a.dist-b.dist);
 
   /* ---- THE LABEL ----------------------------------------------------------
      Authored in screen pixels and sized off SC, the way C7's is: type cut from
@@ -9091,23 +9114,31 @@ function drawDemux(g,n){
   cap.textContent="FASTQ"; sky.appendChild(cap);
 
   /* ---- TIMING -------------------------------------------------------------
-     The beats the request named: BUILD is the accumulation and takes twelve
-     seconds, HOLD is the finished cloud for four, FADE is the seam and is kept
-     short enough not to read as a beat of its own. AWIN is how much of the
-     build one read occupies — a small slice, so only two or three are ever
-     mid-arrival and the fill reads as steady rather than as a wave. */
-  const BUILD=12.0, HOLD=4.0, FADE=0.6, AWIN=0.04;
+     GAP is the beat the request named: one read out of E every quarter
+     second, whatever else is happening, so the stream reads as a rate rather
+     than a burst. BUILD runs until the last and farthest read has settled, so
+     the stream is most of the loop; HOLD is the finished cloud for one beat,
+     long enough to be seen whole and short enough that the stream seems not
+     to stop; FADE is the seam and is kept short enough not to read as a beat
+     of its own. */
+  const GAP=0.25, HOLD=1.0, FADE=0.6;
+  let BUILD=0;
+  read.forEach((R,i)=>{ R.t0=i*GAP; BUILD=Math.max(BUILD,R.t0+R.fly); });
   const t1=BUILD, t2=t1+HOLD, t3=t2+FADE;
   const DIM=0.70;                              // one opacity for every read
-  /* A READ THAT HAS NOT MOVED IS NOT REWRITTEN. For all but the beat itself
-     nearly every group is parked, so the arrival fraction is kept and a repeat
-     is dropped here rather than in the caller. */
+  /* A READ THAT HAS NOT MOVED IS NOT REWRITTEN. For most of the loop nearly
+     every group is parked — not yet out, or settled — so the flight fraction
+     is kept and a repeat is dropped here rather than in the caller. Below
+     zero is "not yet out": parked invisibly on the source rather than at its
+     place, so nothing is ever seen anywhere but E before it has flown. */
   const put=(i,f)=>{
     const R=read[i];
     if(R.f===f) return; R.f=f;
-    const e=1-(1-f)*(1-f);                     // eases in, so it settles rather than stops
-    R.g.setAttribute("transform",at(R.T[0]-SET*SC*(1-e),R.T[1],R.ang));
-    R.bar.setAttribute("fill-opacity",(DIM*f).toFixed(3));
+    const e=f<0?0:1-(1-f)*(1-f);               // eases out, so it settles rather than stops
+    R.g.setAttribute("transform",at(E[0]+(R.T[0]-E[0])*e,E[1]+(R.T[1]-E[1])*e,R.ang));
+    /* already moving when it appears, so it cannot also fade up for long —
+       a few frames, just enough that it does not pop */
+    R.bar.setAttribute("fill-opacity",(f<0?0:DIM*clamp(f*R.fly/0.08)).toFixed(3));
   };
 
   /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion never
@@ -9121,16 +9152,18 @@ function drawDemux(g,n){
   const enter=m=>{
     mode=m;
     sky.setAttribute("opacity","1");
-    for(let i=0;i<NREAD;i++) put(i, m===0?0:1);
+    for(let i=0;i<NREAD;i++) put(i, m===0?-1:1);
   };
   const run=dt=>{
     t=(t+dt)%t3;
     const m = t<t1?0 : t<t2?1 : 2;
     if(m!==mode) enter(m);
 
-    if(m===0){                          // the build: left to right, one read after another
-      const u=t/BUILD;
-      for(let i=0;i<NREAD;i++) put(i, clamp((u-i*(1-AWIN)/(NREAD-1))/AWIN));
+    if(m===0){                          // the stream: out of E on the beat, nearest first
+      for(let i=0;i<NREAD;i++){
+        const R=read[i], u=t-R.t0;
+        put(i, u<0?-1:clamp(u/R.fly));
+      }
       return;
     }
     if(m===2){                          // the seam. Nothing leaves — it dims where it is
