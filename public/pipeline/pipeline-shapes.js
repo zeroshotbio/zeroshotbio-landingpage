@@ -3441,8 +3441,15 @@ function drawLigation(g0,n){
      drives. Dull to full is then one number per well per frame, and a well
      that has not reacted yet reads as dim rather than as missing — there is
      ligase mix in all 96 from the start, and what changes is whether it has
-     been spent. */
-  const DIM=.14;
+     been spent.
+
+     DIM IS HALF-LIT HERE, NOT B2's .14. Every well lights for barely two
+     seconds of the cycle, and at .14 over the grey the difference between
+     two neighbours falls to a fifth of what rampShade gave it: the plate sat
+     as 96 of one grey for most of the loop, however unique the colours
+     underneath. The BC2 in a well is there before any ligation, so its colour
+     is honest at rest; spent is still the step from half to full. */
+  const DIM=.5;
   const wells=plateGrid(deck,pth,COLS,ROWS);
   const dots=[], shown=[];
   wells.forEach((w,k)=>{
