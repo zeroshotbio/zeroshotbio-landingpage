@@ -128,6 +128,7 @@ table.cmp th{font-family:var(--sans);font-weight:500;font-size:10px;letter-spaci
 table.cmp td{padding:7px 10px;border-bottom:1px solid var(--rule-2);vertical-align:top;line-height:1.4}
 table.cmp td:first-child{font-style:italic;color:var(--ink-2);width:24%}
 table.cmp tr.key td{background:rgba(143,45,22,.045)}
+.ci{text-transform:none}
 table.cmp.fin td:last-child{font-variant:small-caps;letter-spacing:.04em;white-space:nowrap}
 table.cmp.fin td.no{font-weight:600}
 table.cmp.fin td:first-child{width:22%}
@@ -195,7 +196,7 @@ ol.lessons li{margin-bottom:.8em}
       <div class="sub">our numbers against the paper&rsquo;s &nbsp;·&nbsp; open ring the paper, solid dot us</div>
       <div class="canvas-hold"><canvas id="cvLedger" data-aspect="0.40"></canvas></div>
       <div class="grid2" style="margin-top:18px">
-        <div class="canvas-hold"><canvas id="cvBudget" data-aspect="0.55"></canvas></div>
+        <div class="canvas-hold"><canvas id="cvBudget" data-minw="480" data-aspect="0.55"></canvas></div>
         <figcaption id="cap2b" style="margin-top:0"></figcaption>
       </div>
     </figure>
@@ -304,7 +305,7 @@ ol.lessons li{margin-bottom:.8em}
       <div class="sub" style="margin-top:0">the bar, one requirement at a time &nbsp;·&nbsp; filled dot clears it, open dot falls short</div>
       <div class="canvas-hold"><canvas id="cvBar" data-minw="560" data-aspect="0.4"></canvas></div>
       <div class="sub">who clears what</div>
-      <div class="canvas-hold"><canvas id="cvScore" data-minw="760" data-aspect="0.34"></canvas></div>
+      <div class="canvas-hold"><canvas id="cvScore" data-minw="1000" data-aspect="0.34"></canvas></div>
       <div class="grid2" style="margin-top:10px">
         <div><div class="sub">the same 192 wells, spent two ways</div>
           <div class="canvas-hold"><canvas id="cvTrade" data-minw="420" data-aspect="0.72"></canvas></div></div>

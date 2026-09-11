@@ -51,7 +51,7 @@ function buildPrograms() {
   });
 }
 
-function clusterName(c) { return c.members_sig ? shortTerm(c.members) : 'no shared pathway'; }
+function clusterName(c) { return c.members_sig ? sentenceTerm(c.members) : 'no shared pathway'; }
 
 function buildClusters() {
   const wrap = $('clusterLegend'), P = CP.plates.p4;
@@ -60,7 +60,7 @@ function buildClusters() {
     const b = document.createElement('button'); b.className = 'leg'; b.dataset.id = c.id;
     b.setAttribute('aria-pressed', 'true');
     b.innerHTML = `<span class="swatch" style="background:${c.members_sig ? 'var(--ink)' : 'transparent'}"></span>` +
-      `<span><span class="leg-name">${clusterName(c).toLowerCase()}</span> <span style="color:var(--ink-3)">${c.n}</span></span>`;
+      `<span><span class="leg-name">${clusterName(c)}</span> <span style="color:var(--ink-3)">${c.n}</span></span>`;
     b.onclick = () => selectCluster(st.cluster === c.id ? -1 : c.id);
     wrap.appendChild(b);
   });
@@ -81,12 +81,12 @@ function writeClusterCard() {
     return;
   }
   const c = P.clusters[st.cluster];
-  const bar = (gs, vs) => gs.slice(0, 8).map((g, i) => `<span style="display:inline-block;margin-right:10px"><i>${g}</i> <span style="color:var(--ink-3)">${Number(vs[i]).toFixed(2)}</span></span>`).join('');
+  const bar = (gs, vs) => gs.slice(0, 8).map((g, i) => `<span style="display:inline-block;margin-right:10px"><i>${g}</i> <span style="color:var(--ink-3)">${f2(vs[i])}</span></span>`).join('');
   card.innerHTML = `<h4>${c.n} knockdowns</h4><p class="big">${clusterName(c)}</p>` +
     `<dl class="kv"><dt>for example</dt><dd>${c.examples}</dd>` +
-    (c.program_up ? `<dt>their own part switches on</dt><dd>${shortTerm(c.program_up)}</dd>` : '') +
-    (c.program_down ? `<dt>and switches off</dt><dd>${shortTerm(c.program_down)}</dd>` : '') +
-    `<dt>typical-response strength</dt><dd>median β ${Number(c.median_beta).toFixed(2)}</dd></dl>` +
+    (c.program_up ? `<dt>their own part switches on</dt><dd>${sentenceTerm(c.program_up)}</dd>` : '') +
+    (c.program_down ? `<dt>and switches off</dt><dd>${sentenceTerm(c.program_down)}</dd>` : '') +
+    `<dt>typical-response strength</dt><dd>median β ${f2(c.median_beta)}</dd></dl>` +
     `<p class="small" style="margin:10px 0 4px">genes their own part raises most</p><div class="small">${bar(c.up_genes, c.up_vals)}</div>` +
     `<p class="small" style="margin:8px 0 4px">genes it lowers most</p><div class="small">${bar(c.down_genes, c.down_vals)}</div>` +
     (c.members_sig ? '' : `<p class="small" style="margin-top:8px"><i>The knocked-down genes in this group have no function in common that passes a significance test; read it as a direction, not a pathway.</i></p>`);
@@ -113,7 +113,10 @@ const span = (xs, fmt = f2) => `${fmt(Math.min(...xs))}–${fmt(Math.max(...xs))
 
 function writeCap1() {
   const P = CP.plates.p1, e = P.exemplars[st.ex];
-  const plain = (s) => s.replace(/the shared axis|the axis/g, 'the typical response');   // data strings use the paper's word
+  // the three were picked by a rule (stage 11): the most typical ribosomal-protein knockdown, the large response nearest half
+  // shared, the large response least like the typical one
+  const WHY = ['the ribosomal-protein knockdown whose response looks most like the typical response',
+    'a large response that is about half shared, half its own', 'a large response that is almost entirely its own'];
   const others = P.exemplars.filter((x) => x !== e).map((x) => `<i>${x.symbol}</i> (${pctShared(x)}% shared)`).join(' and ');
   $('cap1').innerHTML =
     `<p><b>How to read it.</b> Each thin vertical line is one of ${nf(P.n_genes)} genes. Its height is how much that gene went up ` +
@@ -123,7 +126,7 @@ function writeCap1() {
     `knockdown. Because the genes are sorted by the typical response, it comes out as one smooth curve; how tall the curve is ` +
     `(β = ${f2(e.beta)}) says how strongly this knockdown sets off the typical response. <b>Bottom row:</b> what is left over — the ` +
     `part only this knockdown does. Add the middle and bottom rows and you get the top row back. All three rows use the same vertical scale.</p>` +
-    `<p><b>This knockdown:</b> ${plain(e.why)}; ${pctShared(e)}% of its response is the shared part. Compare ${others}. ` +
+    `<p><b>This knockdown</b> is ${WHY[st.ex]}: ${pctShared(e)}% of its response is the shared part. Compare ${others}. ` +
     `<i>These three were picked to show the range, not as a random sample.</i></p>`;
   $('capVector').innerHTML = `The same split, as geometry. Think of each response as an arrow: its length is how big the response ` +
     `is, its direction is which genes move and which way. The flat line is the typical response. Drop a line straight down from an ` +
@@ -137,7 +140,7 @@ function writeProse() {
   const W2 = R.W.paper_anchor['2000'], col = (k) => LINES.map((l) => D[l][k]);
   const num = (s) => parseFloat(String(s).replace(/,/g, ''));
   const CRc = 'COMPASS source (Replogle/Nadig/X-Atlas CRISPRi)';
-  $('mByline').textContent = `${nf(M.anchor.ensembl)} CRISPRi knockdowns · six human cell lines · three studies`;
+  $('mByline').innerHTML = `${nf(M.anchor.ensembl)} CRISPR<span class="ci">i</span> knockdowns · six human cell lines · three studies`;
   ['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'w9'].forEach((id, i) => { $(id).textContent =
     ['the two-part split', `${nf(M.anchor.ensembl)} knockdowns`, 'all protein-coding genes', 'Replogle / Nadig', 'what makes it visible', 'stress tests', 'Tahoe · ChemFish', 'MegaFin · MiniFin, measured', 'the synthesis · the next screen'][i]; });
 
@@ -163,7 +166,7 @@ function writeProse() {
     `HepG2 and Jurkat (Nadig), HCT116 and HEK293T (X-Atlas/Orion), using the paper's methods and the authors' own code. It ` +
     `reproduces almost exactly (Plate II). The rest of the page asks: what is the typical response, biologically (III)? Where does ` +
     `the gene-specific biology show up (IV)? What about these screens lets you see all this (V), and how much data does it take (VI)? ` +
-    `Why don't two datasets closer to our own work, Tahoe-100M and ChemFish, show it cleanly (VII)? And would our own screens, ` +
+    `Why don't two datasets closer to our own work, Tahoe-100M and ChemFish, show it cleanly (VII)? Would our own screens, ` +
     `MegaFin and MiniFin, show it — measured, not guessed (VIII)? And what would the next one have to look like (IX)?</p>` +
     `<p class="caution">What we did not reproduce: the paper's methods built on the STRING protein-interaction database (COMPASS-N, ` +
     `COMPASS-H) and its STRING-based prediction of where a knockdown lands. Everything here is about the two-part split itself and ` +
@@ -200,7 +203,9 @@ function writeProse() {
     `training knockdowns — scores 0.02–0.03 higher for us than in the paper, enough to tie CompassX on accuracy. But it tells ` +
     `nothing apart (discrimination ${f2(Math.max(...R.bench['training mean'].pds))}, against CompassX's ${f2(cxPds)}), because it ` +
     `predicts the same thing for every knockdown. That is the paper's own point: accuracy alone rewards guessing the average.</p>` +
-    `<p><b>The curve.</b> How CompassX improves as you measure more knockdowns in the new line, from 10 to 130: ours rises from ` +
+    `<p><b>The curve.</b> How CompassX improves as you measure more knockdowns in the new line, from 10 to 130, set against two ` +
+    `simple baselines: guessing the average of the knockdowns already measured there, and copying the same knockdown's average ` +
+    `response in the other lines. Ours rises from ` +
     `${f3(R.budget.CompassX.pearson[0])} to ${f3(R.budget.CompassX.pearson.at(-1))}, the paper's from ${f3(Pp.budget.pearson[0])} ` +
     `to ${f3(Pp.budget.pearson[1])}.</p>` +
     `<p class="small"><i>A detail:</i> the paper matched genes across studies by name and got ${nf(Pp.anchor)}; we matched by stable ` +
@@ -276,6 +281,8 @@ function writeProse() {
     `2× (median ${f2(cr.median)}×); Tahoe's median is ${f2(ta.median)}×; ChemFish's is ${f2(cf.median)}×, with most conditions under 2×. ` +
     `MegaFin's drug wells, in plum, reach ${f2(mfw.median)}× on that yardstick. But each MegaFin drug sits in a single well, and the fair ` +
     `yardstick for a single well is the noise between wells: against that they reach only ${f2(mfn.median)}× (the dashed outline). ` +
+    `Tahoe's drugs sit one to a well too, and on that fairer yardstick Tahoe falls to ` +
+    `${(E.tahoe.dmso_well.median_drug_effect_norm / E.tahoe.dmso_well.median_norm_well_diff).toFixed(1)}× (Plate IX). ` +
     `MiniFin's three drugs are too few to draw a spread; a single Sorafenib well sits at ` +
     `${f2(M.fin.hvg.minifin.Sorafenib.median_single_well_over_null)}× the noise between wells. The rows line up with the counts beside them. ` +
     `The knockdowns are strong partly because many hit genes a cell cannot live without — a quarter of the targets, against about ` +
@@ -340,7 +347,7 @@ function writeProse() {
     `<b>In this design, a quirk of one well cannot be told apart from a drug response shared by every line.</b> Tahoe's own ` +
     `parts, by contrast, are strongly drug-specific and look like real signal.</p>` +
     `<p><b>ChemFish is weak for plainer reasons:</b> about ${Math.round(c.n_perturbations)} conditions per tissue, effects only ` +
-    `${f2(c.noise_ratio)}× the difference between control embryos, and tissues whose typical responses barely resemble one another ` +
+    `${f2(CP.plates.p5.chemfish.median)}× the difference between control embryos, and tissues whose typical responses barely resemble one another ` +
     `(${f2(c.pair_similarity.u_cosine)} on a scale where 1 is identical). Its tissues agree on which drugs are strong at only ` +
     `${f2(c.checks.mean_pairwise_spearman_from_W)}.</p>` +
     `<p><b>Right panel:</b> the same measurements for each dataset; the black bar spans the six CRISPRi lines, and MegaFin, in plum, ` +
@@ -396,13 +403,15 @@ function writeCap9() {
     `what the next MegaFin would have to look like on the same number of wells.</p>` +
     `<p><b>The bar</b> (top). Each line is one requirement; the red tick is the bar, taken from this page's own tests; each dot is a ` +
     `dataset, filled if it clears the bar. The CRISPRi screens clear all four. MegaFin clears three — enough drugs, enough cells of most ` +
-    `cell types, enough sequencing — and misses the one that matters most: a typical drug's effect is ${x1('ratio', 'MegaFin')} the ` +
-    `difference between two wells with no drug in them. Tahoe clears on size but not on noise (${x1('ratio', 'Tahoe')}); ChemFish falls ` +
-    `short on drugs, sequencing and strength; MiniFin has three drugs. <i>"The noise it has to beat" is the difference between two halves ` +
-    `of the controls for CRISPRi and ChemFish, and between two no-drug wells for Tahoe and MegaFin (for MiniFin, its measured noise ` +
-    `between wells) — the fair yardstick when each drug sits in a well of its own.</i></p>` +
+    `cell types, enough sequencing — and misses the one that matters most: a typical drug well is only ${x1('ratio', 'MegaFin')} the ` +
+    `noise between wells. Tahoe clears on size but not on noise (${x1('ratio', 'Tahoe')}); ChemFish clears on drugs but falls ` +
+    `short on sequencing and strength; MiniFin has three drugs. <i>"The noise it has to beat" is the difference between two halves ` +
+    `of the controls for CRISPRi and ChemFish, and the noise between wells for Tahoe, MegaFin and MiniFin, measured from their wells ` +
+    `with no drug in them — the fair yardstick when each drug sits in a well of its own.</i></p>` +
     `<p><b>Who clears what</b> (middle). A filled circle clears the bar, a half circle partly, an open circle falls short; a dash cannot ` +
-    `be tested. Only the CRISPRi row is full. Tahoe and MegaFin look like COMPASS datasets on paper and fail the checks that matter, for ` +
+    `be tested. Only the CRISPRi row is full; its artefact checks are controls pooled through every lane, independent halves that ` +
+    `agree, and three separate studies that agree. "Spread over many wells or lanes" is what a one-well design lacks: each ` +
+    `CRISPRi knockdown's cells run through every lane and MiniFin's drugs through twelve wells, while each MegaFin drug-dose sits in one. Tahoe and MegaFin look like COMPASS datasets on paper and fail the checks that matter, for ` +
     `the same reason: every context shares each well, and nothing is repeated.</p>` +
     `<p><b>Spend wells on repeats</b> (lower left). Keep MegaFin's 192 wells, set aside ${NEXT.nodrug} for no-drug controls and ` +
     `${NEXT.ref} for two reference drugs, and share out the rest. One well per drug-dose fits ${d1} drugs, but only ${pct(at(F.hvg, 1))} of ` +
@@ -420,7 +429,7 @@ function writeFinTable() {
   const sora = mf.by_pair['cross-plate: Sorafenib 5 uM (the only replicated drug)'];
   const brS = br['Sorafenib vs Sorafenib_1uM@CP01'];
   const rows = [
-    ['enough perturbations (about 30 or more)', `${nf(M.anchor.ensembl)} per line`, `${comp.drug_wells} usable drug wells; a typical response shows reliably from 30`, `${Z.MiniFin.perturbations} drugs`, 'MegaFin yes', ''],
+    ['enough perturbations (about 30 or more)', `${nf(M.anchor.ensembl)} per line`, `${comp.drug_wells} usable drug wells (a median of ${Math.round(mf.per_context_median.n_perturbations)} with enough cells in each cell type); a typical response shows reliably from 30`, `${Z.MiniFin.perturbations} drugs`, 'MegaFin yes', ''],
     ['enough cells of each type (25 or more per perturbation)', `${M.comparison['cells per perturbation x context (median)']['COMPASS source (Replogle/Nadig/X-Atlas CRISPRi)']} per knockdown`,
       `${pct(comp.frac_drug_well_x_cluster_ge25)} of well × cell-type pairs; ${comp.clusters_ge25_in_90pct_of_wells} of ${comp.clusters} clusters in 9 wells of 10`,
       `${pct(cmn.frac_drug_well_x_cluster_ge25)}; ${cmn.clusters_ge25_in_90pct_of_wells} of ${cmn.clusters} clusters`, 'mostly', ''],
@@ -430,16 +439,16 @@ function writeFinTable() {
       `a drug well: ${f2(ev.median_effect_over_null)}× that noise; ${pct(ev.frac_over_2x_null)} over 2×`,
       `a Sorafenib well ${f2(mn.Sorafenib.median_single_well_over_null)}×; 12 wells ${f2(mn.Sorafenib.median_12well_over_null)}×`, 'no', 'no'],
     ['no-drug wells look like no-drug wells', '—',
-      `two differ ${f2(nd.median_diff_over_sampling)}× beyond sampling — as much as a drug; ${pct(nd.median_abs_beta_well_over_median_drug_beta)} of a drug's pull`,
-      `two DMSO wells differ ${f2(mn.median_dmso_pair_diff_over_sampling)}× beyond sampling`, 'no', 'no'],
+      `two differ by ${f2(nd.median_diff_over_sampling)}× what sampling alone would give — as much as a drug; ${pct(nd.median_abs_beta_well_over_median_drug_beta)} of a drug's pull`,
+      `two DMSO wells differ by ${f2(mn.median_dmso_pair_diff_over_sampling)}× what sampling alone would give`, 'no', 'no'],
     ['the higher dose pulls harder', '—', `in ${pct(mf.dose.frac_beta5_gt_beta1)} of drug × cell-type pairs (a coin toss: 50%)`, 'one dose only', 'no', 'no'],
     ['the same drug gives the same answer twice', 'several lines per knockdown',
-      `Sorafenib, plate 1 vs plate 2: ${f2(sora.diff_over_sampling)}× beyond sampling`,
+      `Sorafenib, plate 1 vs plate 2: ${f2(sora.diff_over_sampling)}× what sampling alone would give`,
       `a Sorafenib well vs the other 11: r = ${f2(mn.Sorafenib.median_single_vs_other11_r)}`, 'no', 'no'],
     ['MiniFin and MegaFin line up', '—', `cell types match (median r ${f2(br.median_match_r)})`,
       `Sorafenib's effect does not (r ${f2(brS.median_r)}; a random drug reaches ${f2(brS.median_null_p95)})`, 'cell types only', ''],
   ];
-  $('finTable').innerHTML = `<tr><th>what COMPASS needs</th><th>CRISPRi screens</th><th>MegaFin, measured</th><th>MiniFin, measured</th><th>so far</th></tr>` +
+  $('finTable').innerHTML = `<tr><th>what COMPASS needs</th><th>CRISPR<span class="ci">i</span> screens</th><th>MegaFin, measured</th><th>MiniFin, measured</th><th>so far</th></tr>` +
     rows.map(([a, b, c, d, v, cls]) => `<tr><td>${a}</td><td>${b}</td><td>${c}</td><td>${d}</td><td class="${cls}">${v}</td></tr>`).join('');
 }
 
@@ -452,15 +461,16 @@ function writeTable() {
     ['contexts', 'in what', () => Z.MegaFin.context, () => Z.MiniFin.context],
     ['control design', 'control cells', () => Z.MegaFin.controls, () => Z.MiniFin.controls],
     ['independent replication', 'repeats', () => Z.MegaFin.replicates, () => Z.MiniFin.replicates],
-    ['cells per perturbation x context (median)', 'cells per perturbation, per line or tissue', () => `${nf(Math.round(CP.meta.fin.cells_pair_median.MegaFin))} per drug well and cell type (${nf(mf.composition.median_cells_per_drug_well)} per well)`, () => `${nf(mn.composition.median_cells_per_drug_well)} per well`],
-    ['effect size: median ||z|| / control-noise ||z||', 'response size ÷ control noise (typical line or tissue)', () => `${f2(mf.effect_vs_single_well_null.median_effect_over_control_split)} · but ${f2(mf.effect_vs_single_well_null.median_effect_over_null)} against the noise between wells`, () => `a Sorafenib well: ${f2(mn.Sorafenib.median_single_well_over_null)} against the noise between wells`],
+    ['cells per perturbation x context (median)', 'cells per perturbation, per line or tissue', () => `${nf(Math.round(CP.meta.fin.cells_pair_median.MegaFin))} per drug well and cell type (${nf(mf.composition.median_cells_per_drug_well)} per well)`, () => `${nf(Math.round(CP.meta.fin.cells_pair_median.MiniFin))} per drug well and cell type (${nf(mn.composition.median_cells_per_drug_well)} per well)`],
+    ['effect size: median ||z|| / control-noise ||z||', 'response size ÷ control noise (median)', () => `${f2(mf.effect_vs_single_well_null.median_effect_over_control_split)} · but ${f2(mf.effect_vs_single_well_null.median_effect_over_null)} against the noise between wells`, () => `a Sorafenib well: ${f2(mn.Sorafenib.median_single_well_over_null)} against the noise between wells`,
+      { 'COMPASS source (Replogle/Nadig/X-Atlas CRISPRi)': f2(CP.plates.p5.crispr.median), 'Tahoe-100M': f2(CP.plates.p5.tahoe.median), 'ChemFish 2026_09': f2(CP.plates.p5.chemfish.median) }],
     ['shared-axis strength: energy on axis (median over contexts)', 'share of a response that is the shared part', () => f2(mf.per_context_median.energy_on_axis), () => '— (3 drugs)'],
     ['beta conservation across contexts (Kendall W)', 'lines or tissues agree on which perturbations are strong', () => `${f2(mf.conservation_pooled_ref.kendalls_W_beta)} (${mf.conservation_pooled_ref.W_block_contexts} clusters × ${mf.conservation_pooled_ref.W_block_perturbations} drug-doses; mean pairwise Spearman ${f2(mf.conservation_pooled_ref.mean_pairwise_spearman_from_W)})`, () => '—'],
     ['residual reproducibility: split-half residual r (median)', 'own part repeats when measured twice', () => f2(mf.per_context_median.split_residual_r_median), () => '—'],
-    ['technical confounding: DMSO-well-vs-DMSO-well |beta| / median drug |beta|', 'no-drug well "effect" ÷ a real drug\'s', () => `${f2(mf.nodrug_within_plate.median_abs_beta_well_over_median_drug_beta)}: two no-drug wells differ as much as a drug does (Plate VIII)`, () => `two DMSO wells differ ${f2(mn.median_dmso_pair_diff_over_sampling)}× beyond sampling (Plate VIII)`,
+    ['technical confounding: DMSO-well-vs-DMSO-well |beta| / median drug |beta|', 'no-drug well "effect" ÷ a real drug\'s', () => `${f2(mf.nodrug_within_plate.median_abs_beta_well_over_median_drug_beta)}: a no-drug well pulls on the typical response ${pct(mf.nodrug_within_plate.median_abs_beta_well_over_median_drug_beta)} as hard as a drug (Plate VIII)`, () => `two DMSO wells differ by ${f2(mn.median_dmso_pair_diff_over_sampling)}× what sampling alone would give (Plate VIII)`,
       { 'Tahoe-100M': `${f2(CP.meta.external.tahoe.dmso_well.median_abs_beta_well_over_median_drug_beta)}: a no-drug well pulls on the typical response about a quarter as hard as a typical drug` }],
   ];
-  const head = `<tr><th></th><th>CRISPRi (COMPASS)</th><th>Tahoe-100M</th><th>ChemFish</th><th>MegaFin</th><th>MiniFin</th></tr>`;
+  const head = `<tr><th></th><th>CRISPR<span class="ci">i</span> (COMPASS)</th><th>Tahoe-100M</th><th>ChemFish</th><th>MegaFin</th><th>MiniFin</th></tr>`;
   const body = pick.map(([key, label, mega, mini, over = {}]) => {
     const r = C[key] || {}, esc = (s) => (s === undefined || s === '' ? '—' : String(s));
     const key_ = /control|replication|confounding/.test(key) ? ' class="key"' : '';

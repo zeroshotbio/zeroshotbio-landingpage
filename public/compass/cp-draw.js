@@ -69,6 +69,12 @@ function text(ctx, s, x, y, o = {}) {
   ctx.textAlign = o.align || 'left';
   ctx.textBaseline = o.base || 'alphabetic';
   if (o.spacing !== undefined && 'letterSpacing' in ctx) ctx.letterSpacing = o.spacing + 'px';
+  if (o.clamp) {                                   // keep the whole string inside [3, clamp - 3]
+    const w = ctx.measureText(s).width, a = o.align || 'left';
+    const left = () => (a === 'center' ? x - w / 2 : a === 'right' || a === 'end' ? x - w : x);
+    if (left() + w > o.clamp - 3) x -= left() + w - (o.clamp - 3);
+    if (left() < 3) x += 3 - left();
+  }
   if (o.back) {
     const m = ctx.measureText(s), w = m.width, a = o.align || 'left';
     const x0 = a === 'center' ? x - w / 2 : a === 'right' ? x - w : x;
@@ -83,14 +89,15 @@ function text(ctx, s, x, y, o = {}) {
 
 /* Machine furniture: small, wide-tracked, uppercase sans. */
 function caps(ctx, s, x, y, o = {}) {
-  text(ctx, String(s).toUpperCase(), x, y, { font: font.sans(o.size || 9.5), color: o.color || INK['ink-3'], spacing: o.spacing ?? 1.6, ...o });
+  text(ctx, String(s).toUpperCase().replace(/Β/g, 'β').replace(/CRISPRI/g, 'CRISPRi'), x, y, { font: font.sans(o.size || 9.5), color: o.color || INK['ink-3'], spacing: o.spacing ?? 1.6, ...o });
 }
 
 const lin = (d0, d1, r0, r1) => (v) => r0 + ((v - d0) / (d1 - d0)) * (r1 - r0);
 const logs = (d0, d1, r0, r1) => (v) => r0 + ((Math.log10(v) - Math.log10(d0)) / (Math.log10(d1) - Math.log10(d0))) * (r1 - r0);
 const nf = (n, d = 0) => Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-const f2 = (x) => (x === null || x === undefined ? '–' : Number(x).toFixed(2));
-const f3 = (x) => (x === null || x === undefined ? '–' : Number(x).toFixed(3));
+// a true minus sign, not a hyphen
+const f2 = (x) => (x === null || x === undefined ? '–' : Number(x).toFixed(2).replace(/^-/, '−'));
+const f3 = (x) => (x === null || x === undefined ? '–' : Number(x).toFixed(3).replace(/^-/, '−'));
 
 /* A labelled horizontal axis with ticks (values, positions via scale). */
 function axisX(ctx, sx, y, ticks, o = {}) {
@@ -101,7 +108,7 @@ function axisX(ctx, sx, y, ticks, o = {}) {
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 4); ctx.strokeStyle = INK['ink-3']; ctx.lineWidth = 0.7; ctx.stroke();
     caps(ctx, o.fmt ? o.fmt(t) : t, x, y + 15, { align: 'center', spacing: 0.6, size: 9 });
   });
-  if (o.label) text(ctx, o.label, (a + b) / 2, y + 32, { font: font.serif(12.5, true), color: INK['ink-2'], align: 'center' });
+  if (o.label) text(ctx, o.label, (a + b) / 2, y + 32, { font: font.serif(12.5, true), color: INK['ink-2'], align: 'center', clamp: ctx.canvas.clientWidth });
 }
 
 function axisY(ctx, sy, x, ticks, o = {}) {

@@ -83,7 +83,7 @@ function drawContinuum(cv) {
   ctx.save(); ctx.translate(9, H / 2); ctx.rotate(-Math.PI / 2);
   caps(ctx, 'bigger response →', 0, 0, { align: 'center', size: 8.5 }); ctx.restore();
   LINES.forEach((l, c) => {
-    const x0 = lm + c * (cw + pad), top = 26, bot = H - 30;
+    const narrow = cw < 190, x0 = lm + c * (cw + pad), top = narrow ? 38 : 26, bot = H - 30;   // narrow: ρ drops a line
     const sx = lin(ax[0], ax[1], x0 + 6, x0 + cw - 4), sy = lin(0, mMax, bot, top + 8);
     penRect(ctx, x0, top, cw, bot - top, 20 + c, INK['rule-2'], 0.7);
     const d = P[l];
@@ -91,7 +91,7 @@ function drawContinuum(cv) {
     for (let i = 0; i < d.m.length; i++) { ctx.beginPath(); ctx.arc(sx(d.a[i]), sy(d.m[i]), 1.25, 0, 6.283); ctx.fill(); }
     caps(ctx, l, x0 + 2, 14, { size: 10, color: INK.ink });
     const rho = M.reproduction.spearman_m_a[l], pr = M.paper.spearman_m_a[l];
-    text(ctx, `ρ = ${f2(rho)}` + (pr !== undefined ? `  (paper ${f2(pr)})` : ''), x0 + cw, 14, { font: font.serif(11.5, true), align: 'right', color: INK['ink-2'] });
+    text(ctx, `ρ = ${f2(rho)}` + (pr !== undefined ? `  (paper ${f2(pr)})` : ''), x0 + cw, narrow ? 28 : 14, { font: font.serif(11.5, true), align: 'right', color: INK['ink-2'] });
     caps(ctx, 'like the average →', x0 + cw / 2, H - 12, { align: 'center', size: 8, spacing: 0.6 });
   });
 }
@@ -156,11 +156,12 @@ function drawBudget(cv) {
   const sx = logs(8, 160, L, W - R), sy = lin(0.2, 0.34, Bt, T);
   axisX(ctx, sx, Bt, [10, 25, 50, 100, 130], { label: 'knockdowns measured in the new line', range: [L, W - R] });
   axisY(ctx, sy, L, [0.2, 0.24, 0.28, 0.32], { label: 'prediction accuracy', fmt: f2, range: [Bt, T] });
+  const NAME = { 'training mean': 'guess the average', 'source average': 'copy the other lines', CompassX: 'CompassX' };
   [['training mean', INK['ink-3'], [4, 3]], ['source average', INK['ink-3'], [1, 3]], ['CompassX', INK.ink, null]].forEach(([m, col, dash]) => {
     const d = B[m]; path(ctx, d.n.map(sx), d.pearson.map(sy), col, m === 'CompassX' ? 1.6 : 1.1, dash);
     d.n.forEach((n, i) => dot(ctx, sx(n), sy(d.pearson[i]), m === 'CompassX' ? 2.6 : 1.8, col));
-    const i = 2, off = { CompassX: -9, 'training mean': 16, 'source average': -7 }[m];
-    text(ctx, m, sx(d.n[i]), sy(d.pearson[i]) + off, { font: font.serif(11.5, true), color: col, align: 'center', back: true });
+    const i = { CompassX: 2, 'training mean': 3, 'source average': 1 }[m], off = { CompassX: -9, 'training mean': 16, 'source average': -8 }[m];
+    text(ctx, NAME[m], sx(d.n[i]), sy(d.pearson[i]) + off, { font: font.serif(11.5, true), color: col, align: 'center', back: true, clamp: W });
   });
   P.n.forEach((n, i) => dot(ctx, sx(n), sy(P.pearson[i]), 4.4, null, INK['ink-2']));
   text(ctx, 'paper', sx(P.n[0]) + 7, sy(P.pearson[0]) + 4, { font: font.serif(11, true), color: INK['ink-2'] });
@@ -206,6 +207,16 @@ function drawSpectrum(cv, st) {
   });
 }
 
+function sigName(s) {
+  // one casing for every programme name, spelled as the captions spell them (MYC, NF-κB, TNF-α)
+  return String(s).replace(/^Hallmark /, '').toLowerCase()
+    .replace(/tnf-alpha signaling via nf-kb/, 'TNF-α signalling via NF-κB').replace(/signaling/g, 'signalling')
+    .replace(/\bmyc\b/g, 'MYC').replace(/\be2f\b/g, 'E2F').replace(/\bg2-m\b/g, 'G2-M').replace(/\bmtorc1\b/g, 'mTORC1')
+    .replace(/\bdna\b/g, 'DNA').replace(/\bv([12])\b/g, 'V$1').replace(/\ber\b/g, 'ER').replace(/\bupr\b/g, 'UPR')
+    .replace(/\bisr\b/g, 'ISR').replace(/\batf4\b/g, 'ATF4').replace(/\(eif\)/g, '(EIF)').replace(/\(mt-\)/g, '(MT-)')
+    .replace(/^(?!p53|mTORC1)./, (c) => c.toUpperCase());
+}
+
 function drawSignatures(cv) {
   const { ctx, W, H } = setup(cv);
   const S = CP.plates.p3.signatures.slice().sort((a, b) =>
@@ -215,7 +226,7 @@ function drawSignatures(cv) {
   LINES.forEach((l, j) => caps(ctx, l, L + cw * (j + 0.5), 16, { align: 'center', size: 8.5, spacing: 0.6 }));
   S.forEach((s, i) => {
     const y = T + rh * (i + 0.5);
-    text(ctx, s.signature.replace('Hallmark ', ''), L - 10, y + 4, { font: font.serif(11.5), color: INK['ink-2'], align: 'right' });
+    text(ctx, sigName(s.signature), L - 10, y + 4, { font: font.serif(11.5), color: INK['ink-2'], align: 'right' });
     penLine(ctx, L, y, W - R, y, 90 + i, rgba(INK.rule, 0.35), 0.5);
     LINES.forEach((l, j) => {
       const v = s[l], r = Math.max(1, rh * 0.46 * Math.sqrt(Math.abs(v) / vmax)), x = L + cw * (j + 0.5);
@@ -230,9 +241,18 @@ function shortTerm(s) {
   return String(s || '').replace(/\s*\((GO:\d+|q=[^)]*)\)/g, '').replace(/\s*R-HSA-\d+/g, '').trim();
 }
 
+/* Enrichr terms arrive in Title Case; set them in sentence case, keeping acronyms (RNA, tRNA, mRNA, II, N-linked). */
+function sentenceTerm(s) {
+  return shortTerm(s).split(' ').map((w, i) => {
+    const keep = /[A-Z]{2}/.test(w) || /[a-z][A-Z]/.test(w) || /^[A-Z]-/.test(w);
+    return keep ? w : i === 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase();
+  }).join(' ');
+}
+function fitWords(s, n) { return s.length <= n ? s : s.slice(0, n).replace(/[\s,]+\S*$/, '') + '…'; }
+
 function drawResidual(cv, st) {
   const { ctx, W, H } = setup(cv);
-  const P = CP.plates.p4, pad = 26, side = Math.min(W, H) - 2 * pad;
+  const P = CP.plates.p4, pad = 26, side = Math.min(W, H) - 2 * pad - (W < 600 ? 18 : 0);   // narrow: room for a two-line note
   const ox = (W - side) / 2, oy = pad;
   const sx = (v) => ox + v * side, sy = (v) => oy + (1 - v) * side;
   st.p4geom = { sx, sy };
@@ -256,7 +276,7 @@ function drawResidual(cv, st) {
     const xs = [], ys = [];
     P.label.forEach((lab, i) => { if (lab === c.id) { xs.push(P.x[i]); ys.push(P.y[i]); } });
     xs.sort((a, b) => a - b); ys.sort((a, b) => a - b);
-    const s = shortTerm(c.members).toLowerCase().slice(0, 30), w = ctx.measureText(s).width;
+    const s = fitWords(sentenceTerm(c.members), 34), w = ctx.measureText(s).width;
     const bx = sx(xs[xs.length >> 1]), by = sy(ys[ys.length >> 1]);
     for (const [dx, dy] of [[0, 0], [0, -14], [0, 14], [22, 0], [-22, 0], [0, -26], [0, 26]]) {
       const box = [bx + dx - w / 2 - 3, by + dy - 10, w + 6, 14];
@@ -267,7 +287,11 @@ function drawResidual(cv, st) {
       break;
     }
   });
-  caps(ctx, 'map of own parts (t-SNE) · near means similar; nothing else', ox, H - 6, { size: 8.5 });
+  const note = 'map of own parts (t-SNE) · near means similar; nothing else';
+  ctx.save(); ctx.font = font.sans(8.5); if ('letterSpacing' in ctx) ctx.letterSpacing = '1.6px';
+  const fits = ctx.measureText(note.toUpperCase()).width < W - ox - 4; ctx.restore();
+  if (fits) caps(ctx, note, ox, H - 6, { size: 8.5 });
+  else { caps(ctx, 'map of own parts (t-SNE)', ox, H - 18, { size: 8.5 }); caps(ctx, 'near means similar; nothing else', ox, H - 6, { size: 8.5 }); }
 }
 
 function drawReliability(cv) {
@@ -275,7 +299,8 @@ function drawReliability(cv) {
   const D = CP.meta.decomposition.per_line, L = 78, R = 44, T = 34, rh = (H - T - 64) / LINES.length;
   const sx = lin(0, 1, L, W - R);
   const keys = [['split_cos_u', 'typical response', INK.ink, 3.2], ['split_beta_r', 'strength β', INK['ink-2'], 2.6], ['split_residual_r', 'own part', INK.t3, 3.0]];
-  keys.forEach(([, n, col], i) => { dot(ctx, L + i * 130, 14, 3, col); text(ctx, n, L + i * 130 + 8, 18, { font: font.serif(12, true), color: col }); });
+  const lx0 = W < 480 ? 8 : L, lg = W < 480 ? (W - 16) / 3 : 130;   // narrow: the legend starts at the edge
+  keys.forEach(([, n, col], i) => { dot(ctx, lx0 + i * lg, 14, 3, col); text(ctx, n, lx0 + i * lg + 8, 18, { font: font.serif(12, true), color: col }); });
   LINES.forEach((l, i) => {
     const y = T + rh * (i + 0.5);
     text(ctx, l, L - 10, y + 4, { font: font.serif(12.5, true), align: 'right' });
@@ -366,7 +391,7 @@ function drawDepth(cv) {
   const cells = [['CRISPRi', num(CC[col])], ['Tahoe', num(CC['Tahoe-100M'])], ['ChemFish', num(CC['ChemFish 2026_09'])],
     ['MegaFin', Math.round(CP.meta.fin.cells_pair_median.MegaFin)]];
   const L = Math.min(150, W * 0.12), R = 30, sx = logs(20, 30000, L, W - R);
-  [[umis, 'molecules per cell', H * 0.28], [cells, 'cells per perturbation, per context', H * 0.60]].forEach(([rows, lab, y]) => {
+  [[umis, 'molecules per cell', H * 0.28], [cells, 'cells per perturbation, per line or cell type', H * 0.60]].forEach(([rows, lab, y]) => {
     caps(ctx, lab, L, y - 48, { size: 9 });
     penLine(ctx, L, y, W - R, y, 130 + y, INK.rule, 0.7);
     // labels alternate below / above by rank; a label too close to the last one on its side steps further out
@@ -471,15 +496,15 @@ function drawRemove(cv) {
   const { ctx, W, H } = setup(cv);
   const S = CP.meta.stress, ref = CP.meta.stress.controls_cons['stratified pool (reference)'];
   const L = 50, R = 16, T = 18, B = H - 50, sx = lin(0, 75, L, W - R), sy = lin(-0.6, 1, B, T);
-  axisX(ctx, sx, B, [0, 10, 25, 50, 75], { fmt: (v) => v + '%', label: 'strongest-loading perturbations removed', range: [L, W - R] });
-  axisY(ctx, sy, L, [-0.5, 0, 0.5, 1], { fmt: (v) => v.toFixed(1), range: [B, T] });
+  axisX(ctx, sx, B, [0, 10, 25, 50, 75], { fmt: (v) => v + '%', label: 'strongest knockdowns removed', range: [L, W - R] });
+  axisY(ctx, sy, L, [-0.5, 0, 0.5, 1], { fmt: (v) => v.toFixed(1).replace(/^-/, '−'), range: [B, T] });
   guide(ctx, L, sy(0), W - R, sy(0));
   LINES.forEach((l) => { const d = S.remove_top_cos[l]; path(ctx, [sx(0), ...d.map((p) => sx(p[0]))], [sy(1), ...d.map((p) => sy(p[1]))], rgba(INK.t3, 0.55), 0.9); });
   [[1, 'Replogle/Nadig', null], [2, 'X-Atlas pair', [4, 3]]].forEach(([ix, lab, dash], m) => {
     const pts = [[0, ref[m]], ...S.remove_top_cons.map((r) => [parseFloat(r[0]), r[ix]])];
     path(ctx, pts.map((p) => sx(p[0])), pts.map((p) => sy(p[1])), INK.ink, 1.6, dash);
     pts.forEach((p) => dot(ctx, sx(p[0]), sy(p[1]), 2.3, INK.ink));
-    const q = pts[m ? 4 : 5]; text(ctx, `lines agree on β, ${lab}`, sx(q[0]) + 6, sy(q[1]) + (m ? 18 : -10), { font: font.serif(11, true), back: true });
+    const q = pts[m ? 4 : 5]; text(ctx, `lines agree on β, ${lab}`, sx(q[0]) + 6, sy(q[1]) + (m ? 18 : -10), { font: font.serif(11, true), back: true, clamp: W });
   });
   text(ctx, 'faint: does each line’s typical response still point the same way?', L + 6, B - 8, { font: font.serif(10.5, true), color: INK.t3 });
 }
@@ -488,10 +513,11 @@ function drawControls(cv) {
   const { ctx, W, H } = setup(cv);
   const C = CP.meta.stress.controls_cos, CC = CP.meta.stress.controls_cons;
   const sets = ['stratified pool (reference)', 'random 10k', 'all controls', 'single largest batch'];
+  const NAME = { 'stratified pool (reference)': 'a mixed pool (reference)', 'random 10k': 'any 10,000 at random', 'all controls': 'all controls', 'single largest batch': 'one batch only' };
   const L = 170, R = 26, T = 26, rh = (H - T - 56) / sets.length, sx = lin(0, 1, L, W - R);
   sets.forEach((s, i) => {
     const y = T + rh * (i + 0.5), bad = s.startsWith('single');
-    text(ctx, s, L - 10, y + 4, { font: font.serif(12, true), align: 'right', color: bad ? INK.select : INK.ink });
+    text(ctx, NAME[s], L - 10, y + 4, { font: font.serif(12, true), align: 'right', color: bad ? INK.select : INK.ink });
     penLine(ctx, L, y, W - R, y, 170 + i, rgba(INK.rule, 0.6), 0.5);
     LINES.forEach((l) => dot(ctx, sx(Math.max(0, C[l][s])), y, 2.8, bad ? INK.select : rgba(INK.ink, 0.75)));
     text(ctx, `lines agree on β: ${f2(CC[s][0])} / ${f2(CC[s][1])}`, L - 10, y + 17, { font: font.serif(10.5), align: 'right', color: INK['ink-3'] });
@@ -594,8 +620,8 @@ function drawFinDose(cv) {
   const rows = [['Tahoe (three doses)', M.external.tahoe.checks.frac_rho_positive, INK['ink-3']],
     ['MegaFin', M.fin.hvg.megafin.dose.frac_beta5_gt_beta1, INK.t6], ['MegaFin, second gene panel', M.fin.expressed.megafin.dose.frac_beta5_gt_beta1, INK.t6]];
   const sx = lin(0, 1, L, W - R), B = H - 40;
-  caps(ctx, 'share of drug × context pairs where the higher', 8, 12, { size: 8.5 });
-  caps(ctx, 'dose pulls harder on the typical response', 8, 24, { size: 8.5 });
+  caps(ctx, 'share of drug × cell-type pairs (lines, for Tahoe) where', 8, 12, { size: 8.5, spacing: 0.8 });
+  caps(ctx, 'the higher dose pulls harder on the typical response', 8, 24, { size: 8.5, spacing: 0.8 });
   rows.forEach(([n, v, col], i) => {
     const y = T + 16 + i * 34;
     text(ctx, n, L - 8, y + 10, { font: font.serif(11.5, true), align: 'right' });
@@ -634,7 +660,8 @@ const dsInk = () => ({ CRISPRi: INK.ink, Tahoe: INK.t4, ChemFish: INK.t1, MegaFi
 
 /* The four requirements that have a number, each with its bar (from this page's own tests) and each dataset's value.
    "The noise it has to beat": halves of the controls where controls share the screen (CRISPRi, ChemFish's embryos),
-   two no-drug wells where every context shares a well (Tahoe, MegaFin), MiniFin's measured noise between wells. */
+   the noise between wells where every context shares a well: Tahoe from its two no-drug wells, MegaFin and MiniFin
+   from the stage-15 single-well noise floor (the same 1.11x and 1.08x Plates V, VII and VIII print). */
 function gauges() {
   const M = CP.meta, E = M.external, Z = M.zeroshot, C = M.comparison, F = M.fin, mf = F.hvg.megafin, mn = F.hvg.minifin, w = E.tahoe.dmso_well;
   const num = (s) => parseFloat(String(s).replace(/,/g, '')), CR = 'COMPASS source (Replogle/Nadig/X-Atlas CRISPRi)';
@@ -653,7 +680,7 @@ function gauges() {
     { key: 'ratio', title: 'a typical response ÷ the noise it has to beat', bar: 2, lo: 0.5, hi: 12, fmt: (v) => v.toFixed(1) + '×',
       why: 'a response should be at least twice the noise',
       v: { CRISPRi: CP.plates.p5.crispr.median, Tahoe: w.median_drug_effect_norm / w.median_norm_well_diff, ChemFish: CP.plates.p5.chemfish.median,
-           MegaFin: mf.median_drug_effect_norm / mf.nodrug_within_plate.median_norm_diff, MiniFin: mn.Sorafenib.median_single_well_over_null } },
+           MegaFin: mf.effect_vs_single_well_null.median_effect_over_null, MiniFin: mn.Sorafenib.median_single_well_over_null } },
   ];
 }
 
@@ -686,11 +713,11 @@ function drawBar(cv) {
 function drawScore(cv) {
   const { ctx, W, H } = setup(cv);
   const G = gauges(), col = dsInk();
-  const heads = [['many', 'perturbations'], ['enough cells', 'per cell type'], ['enough', 'sequencing'], ['beats the', 'noise'],
-    ['controls mixed', 'in with the rest'], ['each perturbation', 'repeated'], ['passes the', 'artefact checks']];
+  const heads = [['many', 'perturbations'], ['enough cells', 'per cell type'], ['enough', 'sequencing'], ['beats', 'the noise'],
+    ['controls', 'mixed in'], ['spread over many', 'wells or lanes'], ['passes the', 'artefact checks']];
   const fixed = { CRISPRi: ['y', 'y', 'y'], Tahoe: ['n', 'n', 'n'], ChemFish: ['n', 'p', '-'], MegaFin: ['n', 'n', 'n'], MiniFin: ['n', 'y', '-'] };
   const verdict = { CRISPRi: ['yes', 'the paper’s result, reproduced'], Tahoe: ['it looks like it', 'but it is the wells'],
-    ChemFish: ['no', 'too few drugs, too weak'], MegaFin: ['it looks like it', 'but not yet: no repeats'], MiniFin: ['no', 'three drugs, but it measures the noise'] };
+    ChemFish: ['no', 'too weak, too shallow'], MegaFin: ['it looks like it', 'but not yet: no repeats'], MiniFin: ['no', 'three drugs, but it measures the noise'] };
   const L = 96, T = 54, vw = Math.min(250, W * 0.24), cw = (W - L - vw - 16) / heads.length, rh = (H - T - 34) / DS_ORDER.length, vx = L + heads.length * cw + 16;
   heads.forEach(([a, b], j) => { const x = L + cw * (j + 0.5);
     caps(ctx, a, x, T - 28, { align: 'center', size: 8.5, spacing: 0.6 }); caps(ctx, b, x, T - 15, { align: 'center', size: 8.5, spacing: 0.6 }); });
@@ -708,8 +735,8 @@ function drawScore(cv) {
       if (m === 'p') { ctx.beginPath(); ctx.moveTo(x, y - r); ctx.arc(x, y, r, -Math.PI / 2, Math.PI / 2); ctx.closePath(); ctx.fillStyle = INK.ink; ctx.fill(); }
     });
     const [v, why] = verdict[d];
-    text(ctx, v, vx, y, { font: v === 'yes' ? `600 14px ${INK.serif}` : font.serif(14, true), color: v === 'yes' ? INK.ink : INK['ink-2'] });
-    text(ctx, why, vx, y + 16, { font: font.serif(11.5, true), color: INK['ink-3'] });
+    text(ctx, v, vx, y, { font: v === 'yes' ? `600 14px ${INK.serif}` : font.serif(14, true), color: v === 'yes' ? INK.ink : INK['ink-2'], clamp: W });
+    text(ctx, why, vx, y + 16, { font: font.serif(11.5, true), color: INK['ink-3'], clamp: W });
   });
   const ly = H - 12; let lx = L;
   [['y', 'clears the bar'], ['p', 'partly'], ['n', 'falls short'], ['-', 'cannot be tested']].forEach(([m, lab]) => {
@@ -739,7 +766,7 @@ function drawTrade(cv) {
     text(ctx, nf(v), x + w / 2, sy1(v) - 4, { font: font.serif(11.5), align: 'center' });
   });
   const y30 = sy1(30); guide(ctx, L, y30, W - R, y30, INK.select);
-  text(ctx, 'needed: 30', W - R, y30 - 4, { font: font.serif(11, true), color: INK.select, align: 'right' });
+  text(ctx, 'need 30', L - 6, y30 + 4, { font: font.serif(10.5, true), color: INK.select, align: 'right' });
   caps(ctx, 'drug × cell-type effects clearing twice the noise', L, mid + 18, { size: 8.5 });
   const sy2 = lin(0, 0.6, B, mid + 32);
   axisY(ctx, sy2, L, [0, 0.2, 0.4, 0.6], { fmt: pct, range: [B, mid + 32] });
