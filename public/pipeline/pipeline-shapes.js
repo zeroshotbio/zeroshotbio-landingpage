@@ -8981,8 +8981,9 @@ function drawReadCycle(g,n){
      a flat disc. Two units was asked for first, then five; LEN is five at
      the authored width and a fraction of it at any other, so a resize
      carries the cloud with it, and the label prints what LEN actually is.
-     The line rides high in the doorway so the sphere, centred on it, sits
-     on the ground rather than through it. */
+     The line rides high in the doorway so the sphere, centred on it while
+     it is small, sits on the ground rather than through it; see GR below
+     for where it goes once it is not. */
   const LEN=n.w*5/1.60, dir=[1,0], za=h*0.66, ym=Y(0.17);
   const RS=n.w*0.28, xc=x1+dir[0]*LEN;
   const A=P(x1,ym,za), C=P(xc,ym,za);
@@ -9029,7 +9030,9 @@ function drawReadCycle(g,n){
   const haze=[[1.12,".06"],[0.85,".08"],[0.5,".11"]].map(([a,o])=>({a,
     e:add(g,el("ellipse",{cx:f1(C[0]),cy:f1(C[1]),rx:f1(HX*a),ry:f1(HY*a),
       fill:"var(--fg2)","fill-opacity":o}))}));
-  const rn=rng(90417), neb=[], BL=n.w*0.045, NB=90;
+  /* ninety bars filled the ball at its old full size; at ten times the
+     radius they would be a handful of specks, so there are more of them */
+  const rn=rng(90417), neb=[], BL=n.w*0.045, NB=240;
   for(let i=0;i<NB;i++){
     const rad=RS*Math.pow(0.15+0.85*rn(),0.4), cz=2*rn()-1, th=rn()*Math.PI*2;
     const bar=add(g,el("line",{x1:f1(C[0]),y1:f1(C[1]),x2:f1(C[0]+1),y2:f1(C[1]),
@@ -9042,18 +9045,30 @@ function drawReadCycle(g,n){
      run starts empty. The ball's volume follows the count, so its radius
      goes as the cube root, and bars join it one by one in the order they
      were drawn; the counter over it prints the count the fill stands for.
-     A figure, not a readout: the rate is the picture's, not an instrument's. */
-  const READS=3e9, GROW=18, FULL=2.5;
-  const cnt=P(xc,ym,za+RS);
-  const tally=add(g,el("text",{x:f1(cnt[0]),y:f1(cnt[1]-3*SC),"text-anchor":"middle",
+     A figure, not a readout: the rate is the picture's, not an instrument's.
+
+     IT GROWS TO TEN TIMES, asked for from the page: GR is the full ball's
+     radius over RS, and it starts as small as it always did. A ball that
+     big centred on the stream would sink most of itself through the ground,
+     so its centre rides up once the radius passes the stream's height and
+     the ball sits on the ground, swelling upward and outward. The stream
+     stays level and meets it wherever the surface crosses its height. */
+  const READS=3e9, GROW=18, FULL=2.5, GR=10;
+  const tally=add(g,el("text",{x:f1(C[0]),y:f1(C[1]),"text-anchor":"middle",
     "font-size":f2(4.6*SC),"font-weight":"700",fill:"var(--fg2)",stroke:"var(--bg)",
     "stroke-width":f2(1.1*SC),"stroke-opacity":".85","paint-order":"stroke","stroke-linejoin":"round"}));
-  let gr=1, shown=NB, tallyS="";
+  let gr=1, zb=za, shown=NB, tallyS="";
   const grow=acc=>{
-    gr=Math.cbrt(Math.max(acc,0.004)); shown=Math.ceil(acc*NB);
-    haze.forEach(H=>{ H.e.setAttribute("rx",f1(HX*H.a*gr)); H.e.setAttribute("ry",f1(HY*H.a*gr)); });
-    const Ep=P(xc-RS*gr*0.8,ym,za), d=`M${f1(A[0])} ${f1(A[1])}L${f1(Ep[0])} ${f1(Ep[1])}`;
+    gr=GR*Math.cbrt(Math.max(acc,0.004/(GR*GR*GR))); shown=Math.ceil(acc*NB);
+    const R=RS*gr; zb=Math.max(za,R);
+    const Cb=P(xc,ym,zb), cx=f1(Cb[0]), cy=f1(Cb[1]);
+    haze.forEach(H=>{ H.e.setAttribute("cx",cx); H.e.setAttribute("cy",cy);
+      H.e.setAttribute("rx",f1(HX*H.a*gr)); H.e.setAttribute("ry",f1(HY*H.a*gr)); });
+    const hw=Math.sqrt(Math.max(0,R*R-(zb-za)*(zb-za)));
+    const Ep=P(xc-hw*0.8,ym,za), d=`M${f1(A[0])} ${f1(A[1])}L${f1(Ep[0])} ${f1(Ep[1])}`;
     wire.setAttribute("d",d); flow.setAttribute("d",d);
+    const cnt=P(xc,ym,zb+R);
+    tally.setAttribute("x",f1(cnt[0])); tally.setAttribute("y",f1(cnt[1]-3*SC));
     const nr=acc*READS;
     const s=nr>=1e9 ? `${(nr/1e9).toFixed(2)} billion reads` : `${Math.round(nr/1e6)} million reads`;
     if(s!==tallyS){ tallyS=s; tally.textContent=s; }
@@ -9062,7 +9077,7 @@ function drawReadCycle(g,n){
   const turn=ph=>neb.forEach((R,i)=>{
     if(i>=shown){ if(R.o!=="0"){ R.o="0"; R.bar.setAttribute("stroke-opacity","0"); } return; }
     const rr=R.rad*gr, a=R.th+ph, c=Math.cos(a), s=Math.sin(a), q=rr*Math.sqrt(1-R.cz*R.cz);
-    const x=xc+c*q, y=ym+s*q, z=za+rr*R.cz;
+    const x=xc+c*q, y=ym+s*q, z=zb+rr*R.cz;
     const p0=P(x+s*BL,y-c*BL,z), p1=P(x-s*BL,y+c*BL,z);
     /* the viewer looks down the x + y diagonal, so that is nearness */
     const dep=((c+s)*Math.SQRT1_2*q/(RS*gr)+1)/2;
