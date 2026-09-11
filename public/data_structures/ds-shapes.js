@@ -92,8 +92,18 @@ DRAW.vault = (g, n) => {
      a dataset's neighbours mean something. Column WIDTHS stay proportional to
      the bytes in each group — the whole point of this map is that area encodes
      size, and a 50/50 split would quietly break that across the divide. */
+  /* WIDE, NOT SQUARE. Squarify aims every tile at 1:1, which is the worst shape for a caption that
+     is always set horizontally: a key like micdropseq/ shrinks to the tile's width while half its
+     height goes unused. So lay out on a canvas stretched vertically by TILE_WIDE and squash the
+     result back - every area is exactly what it was (area is still the encoding), but the layout now
+     optimises for tiles TILE_WIDE times wider than tall. ?wide=<k> overrides it, for tuning. */
+  const TILE_WIDE = Math.max(1, parseFloat(new URLSearchParams(location.search).get("wide")) || 3);
+  const layoutWide = (tiles, x0, y0, w0, h0) =>
+    squarify(tiles, x0, 0, w0, h0 * TILE_WIDE)
+      .map(L => ({ item: L.item, x: L.x, y: y0 + L.y / TILE_WIDE, w: L.w, h: L.h / TILE_WIDE }));
+
   const drawTiles = (tiles, x0, y0, w0, h0, max) => {
-    squarify(tiles, x0, y0, w0, h0).forEach(L => {
+    layoutWide(tiles, x0, y0, w0, h0).forEach(L => {
       const it = L.item;
       /* opacity carries a second channel — object count density — so two
          tiles of equal bytes are still distinguishable when one is a single

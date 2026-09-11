@@ -440,6 +440,22 @@ a reason to open. The pins are now a `pins` command in two repos — ask the
 machine — but the prose has no such check, and `check-fit.mjs` cannot read.
 
 
+## Tiles lay out wide, not square — 2026-09-11
+
+**Squarify aimed every tile at 1:1, which is the worst shape for a horizontal caption.** A key like
+`micdropseq/` shrank to the tile's width while half its height sat empty. `drawTiles` now lays out on a
+canvas stretched vertically by `TILE_WIDE` (in `ds-shapes.js`) and squashes the result back, so the
+layout optimises for tiles `TILE_WIDE` times wider than tall. **Every area is exactly what it was** —
+area is still the encoding, and nothing here is a minimum size.
+
+`TILE_WIDE = 3`, chosen by measurement across Silver and Open Source (58 tile keys): at 1, 26 keys
+rendered at 8 px or taller and the median was 7.0 px; at 2.2, 30 and 8.0 px; at 3, 30 and 9.0 px. The
+cost is that a tile shorter than about one line now sheds its size row sooner (Silver's `zmap/`) —
+that is the existing shed-a-row rule, not a regression. `?wide=<k>` on the page URL overrides the
+factor, for tuning without an edit.
+
+Checks at 3: `check-overlaps` 0 pairs (170 text nodes), `check-clicks` 18, `check-fit` the known 7.
+
 ## The state of the data — 2026-09-10, last. The open-source bucket is full.
 
 ```
