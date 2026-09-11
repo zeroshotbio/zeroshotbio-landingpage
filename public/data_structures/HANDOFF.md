@@ -465,6 +465,20 @@ prefix with no entry still draws, grey, in "Other". And any prefix starting with
 
 Checks: `check-overlaps` 0 pairs (140 text nodes), `check-clicks` 18, `check-fit` the known 7.
 
+## Walls shrink below fit; the open-source vault tops its lane — 2026-09-11
+
+**Non-scaling walls scale again below the fit zoom.** Held at a constant screen width, tile walls kept
+1.6 px while the 0.10-unit gaps between tiles went sub-pixel on a far zoom-out, so neighbouring walls
+piled into each other. `plate()` with `nss` now writes `style="stroke-width: calc(var(--wz, 1) * <sw>px)"`,
+and `ds-view.js apply()` sets `--wz = min(1, zoom / fitZ)` on the root group, only when that value
+changes, so panning and zooming above fit touch no styles. At and above fit nothing changed. At the 0.6×
+floor a 1.6 px wall is 0.96 px.
+
+**OPEN `y 52 → 26.5`.** Its top edge is at 0, level with BRONZE's, at the top of the AWS S3 open-source
+lane. No conduit touches OPEN, so nothing else moved.
+
+**Checks.** overlaps 0 · clicks 17/17 · fit 2 (pre-existing SPUB/GFETCH) · pinch 0 hidden, no errors.
+
 ## Tile outlines sit on the tile, captions fill it, bands breathe — 2026-09-11
 
 **One rectangle per tile.** Every wall `drawTiles` draws — base edge, accent outline, split-tile legacy

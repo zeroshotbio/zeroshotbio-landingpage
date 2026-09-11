@@ -47,9 +47,12 @@ function plate(g, x, y, w, h, s) {
     stroke: s.stroke || "var(--stroke)", "stroke-width": s.sw === undefined ? 1 : s.sw,
     "stroke-opacity": s.so === undefined ? 1 : s.so,
     "stroke-dasharray": s.dash || "none",
-    /* nss: the wall keeps its on-screen width at every zoom (sw is then in screen pixels), so
-       zooming in makes it thinner relative to what it encloses instead of swamping it */
-    ...(s.nss ? { "vector-effect": "non-scaling-stroke" } : {})
+    /* nss: the wall keeps its on-screen width at every zoom above fit (sw is then in screen pixels), so
+       zooming in makes it thinner relative to what it encloses instead of swamping it. Below fit it
+       shrinks with the map (--wz = zoom / fit zoom, set by ds-view apply()), else neighbouring walls
+       grow wider than the gap between their tiles and pile into each other when zoomed far out. */
+    ...(s.nss ? { "vector-effect": "non-scaling-stroke",
+                  style: `stroke-width:calc(var(--wz, 1) * ${s.sw === undefined ? 1 : s.sw}px)` } : {})
   });
 }
 

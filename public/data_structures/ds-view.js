@@ -308,7 +308,14 @@ const MIN_ZOOM_OF_FIT = 0.6;
 let fitZ = 0;
 const MAX_ZOOM = 40;   /* was 4: the smallest tile caption (tomoseq/) is ~0.2pt and needs ~40x to read (2026-09-11) */
 const clampZ = z => Math.max(fitZ * MIN_ZOOM_OF_FIT, Math.min(MAX_ZOOM, z));
-function apply() { root.setAttribute("transform", `translate(${cam.x},${cam.y}) scale(${cam.z})`); }
+/* --wz: tile walls are non-scaling, but below the fit zoom they shrink with the map (see plate()).
+   Written only when it changes, so panning and zooming above fit touch no styles. */
+let wz = 1;
+function apply() {
+  root.setAttribute("transform", `translate(${cam.x},${cam.y}) scale(${cam.z})`);
+  const nz = fitZ ? +Math.min(1, cam.z / fitZ).toFixed(3) : 1;
+  if (nz !== wz) { wz = nz; root.style.setProperty("--wz", nz); }
+}
 
 function contentBox() {
   const b = gContent.getBBox();
