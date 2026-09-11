@@ -307,9 +307,12 @@ const NODES = [
    rule: the request took the cycler off the bench and kept the barcoding in
    the black inset, which is what B8a and C1 were asked for one after the
    other. The record does not move for it. It never cited an instrument — the
-   cycle band below is section 3.5's table and not a readout — and the plate,
-   the spent well and the transfer that carry the rest of the drawing are all
-   still there to be counted against it. */
+   cycle band below is section 3.5's table and not a readout.
+
+   THEN IT LOST THE BENCH, from the same button: the plate, the strip, the
+   tile and the transfer came off and the inset is the station. The record
+   still does not move — one well per sublibrary, wells never reused, is
+   section 3.5's to state, and no longer the drawing's to count. */
 {id:"R4p", key:"C2", group:"Sequencing library prep", shape:"indexpcr", name:"Round 4 — indexing PCR", x:17.1, y:R2, lane:"r2", w:0.72, d:0.72, h:0.42,
  sub:"UDI plate · applied by PCR, not in-cell",
  does:"The fourth barcode. It identifies the sublibrary rather than the sample, it is added by PCR long after the cells were lysed, and it arrives as a standard Illumina index — which is why the read appears to carry only three barcodes when the cell identity is really four.",
