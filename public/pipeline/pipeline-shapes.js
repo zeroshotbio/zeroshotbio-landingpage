@@ -8753,6 +8753,8 @@ DRAW.sizecheck = drawSizeCheck;
    off as the scan's line reaches it, a little late by a lag of its own, so
    the flashes pop in a scatter behind the line rather than as a wipe. The
    lags are drawn once and kept, so every cycle fires the same pattern.
+   A later request took the line itself away and kept the flashes, so the
+   sweep is now only the order they go off in — nothing is drawn crossing.
 
    EACH CYCLE READS ANOTHER BASE, so while the field is dark every cluster is
    recoloured, always to a base other than the one it just showed — the same
@@ -8949,18 +8951,18 @@ function drawReadCycle(g,n){
      the scan crosses in under a second and the gap between rounds is only
      long enough to see that one has ended — a tenth of a second held, a
      fifth dimming, a beat of dark. LAG is the most any cluster trails the
-     line, FLARE how long a bulb takes to die back to its dot. A request
+     sweep, FLARE how long a bulb takes to die back to its dot. A request
      once cut both to a thin band riding the line; the next asked for the
      scatter back, so these are the values from before it. */
   const SCAN=0.9, LAG=0.2, FLARE=0.28, HOLD=0.1, DIM=0.2, DARK=0.12;
   const CYC=SCAN+LAG+HOLD+DIM+DARK;
 
-  /* THE SCAN LINE'S DIRECTION, needed by the clusters as well as the line:
-     the line is level ON THE SCREEN, which on this plane is a line of
+  /* THE SWEEP'S DIRECTION, which outlived the line that used to draw it:
+     the sweep is level ON THE SCREEN, which on this plane is a line of
      constant x + y, and in the unit disk that is a chord at distance d from
      the centre along (ex, ey). A cluster at (u, v) is reached when d passes
      u·NN + v·NN. */
-  const L=Math.hypot(ex,ey), NN=[ex/L,ey/L], TT=[ey/L,-ex/L];
+  const L=Math.hypot(ex,ey), NN=[ex/L,ey/L];
 
   /* ---- THE CLUSTERS ---------------------------------------------------------
      One to a grid cell, jittered a little inside it, and only the cells that
@@ -8991,18 +8993,6 @@ function drawReadCycle(g,n){
     dot.push({k, node, flare, on:"0", fl:"0",
       due:SCAN*(u*NN[0]+v*NN[1]+1)/2 + LAG*rl()});
   }
-
-  /* ---- THE SCAN LINE, a bright core over a wide faint one, running top to
-     bottom as the page sees it — the request's words — rather than along
-     one of the chip's own axes, which the projection turns into a sideways
-     slide. Born at the top of the ellipse, invisible. */
-  const chord=d=>{ const q=Math.sqrt(Math.max(0,1-d*d));
-    return [at(d*NN[0]+q*TT[0],d*NN[1]+q*TT[1]), at(d*NN[0]-q*TT[0],d*NN[1]-q*TT[1])]; };
-  const scan=[[3.5,".18"],[0.9,"1"]].map(([wd,o])=>{
-    const [a,b]=chord(-1);
-    return {o, e:add(g,el("line",{x1:f1(a[0]),y1:f1(a[1]),x2:f1(b[0]),y2:f1(b[1]),
-      stroke:"var(--fg)","stroke-width":f2(wd*SC),"stroke-linecap":"round","stroke-opacity":"0"}))};
-  });
 
   /* ---- THE RIM AND THE LID, the lid one path with the ellipse cut out of
      it by even-odd, laid over the well so they hide the front of the
@@ -9075,13 +9065,25 @@ function drawReadCycle(g,n){
      the lid's flat, inside the rim's rounding, with its own corners rounded
      like everything else on the box. Born closed, so a reader with motion
      off sees the station covered; only xl, its leading edge, ever moves. */
-  const cth=h*0.05, czt=h+cth;
+  /* ASKED NEXT TO READ MORE PLAINLY AS A LID: a lip stands up along the
+     leading edge, the part a hand would push, and the pane is ribbed across
+     like a tambour's slats, so a closed cover reads as closed rather than as
+     a tint over the chip. The ribs are counted back from the lip, so they
+     travel with the edge instead of being uncovered by it. */
+  const cth=h*0.05, czt=h+cth, lw=n.w*0.035, lzt=czt+h*0.05;
   const cx0=x0+hf, cx1=x1-hf, cy0=y0+hf, cy1=y1-hf, crr=Math.min(n.w,n.d)*0.03;
-  const cTop=add(g,el("polygon",{points:"",fill:SKIN.glass.top,"fill-opacity":".22"}));
+  const pitch=(cx1-cx0)/13;
+  const cTop=add(g,el("polygon",{points:"",fill:SKIN.glass.top,"fill-opacity":".28"}));
   const cSheen=add(g,el("polygon",{points:"",fill:"var(--fg)","fill-opacity":".05"}));
+  const cRib=add(g,el("path",{d:"",fill:"none",stroke:"var(--fg)","stroke-width":f2(0.7*SC),
+    "stroke-opacity":".22","stroke-linecap":"round"}));
   const cSide=add(g,el("polygon",{points:"",fill:SKIN.glass.top,"fill-opacity":".4"}));
   const cRim=add(g,el("path",{d:"",fill:"none",stroke:"var(--fg)","stroke-width":f2(0.8*SC),
     "stroke-opacity":".6","stroke-linejoin":"round"}));
+  const lSide=add(g,el("polygon",{points:"",fill:SKIN.works.left}));
+  const lTop=add(g,el("polygon",{points:"",fill:SKIN.works.top}));
+  const lRim=add(g,el("path",{d:"",fill:"none",stroke:"var(--fg)","stroke-width":f2(0.8*SC),
+    "stroke-opacity":".85","stroke-linejoin":"round"}));
   let coverX="";
   const setCover=xl=>{
     const k=f1(xl*S); if(k===coverX) return; coverX=k;
@@ -9090,6 +9092,17 @@ function drawReadCycle(g,n){
     cTop.setAttribute("points",top); cSheen.setAttribute("points",top);
     cSide.setAttribute("points",pts([...lo.slice(SIL,25),...hi.slice(SIL,25).reverse()]));
     cRim.setAttribute("d",`M${ring2d(hi)}Z M${ring2d(lo.slice(SIL,25))}`);
+    let rd="";
+    for(let x=xl-lw-pitch; x>cx0+pitch*0.3; x-=pitch)
+      rd+=seg(P(x,cy0+crr,czt),P(x,cy1-crr,czt));
+    cRib.setAttribute("d",rd);
+    /* the lip is square where it meets the pane and rounded where the pane
+       is, so its ends follow the cover's own corners */
+    const lx=Math.max(cx0,xl-lw), lr=Math.min(rc,(xl-lx)/2), LR=[0,lr,lr,0];
+    const llo=rrect(lx,xl,cy0,cy1,LR,h), lhi=rrect(lx,xl,cy0,cy1,LR,lzt);
+    lSide.setAttribute("points",pts([...llo.slice(SIL,25),...lhi.slice(SIL,25).reverse()]));
+    lTop.setAttribute("points",pts(lhi));
+    lRim.setAttribute("d",`M${ring2d(lhi)}Z M${ring2d(llo.slice(SIL,25))}`);
   };
   setCover(cx1);
   /* slide out, rest closed, slide back, rest open — the clock starts at the
@@ -9278,7 +9291,7 @@ function drawReadCycle(g,n){
      tied to CYC, so they never stop for the dark. */
   const LFL=0.3, rq=rng(3301), gap=()=>0.08+0.5*rq();
   lamps.forEach(L=>{ L.a=LFL+rq()*0.4; L.gap=gap(); });
-  let t=0, litO="0", scanU=-1, fo=0, ph=0, acc=0.85;
+  let t=0, litO="0", fo=0, ph=0, acc=0.85;
   /* the strands and the nebula run on their own clocks, through every beat
      of the cycle: the reads never stop leaving */
   grow(acc); turn(0);
@@ -9312,22 +9325,11 @@ function drawReadCycle(g,n){
       if(on!==d.on){ d.on=on; d.node.setAttribute("opacity",on); }
       if(fl!==d.fl){ d.fl=fl; d.flare.setAttribute("opacity",fl); }
     });
-
-    const u = t<SCAN ? t/SCAN : -1;
-    if(u<0 && scanU<0) return;
-    scanU=u;
-    const [a,b]=chord(-1+2*Math.max(u,0));
-    const fade=u<0 ? 0 : Math.min(1,u*10,(1-u)*10);
-    scan.forEach(L=>{
-      L.e.setAttribute("x1",f1(a[0])); L.e.setAttribute("y1",f1(a[1]));
-      L.e.setAttribute("x2",f1(b[0])); L.e.setAttribute("y2",f1(b[1]));
-      L.e.setAttribute("stroke-opacity",f2(fade*+L.o));
-    });
   };
   /* THE FIRST FRAME IS MID-SCAN. A reader with motion off never advances the
-     clock, so this is the whole station for them: the camera's line partway
-     across, the clusters above it lit and the ones it has just passed still
-     going off. */
+     clock, so this is the whole station for them: the sweep partway across,
+     the clusters above it lit and the ones it has just reached still going
+     off. */
   for(let i=0;i<30;i++) run(SCAN*0.55/30);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
