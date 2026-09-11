@@ -6076,12 +6076,19 @@ function drawCapture(g,n){
      and a redraw is the only reason this function is running again. Composed
      at w .72, d .72, h .44.
 
-     THE RACK STANDS SQUARE ON ITS OWN NODE. Asked for from the page: it was
-     thrown forward and right, off its anchor, to keep clear of B7 and B9, and
-     that left the station's handle and label on bare ground a tile away from
-     the plastic they name. Everything tied to the rack — the glass and its
-     leaders — moves with it by the same fraction, so the composition is the
-     one that was approved, only sitting where the node says it is.
+     THE RACK AND THE GLASS STAND SIDE BY SIDE, ABOUT THE ANCHOR. Asked for
+     from the page, after B7: the glass hung straight under the rack, so the
+     station was a column with the anchor at its top. Now the glass is left
+     of the anchor and the rack right of it, equally far out on screen, so the
+     handle and label sit between the two things they name.
+
+     THE GLASS STEPS DOWN FROM THE RACK THE WAY B7'S DOES, and not only for
+     the likeness. Level, the pair is wider than the room it has: B7's rack
+     is on the left, and B8′a's strip and B8a's glass close off the right, so
+     the magnet bars either side of the ring land on plastic at both ends.
+     Dropped, the bars pass under the rack's left corner and under B7's rack,
+     while the rack stays below B8′a's strip. The rack stood on its own node
+     before this; now it is the pair that is centred on the node.
 
      TWO STRIPS OF EIGHT, WHICH IS WHAT B7 NEXT DOOR SET DOWN. The eight
      sublibraries are split into sixteen tubes there and nothing between the
@@ -6089,7 +6096,7 @@ function drawCapture(g,n){
      plastic on its way across the tile. The two rows straddle where the one
      row stood — the block keeps its own footprint, and the near row is still
      well inside the near face. */
-  const rack={x:n.x, y:n.y,
+  const rack={x:n.x+n.w*1.898, y:n.y+n.d*0.218,
               w:n.w*1.55, d:n.d*0.56, h:n.h*0.50, tubes:8, strips:2,
               mag:"var(--ch1)"};
   const T=magnetRack(g, rack);
@@ -6099,8 +6106,8 @@ function drawCapture(g,n){
      cannot be it — it runs ground to ground from under the block, and what
      goes on is what is in the tubes. What B8′ draws first is a strip of tubes standing at a shoulder, which
      its own note calls what B8 hands over, and it stands just up the page
-     from this rack. So one arc runs from the back strip's last tube into that
-     strip: the same line and chevron B8′ and the pool-and-split benches use
+     from this rack. So one arc runs from the back strip's nearest tube into
+     that strip: the same line and chevron B8′ and the pool-and-split benches use
      for a transfer, so it reads as material moving rather than as wiring.
 
      THE FAR END IS A FRACTION OF THIS NODE, not a read of B8′'s — C4 reaches
@@ -6120,7 +6127,9 @@ function drawCapture(g,n){
      tubes, so it rests at REST and draws heavier, scaled with the node — the
      same answer B8a's handover got for the same complaint. */
   const REST=0.55;
-  const from=T.rims[rack.tubes-1];
+  /* from the back strip's FIRST tube since the rack moved right: the last one
+     would now throw the arc back across every rim in the strip to get there */
+  const from=T.rims[0];
   const hand=flowLine(g, [from.x, from.y-from.ry],
     P(n.x-n.w*0.57, n.y-n.d*0.94, n.h*0.62), "var(--fg2)", SC);
   hand.line.setAttribute("stroke-width",(1.6*SC).toFixed(2));
@@ -6141,8 +6150,9 @@ function drawCapture(g,n){
      travels with the transform rather than with a number somebody has to
      remember to change. */
   const LX=53, LY=42;
-  /* held at the offset it had from the rack before the rack came onto its node */
-  const [KX,KY]=P(n.x+n.w*2.50, n.y+n.d*3.05, n.h*0.50);
+  /* as far left of the anchor on screen as the rack is right of it, and a
+     step lower — see the note at the top of this function */
+  const [KX,KY]=P(n.x+n.w*1.201, n.y+n.d*2.767, 0);
   /* the leaders name ONE tube — the near strip's left-hand one, which is the
      tube closest to the glass and the only end of the rack a leader can reach
      without crossing plastic standing in front of it — and they start ON the
