@@ -4884,11 +4884,18 @@ function poolSplitBench(g,n,OPT){
      their plates with: a donor left on hue alone was a different plate from the
      one it claims to be, twelve colours dealt eight times beside a tile showing
      ninety-six. Asked from the page for B3; B5 follows for free, since its donor
-     is B4's plate and B4 walks the same shade. */
+     is B4's plate and B4 walks the same shade.
+     AND THE PAINT IS LAID DOWN THE WAY B2 LAYS IT: the colour at full strength
+     over a grey disc at .3. The same colour at .85 straight onto the plastic
+     came out a paler plate beside B2's lit one, which is the same mismatch by
+     another road. The grey stays behind when the head drains a well, and that
+     is what an emptied well should look like. */
   const deckSrc=skirtSlab(g,src,th,OPT.src);
-  const WOP=0.85;              // full-strength: a tip's worth of it has to show
+  const WOP=1;                 // B2's lit well: a tip's worth of it has to show
   const from=plateGrid(deckSrc,th,COLS,ROWS).map((w,k)=>{
     drawWell(g,w,false);
+    g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
+      ry:(w.e.ry*0.86).toFixed(2),fill:"var(--fg3)","fill-opacity":".3"}));
     const hue=rampShade(k,COLS*ROWS);
     const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
       ry:(w.e.ry*0.86).toFixed(2),fill:hue,"fill-opacity":WOP});
