@@ -8930,6 +8930,26 @@ function drawReadCycle(g,n){
   edge([P(x1,y1,h),P(x1,y1,0)],".9",1.2);
   edge([...rimH,rimH[0]],".75",1);
 
+  /* ---- SURFACE TAGS, asked for from the page so a later request can name a
+     face by number rather than by describing it. Each sits on the face it
+     names, drawn last so no part of the box covers it, and haloed in the page
+     ground so it stays legible over the dots. The underside cannot be seen,
+     so BOTTOM is tagged on the footprint the box stands in; the well's wall
+     is only a sliver, so its tag sits on the glass with a leader up to it. */
+  const tag=(p,txt,anchor)=>{ const t=add(g,el("text",{x:f1(p[0]),y:f1(p[1]+1.2*SC),
+    "text-anchor":anchor||"middle","font-size":f2(3.4*SC),"font-weight":"700",
+    fill:"var(--fg)",stroke:"var(--bg)","stroke-width":f2(1.1*SC),"stroke-opacity":".85",
+    "paint-order":"stroke","stroke-linejoin":"round"})); t.textContent=txt; };
+  tag(P(X(-0.40),Y(-0.40),h),"1 TOP");
+  tag(P(X(0.5+m),Y(0.5+m),0).map((v,i)=>v+(i?4.5*SC:0)),"2 BOTTOM");
+  tag(P(X(-0.27),y1,h*0.5),"3 LEFT");
+  tag(P(x1,Y(0),h*0.5),"4 RIGHT");
+  const wa=at(-0.62,-0.78,(h+zc)/2), wt=at(-0.40,-0.42);
+  add(g,el("line",{x1:f1(wa[0]),y1:f1(wa[1]),x2:f1(wt[0]),y2:f1(wt[1]-2.2*SC),
+    stroke:"var(--fg)","stroke-width":f2(0.6*SC),"stroke-opacity":".8"}));
+  tag(wt,"5 WELL WALL");
+  tag(at(0.15,0.35),"6 GLASS");
+
   /* ---- TIMING: flash under half a second, then half a second each of hold,
      scan, dim and dark. The flash eases out so it arrives as a flash; the
      scan is linear because a camera's pass is. */
