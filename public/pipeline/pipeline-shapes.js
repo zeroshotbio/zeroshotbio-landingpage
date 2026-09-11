@@ -8771,6 +8771,9 @@ DRAW.sizecheck = drawSizeCheck;
    cell puts out is drawn by C4 — the strands leave from above this box and
    the cloud they build is that station's.
    ------------------------------------------------------------------ */
+/* whether the well's cover has slid in yet — once a page load, not once a
+   draw, so a resize brings it back already in place */
+let READCYCLE_COVERED=false;
 function drawReadCycle(g,n){
   /* EVERY OFFSET IS A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC, since
      a resize is the only reason this runs again. Composed at w 1.60, d 1.30,
@@ -8980,6 +8983,44 @@ function drawReadCycle(g,n){
         P(x1,y0,0),P(x1,y0,h)],".9",1.2);
   edge([P(x1,y1,h),P(x1,y1,0)],".9",1.2);
   edge([...rimH,rimH[0]],".75",1);
+
+  /* ---- THE COVER, asked for from the page: a pane of glass over the well
+     that slides in once and then never moves. A disc a little wider than
+     the rim rather than a square slip, because a square wide enough to
+     close the well would run into the docked screen on the lid's corner.
+     Not perfectly clear: a wash of the page ground dims everything under
+     it — the lattice, the flashes, the scan — the way real glass does, and
+     the cycle keeps running beneath it untouched.
+     IT IS BORN AT REST, so a reader with motion off, whose tickers never
+     run, sees it where it belongs. The slide is started by the first tick
+     instead, from three depths behind the box, and READCYCLE_COVERED keeps
+     a redraw — a resize — from sliding it in a second time. */
+  const cs1=1.06, ct=h*0.05;
+  const disc=z=>{ const a=[]; for(let i=0;i<56;i++){ const t=i/56*Math.PI*2;
+    a.push(at(cs1*Math.cos(t),cs1*Math.sin(t),z)); } return a; };
+  const cover=add(g,el("g",{transform:"translate(0 0)"}));
+  const cb=disc(h), ctp=disc(h+ct);
+  add(cover,el("polygon",{points:pts(cb),fill:SKIN.glass.top,"fill-opacity":".3"}));
+  add(cover,el("polygon",{points:pts(ctp),fill:"var(--bg)","fill-opacity":".3"}));
+  add(cover,el("polygon",{points:pts(ctp),fill:SKIN.glass.top,"fill-opacity":".12"}));
+  const cstrip=(s0,s1,o)=>{ const N=[0.8,0.6], T=[0.6,-0.8];
+    const c=(s,sg)=>{ const q=sg*Math.sqrt(1-s*s);
+      return at(cs1*(s*N[0]+q*T[0]),cs1*(s*N[1]+q*T[1]),h+ct); };
+    add(cover,el("polygon",{points:pts([c(s0,1),c(s1,1),c(s1,-1),c(s0,-1)]),
+      fill:"var(--fg)","fill-opacity":o})); };
+  cstrip(-0.55,-0.42,".07"); cstrip(0.30,0.36,".05");
+  add(cover,el("polyline",{points:pts([...ctp,ctp[0]]),fill:"none",stroke:"var(--fg)",
+    "stroke-width":f2(0.9*SC),"stroke-opacity":".6","stroke-linejoin":"round"}));
+  const CO=P(0,-3*n.d,0), GLIDE=1.6;
+  let glide=READCYCLE_COVERED ? -1 : 0;
+  TICKERS.push(dt=>{
+    if(glide<0) return;
+    READCYCLE_COVERED=true;
+    glide+=Math.min(dt,0.1);
+    const u=Math.min(1,glide/GLIDE), k=Math.pow(1-u,3);
+    cover.setAttribute("transform",`translate(${f1(CO[0]*k)} ${f1(CO[1]*k)})`);
+    if(u>=1) glide=-1;
+  });
 
   /* ---- THE DOCKED SCREEN, asked for from the page as a unit of its own on
      the lid's right edge rather than another thing painted on a wall. It
