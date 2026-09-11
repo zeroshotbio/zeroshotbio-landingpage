@@ -603,3 +603,185 @@ function drawFinRep(cv) {
   dot(ctx, x1, y1, 5.5, null, INK.select);
   text(ctx, 'MegaFin today', x1 + 9, y1 + 4, { font: font.serif(11.5, true), color: INK.select, back: true });
 }
+
+/* ======================= PLATE IX — clearing the bar ======================= */
+
+const DS_ORDER = ['CRISPRi', 'Tahoe', 'ChemFish', 'MegaFin', 'MiniFin'];
+const dsInk = () => ({ CRISPRi: INK.ink, Tahoe: INK.t4, ChemFish: INK.t1, MegaFin: INK.t6, MiniFin: INK.t2 });
+
+/* The four requirements that have a number, each with its bar (from this page's own tests) and each dataset's value.
+   "The noise it has to beat": halves of the controls where controls share the screen (CRISPRi, ChemFish's embryos),
+   two no-drug wells where every context shares a well (Tahoe, MegaFin), MiniFin's measured noise between wells. */
+function gauges() {
+  const M = CP.meta, E = M.external, Z = M.zeroshot, C = M.comparison, F = M.fin, mf = F.hvg.megafin, mn = F.hvg.minifin, w = E.tahoe.dmso_well;
+  const num = (s) => parseFloat(String(s).replace(/,/g, '')), CR = 'COMPASS source (Replogle/Nadig/X-Atlas CRISPRi)';
+  const CC = C['cells per perturbation x context (median)'], UM = C['UMIs per cell (median, protein-coding)'];
+  const whole = (v) => nf(Math.round(v));
+  return [
+    { key: 'perts', title: 'perturbations per cell line, tissue or cell type', bar: 30, lo: 1, hi: 6000, fmt: whole,
+      why: 'a typical response appears from about 30 (Plate V)',
+      v: { CRISPRi: M.anchor.ensembl, Tahoe: E.tahoe.n_perturbations, ChemFish: E.chemfish.n_perturbations, MegaFin: mf.per_context_median.n_perturbations, MiniFin: Z.MiniFin.perturbations } },
+    { key: 'cells', title: 'cells per perturbation, in each cell line, tissue or cell type', bar: 25, lo: 5, hi: 5000, fmt: whole,
+      why: 'the lines still agree from about 25 (Plate VI)',
+      v: { CRISPRi: num(CC[CR]), Tahoe: num(CC['Tahoe-100M']), ChemFish: num(CC['ChemFish 2026_09']), MegaFin: F.cells_pair_median.MegaFin, MiniFin: F.cells_pair_median.MiniFin } },
+    { key: 'depth', title: 'molecules read per cell', bar: 1000, lo: 200, hi: 30000, fmt: whole,
+      why: 'thinning costs little above about 1,000 (Plate VI)',
+      v: { CRISPRi: num(UM[CR]), Tahoe: num(UM['Tahoe-100M']), ChemFish: num(UM['ChemFish 2026_09']), MegaFin: Z.MegaFin.median_umis, MiniFin: Z.MiniFin.median_umis } },
+    { key: 'ratio', title: 'a typical response ÷ the noise it has to beat', bar: 2, lo: 0.5, hi: 12, fmt: (v) => v.toFixed(1) + '×',
+      why: 'a response should be at least twice the noise',
+      v: { CRISPRi: CP.plates.p5.crispr.median, Tahoe: w.median_drug_effect_norm / w.median_norm_well_diff, ChemFish: CP.plates.p5.chemfish.median,
+           MegaFin: mf.median_drug_effect_norm / mf.nodrug_within_plate.median_norm_diff, MiniFin: mn.Sorafenib.median_single_well_over_null } },
+  ];
+}
+
+function drawBar(cv) {
+  // height follows the content: each gauge needs about 120 px whatever the width; narrow, the bar's note drops a line
+  const Wp = Math.max(280, cv.parentElement.clientWidth, +(cv.dataset.minw || 0)), narrow = Wp < 900;
+  cv.dataset.aspect = String(Math.max(0.4, (4 * (narrow ? 132 : 118) + 34) / Wp));
+  const { ctx, W, H } = setup(cv);
+  const G = gauges(), col = dsInk(), L = 22, R = 22, gh = (H - 34) / G.length;
+  G.forEach((g, k) => {
+    const y0 = 4 + k * gh, yl = y0 + gh * (narrow ? 0.66 : 0.6), sx = logs(g.lo, g.hi, L, W - R), xb = sx(g.bar);
+    text(ctx, g.title, L, y0 + 16, { font: font.serif(13.5, true) });
+    if (narrow) text(ctx, `the bar: ${g.fmt(g.bar)} — ${g.why}`, L, y0 + 31, { font: font.serif(11, true), color: INK.select });
+    else text(ctx, `the bar: ${g.fmt(g.bar)} — ${g.why}`, W - R, y0 + 16, { font: font.serif(11, true), color: INK.select, align: 'right' });
+    ctx.fillStyle = rgba(INK.ink, 0.045); ctx.fillRect(xb, yl - 14, W - R - xb, 28);
+    penLine(ctx, L, yl, W - R, yl, 300 + k, INK['ink-3'], 0.8);
+    ctx.beginPath(); ctx.moveTo(xb, yl - 16); ctx.lineTo(xb, yl + 16); ctx.strokeStyle = INK.select; ctx.lineWidth = 2.2; ctx.stroke();
+    const pts = DS_ORDER.map((d) => ({ d, v: g.v[d], x: sx(Math.max(g.lo, Math.min(g.hi, g.v[d]))) })).sort((a, b) => a.x - b.x);
+    const last = { up: -1e9, down: -1e9 };
+    pts.forEach((p, i) => {
+      const side = i % 2 ? 'down' : 'up', far = p.x - last[side] < 90, clears = p.v >= g.bar;
+      last[side] = p.x;
+      dot(ctx, p.x, yl, 5.5, clears ? col[p.d] : INK.paper, col[p.d]);
+      const yy = side === 'up' ? yl - (far ? 30 : 13) : yl + (far ? 38 : 23);
+      text(ctx, `${p.d} ${g.fmt(p.v)}`, p.x, yy, { font: font.serif(12, !clears), color: col[p.d], align: 'center', back: true });
+    });
+  });
+}
+
+function drawScore(cv) {
+  const { ctx, W, H } = setup(cv);
+  const G = gauges(), col = dsInk();
+  const heads = [['many', 'perturbations'], ['enough cells', 'per cell type'], ['enough', 'sequencing'], ['beats the', 'noise'],
+    ['controls mixed', 'in with the rest'], ['each perturbation', 'repeated'], ['passes the', 'artefact checks']];
+  const fixed = { CRISPRi: ['y', 'y', 'y'], Tahoe: ['n', 'n', 'n'], ChemFish: ['n', 'p', '-'], MegaFin: ['n', 'n', 'n'], MiniFin: ['n', 'y', '-'] };
+  const verdict = { CRISPRi: ['yes', 'the paper’s result, reproduced'], Tahoe: ['it looks like it', 'but it is the wells'],
+    ChemFish: ['no', 'too few drugs, too weak'], MegaFin: ['it looks like it', 'but not yet: no repeats'], MiniFin: ['no', 'three drugs, but it measures the noise'] };
+  const L = 96, T = 54, vw = Math.min(250, W * 0.24), cw = (W - L - vw - 16) / heads.length, rh = (H - T - 34) / DS_ORDER.length, vx = L + heads.length * cw + 16;
+  heads.forEach(([a, b], j) => { const x = L + cw * (j + 0.5);
+    caps(ctx, a, x, T - 28, { align: 'center', size: 8.5, spacing: 0.6 }); caps(ctx, b, x, T - 15, { align: 'center', size: 8.5, spacing: 0.6 }); });
+  caps(ctx, 'a COMPASS result', vx, T - 28, { size: 8.5, spacing: 0.6, color: INK.ink }); caps(ctx, 'you can trust?', vx, T - 15, { size: 8.5, spacing: 0.6, color: INK.ink });
+  penLine(ctx, 8, T - 6, W - 8, T - 6, 399, INK.ink, 0.8);
+  DS_ORDER.forEach((d, i) => {
+    const y = T + rh * (i + 0.5), r = Math.min(9, rh * 0.24);
+    penLine(ctx, 8, T + rh * (i + 1), W - 8, T + rh * (i + 1), 400 + i, rgba(INK.rule, 0.6), 0.5);
+    text(ctx, d, L - 14, y + 5, { font: font.serif(15, true), color: col[d], align: 'right' });
+    G.map((g) => (g.v[d] >= g.bar ? 'y' : 'n')).concat(fixed[d]).forEach((m, j) => {
+      const x = L + cw * (j + 0.5);
+      if (m === '-') { text(ctx, '–', x, y + 5, { font: font.serif(16), color: INK['ink-3'], align: 'center' }); return; }
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fillStyle = m === 'y' ? INK.ink : INK.paper; ctx.fill();
+      ctx.strokeStyle = INK.ink; ctx.lineWidth = 1.3; ctx.stroke();
+      if (m === 'p') { ctx.beginPath(); ctx.moveTo(x, y - r); ctx.arc(x, y, r, -Math.PI / 2, Math.PI / 2); ctx.closePath(); ctx.fillStyle = INK.ink; ctx.fill(); }
+    });
+    const [v, why] = verdict[d];
+    text(ctx, v, vx, y, { font: v === 'yes' ? `600 14px ${INK.serif}` : font.serif(14, true), color: v === 'yes' ? INK.ink : INK['ink-2'] });
+    text(ctx, why, vx, y + 16, { font: font.serif(11.5, true), color: INK['ink-3'] });
+  });
+  const ly = H - 12; let lx = L;
+  [['y', 'clears the bar'], ['p', 'partly'], ['n', 'falls short'], ['-', 'cannot be tested']].forEach(([m, lab]) => {
+    if (m === '-') text(ctx, '–', lx, ly + 4, { font: font.serif(15), color: INK['ink-3'], align: 'center' });
+    else { ctx.beginPath(); ctx.arc(lx, ly, 5, 0, 6.283); ctx.fillStyle = m === 'y' ? INK.ink : INK.paper; ctx.fill(); ctx.strokeStyle = INK.ink; ctx.lineWidth = 1.1; ctx.stroke();
+      if (m === 'p') { ctx.beginPath(); ctx.moveTo(lx, ly - 5); ctx.arc(lx, ly, 5, -Math.PI / 2, Math.PI / 2); ctx.closePath(); ctx.fillStyle = INK.ink; ctx.fill(); } }
+    text(ctx, lab, lx + 10, ly + 4, { font: font.serif(11.5, true), color: INK['ink-2'] });
+    ctx.font = font.serif(11.5, true); lx += ctx.measureText(lab).width + 36;
+  });
+}
+
+/* The next MegaFin on MegaFin's own budget: 192 wells, 16 of them no-drug and 8 for two reference drugs. */
+const NEXT = { wells: 192, nodrug: 16, ref: 8, ks: [1, 2, 3, 4, 6, 8], pick: 4 };
+function nextDrugs(k) { return Math.floor((NEXT.wells - NEXT.nodrug - NEXT.ref) / (2 * k)); }
+
+function drawTrade(cv) {
+  const { ctx, W, H } = setup(cv);
+  const F = CP.meta.fin, ks = NEXT.ks, L = 56, R = 14, T = 20, mid = H * 0.44, B = H - 44, cw = (W - L - R) / ks.length;
+  const at = (s, k) => s.replication.projection.find((r) => r.wells_per_drug === k).frac_over_2x_noise;
+  const j4 = ks.indexOf(NEXT.pick);
+  ctx.fillStyle = rgba(INK.select, 0.06); ctx.fillRect(L + cw * j4 + 2, T - 6, cw - 4, B - T + 10);
+  caps(ctx, 'drug-doses that fit', L, T + 4, { size: 8.5 });
+  const sy1 = lin(0, 180, mid - 6, T + 20);
+  ks.forEach((k, j) => {
+    const v = 2 * nextDrugs(k), x = L + cw * j + cw * 0.22, w = cw * 0.56, ok = v >= 30;
+    ctx.fillStyle = rgba(INK.ink, ok ? 0.55 : 0.2); ctx.fillRect(x, sy1(v), w, mid - 6 - sy1(v));
+    text(ctx, nf(v), x + w / 2, sy1(v) - 4, { font: font.serif(11.5), align: 'center' });
+  });
+  const y30 = sy1(30); guide(ctx, L, y30, W - R, y30, INK.select);
+  text(ctx, 'needed: 30', W - R, y30 - 4, { font: font.serif(11, true), color: INK.select, align: 'right' });
+  caps(ctx, 'drug × cell-type effects clearing twice the noise', L, mid + 18, { size: 8.5 });
+  const sy2 = lin(0, 0.6, B, mid + 32);
+  axisY(ctx, sy2, L, [0, 0.2, 0.4, 0.6], { fmt: pct, range: [B, mid + 32] });
+  [['hvg', null, 'headline gene panel'], ['expressed', [4, 3], 'second gene panel']].forEach(([p, dash, lab], m) => {
+    const xs = ks.map((k, j) => L + cw * (j + 0.5)), ys = ks.map((k) => sy2(at(F[p], k)));
+    path(ctx, xs, ys, INK.ink, 1.5, dash); xs.forEach((x, i) => dot(ctx, x, ys[i], 2.4, INK.ink));
+    text(ctx, lab, xs.at(-1), ys.at(-1) + (m ? -9 : 16), { font: font.serif(10.5, true), align: 'right', back: true });
+  });
+  ks.forEach((k, j) => caps(ctx, String(k), L + cw * (j + 0.5), B + 15, { align: 'center', size: 9 }));
+  text(ctx, 'wells per drug-dose', (L + W - R) / 2, B + 32, { font: font.serif(12, true), color: INK['ink-2'], align: 'center' });
+  text(ctx, 'MegaFin today', L + cw * 0.5, sy2(at(F.hvg, 1)) - 10, { font: font.serif(11, true), color: INK.select, align: 'left', back: true });
+  text(ctx, 'the proposal', L + cw * (j4 + 0.5), T + 8, { font: font.serif(11.5, true), color: INK.select, align: 'center' });
+}
+
+function seeded(seed) {
+  return () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+function layoutAsRun() {
+  const role = {};
+  for (const r of 'ABCDEFGH') for (let c = 1; c <= 12; c++) role[r + c] = { t: 'drug', dose: 'ACEG'.includes(r) ? 5 : 1 };
+  role.A1 = role.B1 = { t: 'nodrug' }; role.G3 = role.H3 = { t: 'never' };
+  role.A2 = { t: 'ref', dose: 5 }; role.B2 = { t: 'ref', dose: 1 };
+  return role;
+}
+function layoutNext() {
+  const rnd = seeded(20260911), role = {}, all = [];
+  for (const r of 'ABCDEFGH') for (let c = 1; c <= 12; c++) all.push(r + c);
+  ['A1', 'H12', 'B6', 'G7', 'C11', 'F2', 'D4', 'E9'].forEach((w) => { role[w] = { t: 'nodrug' }; });   // one per row, each in its own column
+  [['A8', 5], ['H3', 1], ['D10', 5], ['E5', 1]].forEach(([w, dose]) => { role[w] = { t: 'ref', dose }; });
+  const free = all.filter((w) => !role[w]);
+  for (let i = free.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [free[i], free[j]] = [free[j], free[i]]; }
+  let k = 0;
+  for (let d = 0; d < nextDrugs(NEXT.pick); d++) for (const dose of [5, 1]) for (let rep = 0; rep < NEXT.pick / 2; rep++) role[free[k++]] = { t: 'drug', drug: d, dose };
+  return role;
+}
+
+function drawNext(cv) {
+  const { ctx, W, H } = setup(cv);
+  const pw = (W - 30) / 2, cell = Math.min(pw / 12.4, (H - 130) / 8);
+  const plates = [['MegaFin plate 1, as run', layoutAsRun(), ['92 drug wells, one per drug-dose;', '2 DMSO wells, 2 never dosed']],
+    ['the next one: plate 1 of 2, a proposal', layoutNext(), [`${nextDrugs(NEXT.pick)} drugs × 2 doses × 2 wells here, 2 more on plate 2;`, '8 no-drug wells, 2 reference drugs']]];
+  plates.forEach(([title, role, lines], p) => {
+    const px = 10 + p * (pw + 10), x0 = px + (pw - 12 * cell) / 2, y0 = 34;
+    text(ctx, title, px + pw / 2, 16, { font: font.serif(12.5, true), align: 'center' });
+    'ABCDEFGH'.split('').forEach((r, i) => {
+      for (let c = 1; c <= 12; c++) {
+        const w = role[r + c], cx = x0 + (c - 1) * cell + cell / 2, cy = y0 + i * cell + cell / 2;
+        ctx.beginPath(); ctx.arc(cx, cy, cell * 0.4, 0, 6.283);
+        if (w.t === 'never') { ctx.fillStyle = INK.paper; ctx.fill(); ctx.strokeStyle = INK.t3; ctx.lineWidth = 1.5; ctx.stroke(); continue; }
+        ctx.fillStyle = w.t === 'nodrug' ? INK.t3 : w.t === 'ref' ? INK.t1 : w.drug === 0 ? INK.select : rgba(INK.ink, w.dose === 5 ? 0.6 : 0.22);
+        ctx.fill();
+      }
+    });
+    lines.forEach((s, k) => text(ctx, s, px + pw / 2, y0 + 8 * cell + 20 + k * 15, { font: font.serif(11, true), color: INK['ink-2'], align: 'center' }));
+  });
+  const items = [[rgba(INK.ink, 0.6), 'drug, 5 µM'], [rgba(INK.ink, 0.22), 'drug, 1 µM'], [INK.t3, 'no drug'], [null, 'never dosed'],
+    [INK.t1, 'reference drug (MegaFin: Sorafenib)'], [INK.select, 'one drug’s four wells on this plate']];
+  let lx = 16, ly = H - 30;
+  items.forEach(([c, lab]) => {
+    ctx.font = font.serif(11, true); const w = ctx.measureText(lab).width + 34;
+    if (lx + w > W - 8) { lx = 16; ly += 17; }
+    ctx.beginPath(); ctx.arc(lx, ly, 5, 0, 6.283);
+    if (c) { ctx.fillStyle = c; ctx.fill(); } else { ctx.strokeStyle = INK.t3; ctx.lineWidth = 1.4; ctx.stroke(); }
+    text(ctx, lab, lx + 10, ly + 4, { font: font.serif(11, true), color: INK['ink-2'] });
+    lx += w;
+  });
+}

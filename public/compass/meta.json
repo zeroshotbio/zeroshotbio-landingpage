@@ -5,7 +5,7 @@
  "asset_version": "58ae4d0d8874",
  "source": {
   "repro_dir": "/data/scratch/compass_repro",
-  "repro_commit": "5e143de",
+  "repro_commit": "a700359",
   "paper_doi": "10.64898/2026.08.03.742643",
   "paper_sha256": "871fe5651cfa80773a3a760baee67f9efe426ebbe836f45c2b5d503e32b1effd",
   "compass_repo": "https://github.com/rohitsinghlab/compass",
@@ -5426,6 +5426,10 @@
     },
     "n_drug_cluster": 5340
    }
+  },
+  "cells_pair_median": {
+   "MegaFin": 113.0,
+   "MiniFin": 64.0
   }
  },
  "biology": {

@@ -21,6 +21,7 @@ function redrawAll() {
   drawPhase($('cvPhase')); drawDepthSweep($('cvDepthSweep')); drawRemove($('cvRemove')); drawControls($('cvControls'));
   drawTahoe($('cvTahoe')); drawThree($('cvThree'));
   drawFinWells($('cvFinWells')); drawFinDose($('cvFinDose')); drawFinRep($('cvFinRep'));
+  drawBar($('cvBar')); drawScore($('cvScore')); drawTrade($('cvTrade')); drawNext($('cvNext'));
 }
 
 /* ---------------- controls ---------------- */
@@ -137,8 +138,8 @@ function writeProse() {
   const num = (s) => parseFloat(String(s).replace(/,/g, ''));
   const CRc = 'COMPASS source (Replogle/Nadig/X-Atlas CRISPRi)';
   $('mByline').textContent = `${nf(M.anchor.ensembl)} CRISPRi knockdowns · six human cell lines · three studies`;
-  ['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8'].forEach((id, i) => { $(id).textContent =
-    ['the two-part split', `${nf(M.anchor.ensembl)} knockdowns`, 'all protein-coding genes', 'Replogle / Nadig', 'what makes it visible', 'stress tests', 'Tahoe · ChemFish', 'MegaFin · MiniFin, measured'][i]; });
+  ['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'w9'].forEach((id, i) => { $(id).textContent =
+    ['the two-part split', `${nf(M.anchor.ensembl)} knockdowns`, 'all protein-coding genes', 'Replogle / Nadig', 'what makes it visible', 'stress tests', 'Tahoe · ChemFish', 'MegaFin · MiniFin, measured', 'the synthesis · the next screen'][i]; });
 
   $('intro').innerHTML =
     `<p class="lead">A CRISPRi screen turns down one gene in each cell, then reads out the activity of every other gene. Do that ` +
@@ -163,7 +164,7 @@ function writeProse() {
     `reproduces almost exactly (Plate II). The rest of the page asks: what is the typical response, biologically (III)? Where does ` +
     `the gene-specific biology show up (IV)? What about these screens lets you see all this (V), and how much data does it take (VI)? ` +
     `Why don't two datasets closer to our own work, Tahoe-100M and ChemFish, show it cleanly (VII)? And would our own screens, ` +
-    `MegaFin and MiniFin, show it — measured, not guessed (VIII)?</p>` +
+    `MegaFin and MiniFin, show it — measured, not guessed (VIII)? And what would the next one have to look like (IX)?</p>` +
     `<p class="caution">What we did not reproduce: the paper's methods built on the STRING protein-interaction database (COMPASS-N, ` +
     `COMPASS-H) and its STRING-based prediction of where a knockdown lands. Everything here is about the two-part split itself and ` +
     `the paper's cross-cell-line predictor, COMPASS-X.</p>`;
@@ -342,7 +343,7 @@ function writeProse() {
     `${f2(c.checks.mean_pairwise_spearman_from_W)}.</p>` +
     `<p><b>Right panel:</b> the same measurements for each dataset; the black bar spans the six CRISPRi lines, and MegaFin, in plum, ` +
     `is taken up in Plate VIII. On paper Tahoe scores highest nearly everywhere, which is exactly why the no-drug-well test matters.</p>`;
-  writeCap8();
+  writeCap8(); writeCap9();
 }
 
 function writeCap8() {
@@ -382,6 +383,33 @@ function writeCap8() {
     `<b>What MegaFin lacks is repeats, not size.</b></p>` +
     `<p class="small"><i>Caveats.</i> Clusters stand in for cell types. The curve on the right is a projection from one well per drug, ` +
     `not a measurement. The second gene panel (the 2,000 most-expressed genes) changes the sizes but none of the verdicts.</p>`;
+}
+
+function writeCap9() {
+  const M = CP.meta, G = gauges(), F = M.fin, at = (s, k) => s.replication.projection.find((r) => r.wells_per_drug === k).frac_over_2x_noise;
+  const v = (key, d) => G.find((g) => g.key === key).v[d], x1 = (key, d) => v(key, d).toFixed(1) + '×';
+  const d1 = nextDrugs(1), dk = nextDrugs(NEXT.pick);
+  $('cap9').innerHTML =
+    `<p><b>This plate pulls the page together:</b> the four requirements that can be put in a number, which dataset clears which, and ` +
+    `what the next MegaFin would have to look like on the same number of wells.</p>` +
+    `<p><b>The bar</b> (top). Each line is one requirement; the red tick is the bar, taken from this page's own tests; each dot is a ` +
+    `dataset, filled if it clears the bar. The CRISPRi screens clear all four. MegaFin clears three — enough drugs, enough cells of most ` +
+    `cell types, enough sequencing — and misses the one that matters most: a typical drug's effect is ${x1('ratio', 'MegaFin')} the ` +
+    `difference between two wells with no drug in them. Tahoe clears on size but not on noise (${x1('ratio', 'Tahoe')}); ChemFish falls ` +
+    `short on drugs, sequencing and strength; MiniFin has three drugs. <i>"The noise it has to beat" is the difference between two halves ` +
+    `of the controls for CRISPRi and ChemFish, and between two no-drug wells for Tahoe and MegaFin (for MiniFin, its measured noise ` +
+    `between wells) — the fair yardstick when each drug sits in a well of its own.</i></p>` +
+    `<p><b>Who clears what</b> (middle). A filled circle clears the bar, a half circle partly, an open circle falls short; a dash cannot ` +
+    `be tested. Only the CRISPRi row is full. Tahoe and MegaFin look like COMPASS datasets on paper and fail the checks that matter, for ` +
+    `the same reason: every context shares each well, and nothing is repeated.</p>` +
+    `<p><b>Spend wells on repeats</b> (lower left). Keep MegaFin's 192 wells, set aside ${NEXT.nodrug} for no-drug controls and ` +
+    `${NEXT.ref} for two reference drugs, and share out the rest. One well per drug-dose fits ${d1} drugs, but only ${pct(at(F.hvg, 1))} of ` +
+    `drug × cell-type effects clear twice the noise. ${NEXT.pick} wells per drug-dose fits ${dk} drugs — ${2 * dk} drug-doses, still past the ` +
+    `30 needed — and ${pct(at(F.hvg, NEXT.pick))} of effects clear it (${pct(at(F.expressed, NEXT.pick))} on the second gene panel). Go further ` +
+    `and the drug count drops under the bar.</p>` +
+    `<p><b>The plate itself</b> (lower right). MegaFin's first plate as it was run, beside one plate of the proposal: a no-drug well in ` +
+    `every row, each in its own column; two reference drugs on every plate; each drug-dose in two wells on each of the two plates, so no ` +
+    `drug is tied to a plate; and doses scattered instead of laid out in rows. In red, one drug's four wells on this plate.</p>`;
 }
 
 function writeFinTable() {
@@ -440,27 +468,31 @@ function writeTable() {
 }
 
 function writeLessons() {
-  const M = CP.meta, S = M.stress, ph = S.phase, FH = M.fin.hvg, mf = FH.megafin, i300 = ph.n.indexOf(300);
-  const at = (k) => FH.replication.projection.find((r) => r.wells_per_drug === k).frac_over_2x_noise;
+  const M = CP.meta, F = M.fin.hvg, mf = F.megafin, ph = M.stress.phase, i300 = ph.n.indexOf(300);
+  const at = (k) => F.replication.projection.find((r) => r.wells_per_drug === k).frac_over_2x_noise, dk = nextDrugs(NEXT.pick);
   $('lessons').innerHTML =
-    `<h3>What follows for the next screen</h3>` +
+    `<h3>What the next MegaFin has to be</h3>` +
     `<ol class="lessons">` +
-    `<li><b>Repeat wells before adding drugs.</b> In MegaFin two wells with no drug in them differ as much as a typical drug differs ` +
-    `from control, so an effect seen in one well cannot be told from a well quirk. With 4 wells per drug about ${pct(at(4))} of drug × ` +
-    `cell-type effects would clear twice that noise, against ${pct(at(1))} with one. For the same number of wells, fewer drugs in more ` +
-    `wells shows more.</li>` +
-    `<li><b>Put several no-drug wells on every plate, spread out.</b> MegaFin's reference for each dose on each plate is a single DMSO ` +
-    `well, and one of them yielded under a thousand cells. The CRISPRi result is trustworthy partly because its controls are thousands of ` +
-    `cells mixed through the whole screen.</li>` +
-    `<li><b>Keep the cells per cell type MegaFin already has.</b> About ${nf(mf.composition.median_cells_per_drug_well)} cells per well gave 25 ` +
-    `or more for most cell types — the level at which the CRISPRi lines still agree (${f2(ph.cons_RN[i300][ph.k.indexOf('25')])} at 25 cells, ` +
-    `${f2(ph.cons_RN[i300][ph.k.indexOf('10')])} at 10).</li>` +
-    `<li><b>Tie plates and experiments together with repeated reference drugs.</b> Only Sorafenib sits on both MegaFin plates, and it does ` +
-    `not come out the same on them — or in MiniFin. A few well-behaved drugs repeated on every plate would let plates and experiments be joined.</li>` +
-    `<li><b>Keep some strong drugs in the set.</b> The typical response is defined mostly by the strongest quarter of perturbations; MegaFin's ` +
-    `cytotoxic drugs are its best anchors.</li>` +
-    `<li><b>Shallow sequencing is fine; treat the typical response as background; judge predictions on telling perturbations apart.</b> ` +
-    `The thinning test, the biology of Plate III and the guess-the-average predictor of Plate II all say so.</li></ol>`;
+    `<li><b>Every drug-dose in about ${NEXT.pick} wells, split across plates.</b> On MegaFin's effect sizes this lifts the share of drug × ` +
+    `cell-type effects that clear twice the noise from ${pct(at(1))} to ${pct(at(NEXT.pick))}, and no drug is tied to one plate any more.</li>` +
+    `<li><b>Eight no-drug wells on every plate</b>, one in each row and each in its own column, so the noise between wells is measured on ` +
+    `every plate instead of resting on one DMSO well per dose.</li>` +
+    `<li><b>Two reference drugs on every plate, and in every screen after this one</b> — Sorafenib and one strong drug, at both doses — so ` +
+    `plates and experiments can be joined. MiniFin and MegaFin cannot be joined today.</li>` +
+    `<li><b>At least 30 drug-doses, including a few strong drugs.</b> ${dk} drugs at two doses gives ${2 * dk}; the typical response appears ` +
+    `from about 30 and is anchored by the strongest quarter.</li>` +
+    `<li><b>Keep MegaFin's cells per well.</b> About ${nf(mf.composition.median_cells_per_drug_well)} cells per well gives 25 or more cells in ` +
+    `${mf.composition.clusters_ge25_in_90pct_of_wells} cell types in nine wells out of ten; the CRISPRi lines still agree at 25 cells ` +
+    `(${f2(ph.cons_RN[i300][ph.k.indexOf('25')])}) and sag at 10 (${f2(ph.cons_RN[i300][ph.k.indexOf('10')])}).</li>` +
+    `<li><b>Don't buy more depth; buy wells.</b> The thinning test barely moves above about 1,000 molecules per cell, and MegaFin reads ` +
+    `about ${nf(M.zeroshot.MegaFin.median_umis)}.</li>` +
+    `<li><b>Scatter the layout, and keep it as a file.</b> Put drugs and doses in random positions so neither follows a plate row, and ` +
+    `save the plate map — MegaFin's layout can today only be read back out of its sample names.</li>` +
+    `<li><b>Run the three checks before believing the answer.</b> Two no-drug wells should differ less than a drug does; the higher dose ` +
+    `should pull harder; the reference drugs should come out the same on every plate. MegaFin fails all three today.</li></ol>` +
+    `<p class="small"><i>What we can't know yet</i> is how strong the next drugs will be. The projection assumes MegaFin-like effects: ` +
+    `stronger drugs need fewer repeats, weaker ones more. A small pilot — a handful of drugs in eight wells each — would test it before ` +
+    `the full screen.</p>`;
 }
 
 function writeNotes() {
@@ -495,6 +527,9 @@ function writeNotes() {
     `pooled no-drug wells; ${M.fin.hvg.megafin.failed_wells.length} MegaFin wells with near-empty-droplet cells were excluded; a second ` +
     `gene panel is reported beside the first. The wells-per-drug curve is a model: each effect's true size is estimated from one well by ` +
     `subtracting the noise expected there.`,
+    `<b>Plate IX's bars come from this page's own tests</b>: 30 perturbations (when the typical response appears, Plate V), 25 cells ` +
+    `(the Plate VI grid), 1,000 molecules (the Plate VI thinning), twice the noise (the page's convention). Its next-generation layout is a ` +
+    `proposal, and its gain is the wells-per-drug projection of Plate VIII, not a measurement.`,
   ];
   $('noteList').innerHTML = notes.map((s) => `<li>${s}</li>`).join('');
   const s = M.source;

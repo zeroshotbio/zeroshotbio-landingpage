@@ -186,6 +186,20 @@ def fin():
         wr = s["megafin"]["crosscluster_r_of_well_difference"]
         s["megafin"]["crosscluster_r_of_nodrug_difference_mean"] = f(np.mean([v for k, v in wr.items() if k.startswith("no-drug")]))
         out[p] = s
+    # cells per drug well and cell type, counted the same way for both screens: every (drug well, cluster)
+    # pair with >= 20 cells (the stage-15 minimum), failed MegaFin wells and no-drug wells excluded
+    fail = {w for w, _ in out["hvg"]["megafin"]["failed_wells"]}
+    def pair_median(tab, meta, key):
+        pert = {r[key]: r["perturbation"] for r in csv.DictReader(open(RES / "fin" / meta))}
+        vals = []
+        for r in csv.DictReader(open(RES / "fin" / tab)):
+            w = r[key]
+            if pert[w] in ("DMSO", "ctrl_no_DMSO") or w in fail:
+                continue
+            vals += [int(v) for k, v in r.items() if k != key and int(v) >= 20]
+        return float(np.median(vals))
+    out["cells_pair_median"] = {"MegaFin": pair_median("megafin_well_by_leiden.csv", "megafin_wells.csv", "parse_sample"),
+                                "MiniFin": pair_median("minifin_well_by_leiden.csv", "minifin_wells.csv", "replicate")}
     return out
 
 
