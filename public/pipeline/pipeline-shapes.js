@@ -8805,99 +8805,152 @@ function drawSizeCheck(g,n){
 DRAW.sizecheck = drawSizeCheck;
 
 /* ------------------------------------------------------------------
-   Sa · THE READ CYCLE — the flow cell, and the whole field read at once.
+   Sa · THE READ CYCLE — the flow cell, loaded into its housing.
 
-   REBUILT FROM "EDIT VISUAL" a third time, down to the flow cell alone: a
-   flat pane of glass on the grid with nothing standing over it. The factory
-   before this put a crane over a pool and lit the clusters where each base
-   landed, so the surface filled a patch at a time. This request asked for
-   the opposite, and it is the truer picture of a cycle: every cluster takes
-   its base and is imaged together, so nothing here travels across the
-   surface and nothing happens in turn.
+   REBUILT FROM "EDIT VISUAL" a fourth time. The pane before this lay bare on
+   the grid and read as a surface rather than as an instrument; this puts it
+   back in the charcoal box the first version stood in — white edges, a soft
+   glow, a dashed footprint, like the other apparatus on the row — with the
+   pane dropped into a shallow well in the lid, the way a slide sits loaded.
+   Still no arm and no moving parts: whatever character it has comes from the
+   housing and the lights on its front, not from anything moving over it.
 
    ONE CYCLE IS FIVE BEATS — flash, hold, scan, dim, dark — and every dot is
    on the same beat. So the coloured dots share one group and the beat is
    that group's opacity: a frame writes one attribute rather than one per
    cluster, and no cluster can drift out of step with its neighbours.
 
+   THE STATUS LIGHTS ARE IN THAT SAME GROUP, for the same reason. Four, one
+   per base in S's order, so they flash and dim in the same frame as the
+   field; a light on its own clock would read as the housing doing something
+   the flow cell is not.
+
    EACH CYCLE READS ANOTHER BASE, so while the field is dark every cluster is
    recoloured, always to a base other than the one it just showed — the
-   pattern visibly changes rather than happening to repeat. The four colours
-   are S's, in S's order.
+   pattern visibly changes rather than happening to repeat.
 
-   THE SCAN IS THE CAMERA, NOT THE CHEMISTRY. One line crosses the full width
+   THE SCAN IS THE CAMERA, NOT THE CHEMISTRY. One line crosses the full depth
    of the cell, back edge to front, while the field is lit; the dots do not
    answer it as it passes, because one exposure takes the whole surface.
    ------------------------------------------------------------------ */
 function drawReadCycle(g,n){
   /* EVERY OFFSET IS A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC, since
-     a resize is the only reason this runs again. Composed at w 1.60, d 1.30;
-     n.h is the glass's own thickness. */
+     a resize is the only reason this runs again. Composed at w 1.60, d 1.30,
+     h .46 — the height is the housing's, and the well is a fraction of it. */
   const SC=n.w/1.60;
   const X=f=>n.x+f*n.w, Y=f=>n.y+f*n.d;
   const r=rng(52817);
   const BASE=["var(--signal)","var(--drop)","var(--ok)","var(--c-top)"];
   const add=(gg,e)=>{ gg.appendChild(e); return e; };
   const f1=v=>v.toFixed(1), f2=v=>v.toFixed(2);
-  const h=n.h, x0=X(-0.5), x1=X(0.5), y0=Y(-0.5), y1=Y(0.5);
-  const top=(u0,v0,u1,v1)=>pts([P(X(u0),Y(v0),h),P(X(u1),Y(v0),h),P(X(u1),Y(v1),h),P(X(u0),Y(v1),h)]);
+  const quad=(a,b,c,d)=>pts([a,b,c,d]);
+  const face=(points,fill,o)=>add(g,el("polygon",{points,fill,"fill-opacity":o||1}));
+  /* a white line, not the map's usual --stroke, so the edges read white
+     against the charcoal the way the first version's did */
+  const edge=(ps,o,wd)=>add(g,el("polyline",{points:pts(ps),fill:"none",stroke:"var(--fg)",
+    "stroke-width":f2(wd*SC),"stroke-opacity":o,"stroke-linejoin":"round","stroke-linecap":"round"}));
 
-  /* ---- THE GLASS: two tinted edges and a top thin enough to be looked into.
-     The glass skin rather than the charcoal the factory wore, because the
-     request is for a pane and a pane has to read as one at a glance. */
-  add(g,el("polygon",{points:pts([P(x0,y1,h),P(x1,y1,h),P(x1,y1,0),P(x0,y1,0)]),
-    fill:SKIN.glass.left,"fill-opacity":".85"}));
-  add(g,el("polygon",{points:pts([P(x1,y0,h),P(x1,y1,h),P(x1,y1,0),P(x1,y0,0)]),
-    fill:SKIN.glass.right,"fill-opacity":".85"}));
-  add(g,el("polygon",{points:top(-0.5,-0.5,0.5,0.5),fill:SKIN.glass.top,"fill-opacity":".6"}));
+  const h=n.h, x0=X(-0.5), x1=X(0.5), y0=Y(-0.5), y1=Y(0.5);
+  /* the well: a rim of about a twelfth of the node all round, and a floor a
+     sixth of the way down, which is deep enough to cast a wall and shallow
+     enough that the front rim hides none of the cell */
+  const cx0=X(-0.42), cx1=X(0.42), cy0=Y(-0.40), cy1=Y(0.40), zc=h*0.84;
+  const cw=cx1-cx0, cd=cy1-cy0;
+  const top=(u0,v0,u1,v1)=>quad(P(cx0+u0*cw,cy0+v0*cd,zc),P(cx0+u1*cw,cy0+v0*cd,zc),
+                                P(cx0+u1*cw,cy0+v1*cd,zc),P(cx0+u0*cw,cy0+v1*cd,zc));
+
+  /* ---- FOOTPRINT AND GLOW, both under the box ----------------------------
+     The glow is the silhouette stroked wide and faint three times rather than
+     a blur filter: the selection halo is already a CSS filter on this group,
+     and a second one inside it is a second thing to go wrong on a phone. */
+  const m=0.07;
+  add(g,el("polygon",{points:quad(P(X(-0.5-m),Y(-0.5-m),0),P(X(0.5+m),Y(-0.5-m),0),
+    P(X(0.5+m),Y(0.5+m),0),P(X(-0.5-m),Y(0.5+m),0)),fill:"none",stroke:"var(--fg)",
+    "stroke-width":f2(SC),"stroke-opacity":".45",
+    "stroke-dasharray":`${f1(4*SC)} ${f1(3*SC)}`}));
+  const sil=pts([P(x0,y0,h),P(x1,y0,h),P(x1,y0,0),P(x1,y1,0),P(x0,y1,0),P(x0,y1,h)]);
+  [[16,".035"],[10,".05"],[5,".07"]].forEach(([wd,o])=>add(g,el("polygon",{points:sil,
+    fill:"none",stroke:"var(--fg)","stroke-width":f2(wd*SC),"stroke-opacity":o,
+    "stroke-linejoin":"round"})));
+
+  /* ---- THE HOUSING: two walls and a lid with the well cut out of it. Fill
+     only; the white edges go on at the end as lines, so the four rim pieces
+     do not draw seams between each other. */
+  face(quad(P(x0,y1,h),P(x1,y1,h),P(x1,y1,0),P(x0,y1,0)),SKIN.works.left);
+  face(quad(P(x1,y0,h),P(x1,y1,h),P(x1,y1,0),P(x1,y0,0)),SKIN.works.right);
+  face(quad(P(x0,y0,h),P(x1,y0,h),P(x1,cy0,h),P(x0,cy0,h)),SKIN.works.top);
+  face(quad(P(x0,cy1,h),P(x1,cy1,h),P(x1,y1,h),P(x0,y1,h)),SKIN.works.top);
+  face(quad(P(x0,cy0,h),P(cx0,cy0,h),P(cx0,cy1,h),P(x0,cy1,h)),SKIN.works.top);
+  face(quad(P(cx1,cy0,h),P(x1,cy0,h),P(x1,cy1,h),P(cx1,cy1,h)),SKIN.works.top);
+
+  /* the well's two visible walls, the housing's own skin under a wash of the
+     page ground so they read as the same material in shadow */
+  [[quad(P(cx0,cy0,h),P(cx1,cy0,h),P(cx1,cy0,zc),P(cx0,cy0,zc)),SKIN.works.left],
+   [quad(P(cx0,cy0,h),P(cx0,cy1,h),P(cx0,cy1,zc),P(cx0,cy0,zc)),SKIN.works.right]]
+    .forEach(([ps,fill])=>{ face(ps,fill); face(ps,"var(--bg)",.35); });
+
+  /* ---- THE GLASS, on the well's floor. The glass skin over charcoal, so the
+     cell is the one pale thing on the box and reads as the slide in it. */
+  face(top(0,0,1,1),SKIN.glass.top,.6);
 
   /* the fine grid etched into it, as one path so a cell's worth of lines is
      one element and not thirty */
   const GU=20, GV=16; let gd="";
-  for(let i=1;i<GU;i++){ const x=x0+i*n.w/GU, a=P(x,y0,h), b=P(x,y1,h);
+  for(let i=1;i<GU;i++){ const x=cx0+i*cw/GU, a=P(x,cy0,zc), b=P(x,cy1,zc);
     gd+=`M${f1(a[0])} ${f1(a[1])}L${f1(b[0])} ${f1(b[1])}`; }
-  for(let j=1;j<GV;j++){ const y=y0+j*n.d/GV, a=P(x0,y,h), b=P(x1,y,h);
+  for(let j=1;j<GV;j++){ const y=cy0+j*cd/GV, a=P(cx0,y,zc), b=P(cx1,y,zc);
     gd+=`M${f1(a[0])} ${f1(a[1])}L${f1(b[0])} ${f1(b[1])}`; }
   add(g,el("path",{d:gd,fill:"none",stroke:"var(--fg)","stroke-width":f2(0.45*SC),"stroke-opacity":".10"}));
 
   /* the reflection: two diagonal strips of faint light, which is what makes
      a flat pale shape read as glass rather than as paper */
-  add(g,el("polygon",{points:pts([P(X(-0.22),y1,h),P(X(-0.06),y1,h),P(X(0.30),y0,h),P(X(0.14),y0,h)]),
-    fill:"var(--fg)","fill-opacity":".06"}));
-  add(g,el("polygon",{points:pts([P(X(-0.01),y1,h),P(X(0.04),y1,h),P(X(0.40),y0,h),P(X(0.35),y0,h)]),
-    fill:"var(--fg)","fill-opacity":".045"}));
-
-  const edge=(ps,o,wd)=>add(g,el("polyline",{points:pts(ps),fill:"none",stroke:"var(--fg)",
-    "stroke-width":f2(wd*SC),"stroke-opacity":o,"stroke-linejoin":"round","stroke-linecap":"round"}));
-  edge([P(x0,y1,0),P(x1,y1,0),P(x1,y0,0)],".35",0.7);
-  edge([P(x0,y1,h),P(x0,y1,0)],".45",0.7); edge([P(x1,y1,h),P(x1,y1,0)],".45",0.7);
-  edge([P(x1,y0,h),P(x1,y0,0)],".45",0.7);
-  edge([P(x0,y1,h),P(x0,y0,h),P(x1,y0,h),P(x1,y1,h),P(x0,y1,h)],".7",0.9);
-  /* the near edges catch the light */
-  edge([P(x0,y1,h),P(x1,y1,h),P(x1,y0,h)],".9",0.6);
+  const at=(u,v)=>P(cx0+u*cw,cy0+v*cd,zc);
+  face(pts([at(0.28,1),at(0.44,1),at(0.80,0),at(0.64,0)]),"var(--fg)",.06);
+  face(pts([at(0.49,1),at(0.54,1),at(0.90,0),at(0.85,0)]),"var(--fg)",.045);
 
   /* ---- THE CLUSTERS ---------------------------------------------------------
      A jittered lattice, so they sit evenly over the whole cell without
      reading as a printed grid on top of the etched one. Each is drawn twice
      at the same point: a dim grey dot that is always there, and its coloured
      twin in the lit group, which is the only thing the cycle fades. */
-  const NU=16, NV=13, IN=0.46, rest=el("g",{}), lit=el("g",{opacity:"0"}), dot=[];
+  const NU=16, NV=13, IN=0.04, rest=el("g",{}), lit=el("g",{opacity:"0"}), dot=[];
   g.appendChild(rest);
-  /* a faint wash over the whole top, so the flash is the surface lighting
+  /* a faint wash over the whole cell, so the flash is the surface lighting
      and not only its dots */
-  add(lit,el("polygon",{points:top(-0.5,-0.5,0.5,0.5),fill:"var(--fg)","fill-opacity":".05"}));
+  add(lit,el("polygon",{points:top(0,0,1,1),fill:"var(--fg)","fill-opacity":".05"}));
   g.appendChild(lit);
   for(let a=0;a<NU;a++)for(let b=0;b<NV;b++){
-    const u=-IN+((a+0.5+(r()-0.5)*0.6)/NU)*2*IN, v=-IN+((b+0.5+(r()-0.5)*0.6)/NV)*2*IN;
-    const p=P(X(u),Y(v),h), k=Math.floor(r()*4);
+    const u=IN+((a+0.5+(r()-0.5)*0.6)/NU)*(1-2*IN), v=IN+((b+0.5+(r()-0.5)*0.6)/NV)*(1-2*IN);
+    const p=at(u,v), k=Math.floor(r()*4);
     add(rest,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(0.85*SC),fill:"var(--fg)","fill-opacity":".18"}));
     dot.push({k, node:add(lit,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(1.2*SC),fill:BASE[k]}))});
   }
 
+  /* ---- THE STATUS LIGHTS, along the front wall's right half, where the eye
+     lands after the cell. Each is a dim socket that is always there and, in
+     the lit group, its base's colour inside a soft bloom. */
+  const zl=h*0.42;
+  BASE.forEach((c,i)=>{
+    const p=P(X(0.16+i*0.085),y1,zl);
+    add(g,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(1.9*SC),fill:"var(--bg)","fill-opacity":".55",
+      stroke:"var(--fg)","stroke-width":f2(0.5*SC),"stroke-opacity":".35"}));
+    add(lit,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(3.6*SC),fill:c,"fill-opacity":".28"}));
+    add(lit,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(1.6*SC),fill:c}));
+  });
+
+  /* ---- THE EDGES, over everything they bound. The well's rim is fainter
+     than the box's, so the housing is drawn once and the opening inside it. */
+  edge([P(x0,y1,h),P(x0,y0,h),P(x1,y0,h),P(x1,y1,h),P(x0,y1,h),P(x0,y1,0),P(x1,y1,0),
+        P(x1,y0,0),P(x1,y0,h)],".9",1.2);
+  edge([P(x1,y1,h),P(x1,y1,0)],".9",1.2);
+  edge([P(cx0,cy0,h),P(cx1,cy0,h),P(cx1,cy1,h),P(cx0,cy1,h),P(cx0,cy0,h)],".75",1);
+  edge([P(cx0,cy1,zc),P(cx0,cy0,zc),P(cx1,cy0,zc)],".35",0.7);
+  edge([P(cx0,cy0,h),P(cx0,cy0,zc)],".35",0.7);
+
   /* ---- THE SCAN LINE, a bright core over a wide faint one, born on the back
-     edge and invisible */
+     edge of the cell and invisible */
   const scan=[[3.5,".18"],[0.9,"1"]].map(([wd,o])=>{
-    const a=P(x0,y0,h), b=P(x1,y0,h);
+    const a=P(cx0,cy0,zc), b=P(cx1,cy0,zc);
     return {o, e:add(g,el("line",{x1:f1(a[0]),y1:f1(a[1]),x2:f1(b[0]),y2:f1(b[1]),
       stroke:"var(--fg)","stroke-width":f2(wd*SC),"stroke-linecap":"round","stroke-opacity":"0"}))};
   });
@@ -8924,7 +8977,7 @@ function drawReadCycle(g,n){
     const u = t>=s && t<e ? (t-s)/SCAN : -1;
     if(u<0 && scanU<0) return;
     scanU=u;
-    const y=y0+Math.max(u,0)*n.d, a=P(x0,y,h), b=P(x1,y,h);
+    const y=cy0+Math.max(u,0)*cd, a=P(cx0,y,zc), b=P(cx1,y,zc);
     const fade=u<0 ? 0 : Math.min(1,u*10,(1-u)*10);
     scan.forEach(L=>{
       L.e.setAttribute("x1",f1(a[0])); L.e.setAttribute("y1",f1(a[1]));
@@ -8933,8 +8986,8 @@ function drawReadCycle(g,n){
     });
   };
   /* THE FIRST FRAME IS MID-SCAN. A reader with motion off never advances the
-     clock, so this is the whole station for them: the field lit in one
-     base's pattern and the camera's line partway across it. */
+     clock, so this is the whole station for them: the field and the lights
+     lit in one base's pattern and the camera's line partway across it. */
   for(let i=0;i<30;i++) run((FLASH+HOLD+SCAN*0.45)/30);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
