@@ -36,7 +36,7 @@ const SECTIONS: Section[] = [
       { href: "/fate_map_daniocell", label: "Fate map · DanioCell — five days of becoming a fish", note: "489,686 cells, 3.3–120 hpf; transcriptional identity, not lineage" },
       { href: "/fate_map_zebrahub", label: "Fate map · Zebrahub — two maps of becoming", note: "120,444 cells from 40 individual embryos, plus 101,676 tracked nuclei" },
       { href: "/fate_map_24_48", label: "Fate map · 24–48 hpf — the inferred skeleton", note: "186 states, 173 transitions, each with its literature verdict; inferred, not observed" },
-      { href: "/compass", label: "COMPASS, reproduced — the shared response of a perturbed cell", note: "2,317 CRISPRi knockdowns in six human lines; held against Tahoe and ChemFish" },
+      { href: "/compass", label: "COMPASS, reproduced — the shared response of a perturbed cell", note: "2,317 CRISPRi knockdowns in six human lines; held against Tahoe, ChemFish and our own MegaFin / MiniFin" },
       { href: "/danio_specimen_poster.html", label: "DANIO — interactive specimen poster" },
       { href: "/d3_complexity_heatmap.html", label: "Complexity heatmap" },
       { href: "/prospective_diseases_treemap.html", label: "Prospective diseases treemap" },

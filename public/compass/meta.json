@@ -2,7 +2,7 @@
  "page": "/compass",
  "generated_by": "scripts/build_compass.py",
  "built": "2026-09-11",
- "asset_version": "1c6f505d2b8b",
+ "asset_version": "58ae4d0d8874",
  "source": {
   "repro_dir": "/data/scratch/compass_repro",
   "repro_commit": "5e143de",

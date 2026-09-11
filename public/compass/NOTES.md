@@ -72,6 +72,8 @@ measured relative to, and what a big or small value means; terms are defined onc
 - Tahoe's shared axis is described as **confounded** (DMSO-well pseudo-drug test); its numbers are
   upper bounds on a biological shared response. ChemFish contexts are tissues of the same embryos.
 - Plate I exemplars and the Plate IV t-SNE are illustrations; statistics come from the full space.
+- MegaFin / MiniFin (Plates V–VIII): clusters stand in for cell types; the wells-per-drug curve is a model;
+  10 MegaFin wells with near-empty-droplet cells are excluded (9 of them 1 µM wells).
 
 ## Possible future work
 
@@ -80,6 +82,7 @@ measured relative to, and what a big or small value means; terms are defined onc
   phase grid with Tahoe-like pooled-well controls to see whether the confound can be simulated.
 - Tahoe: model well as a random effect using the second DMSO well and multi-plate drug-doses; test
   whether the axis survives.
-- MegaFin / MiniFin: measure effect/noise, per-cell-type cells per well, and the DMSO-well
-  pseudo-drug in MiniFin (12 replicate wells makes it separable) before planning the next screen.
+- MegaFin / MiniFin: redo Plate VIII on annotated cell types and on the `zsb` recipe; test whether the
+  inverted dose check follows cell yield (9 of 10 failed wells are 1 µM); run a small replicate-well pilot
+  to check the wells-per-drug projection before designing the next screen.
 - ChemFish genetic arm, once its cells are released.

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>COMPASS, reproduced — the shared response of a perturbed cell</title>
-<meta name="description" content="A reproduction of the COMPASS shared-response result across six human CRISPRi cell lines, what the shared axis is biologically, when it disappears, and why Tahoe and ChemFish do not show it cleanly.">
+<meta name="description" content="A reproduction of the COMPASS shared-response result across six human CRISPRi cell lines, what the shared axis is biologically, when it disappears, why Tahoe and ChemFish do not show it cleanly, and what our own MegaFin and MiniFin screens show when the same checks are run.">
 <style>
 /* ---------------------------------------------------------------------------
    The plate style (PLATE_STYLE.md at the repo root; /fate_map_wang_2026 is the
@@ -237,13 +237,13 @@ ol.lessons li{margin-bottom:.8em}
         <h2 class="plate-title">Why it can be seen in these screens</h2><span class="plate-when" id="w5"></span></div>
       <div class="grid2">
         <div><div class="sub" style="margin-top:0">how many perturbations &nbsp;·&nbsp; one stroke each</div>
-          <div class="canvas-hold"><canvas id="cvCount" data-minw="420" data-aspect="0.62"></canvas></div></div>
+          <div class="canvas-hold"><canvas id="cvCount" data-minw="420" data-aspect="0.8"></canvas></div></div>
         <div><div class="sub" style="margin-top:0">how strong &nbsp;·&nbsp; each response against the noise between control cells</div>
-          <div class="canvas-hold"><canvas id="cvStrength" data-aspect="0.62"></canvas></div></div>
+          <div class="canvas-hold"><canvas id="cvStrength" data-minw="420" data-aspect="0.8"></canvas></div></div>
         <div><div class="sub">how much was measured &nbsp;·&nbsp; molecules per cell, cells per perturbation</div>
           <div class="canvas-hold"><canvas id="cvDepth" data-minw="460" data-aspect="0.62"></canvas></div></div>
         <div><div class="sub">where the controls sit</div>
-          <div class="canvas-hold"><canvas id="cvLanes" data-minw="620" data-aspect="0.62"></canvas></div></div>
+          <div class="canvas-hold"><canvas id="cvLanes" data-minw="640" data-aspect="0.66"></canvas></div></div>
       </div>
       <figcaption id="cap5"></figcaption>
     </figure>
@@ -268,11 +268,11 @@ ol.lessons li{margin-bottom:.8em}
     <!-- PLATE VII -->
     <figure class="plate wide" id="plate7">
       <div class="plate-head"><span class="plate-num">Plate VII</span>
-        <h2 class="plate-title">What this means for a zebrafish screen</h2><span class="plate-when" id="w7"></span></div>
+        <h2 class="plate-title">Two screens closer to ours</h2><span class="plate-when" id="w7"></span></div>
       <div class="grid2">
         <div><div class="sub" style="margin-top:0">Tahoe &nbsp;·&nbsp; two no-drug wells, one treated as if it were a drug</div>
           <div class="canvas-hold"><canvas id="cvTahoe" data-minw="560" data-aspect="0.8"></canvas></div></div>
-        <div><div class="sub" style="margin-top:0">the three datasets, measured the same way</div>
+        <div><div class="sub" style="margin-top:0">the datasets, measured the same way</div>
           <div class="canvas-hold"><canvas id="cvThree" data-minw="560" data-aspect="0.8"></canvas></div></div>
       </div>
       <figcaption id="cap7"></figcaption>

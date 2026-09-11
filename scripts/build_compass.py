@@ -199,6 +199,13 @@ def histograms(p5):
     for ds in ("crispr", "tahoe"):
         x = np.log10(np.maximum(np.asarray(p5[ds]["cells"]), 1)); c, _ = np.histogram(x, bins=cedges)
         h[ds]["cells_counts"] = c.tolist(); h[ds]["cells_median"] = int(np.median(p5[ds]["cells"]))
+    # MegaFin, measured (compass_repro stage 15): every drug well x cluster effect, against the halves of the
+    # plate's pooled no-drug cells (the CRISPRi-style yardstick) and against the single-well noise floor
+    rows = list(csv.DictReader(open(RES / "fin" / "megafin_effect_vs_wellnoise.tsv"), delimiter="\t"))
+    for ds, col in (("megafin", "effect_over_control_split"), ("megafin_wells", "effect_over_null")):
+        x = np.log10(np.array([float(r[col]) for r in rows]))
+        c, _ = np.histogram(np.clip(x, edges[0], edges[-1] - 1e-9), bins=edges)
+        h[ds] = {"counts": c.tolist(), "n": int(len(x)), "median": f(10 ** np.median(x), 2), "above_2x": f(np.mean(x > np.log10(2)))}
     return {"ratio_edges": edges.tolist(), "cells_edges": cedges.tolist(), **h}
 
 

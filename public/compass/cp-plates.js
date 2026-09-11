@@ -291,8 +291,9 @@ function drawCount(cv) {
   const { ctx, W, H } = setup(cv);
   const M = CP.meta, E = M.external, Z = M.zeroshot;
   const rows = [['CRISPRi, per line', M.anchor.ensembl], ['Tahoe, per line', Math.round(E.tahoe.n_perturbations)],
-    ['MegaFin (design)', Z.MegaFin.perturbations], ['ChemFish, per tissue', Math.round(E.chemfish.n_perturbations)], ['MiniFin (design)', Z.MiniFin.perturbations]];
-  const L = 130, R = 60, T = 26, rh = (H - T - 30) / rows.length, pitch = (W - L - R) / rows[0][1];
+    ['MegaFin, per cell type', Math.round(M.fin.hvg.megafin.per_context_median.n_perturbations)], ['ChemFish, per tissue', Math.round(E.chemfish.n_perturbations)],
+    ['MiniFin, drugs', Z.MiniFin.perturbations]];
+  const L = 156, R = 60, T = 26, rh = (H - T - 30) / rows.length, pitch = (W - L - R) / rows[0][1];
   // one pitch for every row: a smaller screen is a shorter row, never a stretched one
   rows.forEach(([name, n], i) => {
     const y = T + rh * i + 6;
@@ -313,14 +314,15 @@ function drawStrength(cv) {
   const { ctx, W, H } = setup(cv);
   const P = CP.plates.p5, ed = P.ratio_edges, L = 20, R = 16, T = 18, B = H - 42;
   const sx = lin(ed[0], ed[ed.length - 1], L, W - R);
-  const sets = [['crispr', 'CRISPRi knockdowns'], ['tahoe', 'Tahoe drug-doses'], ['chemfish', 'ChemFish drug conditions']];
-  const rh = (B - T) / 3;
-  sets.forEach(([k, name], i) => {
+  const sets = [['crispr', 'CRISPRi knockdowns', INK.ink], ['tahoe', 'Tahoe drug-doses', INK.ink], ['chemfish', 'ChemFish drug conditions', INK.ink],
+    ['megafin', 'MegaFin drug wells', INK.t6], ['megafin_wells', 'MegaFin, against the noise between wells', INK.t6]];
+  const rh = (B - T) / sets.length;
+  sets.forEach(([k, name, col], i) => {
     const d = P[k], tot = d.counts.reduce((a, b) => a + b, 0), mxv = Math.max(...d.counts) / tot, y0 = T + rh * (i + 1) - 4;
     ctx.beginPath(); ctx.moveTo(sx(ed[0]), y0);
     d.counts.forEach((c, j) => { const h = (c / tot / mxv) * (rh - 16); ctx.lineTo(sx(ed[j]), y0 - h); ctx.lineTo(sx(ed[j + 1]), y0 - h); });
     ctx.lineTo(sx(ed[ed.length - 1]), y0); ctx.closePath();
-    ctx.fillStyle = rgba(INK.ink, 0.16); ctx.fill(); ctx.strokeStyle = rgba(INK.ink, 0.75); ctx.lineWidth = 0.8; ctx.stroke();
+    ctx.fillStyle = rgba(col, 0.16); ctx.fill(); ctx.strokeStyle = rgba(col, 0.75); ctx.lineWidth = 0.8; ctx.stroke();
     text(ctx, name, W - R, y0 - rh + 26, { font: font.serif(12, true), align: 'right' });
     text(ctx, `median ${f2(d.median)}×  ·  ${Math.round(d.above_2x * 100)}% above 2×`, W - R, y0 - rh + 40, { font: font.serif(11), color: INK['ink-2'], align: 'right' });
   });
@@ -357,35 +359,40 @@ function drawDepth(cv) {
 }
 
 function drawLanes(cv) {
-  // A schematic: the arrangement is the claim, not the dot counts. Proportions are real where stated.
+  // A sketch: the arrangement is the claim, not the dot counts. The CRISPRi control share is K562's real share;
+  // the plates show where the no-drug wells sit (Tahoe as deposited, MegaFin plate 1 from its sample names).
   const { ctx, W, H } = setup(cv);
-  const M = CP.meta, pw = (W - 40) / 3, top = 34;
-  const panes = ['CRISPRi: controls in the same lanes', 'Tahoe: controls in their own wells', 'ChemFish: controls in their own embryos'];
-  panes.forEach((t, i) => { const x = 10 + i * (pw + 10); caps(ctx, t.split(':')[0], x + pw / 2, 14, { align: 'center', size: 9.5, color: INK.ink });
-    text(ctx, t.split(':')[1].trim(), x + pw / 2, 28, { font: font.serif(11.5, true), color: INK['ink-2'], align: 'center' }); });
+  const M = CP.meta, np = 4, pw = (W - 10 * (np + 1)) / np, top = 34, X = (i) => 10 + i * (pw + 10);
+  const note = (x, y, lines) => lines.forEach((s, k) => text(ctx, s, x + pw / 2, y + k * 14, { font: font.serif(10.5, true), color: INK['ink-2'], align: 'center' }));
+  [['CRISPRi', 'controls in the same lanes'], ['Tahoe', 'controls in own wells'], ['ChemFish', 'controls in own embryos'], ['MegaFin', 'controls in own wells']]
+    .forEach(([a, b], i) => { caps(ctx, a, X(i) + pw / 2, 14, { align: 'center', size: 9.5, color: INK.ink });
+      text(ctx, b, X(i) + pw / 2, 28, { font: font.serif(10.5, true), color: INK['ink-2'], align: 'center' }); });
   const frac = M.data.controls.K562 / M.data.cells.K562;
-  // CRISPRi lane: one box, cells interleaved, control share = the real K562 share
-  { const x = 10, y = top + 14, w = pw, h = H - top - 40; penRect(ctx, x, y, w, h, 150, INK.rule, 0.8);
-    let k = 0; for (let r = 0; r < 12; r++) for (let c = 0; c < 14; c++) {
-      const cx = x + 10 + c * ((w - 20) / 13), cy = y + 10 + r * ((h - 20) / 11), isC = ((k * 0.6180339) % 1) < frac; k++;
-      dot(ctx, cx, cy, 2.4, isC ? INK.t3 : rgba(INK.ink, 0.55)); } }
-  // Tahoe plate: 8 x 12 wells, 2 DMSO wells per plate (as deposited), every well holding all 50 lines
-  { const x = 20 + pw, y = top + 22, w = pw, cell = Math.min((w - 16) / 12, (H - top - 60) / 8);
+  { const x = X(0), y = top + 14, w = pw, h = H - top - 44; penRect(ctx, x, y, w, h, 150, INK.rule, 0.8);
+    let k = 0; for (let r = 0; r < 12; r++) for (let c = 0; c < 9; c++) {
+      const cx = x + 9 + c * ((w - 18) / 8), cy = y + 10 + r * ((h - 20) / 11), isC = ((k * 0.6180339) % 1) < frac; k++;
+      dot(ctx, cx, cy, 2.2, isC ? INK.t3 : rgba(INK.ink, 0.55)); } }
+  const plate = (x, ctrl, never, lines) => {
+    const cell = Math.min((pw - 4) / 12, (H - top - 110) / 8), y = top + 22, x0 = x + (pw - 12 * cell) / 2;
     for (let r = 0; r < 8; r++) for (let c = 0; c < 12; c++) {
-      const isC = (r === 3 && c === 0) || (r === 6 && c === 11), cx = x + 8 + c * cell + cell / 2, cy = y + r * cell + cell / 2;
-      ctx.beginPath(); ctx.arc(cx, cy, cell * 0.38, 0, 6.283); ctx.strokeStyle = INK['ink-3']; ctx.lineWidth = 0.7; ctx.stroke();
-      if (isC) { ctx.fillStyle = INK.t3; ctx.fill(); } else { ctx.fillStyle = rgba(INK.ink, 0.12); ctx.fill(); } }
-    text(ctx, 'two DMSO wells on each plate;', x + w / 2, y + 8 * cell + 18, { font: font.serif(11, true), color: INK['ink-2'], align: 'center' });
-    text(ctx, 'all 50 lines share every well', x + w / 2, y + 8 * cell + 34, { font: font.serif(11, true), color: INK['ink-2'], align: 'center' }); }
-  // ChemFish: treated embryos and separate vehicle embryos
-  { const x = 30 + 2 * pw, y = top + 26, w = pw;
-    for (let k = 0; k < 10; k++) { const cx = x + 18 + (k % 5) * ((w - 36) / 4), cy = y + 16 + Math.floor(k / 5) * 44, isC = k >= 7;
-      ctx.beginPath(); ctx.ellipse(cx, cy, 12, 17, 0.4, 0, 6.283); ctx.strokeStyle = INK['ink-3']; ctx.lineWidth = 0.8; ctx.stroke();
+      const id = 'ABCDEFGH'[r] + (c + 1), cx = x0 + c * cell + cell / 2, cy = y + r * cell + cell / 2;
+      ctx.beginPath(); ctx.arc(cx, cy, cell * 0.38, 0, 6.283);
+      if (never.has(id)) { ctx.fillStyle = INK.paper; ctx.fill(); ctx.strokeStyle = INK.t3; ctx.lineWidth = 1.4; ctx.stroke(); continue; }
+      ctx.fillStyle = ctrl.has(id) ? INK.t3 : rgba(INK.ink, 0.12); ctx.fill(); ctx.strokeStyle = INK['ink-3']; ctx.lineWidth = 0.6; ctx.stroke();
+    }
+    note(x, y + 8 * cell + 18, lines);
+  };
+  plate(X(1), new Set(['D1', 'G12']), new Set(), ['two DMSO wells a plate;', 'all 50 lines share', 'every well']);
+  { const x = X(2), y = top + 26;
+    for (let k = 0; k < 10; k++) { const cx = x + 14 + (k % 5) * ((pw - 28) / 4), cy = y + 16 + Math.floor(k / 5) * 44, isC = k >= 7;
+      ctx.beginPath(); ctx.ellipse(cx, cy, Math.min(11, pw / 14), 16, 0.4, 0, 6.283); ctx.strokeStyle = INK['ink-3']; ctx.lineWidth = 0.8; ctx.stroke();
       ctx.fillStyle = isC ? INK.t3 : rgba(INK.ink, 0.14); ctx.fill(); }
-    text(ctx, 'vehicle embryos are separate animals', x + w / 2, y + 116, { font: font.serif(11, true), color: INK['ink-2'], align: 'center' });
-    text(ctx, 'tissues of one embryo share it', x + w / 2, y + 132, { font: font.serif(11, true), color: INK['ink-2'], align: 'center' }); }
+    note(x, y + 112, ['vehicle embryos are', 'separate animals;', 'tissues of one embryo', 'share it']); }
+  plate(X(3), new Set(['A1', 'B1']), new Set(['G3', 'H3']), ['one DMSO well per dose', 'and two never-dosed wells', 'a plate; cell types', 'share every well']);
   dot(ctx, 16, H - 12, 3, INK.t3); text(ctx, 'control', 24, H - 8, { font: font.serif(11, true), color: INK['ink-2'] });
-  caps(ctx, 'schematic', W - 8, H - 8, { align: 'right', size: 8.5 });
+  ctx.beginPath(); ctx.arc(84, H - 12, 3.2, 0, 6.283); ctx.strokeStyle = INK.t3; ctx.lineWidth = 1.3; ctx.stroke();
+  text(ctx, 'no-drug well, never dosed', 92, H - 8, { font: font.serif(11, true), color: INK['ink-2'] });
+  caps(ctx, 'sketch', W - 8, H - 8, { align: 'right', size: 8.5 });
 }
 
 /* ======================= PLATE VI — thresholds ======================= */
@@ -426,7 +433,8 @@ function drawDepthSweep(cv) {
   const sx = logs(20000, 250, L, W - R), sy = lin(0, 1, B, T);
   const num = (s) => parseFloat(String(s).replace(/,/g, ''));
   [['Tahoe', num(C['UMIs per cell (median, protein-coding)']['Tahoe-100M'])], ['ChemFish', num(C['UMIs per cell (median, protein-coding)']['ChemFish 2026_09'])]]
-    .forEach(([n, v]) => { const x = sx(v); guide(ctx, x, T, x, B); caps(ctx, `${n} depth`, x, T + 8, { align: 'center', size: 8.5 }); });
+    .concat([['MegaFin', CP.meta.zeroshot.MegaFin.median_umis]])
+    .forEach(([n, v], i) => { const x = sx(v); guide(ctx, x, T, x, B); caps(ctx, `${n} depth`, x, T + 8 + (n === 'MegaFin' ? 12 : 0), { align: 'center', size: 8.5 }); });
   axisX(ctx, sx, B, [10000, 3000, 1000, 300], { fmt: (v) => (v >= 1000 ? v / 1000 + 'k' : v), label: 'molecules kept per cell (median)', range: [L, W - R] });
   axisY(ctx, sy, L, [0, 0.25, 0.5, 0.75, 1], { fmt: f2, range: [B, T] });
   [['cons_RN', 'lines agree on β (Replogle/Nadig)', INK.ink, null], ['cons_XA', 'lines agree on β (X-Atlas)', INK.ink, [4, 3]],

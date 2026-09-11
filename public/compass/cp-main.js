@@ -260,27 +260,31 @@ function writeProse() {
     `there, but any one knockdown's own part is noisy;</b> it is the patterns across many knockdowns, like the groups above, that are solid.</p>`;
 
   const cr = CP.plates.p5.crispr, ta = CP.plates.p5.tahoe, cf = CP.plates.p5.chemfish;
+  const mfw = CP.plates.p5.megafin, mfn = CP.plates.p5.megafin_wells, MF = M.fin.hvg.megafin;
   $('cap5').innerHTML =
     `<p>Four things about these CRISPRi screens make the typical response easy to see. Each panel sets them beside Tahoe-100M ` +
     `(a large drug screen on 50 human cancer cell lines grown together), ChemFish (a drug screen on whole zebrafish embryos) and ` +
-    `our own MegaFin and MiniFin designs.</p>` +
+    `our own MegaFin and MiniFin, measured rather than read off their designs (Plate VIII has the full check).</p>` +
     `<p><b>1. Many perturbations</b> (top left). One stroke per perturbation at the same spacing in every row, so a row's length is ` +
     `its count: ${nf(M.anchor.ensembl)} knockdowns per line, against ${nf(Math.round(E.tahoe.n_perturbations))} drug-doses per Tahoe line, ` +
-    `${Z.MegaFin.perturbations} in MegaFin, a median of ${Math.round(E.chemfish.n_perturbations)} per ChemFish tissue, and ` +
-    `${Z.MiniFin.perturbations} in MiniFin. The red dashed lines mark roughly how many you need before a typical response shows up ` +
-    `at all: about 30, or about 100 in the hardest line.</p>` +
+    `a median of ${Math.round(MF.per_context_median.n_perturbations)} usable drug wells per MegaFin cell type, ` +
+    `${Math.round(E.chemfish.n_perturbations)} conditions per ChemFish tissue, and ${Z.MiniFin.perturbations} drugs in MiniFin. The red ` +
+    `dashed lines mark roughly how many you need before a typical response shows up at all: about 30, or about 100 in the hardest line.</p>` +
     `<p><b>2. Strong perturbations</b> (top right). For each perturbation: how big its response is, divided by how different two ` +
     `random halves of the control cells look from each other. 1× means you can't tell it from noise. Nearly every knockdown is above ` +
     `2× (median ${f2(cr.median)}×); Tahoe's median is ${f2(ta.median)}×; ChemFish's is ${f2(cf.median)}×, with most conditions under 2×. ` +
+    `MegaFin's drug wells, in plum, reach ${f2(mfw.median)}× on that yardstick. But each MegaFin drug sits in a single well, and the fair ` +
+    `yardstick for a single well is the noise between wells: against that they reach only ${f2(mfn.median)}× (the bottom row). ` +
     `The knockdowns are strong partly because many hit genes a cell cannot live without — a quarter of the targets, against about ` +
     `3.5% of all genes.</p>` +
     `<p><b>3. Plenty of measurement</b> (bottom left). About ${nf(num(M.comparison['UMIs per cell (median, protein-coding)'][CRc]))} ` +
     `molecules read per cell, and a median of ${num(M.comparison['cells per perturbation x context (median)'][CRc])} cells per ` +
     `knockdown in each line. MegaFin sits between Tahoe and the CRISPRi screens on both: about ${nf(Z.MegaFin.median_umis)} molecules ` +
-    `per cell and a median of ${nf(Math.round(M.fin.hvg.megafin.per_context_median.median_cells))} cells per drug well and cell type.</p>` +
+    `per cell and a median of ${nf(Math.round(MF.per_context_median.median_cells))} cells per drug well and cell type.</p>` +
     `<p><b>4. Controls in the same place</b> (bottom right, a sketch). In a CRISPRi screen the control cells are mixed into the same ` +
     `pool as everything else, so they go through exactly the same handling. In Tahoe the controls sit in their own wells; in ` +
-    `ChemFish, in separate embryos. Anything that differs between wells or embryos can then look like an effect.</p>`;
+    `ChemFish, in separate embryos; in MegaFin, in one DMSO well per dose on each plate, beside two wells that were never dosed. ` +
+    `Anything that differs between wells or embryos can then look like an effect — and in MegaFin it measurably does (Plate VIII).</p>`;
 
   const ph = S.phase, kAll = ph.k.length - 1, iN = (n) => ph.n.indexOf(n), kx = (k) => ph.k.indexOf(String(k));
   const kMin = ph.k.find((k, j) => ph.cons_RN[iN(300)][j] >= 0.5);
@@ -302,7 +306,8 @@ function writeProse() {
     `${f2(ph.cons_RN[iN(10)][kAll])}). Cells per knockdown decide it.</p>` +
     `<p><b>Top right — shallower sequencing</b> (new). The same cells, but with molecules thrown away at random, as if each cell ` +
     `had been sequenced less deeply. Agreement barely moves: ${f2(dp.cons_RN[iT])} at Tahoe's depth, ${f2(dp.cons_RN[iC])} near ` +
-    `ChemFish's. The X-Atlas pair frays sooner (${f2(dp.cons_XA[iC])}). <b>Shallow sequencing on its own does not erase it.</b></p>` +
+    `ChemFish's. The X-Atlas pair frays sooner (${f2(dp.cons_XA[iC])}). <b>Shallow sequencing on its own does not erase it.</b> ` +
+    `MegaFin, at about ${nf(Z.MegaFin.median_umis)} molecules per cell, is deeper than either.</p>` +
     `<p><b>Bottom left — take away the strongest.</b> Remove the knockdowns that set off the typical response hardest. Agreement ` +
     `falls from ${f2(ref)} to ${f2(S.remove_top_cons[3][1])} once the top quarter is gone (X-Atlas pair: ${f2(S.remove_top_cons[3][2])}), ` +
     `and to ${f2(S.remove_top_cons[4][1])} at half. The faint lines ask whether each line's typical response still points the same ` +
@@ -311,7 +316,10 @@ function writeProse() {
     `gives the same typical response (dots near 1). Controls from a single batch do not (${span(single)}): that batch's quirks ` +
     `leak into every response.</p>` +
     `<p><b>The short version:</b> about ${kMin} or more cells per perturbation in each cell type, a few dozen perturbations including ` +
-    `strong ones, and controls pooled across batches.</p>`;
+    `strong ones, and controls pooled across batches. MegaFin meets the first two — about ` +
+    `${nf(Math.round(M.fin.hvg.megafin.per_context_median.median_cells))} cells per drug well and cell type, and a median of ` +
+    `${Math.round(M.fin.hvg.megafin.per_context_median.n_perturbations)} usable drug wells per cell type. Its controls are where it falls ` +
+    `short: one DMSO well per dose on each plate (Plate VIII).</p>`;
 
   const w = E.tahoe.dmso_well, t = E.tahoe.checks, c = E.chemfish;
   $('cap7').innerHTML =
@@ -409,7 +417,7 @@ function writeTable() {
   const C = CP.meta.comparison, Z = CP.meta.zeroshot, mf = CP.meta.fin.hvg.megafin, mn = CP.meta.fin.hvg.minifin;
   const cols = ['COMPASS source (Replogle/Nadig/X-Atlas CRISPRi)', 'Tahoe-100M', 'ChemFish 2026_09'];
   const pick = [
-    ['perturbations per context (analysed)', 'perturbations per cell line or tissue', () => `${Z.MegaFin.perturbations} drug-doses`, () => `${Z.MiniFin.perturbations} drugs + DMSO`],
+    ['perturbations per context (analysed)', 'perturbations per cell line or tissue', () => `${Z.MegaFin.perturbations} drug-doses (a median of ${Math.round(mf.per_context_median.n_perturbations)} usable per cell type)`, () => `${Z.MiniFin.perturbations} drugs + DMSO`],
     ['perturbation type', 'what is perturbed', () => 'drugs, whole embryos', () => 'drugs, whole embryos'],
     ['contexts', 'in what', () => Z.MegaFin.context, () => Z.MiniFin.context],
     ['control design', 'control cells', () => Z.MegaFin.controls, () => Z.MiniFin.controls],
@@ -495,7 +503,8 @@ function writeNotes() {
     `are the record). Paper: Liang &amp; Singh 2026, <a href="https://doi.org/${s.paper_doi}" target="_blank" rel="noopener">bioRxiv ${s.paper_doi}</a> ` +
     `(PDF sha256 ${s.paper_sha256.slice(0, 12)}…). Decomposition and CompassX: the authors' <a href="${s.compass_repo}" target="_blank" rel="noopener">compass</a> ` +
     `package at ${s.compass_commit}. Data: Replogle 2022 (Figshare+ 20029387), Nadig 2025 (GEO GSE264667), X-Atlas/Orion (Hugging Face, ` +
-    `commit 53a5bc98, CC BY-NC-SA 4.0), Tahoe-100M (Arc Institute, 2025-02-25), ChemFish (Trapnell lab, 2026-09 release). ` +
+    `commit 53a5bc98, CC BY-NC-SA 4.0), Tahoe-100M (Arc Institute, 2025-02-25), ChemFish (Trapnell lab, 2026-09 release), ` +
+    `MegaFin and MiniFin (Zeroshot's gold <code>parse/v1</code> objects, s3://zsb-gold-library). ` +
     `Python ${s.software.python}, numpy ${s.software.numpy}, scanpy ${s.software.scanpy}. Asset version ${M.asset_version}. ` +
     `The pen wobble on frames and rules is decoration; no data mark is jittered.`;
 }
