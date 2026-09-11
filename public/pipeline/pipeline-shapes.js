@@ -8758,10 +8758,11 @@ DRAW.sizecheck = drawSizeCheck;
    recoloured, always to a base other than the one it just showed — the same
    flashes go off next time, each in a colour it did not flash last time.
 
-   THE DIMMING IS STILL ONE GROUP'S OPACITY, and the status lights share
-   it: the field goes out together and the lights with it, so the housing
-   never reads as doing something the flow cell is not. Only the going-off
-   is per cluster, because only the going-off was asked to be.
+   THE DIMMING IS STILL ONE GROUP'S OPACITY. The status lights used to
+   share it and go out with the field; a later request asked them to keep
+   flashing in succession, so they now run a clock of their own, C A T G
+   round and round, through the dark between rounds as well. Only the
+   going-off is per cluster, because only the going-off was asked to be.
 
    A FIFTH REQUEST made it read as a flow chip: the cell is an ellipse
    rather than a pane, its grid is the lattice the clusters sit in and drawn
@@ -8857,11 +8858,13 @@ function drawReadCycle(g,n){
     face(pts([c(s0,1),c(s1,1),c(s1,-1),c(s0,-1)]),"var(--fg)",o); };
   strip(-0.34,-0.12,.06); strip(0.02,0.09,.045);
 
-  /* ---- TIMING: the scan crosses in a second and a half, slow enough that
-     the flashes behind it read one by one; LAG is the most any cluster
-     trails the line, FLARE how long a bulb takes to die back to its dot,
-     then half a second each of hold, dim and dark. */
-  const SCAN=1.5, LAG=0.35, FLARE=0.4, HOLD=0.5, DIM=0.5, DARK=0.5;
+  /* ---- TIMING: asked from the page to be "almost a continuous cycle", so
+     the scan crosses in under a second and the gap between rounds is only
+     long enough to see that one has ended — a tenth of a second held, a
+     fifth dimming, a beat of dark. LAG is the most any cluster trails the
+     line, FLARE how long a bulb takes to die back to its dot; both shrank
+     with the scan so the scatter behind the line keeps its proportions. */
+  const SCAN=0.9, LAG=0.2, FLARE=0.28, HOLD=0.1, DIM=0.2, DARK=0.12;
   const CYC=SCAN+LAG+HOLD+DIM+DARK;
 
   /* THE SCAN LINE'S DIRECTION, needed by the clusters as well as the line:
@@ -8923,19 +8926,21 @@ function drawReadCycle(g,n){
      lands after the cell. Asked to be more obvious, so each socket now holds
      its own colour even while the field is dark, and flares — bloom, core
      and a hot white centre — on the beat. The flare is its own group after
-     the lid, so the bloom is not cut off at the wall's top edge; it is
-     written in the same frame and to the same value as the field's. Set a
-     little above the wall's middle, so each letter has the lower third to
-     itself. */
-  const zl=h*0.64, lamp=el("g",{opacity:"0"});
+     the lid, so the bloom is not cut off at the wall's top edge; each light
+     has a group of its own inside it, so they can go off one after another.
+     Set a little above the wall's middle, so each letter has the lower
+     third to itself. */
+  const zl=h*0.64, lamp=el("g",{}), lamps=[];
   BASE.forEach((c,i)=>{
     const p=P(X(0.10+i*0.105),y1,zl), cx=f1(p[0]), cy=f1(p[1]);
     add(g,el("circle",{cx,cy,r:f2(2.6*SC),fill:c,"fill-opacity":".3",
       stroke:"var(--fg)","stroke-width":f2(0.5*SC),"stroke-opacity":".5"}));
-    add(lamp,el("circle",{cx,cy,r:f2(6.5*SC),fill:c,"fill-opacity":".22"}));
-    add(lamp,el("circle",{cx,cy,r:f2(4.2*SC),fill:c,"fill-opacity":".4"}));
-    add(lamp,el("circle",{cx,cy,r:f2(2.4*SC),fill:c}));
-    add(lamp,el("circle",{cx,cy,r:f2(0.9*SC),fill:"var(--fg)","fill-opacity":".85"}));
+    const one=add(lamp,el("g",{opacity:"0"}));
+    lamps.push({e:one, o:"0"});
+    add(one,el("circle",{cx,cy,r:f2(6.5*SC),fill:c,"fill-opacity":".22"}));
+    add(one,el("circle",{cx,cy,r:f2(4.2*SC),fill:c,"fill-opacity":".4"}));
+    add(one,el("circle",{cx,cy,r:f2(2.4*SC),fill:c}));
+    add(one,el("circle",{cx,cy,r:f2(0.9*SC),fill:"var(--fg)","fill-opacity":".85"}));
     /* the letter under each light is the key: it stays when the field goes
        dark, so which colour is which base is never left to be guessed */
     const t=add(g,el("text",{x:cx,y:f1(p[1]+7.0*SC),"text-anchor":"middle",
@@ -8990,17 +8995,27 @@ function drawReadCycle(g,n){
      back — so a frame touches the handful going off, not all of them. The
      scan is linear because a camera's pass is. */
   const ease=u=>u<0.5?2*u*u:1-2*(1-u)*(1-u);
-  let t=0, litO="0", scanU=-1;
+  /* the lights' own beat: one goes off every STEP and dies back over LFL,
+     a little longer than a step, so the run reads as a chase rather than
+     four separate blinks. Not tied to CYC, so they never stop for the dark. */
+  const STEP=0.2, LFL=0.3;
+  let t=0, lt=0, litO="0", scanU=-1;
   const run=dt=>{
     t+=Math.min(dt,0.1);
+    lt=(lt+Math.min(dt,0.1))%(4*STEP);
+    lamps.forEach((L,i)=>{
+      const a=(lt-i*STEP+4*STEP)%(4*STEP);
+      const o=a<LFL ? ((1-a/LFL)*(1-a/LFL)).toFixed(2) : "0";
+      if(o!==L.o){ L.o=o; L.e.setAttribute("opacity",o); }
+    });
     if(t>=CYC){ t%=CYC;
       dot.forEach(d=>{ d.k=(d.k+1+Math.floor(r()*3))%4;
         d.node.setAttribute("fill",BASE[d.k]); d.flare.setAttribute("fill",BASE[d.k]); });
     }
     const e=SCAN+LAG+HOLD;
-    const o = t<e ? Math.min(1,t/0.15) : t<e+DIM ? 1-ease((t-e)/DIM) : 0;
+    const o = t<e ? Math.min(1,t/0.1) : t<e+DIM ? 1-ease((t-e)/DIM) : 0;
     const os=o.toFixed(2);
-    if(os!==litO){ litO=os; lit.setAttribute("opacity",os); lamp.setAttribute("opacity",os); }
+    if(os!==litO){ litO=os; lit.setAttribute("opacity",os); }
     dot.forEach(d=>{
       const a=t-d.due, on=a<0?"0":"1";
       const fl=a<0||a>=FLARE ? "0" : ((1-a/FLARE)*(1-a/FLARE)).toFixed(2);
