@@ -440,6 +440,29 @@ a reason to open. The pins are now a `pins` command in two repos — ask the
 machine — but the prose has no such check, and `check-fit.mjs` cannot read.
 
 
+## Tile captions are two rows at one size — 2026-09-11
+
+**A tile caption is its key and its size, nothing else.** The object count is gone from the tiles
+(it is in each vault's reader panel); a wholly-legacy tile says `· legacy` on its size row instead.
+Every tile in every vault starts from the same `CAP_KEY = 8.6` / `CAP_SIZE = 7.6` and only shrinks
+when it must — before, a big tile set its key at 10.5, so `human/tahoe/` and `megafin/` shouted while
+the tiles beside them whispered, and the eye read lettering instead of area. Bronze's split tiles
+(aspirational / legacy halves) use the same two sizes. Rows sit at a pitch of `1.22`, not `lineH`'s
+`1.45`: a caption is one object. `1.15` let glyph boxes touch by 0.2px (`check-overlaps` caught
+`micdropseq/` against `15.7 GiB`).
+
+**An unlabelled group draws no column caption and reserves no row for one.** The OPEN vault's single
+group is now `label:""` — "Acquired (Open Source)" repeated the vault's own name. SILVER keeps its
+caption; there it separates ours from theirs.
+
+**The OPEN vault now shows 879 objects, 472.57 GiB, not 867.** At 00:24 UTC another Claude session on
+this instance (the fate-map one) copied `zebrahub/timepoints/` (11) and `zebrahub/zebrahub_base.h5ad`
+into `zsb-open-source` and verified them against local and silver copies — the pre-convention legacy
+objects the move had excluded. The panel draws them in the pending-deletion red, as it does the
+chemfish stray. Whether they stay is the user's call, not this page's.
+
+Checks: `check-overlaps` 0 pairs, `check-clicks` 18, `check-fit` the known 7.
+
 ## Tiles lay out wide, not square — 2026-09-11
 
 **Squarify aimed every tile at 1:1, which is the worst shape for a horizontal caption.** A key like

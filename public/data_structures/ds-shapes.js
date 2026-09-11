@@ -97,6 +97,10 @@ DRAW.vault = (g, n) => {
      height goes unused. So lay out on a canvas stretched vertically by TILE_WIDE and squash the
      result back - every area is exactly what it was (area is still the encoding), but the layout now
      optimises for tiles TILE_WIDE times wider than tall. ?wide=<k> overrides it, for tuning. */
+  /* Tile captions: one key size and one figure size for every tile in every vault, and a pitch
+     tighter than lineH's 1.45 - a two-row caption is one object, not two lines of prose. */
+  const CAP_KEY = 8.6, CAP_SIZE = 7.6;
+  const capH_ = size => size * TYPE * 1.22 / S;   /* 1.15 let glyph boxes touch by 0.2px */
   const TILE_WIDE = Math.max(1, parseFloat(new URLSearchParams(location.search).get("wide")) || 3);
   const layoutWide = (tiles, x0, y0, w0, h0) =>
     squarify(tiles, x0, 0, w0, h0 * TILE_WIDE)
@@ -147,20 +151,20 @@ DRAW.vault = (g, n) => {
           const availPx = Math.max((cw - 0.50) * S, 1);
           const availH = Math.max(ch - 0.28, 0.01);
           const base = [
-            { t: it.key, z: 9.5, c: col },
-            { t: kind, z: 7.8, c: col },
-            { t: fmtBytes(bytes), z: 8.0, c: "var(--fg3)" }
+            { t: it.key, z: CAP_KEY, c: col },
+            { t: kind, z: CAP_SIZE, c: col },
+            { t: fmtBytes(bytes), z: CAP_SIZE, c: "var(--fg3)" }
           ];
           let k = 1;
           for (const r of base) k = Math.min(k, availPx / textW(r.t, r.z));
-          k = Math.min(k, availH / base.reduce((a, b) => a + lineH(b.z), 0));
+          k = Math.min(k, availH / base.reduce((a, b) => a + capH_(b.z), 0));
           const rows = base.map(r => ({ t: r.t, z: r.z * k, c: r.c }));
-          const tot = rows.reduce((a, b) => a + lineH(b.z), 0);
+          const tot = rows.reduce((a, b) => a + capH_(b.z), 0);
           let y = cy - tot / 2;
           rows.forEach(r => {
-            y += lineH(r.z) / 2;
+            y += capH_(r.z) / 2;
             label(g, cx, y, r.t, { size: r.z, fill: r.c, ls: 0.03 });
-            y += lineH(r.z) / 2;
+            y += capH_(r.z) / 2;
           });
         };
         cap(ax, ay, aw, ah, "aspirational", null, it.value - it.legacy, "var(--fg)");
@@ -203,10 +207,13 @@ DRAW.vault = (g, n) => {
          accent. It takes the reader panel's legacy vocabulary instead: dashed
          rule, no accent, captions receded a step. */
       const wholly = it.value > 0 && it.legacy >= it.value;
+      /* TWO ROWS, ONE SIZE. A caption is the key and its size - the object count lives in the reader
+         panel, not on the tile. Every tile starts from the same CAP_KEY / CAP_SIZE and only shrinks
+         when it must; a big tile no longer gets big type, so the eye reads the tiles' AREAS, which
+         are the data, rather than their lettering. */
       const base = [
-        { t: it.key, z: 10.5, c: wholly ? "var(--fg3)" : "var(--fg)" },
-        { t: fmtBytes(it.value), z: 9, c: wholly ? "var(--fg3)" : "var(--fg2)" },
-        { t: (wholly ? "legacy · " : "") + fmtCount(it.objs) + " obj", z: 8.2, c: "var(--fg3)" }
+        { t: it.key, z: CAP_KEY, c: wholly ? "var(--fg3)" : "var(--fg)" },
+        { t: fmtBytes(it.value) + (wholly ? " · legacy" : ""), z: CAP_SIZE, c: wholly ? "var(--fg3)" : "var(--fg2)" }
       ];
       /* SHRINK, THEN SHED ONE ROW — and only one. The rule above is that a
          caption shrinks rather than sheds, because a tile with a key and no
@@ -219,7 +226,7 @@ DRAW.vault = (g, n) => {
       const fit = rows => {
         let k = 1;
         for (const r of rows) k = Math.min(k, availPx / textW(r.t, r.z));
-        return Math.min(k, availH / rows.reduce((a, b) => a + lineH(b.z), 0));
+        return Math.min(k, availH / rows.reduce((a, b) => a + capH_(b.z), 0));
       };
       let k = fit(base);
       /* Shed one row at a time until what is left clears the legibility floor.
@@ -231,12 +238,12 @@ DRAW.vault = (g, n) => {
       while (base[0].z * k < 6 && base.length > 1) { base.length -= 1; k = fit(base); }
       const rows = base.map(r => ({ t: r.t, z: r.z * k, c: r.c }));
 
-      const total = rows.reduce((a, b) => a + lineH(b.z), 0);
+      const total = rows.reduce((a, b) => a + capH_(b.z), 0);
       let cy = L.y - total / 2;
       rows.forEach(r => {
-        cy += lineH(r.z) / 2;
+        cy += capH_(r.z) / 2;
         label(g, L.x, cy, r.t, { size: r.z, fill: it.stale ? "var(--drop)" : r.c, ls: 0.03 });
-        cy += lineH(r.z) / 2;
+        cy += capH_(r.z) / 2;
       });
 
       /* the dataset's own outline, in its category colour, drawn over the fill
@@ -270,9 +277,14 @@ DRAW.vault = (g, n) => {
       /* FIT THE CAPTION TO ITS COLUMN. The first pair of these ran into each
          other across the divide, which reads as one long broken word. Same
          treatment the tile captions get: shrink until it fits, no floor. */
-      const capZ = Math.min(8.2, 8.2 * ((gw - 0.6) * S) / Math.max(textW(gr.label.toUpperCase(), 8.2), 1));
-      label(g, gx + gw / 2, fy + capH / 2, gr.label,
-        { size: capZ, fill: "var(--fg3)", ls: 0.1, upper: true });
+      /* An unlabelled group draws no caption and keeps no row for one: the open-source vault is one
+         kind of thing throughout, and a column caption there would only repeat the vault's name. */
+      const ch = gr.label ? capH : 0;
+      if (gr.label) {
+        const capZ = Math.min(8.2, 8.2 * ((gw - 0.6) * S) / Math.max(textW(gr.label.toUpperCase(), 8.2), 1));
+        label(g, gx + gw / 2, fy + capH / 2, gr.label,
+          { size: capZ, fill: "var(--fg3)", ls: 0.1, upper: true });
+      }
       if (gr.sub) {
         /* SUB-SECTIONS, STACKED. A column whose contents are several kinds of
            data splits into bands, one per kind, captioned. Band heights are
@@ -283,14 +295,14 @@ DRAW.vault = (g, n) => {
            sitting on it is captioned "(not to scale)". Within every band the
            tiles are exact, and the two top-level columns are exact. */
         const FLOOR = 2.1, SUBCAP = 0.85;
-        const inner = fh - capH;
+        const inner = fh - ch;
         const subT = gr.sub.map(sg => sg.tiles.reduce((a, t) => a + t.value, 0));
         const subSum = subT.reduce((a, b) => a + b, 0);
         const wanted = subT.map(v => inner * v / subSum);
         const floored = wanted.map(v => v < FLOOR);
         const slack = inner - floored.reduce((a, f, i) => a + (f ? FLOOR : 0), 0);
         const freeSum = subT.reduce((a, v, i) => a + (floored[i] ? 0 : v), 0);
-        let sy = fy + capH;
+        let sy = fy + ch;
         gr.sub.forEach((sg, si) => {
           const sh = floored[si] ? FLOOR : slack * subT[si] / freeSum;
           /* Scale a band caption to its band, exactly as the column captions and
@@ -304,7 +316,7 @@ DRAW.vault = (g, n) => {
           sy += sh;
         });
       } else {
-        drawTiles(gr.tiles, gx, fy + capH, gw, fh - capH, max);
+        drawTiles(gr.tiles, gx, fy + ch, gw, fh - ch, max);
       }
       gx += gw + GUTTER;
     });

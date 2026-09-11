@@ -144,7 +144,9 @@ for band, ps in bands.items():
     if ps:
         tiles = ", ".join(f'{{key:"{p}", value:{agg[p][1]}, objs:{agg[p][0]}, accent:"{ACC.get(p, "#8A8A8A")}"}}' for p in ps)
         groups.append(f'{{label:"{band}", tiles:[{tiles}]}}')
-(SP / "open_source_groups.txt").write_text(f'[{{label:"Acquired (Open Source)", sub:[{", ".join(groups)}]}}]')
+# One unlabelled group: in this vault everything is acquired, so the column caption silver needs to
+# tell "ours" from "theirs" would only repeat the vault's own name. The vault draws no caption for it.
+(SP / "open_source_groups.txt").write_text(f'[{{label:"", sub:[{", ".join(groups)}]}}]')
 json.dump({"objects": len(rows), "bytes": TOT, "gib": round(gib(TOT), 2), "datasets": len(agg),
            "waiting": len(waiting)}, open(SP / "open_source_figures.json", "w"))
 print(f"{len(rows)} obj · {gib(TOT):,.2f} GiB · {len(agg)} datasets · {len(waiting)} not moved yet")
