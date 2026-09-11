@@ -7498,6 +7498,30 @@ function drawPcrAmplify(g,n){
   lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,fill:"none",
     stroke:"var(--fg2)","stroke-width":"1.5","stroke-opacity":".85"}));
 
+  /* ---- THE HANDOVER -------------------------------------------------------
+     Asked for from the page: a connection to the next module. The lane's track
+     already joins the two dots, but it runs ground to ground, and what is
+     handed on is what is in this glass. B9 opens on a strip of tubes, the
+     thing it loads from, and on screen that strip stands inside this ring's
+     lower right. So one arc runs from the middle of the glass into the strip's
+     back tube, the one B9 loads first — the flowLine and chevron B8 draws its
+     own handover with, so the row says "goes on to" one way.
+
+     THE FAR END IS A FRACTION OF THIS NODE, not a read of B9's — the bargain B8
+     and C4 already make. The lane stands B9 about 1.69 of this width along, and
+     its strip sits 0.27 of B9's width back from its centre. A resize here
+     carries both ends; B9 moving on its own would leave this pointing where it
+     was.
+
+     It lives in this group, so B9's tile, painted after, stands over its end
+     and the line goes into the tube rather than across it. Lit through the
+     hold on the full glass — what goes on is the amplified library, so the
+     bead cannot leave before the cloud is made — and faint the rest of the
+     loop, because the connection is a fact about the station. */
+  const hand=flowLine(g, MID, P(n.x+n.w*1.42, n.y-n.d*0.227, n.h*0.6),
+    "var(--fg2)", SC);
+  setFanLine(hand, 0.22, 0);
+
   /* ---- TIMING -------------------------------------------------------------
      Three strands adrift long enough to be counted; then copy after copy,
      each an enzyme landing, a walk that writes the copy, and a peel, until
@@ -7565,7 +7589,8 @@ function drawPcrAmplify(g,n){
      and for this one it has to be the full glass — the frame the request asks
      the figure to end on. */
   let t=T_FULL+HOLD*0.5, ph=0;
-  const run=dt=>{ t=(t+dt)%TOT; ph+=dt*1.7; place(t,ph); };
+  const run=dt=>{ t=(t+dt)%TOT; ph+=dt*1.7; place(t,ph);
+    setFanLine(hand, 0.22, (t-T_FULL)/HOLD); };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
