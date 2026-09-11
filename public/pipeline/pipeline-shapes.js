@@ -9167,8 +9167,8 @@ function drawReadCycle(g,n){
     neb.push({bar, rad, cz, th, o:""});
   }
 
-  /* THE CLOUD GROWS, asked for so the picture shows the run's ~3 billion
-     reads piling up. acc runs 0 to 1 over GROW seconds, holds, and a new
+  /* THE CLOUD GROWS, asked for so the picture shows the run's reads
+     piling up. acc runs 0 to 1 over GROW seconds, holds, and a new
      run starts empty. The ball's volume follows the count, so its radius
      goes as the cube root, and bars join it one by one in the order they
      were drawn; the counter over it prints the count the fill stands for.
@@ -9179,8 +9179,13 @@ function drawReadCycle(g,n){
      it always did. Its centre stays on the stream's line, asked for in
      place of a centre that rose to keep the ball off the ground, so the
      strands run into its middle and its lower part passes below the floor
-     the way the projection draws anything there. */
-  const READS=3e9, GROW=18, FULL=2.5, GR=5;
+     the way the projection draws anything there.
+
+     IT COUNTS TO 3,655,719,111, asked for from the page in place of a round
+     three billion, and prints every digit so the held figure is that exact
+     number, not a rounded "3.66 billion". Grouped by hand rather than by
+     toLocaleString, so the separator is a comma in every browser locale. */
+  const READS=3655719111, GROW=18, FULL=2.5, GR=5;
   const tally=add(g,el("text",{x:f1(C[0]),y:f1(C[1]),"text-anchor":"middle",
     "font-size":f2(4.6*SC),"font-weight":"700",fill:"var(--fg2)",stroke:"var(--bg)",
     "stroke-width":f2(1.1*SC),"stroke-opacity":".85","paint-order":"stroke","stroke-linejoin":"round"}));
@@ -9194,7 +9199,7 @@ function drawReadCycle(g,n){
     const cnt=P(xc,ym,za+R);
     tally.setAttribute("x",f1(cnt[0])); tally.setAttribute("y",f1(cnt[1]-3*SC));
     const nr=acc*READS;
-    const s=nr>=1e9 ? `${(nr/1e9).toFixed(2)} billion reads` : `${Math.round(nr/1e6)} million reads`;
+    const s=`${String(Math.round(nr)).replace(/\B(?=(\d{3})+(?!\d))/g,",")} reads`;
     if(s!==tallyS){ tallyS=s; tally.textContent=s; }
   };
   const SPIN=Math.PI*2/12;
