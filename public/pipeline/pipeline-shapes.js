@@ -8114,6 +8114,24 @@ function drawSizeRun(g,n,o){
     Q.bar.setAttribute("stroke",ink); Q.sign.setAttribute("fill",ink);
   });
 
+  /* ---- THE HANDOVER -------------------------------------------------------
+     Only when a caller passes `hand`, because B9a's claim is that nothing
+     leaves its bench. C3 is the other case: it is the last check before the
+     sequencer, and what goes on is what is in the tubes. One arc runs from the
+     back tube's rim — the one standing nearest the sequencer on screen — to
+     the point `hand` names, the flowLine and chevron B8 and B8a draw their own
+     handovers with, so the row says "goes on to" one way.
+
+     `hand` is three fractions of THIS node, not a read of the next one's —
+     the bargain B8 and B8a already make. A resize here carries both ends. */
+  let hand=null;
+  if(o.hand){
+    const rim=ellipseAt(tx,laneY(0),th,tr);
+    hand=flowLine(g, [rim.x, rim.y-rim.ry],
+      P(n.x+n.w*o.hand[0], n.y+n.d*o.hand[1], n.h*o.hand[2]), "var(--fg2)", SC);
+    setFanLine(hand, 0.22, 0);
+  }
+
   /* ---- THE GRAPH ----------------------------------------------------------
      Axis origin at the group's own 0,0, x to the right and intensity up, on a
      backing panel so the traces are read against their own axes and not the
@@ -8219,6 +8237,9 @@ function drawSizeRun(g,n,o){
     gr.setAttribute("opacity",(t<t3 ? 0 : t<t5 ? clamp((t-t3)/0.3)
       : 1-clamp((t-t5)/CLEAR)).toFixed(2));
     traceAt(f);
+    /* lit through the hold on the finished graph: the library goes on once
+       it has been seen to peak, not before */
+    if(hand) setFanLine(hand, 0.22, (t-t4)/HOLD2);
   };
 
   /* THE CLOCK DOES NOT START AT ZERO. Reduced motion never advances it, so
@@ -8740,10 +8761,18 @@ DRAW.indexpcr = drawIndexPcr;
    single peak in that band, so the band is drawn on the graph and labelled,
    and the traces are drawn landing in it. cond says no electropherogram was
    archived; the traces show where the peak should be, not what one was.
+
+   AND A CONNECTOR TO THE NEXT STEP, asked for from "Edit visual". The lane's
+   track runs ground to ground and leaves from under the cassette, not from
+   the tubes that go on. So `hand` names where S's chassis meets its top on
+   the near side, level with its flow cell: the lane stands S's near edge
+   1.37 of this width along, its deck 2.94 of this height up, and the flow
+   cell 0.42 of this depth forward. S is painted after this node, so the arc
+   stops at its rim rather than crossing the deck.
    ------------------------------------------------------------------ */
 function drawSizeCheck(g,n){
   drawSizeRun(g,n,{sizes:[{r:0.7,far:0.55,mu:0.52}], least:2, sd:0.036,
-    window:[0.44,0.60,"400–500 bp"], seed:523});
+    window:[0.44,0.60,"400–500 bp"], seed:523, hand:[1.37,0.42,2.94]});
 }
 DRAW.sizecheck = drawSizeCheck;
 
