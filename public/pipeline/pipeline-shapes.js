@@ -8213,18 +8213,26 @@ DRAW.sizerun = drawSizeRun;
    to the thing the next station needs. It is labelled once, outside the rim,
    on the far-left end where nothing else on the map is reaching.
 
+   THE STRAND IS CARRIED OVER, NOT DRAWN AGAIN. Asked for a fourth time, and
+   this time the request said the strand should be the one the previous
+   panel left — so the duplex runs on B8's spine, the wobble B8a's glass
+   fills with, in B8's --c-top, stretched to the glass's width. B9 and B9a
+   between here and there draw no strand, so there is no nearer one to match.
+   The chips and the gold stay off: a cut through a chip would be a claim
+   about which piece keeps the barcode, and the request makes none.
+
    AND THE LOOP CUTS RATHER THAN UNDOING ITSELF: a strand does not re-anneal,
    so the pieces fade and the whole strand comes back.
 
-   Spends --ch8, declared on /molecular_pipe; this shape is worn by that
-   page's C1 alone.
+   Spends --ch8 and --c-top, declared on /molecular_pipe; this shape is worn
+   by that page's C1 alone.
    ------------------------------------------------------------------ */
 function drawFragmentLigate(g,n){
   /* EVERY OFFSET IS A FRACTION OF THE NODE. Q is the one ruler the inset is
      written in, so the glass and everything in it grows with the tile by one
      number. Composed at w .72, d .72, h .4 — the tile C2 and B9 stand on. */
   const Q=n.w*S, SC=n.w/0.72;
-  const DNA="var(--fg)", ATAIL="var(--ch8)";
+  const DNA="var(--c-top)", ATAIL="var(--ch8)";
   const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
   const clamp=x=>x<0?0:x>1?1:x;
   const ease =x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
@@ -8265,9 +8273,17 @@ function drawFragmentLigate(g,n){
      middle one, which with the dots on is what the rim has to hold. D is half
      the spacing of the pair — the two strands follow one wave, because a
      duplex is one thing that bends. OV is half the stagger at a cut. */
-  const HL=1.34, GAP=0.15, D=0.055, OV=0.08, DR=0.065;
-  const AMP=0.07, WK=4.2, PH=0.6;
-  const waveY=v=>Math.sin(v*WK+PH)*AMP;
+  const HL=1.42, GAP=0.13, D=0.055, OV=0.08, DR=0.065;
+  /* B8's spine, sample for sample: eleven points, sin(s·0.86)·2.1 on a
+     half-length of 15, its first point on the axis, straight between. Only
+     the ruler changes — 15 there is HL here — so the wobble has the same
+     number of turns and the same height for its length as the strand B8a
+     leaves in its glass */
+  const SPN=Array.from({length:11},(_,s)=>s ? Math.sin(s*0.86)*2.1*HL/15 : 0);
+  const waveY=v=>{
+    const u=clamp((v+HL)/(2*HL))*10, s=Math.min(9,Math.floor(u));
+    return SPN[s]+(SPN[s+1]-SPN[s])*(u-s);
+  };
   const EX=v=>(v*Q).toFixed(2), LW=px=>(px*SC).toFixed(2);
   const rail=(a,b,off)=>{
     const N=Math.max(2,Math.ceil(Math.abs(b-a)*30));
