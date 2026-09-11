@@ -18,8 +18,8 @@ function drawDecomp(cv, st) {
   let mx = 0; e.z.forEach((v) => { mx = Math.max(mx, Math.abs(v)); });
   const rows = [
     { key: 'z', name: 'the response', note: 'measured' },
-    { key: 'shared', name: 'shared part', note: `β = ${f2(e.beta)} along the axis` },
-    { key: 'residual', name: 'its own part', note: 'orthogonal to the axis' },
+    { key: 'shared', name: 'shared part', note: `strength β = ${f2(e.beta)}` },
+    { key: 'residual', name: 'its own part', note: 'the rest' },
   ];
   rows.forEach((r, k) => {
     const y0 = T + k * (rowH + gap) + rowH / 2, sy = (v) => y0 - (v / mx) * (rowH / 2);
@@ -41,10 +41,10 @@ function drawDecomp(cv, st) {
     if (k < 2) text(ctx, k === 0 ? '=' : '+', L - 40, T + (k + 1) * (rowH + gap) - gap / 2 + 7, { font: font.serif(22), color: INK['ink-2'], align: 'center' });
   });
   const yb = T + 3 * rowH + 2 * gap + 16;
-  caps(ctx, `${nf(G)} genes, ordered by the shared axis of ${P.line}`, (L + W - R) / 2, yb + 18, { align: 'center' });
+  caps(ctx, `${nf(G)} genes, in the order of ${P.line}'s typical response`, (L + W - R) / 2, yb + 18, { align: 'center' });
   const ng = W < 800 ? 2 : 5;
-  text(ctx, 'up along the axis: ' + P.genes_in_order.slice(0, ng).join(', '), L, yb, { font: font.serif(11.5, true), color: INK['ink-2'] });
-  text(ctx, P.genes_in_order.slice(-ng).reverse().join(', ') + ' : down along the axis', W - R, yb, { font: font.serif(11.5, true), color: INK['ink-2'], align: 'right' });
+  text(ctx, 'a typical knockdown raises: ' + P.genes_in_order.slice(0, ng).join(', '), L, yb, { font: font.serif(11.5, true), color: INK['ink-2'] });
+  text(ctx, P.genes_in_order.slice(-ng).reverse().join(', ') + ' : a typical knockdown lowers', W - R, yb, { font: font.serif(11.5, true), color: INK['ink-2'], align: 'right' });
   caps(ctx, `${e.symbol} knockdown · ${P.line}`, L, 16, { color: INK.select, size: 10 });
   caps(ctx, `${Math.round(e.frac_shared * 100)}% of its squared size is shared`, W - R, 16, { align: 'right', size: 10 });
 }
@@ -54,7 +54,7 @@ function drawVector(cv, st) {
   const P = CP.plates.p1, ex = P.exemplars;
   const ox = 28, oy = H - 44, maxN = Math.max(...ex.map((e) => e.norm)), s = (W - ox - 40) / maxN;
   penLine(ctx, ox, oy, W - 12, oy, 7, INK['ink-2'], 1);
-  text(ctx, 'the shared axis u', W - 12, oy + 18, { font: font.serif(12, true), color: INK['ink-2'], align: 'right' });
+  text(ctx, 'the typical response', W - 12, oy + 18, { font: font.serif(12, true), color: INK['ink-2'], align: 'right' });
   ex.forEach((e, k) => {
     const th = Math.acos(Math.max(-1, Math.min(1, e.cos))), len = e.norm * s;
     const x = ox + len * Math.cos(th), y = oy - len * Math.sin(th);
@@ -81,7 +81,7 @@ function drawContinuum(cv) {
   let mMax = 0; LINES.forEach((l) => P[l].m.forEach((v) => { mMax = Math.max(mMax, v); }));
   const ax = [-0.5, 1.0];
   ctx.save(); ctx.translate(9, H / 2); ctx.rotate(-Math.PI / 2);
-  caps(ctx, 'magnitude ‖w‖ →', 0, 0, { align: 'center', size: 8.5 }); ctx.restore();
+  caps(ctx, 'bigger response →', 0, 0, { align: 'center', size: 8.5 }); ctx.restore();
   LINES.forEach((l, c) => {
     const x0 = lm + c * (cw + pad), top = 26, bot = H - 30;
     const sx = lin(ax[0], ax[1], x0 + 6, x0 + cw - 4), sy = lin(0, mMax, bot, top + 8);
@@ -92,27 +92,27 @@ function drawContinuum(cv) {
     caps(ctx, l, x0 + 2, 14, { size: 10, color: INK.ink });
     const rho = M.reproduction.spearman_m_a[l], pr = M.paper.spearman_m_a[l];
     text(ctx, `ρ = ${f2(rho)}` + (pr !== undefined ? `  (paper ${f2(pr)})` : ''), x0 + cw, 14, { font: font.serif(11.5, true), align: 'right', color: INK['ink-2'] });
-    caps(ctx, 'alignment →', x0 + cw / 2, H - 12, { align: 'center', size: 8.5 });
+    caps(ctx, 'like the average →', x0 + cw / 2, H - 12, { align: 'center', size: 8, spacing: 0.6 });
   });
 }
 
 function drawLedger(cv) {
   const M = CP.meta, R = M.reproduction, Pp = M.paper;
   const blocks = [
-    { title: "Kendall's W across six lines", rows: [] },
-    { title: 'β agreement between lines (Table 13)', rows: [] },
-    { title: 'held-out transfer (Tables 2, 9)', rows: [] },
-    { title: 'CompassX accuracy (Table 3)', rows: [] },
-    { title: 'CompassX discrimination, PDS gain', rows: [] },
-    { title: 'training-mean accuracy (the discrepancy)', rows: [], warn: true },
+    { title: "do six lines rank knockdowns alike? (Kendall's W)", rows: [] },
+    { title: 'do two lines agree on β? (Table 13)', rows: [] },
+    { title: 'predicting a hidden line (Tables 2, 9)', rows: [] },
+    { title: 'CompassX: right overall shape? (Table 3)', rows: [] },
+    { title: 'CompassX: right knockdown? (PDS gain)', rows: [] },
+    { title: 'guess-the-average: shape (our discrepancy)', rows: [], warn: true },
   ];
-  ['1000', '2000', '5000'].forEach((pn) => ['alignment', 'magnitude', 'position s'].forEach((q, i) =>
+  ['1000', '2000', '5000'].forEach((pn) => ['likeness', 'size', 'position'].forEach((q, i) =>
     blocks[0].rows.push({ l: `${q} · ${nf(+pn)}`, p: Pp.W[pn][i], o: R.W.paper_anchor[pn].W[i] })));
   Object.entries(Pp.beta_pairs).forEach(([k, v]) => blocks[1].rows.push({ l: k.replace('_', ' / '), p: v, o: R.beta_pairs[k].r }));
   ['K562', 'RPE1', 'HepG2', 'Jurkat'].forEach((l) => blocks[2].rows.push({ l: `β, ${l}`, p: Pp.transfer_beta[l], o: R.transfer.ensembl[l].beta }));
   blocks[2].rows.push({ l: 'β, X-Atlas pair', p: Pp.transfer_beta['X-Atlas'], o: R.transfer.ensembl.HCT116.beta });
-  ['K562', 'RPE1', 'HepG2', 'Jurkat'].forEach((l) => blocks[2].rows.push({ l: `residual, ${l}`, p: Pp.transfer_g[l], o: R.transfer.ensembl[l].g }));
-  blocks[2].rows.push({ l: 'residual, X-Atlas pair', p: Pp.transfer_g['X-Atlas'], o: R.transfer.ensembl.HCT116.g });
+  ['K562', 'RPE1', 'HepG2', 'Jurkat'].forEach((l) => blocks[2].rows.push({ l: `own part, ${l}`, p: Pp.transfer_g[l], o: R.transfer.ensembl[l].g }));
+  blocks[2].rows.push({ l: 'own part, X-Atlas pair', p: Pp.transfer_g['X-Atlas'], o: R.transfer.ensembl.HCT116.g });
   LINES.forEach((l, i) => {
     blocks[3].rows.push({ l, p: Pp.table3.CompassX[0][i], o: R.bench.CompassX.pearson[i] });
     blocks[4].rows.push({ l, p: Pp.table3.CompassX[1][i], o: R.bench.CompassX.pds[i] });
@@ -154,8 +154,8 @@ function drawBudget(cv) {
   const M = CP.meta, B = M.reproduction.budget, P = M.paper.budget;
   const L = 64, R = 18, T = 20, Bt = H - 44;
   const sx = logs(8, 160, L, W - R), sy = lin(0.2, 0.34, Bt, T);
-  axisX(ctx, sx, Bt, [10, 25, 50, 100, 130], { label: 'perturbations profiled in the target line', range: [L, W - R] });
-  axisY(ctx, sy, L, [0.2, 0.24, 0.28, 0.32], { label: 'de-biased Pearson', fmt: f2, range: [Bt, T] });
+  axisX(ctx, sx, Bt, [10, 25, 50, 100, 130], { label: 'knockdowns measured in the new line', range: [L, W - R] });
+  axisY(ctx, sy, L, [0.2, 0.24, 0.28, 0.32], { label: 'prediction accuracy', fmt: f2, range: [Bt, T] });
   [['training mean', INK['ink-3'], [4, 3]], ['source average', INK['ink-3'], [1, 3]], ['CompassX', INK.ink, null]].forEach(([m, col, dash]) => {
     const d = B[m]; path(ctx, d.n.map(sx), d.pearson.map(sy), col, m === 'CompassX' ? 1.6 : 1.1, dash);
     d.n.forEach((n, i) => dot(ctx, sx(n), sy(d.pearson[i]), m === 'CompassX' ? 2.6 : 1.8, col));
@@ -174,8 +174,8 @@ function drawSpectrum(cv, st) {
   const L = 92, R = 16, T = 26, rowGap = 12, rowH = (H - T - 30 - rowGap * 5) / 6;
   const silH = rowH * 0.52, rugH = rowH - silH - 14, sub = rugH / progs.length;
   const sx = (q) => L + q * (W - L - R);
-  caps(ctx, 'shared direction positive', L, 14, { size: 9 });
-  caps(ctx, 'shared direction negative', W - R, 14, { size: 9, align: 'right' });
+  caps(ctx, 'raised by a typical knockdown', L, 14, { size: 9 });
+  caps(ctx, 'lowered by a typical knockdown', W - R, 14, { size: 9, align: 'right' });
   LINES.forEach((l, k) => {
     const d = P.lines[l], y0 = T + k * (rowH + rowGap), mid = y0 + silH / 2 + 2;
     // silhouette of the sorted direction (exact quantiles, one ink)
@@ -211,13 +211,14 @@ function drawSignatures(cv) {
   const S = CP.plates.p3.signatures.slice().sort((a, b) =>
     LINES.reduce((s, l) => s + a[l], 0) - LINES.reduce((s, l) => s + b[l], 0));
   const L = Math.min(250, W * 0.46), R = 8, T = 30, rh = (H - T - 8) / S.length, cw = (W - L - R) / LINES.length;
+  const vmax = Math.max(...S.flatMap((s) => LINES.map((l) => Math.abs(s[l]))));   // area ∝ |score|
   LINES.forEach((l, j) => caps(ctx, l, L + cw * (j + 0.5), 16, { align: 'center', size: 8.5, spacing: 0.6 }));
   S.forEach((s, i) => {
     const y = T + rh * (i + 0.5);
     text(ctx, s.signature.replace('Hallmark ', ''), L - 10, y + 4, { font: font.serif(11.5), color: INK['ink-2'], align: 'right' });
     penLine(ctx, L, y, W - R, y, 90 + i, rgba(INK.rule, 0.35), 0.5);
     LINES.forEach((l, j) => {
-      const v = s[l], r = Math.min(rh * 0.46, 1.5 + Math.abs(v) * 2.4), x = L + cw * (j + 0.5);
+      const v = s[l], r = Math.max(1, rh * 0.46 * Math.sqrt(Math.abs(v) / vmax)), x = L + cw * (j + 0.5);
       dot(ctx, x, y, r, v >= 0 ? rgba(INK.t1, 0.85) : rgba(INK.t4, 0.85));
     });
   });
@@ -266,15 +267,15 @@ function drawResidual(cv, st) {
       break;
     }
   });
-  caps(ctx, 't-SNE of residual directions · a layout, not a measurement', ox, H - 6, { size: 8.5 });
+  caps(ctx, 'map of own parts (t-SNE) · near means similar; nothing else', ox, H - 6, { size: 8.5 });
 }
 
 function drawReliability(cv) {
   const { ctx, W, H } = setup(cv);
   const D = CP.meta.decomposition.per_line, L = 78, R = 44, T = 34, rh = (H - T - 64) / LINES.length;
   const sx = lin(0, 1, L, W - R);
-  const keys = [['split_cos_u', 'axis', INK.ink, 3.2], ['split_beta_r', 'β', INK['ink-2'], 2.6], ['split_residual_r', 'residual', INK.t3, 3.0]];
-  keys.forEach(([, n, col], i) => { dot(ctx, L + i * 110, 14, 3, col); text(ctx, n, L + i * 110 + 8, 18, { font: font.serif(12, true), color: col }); });
+  const keys = [['split_cos_u', 'typical response', INK.ink, 3.2], ['split_beta_r', 'strength β', INK['ink-2'], 2.6], ['split_residual_r', 'own part', INK.t3, 3.0]];
+  keys.forEach(([, n, col], i) => { dot(ctx, L + i * 130, 14, 3, col); text(ctx, n, L + i * 130 + 8, 18, { font: font.serif(12, true), color: col }); });
   LINES.forEach((l, i) => {
     const y = T + rh * (i + 0.5);
     text(ctx, l, L - 10, y + 4, { font: font.serif(12.5, true), align: 'right' });
@@ -305,7 +306,7 @@ function drawCount(cv) {
     const x = L + t * pitch; guide(ctx, x, T - 6, x, H - 22, INK.select);
     caps(ctx, String(t), t === 30 ? x - 3 : x + 3, H - 8, { align: t === 30 ? 'right' : 'left', size: 8.5, spacing: 0.4, color: INK.select });
   });
-  caps(ctx, 'axis visible from', L + 30 * pitch - 22, H - 8, { align: 'right', size: 8.5, color: INK.select });
+  caps(ctx, 'visible from', L + 30 * pitch - 22, H - 8, { align: 'right', size: 8.5, color: INK.select });
 }
 
 function drawStrength(cv) {
@@ -325,7 +326,7 @@ function drawStrength(cv) {
   });
   const x2 = sx(Math.log10(2)); guide(ctx, x2, T, x2, B, INK.select);
   caps(ctx, '2× noise', x2 + 4, T + 8, { size: 8.5, color: INK.select });
-  axisX(ctx, sx, B + 4, [-0.5, 0, 0.5, 1, 1.5, 2], { fmt: (v) => (Math.pow(10, v) < 10 ? Math.pow(10, v).toFixed(1) : Math.round(Math.pow(10, v))) + '×', label: 'effect size over control-vs-control noise (log)', range: [L, W - R] });
+  axisX(ctx, sx, B + 4, [-0.5, 0, 0.5, 1, 1.5, 2], { fmt: (v) => (Math.pow(10, v) < 10 ? Math.pow(10, v).toFixed(1) : Math.round(Math.pow(10, v))) + '×', label: 'response size ÷ difference between two halves of the controls', range: [L, W - R] });
 }
 
 function drawDepth(cv) {
@@ -411,8 +412,8 @@ function drawPhase(cv) {
   [...Ph.n].reverse().forEach((n, i) => caps(ctx, nf(n), L - 8, T + i * rh + rh / 2 + 3, { align: 'right', size: 9 }));
   text(ctx, 'cells per perturbation, at most', (L + W - R) / 2, B + 32, { font: font.serif(12.5, true), color: INK['ink-2'], align: 'center' });
   ctx.save(); ctx.translate(16, (T + B) / 2); ctx.rotate(-Math.PI / 2);
-  text(ctx, 'perturbations', 0, 0, { font: font.serif(12.5, true), color: INK['ink-2'], align: 'center' }); ctx.restore();
-  text(ctx, 'madder edge: agreement of 0.5 or more', W - R, H - 6, { font: font.serif(11, true), color: INK.select, align: 'right' });
+  text(ctx, 'knockdowns used', 0, 0, { font: font.serif(12.5, true), color: INK['ink-2'], align: 'center' }); ctx.restore();
+  text(ctx, 'red outline: agreement of 0.5 or more', W - R, H - 6, { font: font.serif(11, true), color: INK.select, align: 'right' });
 }
 
 function drawDepthSweep(cv) {
@@ -422,10 +423,10 @@ function drawDepthSweep(cv) {
   const num = (s) => parseFloat(String(s).replace(/,/g, ''));
   [['Tahoe', num(C['UMIs per cell (median, protein-coding)']['Tahoe-100M'])], ['ChemFish', num(C['UMIs per cell (median, protein-coding)']['ChemFish 2026_09'])]]
     .forEach(([n, v]) => { const x = sx(v); guide(ctx, x, T, x, B); caps(ctx, `${n} depth`, x, T + 8, { align: 'center', size: 8.5 }); });
-  axisX(ctx, sx, B, [10000, 3000, 1000, 300], { fmt: (v) => (v >= 1000 ? v / 1000 + 'k' : v), label: 'molecules per cell after thinning (median)', range: [L, W - R] });
+  axisX(ctx, sx, B, [10000, 3000, 1000, 300], { fmt: (v) => (v >= 1000 ? v / 1000 + 'k' : v), label: 'molecules kept per cell (median)', range: [L, W - R] });
   axisY(ctx, sy, L, [0, 0.25, 0.5, 0.75, 1], { fmt: f2, range: [B, T] });
-  [['cons_RN', 'β agreement, Replogle/Nadig', INK.ink, null], ['cons_XA', 'β agreement, X-Atlas pair', INK.ink, [4, 3]],
-    ['beta_rel', 'β split-half reliability', INK['ink-3'], [1, 3]], ['split_cos', 'axis split-half cosine', INK.t3, null]].forEach(([k, lab, col, dash]) => {
+  [['cons_RN', 'lines agree on β (Replogle/Nadig)', INK.ink, null], ['cons_XA', 'lines agree on β (X-Atlas)', INK.ink, [4, 3]],
+    ['beta_rel', 'β, measured twice', INK['ink-3'], [1, 3]], ['split_cos', 'typical response, measured twice', INK.t3, null]].forEach(([k, lab, col, dash]) => {
     const xs = D.library.map(sx), ys = D[k].map(sy); path(ctx, xs, ys, col, 1.4, dash); xs.forEach((x, i) => dot(ctx, x, ys[i], 2.2, col));
     text(ctx, lab, xs[xs.length - 1] - 4, ys[ys.length - 1] + (k === 'cons_XA' ? 16 : -8), { font: font.serif(11, true), color: col, align: 'right', back: true });
   });
@@ -443,9 +444,9 @@ function drawRemove(cv) {
     const pts = [[0, ref[m]], ...S.remove_top_cons.map((r) => [parseFloat(r[0]), r[ix]])];
     path(ctx, pts.map((p) => sx(p[0])), pts.map((p) => sy(p[1])), INK.ink, 1.6, dash);
     pts.forEach((p) => dot(ctx, sx(p[0]), sy(p[1]), 2.3, INK.ink));
-    const q = pts[m ? 4 : 5]; text(ctx, `β agreement, ${lab}`, sx(q[0]) + 6, sy(q[1]) + (m ? 18 : -10), { font: font.serif(11, true), back: true });
+    const q = pts[m ? 4 : 5]; text(ctx, `lines agree on β, ${lab}`, sx(q[0]) + 6, sy(q[1]) + (m ? 18 : -10), { font: font.serif(11, true), back: true });
   });
-  text(ctx, 'faint: each line’s axis vs its full-data axis (cosine)', L + 6, B - 8, { font: font.serif(10.5, true), color: INK.t3 });
+  text(ctx, 'faint: does each line’s typical response still point the same way?', L + 6, B - 8, { font: font.serif(10.5, true), color: INK.t3 });
 }
 
 function drawControls(cv) {
@@ -458,9 +459,9 @@ function drawControls(cv) {
     text(ctx, s, L - 10, y + 4, { font: font.serif(12, true), align: 'right', color: bad ? INK.select : INK.ink });
     penLine(ctx, L, y, W - R, y, 170 + i, rgba(INK.rule, 0.6), 0.5);
     LINES.forEach((l) => dot(ctx, sx(Math.max(0, C[l][s])), y, 2.8, bad ? INK.select : rgba(INK.ink, 0.75)));
-    text(ctx, `β agreement ${f2(CC[s][0])} / ${f2(CC[s][1])}`, L - 10, y + 17, { font: font.serif(10.5), align: 'right', color: INK['ink-3'] });
+    text(ctx, `lines agree on β: ${f2(CC[s][0])} / ${f2(CC[s][1])}`, L - 10, y + 17, { font: font.serif(10.5), align: 'right', color: INK['ink-3'] });
   });
-  axisX(ctx, sx, H - 36, [0, 0.25, 0.5, 0.75, 1], { label: 'cosine of each line’s axis with the reference axis', range: [L, W - R] });
+  axisX(ctx, sx, H - 36, [0, 0.25, 0.5, 0.75, 1], { label: 'match to the typical response from pooled controls (1 = same)', range: [L, W - R] });
 }
 
 /* ======================= PLATE VII — Tahoe, and the three datasets ======================= */
@@ -469,23 +470,23 @@ function drawTahoe(cv) {
   const { ctx, W, H } = setup(cv);
   const E = CP.meta.external.tahoe, w = E.dmso_well, t = E.dose_tiers;
   const L = 180, R = 40, T = 22;
-  const bars = [['sampling noise, one well split', w.median_norm_sampling_noise, INK['ink-3']],
-    ['DMSO well minus DMSO well', w.median_norm_well_diff, INK.select], ['median drug effect', w.median_drug_effect_norm, INK.ink]];
+  const bars = [['one well split in two (noise)', w.median_norm_sampling_noise, INK['ink-3']],
+    ['no-drug well vs no-drug well', w.median_norm_well_diff, INK.select], ['a typical drug', w.median_drug_effect_norm, INK.ink]];
   const sx = lin(0, 2.5, L, W - R);
-  caps(ctx, 'size of the difference, ‖·‖', L, T, { size: 9 });
+  caps(ctx, 'how big the difference is', L, T, { size: 9 });
   bars.forEach(([n, v, col], i) => { const y = T + 18 + i * 26;
     text(ctx, n, L - 10, y + 10, { font: font.serif(12, true), align: 'right' });
     ctx.fillStyle = rgba(col, 0.75); ctx.fillRect(L, y, sx(v) - L, 14); text(ctx, f2(v), sx(v) + 6, y + 11, { font: font.serif(11.5) }); });
   const y2 = T + 18 + 3 * 26 + 30;
-  caps(ctx, 'agreement across the 50 pooled lines', L, y2, { size: 9 });
+  caps(ctx, 'does it look the same in all 50 lines?', L, y2, { size: 9 });
   const sx2 = lin(0, 0.5, L, W - R);
-  [['the DMSO well difference', w.mean_crossline_r_of_well_diff, INK.select], ['the same drug’s effect', w.mean_crossline_r_of_same_drug_effect, INK.ink]].forEach(([n, v, col], i) => {
+  [['the no-drug difference', w.mean_crossline_r_of_well_diff, INK.select], ['a real drug’s effect', w.mean_crossline_r_of_same_drug_effect, INK.ink]].forEach(([n, v, col], i) => {
     const y = y2 + 18 + i * 26; text(ctx, n, L - 10, y + 10, { font: font.serif(12, true), align: 'right' });
     ctx.fillStyle = rgba(col, 0.75); ctx.fillRect(L, y, sx2(v) - L, 14); text(ctx, 'r = ' + f2(v), sx2(v) + 6, y + 11, { font: font.serif(11.5) }); });
   const y3 = y2 + 18 + 2 * 26 + 30;
-  caps(ctx, 'median β by dose tier (lowest to highest)', L, y3, { size: 9 });
+  caps(ctx, 'pull on the typical response (median β), by dose', L, y3, { size: 9 });
   const sx3 = lin(0, 1.3, L, W - R);
-  ['lowest', 'middle', 'highest'].forEach((n, i) => { const v = t[String(i + 1)], y = y3 + 18 + i * 22;
+  ['lowest dose', 'middle dose', 'highest dose'].forEach((n, i) => { const v = t[String(i + 1)], y = y3 + 18 + i * 22;
     text(ctx, n, L - 10, y + 9, { font: font.serif(12, true), align: 'right' });
     dot(ctx, sx3(v), y + 5, 4, INK.ink); penLine(ctx, L, y + 5, sx3(v), y + 5, 200 + i, INK['ink-3'], 0.6); text(ctx, f2(v), sx3(v) + 8, y + 9, { font: font.serif(11.5) }); });
 }
@@ -496,15 +497,15 @@ function drawThree(cv) {
   const vals = (k) => LINES.map((l) => D[l][k]);
   const tW = E.tahoe.checks, cW = E.chemfish.checks;
   const rows = [
-    ['share of response on the axis', vals('energy'), E.tahoe.energy, E.chemfish.energy],
-    ['axis split-half cosine', vals('split_cos_u'), E.tahoe.split_cos_u, E.chemfish.split_cos_u],
-    ['β split-half reliability', vals('split_beta_r'), E.tahoe.split_beta_r, E.chemfish.split_beta_r],
-    ['residual split-half reliability', vals('split_residual_r'), E.tahoe.split_residual_r, E.chemfish.split_residual_r],
-    ['β agreement across contexts', [(6 * M.reproduction.kendall_W_beta_all6 - 1) / 5], tW.mean_pairwise_spearman_from_W, cW.mean_pairwise_spearman_from_W],
+    ['share that is the shared part', vals('energy'), E.tahoe.energy, E.chemfish.energy],
+    ['typical response, measured twice', vals('split_cos_u'), E.tahoe.split_cos_u, E.chemfish.split_cos_u],
+    ['β, measured twice', vals('split_beta_r'), E.tahoe.split_beta_r, E.chemfish.split_beta_r],
+    ['own part, measured twice', vals('split_residual_r'), E.tahoe.split_residual_r, E.chemfish.split_residual_r],
+    ['agree on which are strong', [(6 * M.reproduction.kendall_W_beta_all6 - 1) / 5], tW.mean_pairwise_spearman_from_W, cW.mean_pairwise_spearman_from_W],
   ];
   const L = Math.min(190, W * 0.45), R = 20, T = 34, rh = (H - T - 40) / rows.length, sx = lin(0, 1, L, W - R);
   let lx = 8;
-  [['CRISPRi (range over six lines)', INK.ink], ['Tahoe', INK.t4], ['ChemFish', INK.t1]].forEach(([n, col]) => {
+  [['CRISPRi (bar spans six lines)', INK.ink], ['Tahoe', INK.t4], ['ChemFish', INK.t1]].forEach(([n, col]) => {
     dot(ctx, lx, 12, 3.2, col); text(ctx, n, lx + 8, 16, { font: font.serif(11.5, true), color: col });
     ctx.font = font.serif(11.5, true); lx += ctx.measureText(n).width + 34; });
   rows.forEach(([name, cr, ta, ch], i) => {

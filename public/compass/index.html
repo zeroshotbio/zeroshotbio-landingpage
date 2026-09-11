@@ -82,6 +82,11 @@ figure.plate{margin:96px auto 0}
 @media(max-width:700px){.plate-when{display:none}}
 figcaption{font-size:14px;color:var(--ink-2);margin-top:14px;max-width:760px;line-height:1.6}
 figcaption b{font-weight:600;color:var(--ink)}
+figcaption p{margin:0 0 .7em}
+figcaption p:last-child{margin-bottom:0}
+ul.terms{list-style:none;margin:1.3em 0 1.4em;padding:12px 0;border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2);font-size:15px}
+ul.terms li{margin:.4em 0}
+ul.terms b{font-weight:600}
 .sub{font-family:var(--sans);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);margin:30px 0 8px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:start}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:36px;align-items:start}
@@ -145,9 +150,9 @@ ol.lessons li{margin-bottom:.8em}
   <header class="masthead">
     <div class="eyebrow"><a href="/">zeroshot.bio</a> &nbsp;·&nbsp; perturbation response &nbsp;·&nbsp; a reproduction</div>
     <h1>The shared response<br>of a <em>perturbed</em> cell</h1>
-    <p class="dek">Knock down almost any essential gene and a cell answers in much the same way.
-      COMPASS says that common answer is orderly, portable and separable from the rest. We rebuilt it
-      from the raw data, found it exactly where the paper found it, and then looked for it in our own kind of screen.</p>
+    <p class="dek">Turn down almost any essential gene and a cell reacts in much the same way.
+      COMPASS says that common reaction can be pulled apart from the part that is specific to each gene.
+      We rebuilt it from the raw data, found it where the paper found it, and asked what it would take to see it in our own zebrafish screens.</p>
     <div class="byline" id="mByline"></div>
     <div class="source-line">after Liang &amp; Singh 2026 &nbsp;·&nbsp; <i>COMPASS: component-wise inference of shared and gene-specific perturbation response</i></div>
     <svg class="rule-orn" viewBox="0 0 220 14" aria-hidden="true">
@@ -168,7 +173,7 @@ ol.lessons li{margin-bottom:.8em}
       <div class="plate-head"><span class="plate-num">Plate I</span>
         <h2 class="plate-title">One response, two parts</h2><span class="plate-when" id="w1"></span></div>
       <div class="toolbar"><div class="seg" id="exSeg" role="group" aria-label="exemplar"></div>
-        <span class="hint">choose a knockdown; the genes are laid out in the order of the shared axis</span></div>
+        <span class="hint">choose a knockdown to see its response split in two</span></div>
       <div class="grid21">
         <div class="canvas-hold"><canvas id="cvDecomp" data-minw="620" data-aspect="0.62"></canvas></div>
         <div><div class="canvas-hold"><canvas id="cvVector" data-aspect="0.8"></canvas></div>
@@ -181,10 +186,10 @@ ol.lessons li{margin-bottom:.8em}
     <figure class="plate wide" id="plate2">
       <div class="plate-head"><span class="plate-num">Plate II</span>
         <h2 class="plate-title">The reproduction, set beside the paper</h2><span class="plate-when" id="w2"></span></div>
-      <div class="sub">the continuum, in six lines &nbsp;·&nbsp; magnitude against alignment</div>
+      <div class="sub">every knockdown, in six cell lines &nbsp;·&nbsp; how big its response is, against how much it looks like the average</div>
       <div class="canvas-hold"><canvas id="cvCont" data-minw="720" data-aspect="0.36"></canvas></div>
       <figcaption id="cap2a"></figcaption>
-      <div class="sub">the ledger &nbsp;·&nbsp; open ring the paper, solid dot ours</div>
+      <div class="sub">our numbers against the paper&rsquo;s &nbsp;·&nbsp; open ring the paper, solid dot us</div>
       <div class="canvas-hold"><canvas id="cvLedger" data-aspect="0.40"></canvas></div>
       <div class="grid2" style="margin-top:18px">
         <div class="canvas-hold"><canvas id="cvBudget" data-aspect="0.55"></canvas></div>
@@ -195,12 +200,12 @@ ol.lessons li{margin-bottom:.8em}
     <!-- PLATE III -->
     <figure class="plate wide" id="plate3">
       <div class="plate-head"><span class="plate-num">Plate III</span>
-        <h2 class="plate-title">What the shared axis is made of</h2><span class="plate-when" id="w3"></span></div>
+        <h2 class="plate-title">What the typical response is made of</h2><span class="plate-when" id="w3"></span></div>
       <div class="canvas-hold"><canvas id="cvSpectrum" data-minw="700" data-aspect="0.62"></canvas></div>
       <div class="legend" id="progLegend"></div>
       <figcaption id="cap3"></figcaption>
       <div class="grid2" style="margin-top:26px">
-        <div><div class="sub" style="margin-top:0">signature scores of the shared direction</div>
+        <div><div class="sub" style="margin-top:0">which gene programmes a typical knockdown turns up or down</div>
           <div class="canvas-hold"><canvas id="cvSig" data-minw="560" data-aspect="0.95"></canvas></div></div>
         <figcaption id="cap3b" style="margin-top:28px"></figcaption>
       </div>
@@ -217,7 +222,7 @@ ol.lessons li{margin-bottom:.8em}
       <div class="legend" id="clusterLegend"></div>
       <figcaption id="cap4"></figcaption>
       <div class="grid2" style="margin-top:26px">
-        <div><div class="sub" style="margin-top:0">what replicates, and what barely does</div>
+        <div><div class="sub" style="margin-top:0">measure it twice: what repeats, and what barely does</div>
           <div class="canvas-hold"><canvas id="cvReliab" data-aspect="0.62"></canvas></div></div>
         <figcaption id="cap4b" style="margin-top:28px"></figcaption>
       </div>
@@ -230,9 +235,9 @@ ol.lessons li{margin-bottom:.8em}
       <div class="grid2">
         <div><div class="sub" style="margin-top:0">how many perturbations &nbsp;·&nbsp; one stroke each</div>
           <div class="canvas-hold"><canvas id="cvCount" data-minw="420" data-aspect="0.62"></canvas></div></div>
-        <div><div class="sub" style="margin-top:0">how strong &nbsp;·&nbsp; effect over control-vs-control noise</div>
+        <div><div class="sub" style="margin-top:0">how strong &nbsp;·&nbsp; each response against the noise between control cells</div>
           <div class="canvas-hold"><canvas id="cvStrength" data-aspect="0.62"></canvas></div></div>
-        <div><div class="sub">how deep &nbsp;·&nbsp; cells and molecules</div>
+        <div><div class="sub">how much was measured &nbsp;·&nbsp; molecules per cell, cells per perturbation</div>
           <div class="canvas-hold"><canvas id="cvDepth" data-minw="460" data-aspect="0.62"></canvas></div></div>
         <div><div class="sub">where the controls sit</div>
           <div class="canvas-hold"><canvas id="cvLanes" data-minw="620" data-aspect="0.62"></canvas></div></div>
@@ -245,13 +250,13 @@ ol.lessons li{margin-bottom:.8em}
       <div class="plate-head"><span class="plate-num">Plate VI</span>
         <h2 class="plate-title">When it falls apart</h2><span class="plate-when" id="w6"></span></div>
       <div class="grid2">
-        <div><div class="sub" style="margin-top:0">perturbations &times; cells &nbsp;·&nbsp; cross-line agreement of &beta;</div>
+        <div><div class="sub" style="margin-top:0">fewer knockdowns, fewer cells &nbsp;·&nbsp; do the lines still agree?</div>
           <div class="canvas-hold"><canvas id="cvPhase" data-aspect="0.8"></canvas></div></div>
-        <div><div class="sub" style="margin-top:0">sequencing depth &nbsp;·&nbsp; the same cells, thinned</div>
+        <div><div class="sub" style="margin-top:0">shallower sequencing &nbsp;·&nbsp; the same cells, molecules thrown away at random</div>
           <div class="canvas-hold"><canvas id="cvDepthSweep" data-minw="480" data-aspect="0.8"></canvas></div></div>
-        <div><div class="sub">taking away the strongest</div>
+        <div><div class="sub">taking away the strongest knockdowns</div>
           <div class="canvas-hold"><canvas id="cvRemove" data-minw="480" data-aspect="0.8"></canvas></div></div>
-        <div><div class="sub">the control reference</div>
+        <div><div class="sub">which control cells you compare against</div>
           <div class="canvas-hold"><canvas id="cvControls" data-minw="480" data-aspect="0.8"></canvas></div></div>
       </div>
       <figcaption id="cap6"></figcaption>
@@ -262,7 +267,7 @@ ol.lessons li{margin-bottom:.8em}
       <div class="plate-head"><span class="plate-num">Plate VII</span>
         <h2 class="plate-title">What this means for a zebrafish screen</h2><span class="plate-when" id="w7"></span></div>
       <div class="grid2">
-        <div><div class="sub" style="margin-top:0">Tahoe &nbsp;·&nbsp; a pseudo-drug made of two DMSO wells</div>
+        <div><div class="sub" style="margin-top:0">Tahoe &nbsp;·&nbsp; two no-drug wells, one treated as if it were a drug</div>
           <div class="canvas-hold"><canvas id="cvTahoe" data-minw="560" data-aspect="0.8"></canvas></div></div>
         <div><div class="sub" style="margin-top:0">the three datasets, measured the same way</div>
           <div class="canvas-hold"><canvas id="cvThree" data-minw="560" data-aspect="0.8"></canvas></div></div>

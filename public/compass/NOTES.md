@@ -47,6 +47,12 @@ Rebuild: `python3 scripts/build_compass.py` (stdlib + numpy). It reads
 Already in the reproduction and reused: detectability vs perturbation count, removal of the
 strongest loaders, control-reference swaps, growth-set removal (`05_stress.py`; `results/stress_per_line.tsv`, `results/stress_conservation.tsv`).
 
+## Voice
+
+Plain English (the user's standing preference). Every caption says what a mark represents, what it is
+measured relative to, and what a big or small value means; terms are defined once in the intro
+("typical response" = the paper's shared axis, "own part" = its residual, β = strength).
+
 ## Caveats the page must keep
 
 - STRING, COMPASS-N, COMPASS-H and the STRING position prediction were **not** reproduced.
