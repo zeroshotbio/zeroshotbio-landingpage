@@ -465,6 +465,22 @@ prefix with no entry still draws, grey, in "Other". And any prefix starting with
 
 Checks: `check-overlaps` 0 pairs (140 text nodes), `check-clicks` 18, `check-fit` the known 7.
 
+## A guaranteed 1px gap between tiles — 2026-09-11, later
+
+Shrinking walls below fit (entry below) was not enough. With `EDGE = 0.10` the space between two tiles
+was 0.10 × 30 × zoom ≈ 0.4 px at the zoom-out floor, still narrower than the walls, so neighbouring
+coloured borders still overlapped. The old code had a visible gap because its accent outline sat 0.30 in,
+but its fill sat 0.07 in, and that difference was the drift seen when zoomed in.
+
+- **`TILE_GAP = 0.30`** (ds-plan.js) is now `EDGE`, the old outline inset, shared by fill and wall, so
+  there is still one rectangle per tile. A speck keeps at least 40% of its own size.
+- **`--gap`** (ds-view.js apply()) is `TILE_GAP × S × zoom` in screen px, in quarter-px steps. It is
+  clamped at 2.6, so it stops changing once zoomed in and pinch frames restyle nothing there.
+- **The wall width** is `min(sw × --wz, max(0.35px, --gap − 1px))`: at least 1 px of dark ground always
+  shows between neighbours. Measured: fit gap 2.6 px / wall 1.6 px; floor gap 1.75 px / wall 0.75 px.
+
+**Checks.** overlaps 0 · clicks 17/17 · fit 2 (pre-existing SPUB/GFETCH) · pinch 0 hidden, no errors.
+
 ## Walls shrink below fit; the open-source vault tops its lane — 2026-09-11
 
 **Non-scaling walls scale again below the fit zoom.** Held at a constant screen width, tile walls kept

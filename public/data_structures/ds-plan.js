@@ -39,6 +39,9 @@ const add = (g, t, at) => { const e = el(t, at); g.appendChild(e); return e; };
 /* A plan rectangle, centred on (x,y) and measured in grid units. Everything
    on this map is ultimately one of these; the shapes differ in what they put
    inside and how heavy the wall is. */
+/* TILE_GAP: grid units of dark ground between neighbouring treemap tiles. ds-view apply() turns it
+   into screen px (--gap) so a non-scaling wall can be capped to leave at least 1px of it showing. */
+const TILE_GAP = 0.30;
 function plate(g, x, y, w, h, s) {
   const [px, py] = P(x - w / 2, y - h / 2);
   return add(g, "rect", {
@@ -49,10 +52,10 @@ function plate(g, x, y, w, h, s) {
     "stroke-dasharray": s.dash || "none",
     /* nss: the wall keeps its on-screen width at every zoom above fit (sw is then in screen pixels), so
        zooming in makes it thinner relative to what it encloses instead of swamping it. Below fit it
-       shrinks with the map (--wz = zoom / fit zoom, set by ds-view apply()), else neighbouring walls
-       grow wider than the gap between their tiles and pile into each other when zoomed far out. */
+       shrinks with the map (--wz = zoom / fit zoom, set by ds-view apply()), and at any zoom it is
+       capped at the on-screen tile gap less 1px (--gap), so neighbouring walls never touch. */
     ...(s.nss ? { "vector-effect": "non-scaling-stroke",
-                  style: `stroke-width:calc(var(--wz, 1) * ${s.sw === undefined ? 1 : s.sw}px)` } : {})
+                  style: `stroke-width:min(calc(var(--wz, 1) * ${s.sw === undefined ? 1 : s.sw}px), max(0.35px, calc(var(--gap, 99px) - 1px)))` } : {})
   });
 }
 

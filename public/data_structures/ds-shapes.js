@@ -120,7 +120,7 @@ DRAW.vault = (g, n) => {
      stale overlay all share it, so the coloured border IS the box's edge. The accent used to sit 0.15
      inside a grey edge; the old 4.2-unit stroke hid the gap, and once walls went thin it showed as a
      coloured frame drifting away from its box. EDGE is the gap between neighbouring datasets. */
-  const EDGE = 0.10;
+  const EDGE = TILE_GAP;   /* 0.10 left no visible gap zoomed out; 0.30 is the old outline inset, now shared by fill and wall */
 
   const drawTiles = (tiles, x0, y0, w0, h0, max) => {
     layoutWide(tiles, x0, y0, w0, h0).forEach(L => {
@@ -129,7 +129,7 @@ DRAW.vault = (g, n) => {
          tiles of equal bytes are still distinguishable when one is a single
          16 GB zip and the other is 256 FASTQs */
       const heat = 0.10 + 0.30 * Math.sqrt(it.value / max);
-      const tw = L.w - EDGE, th = L.h - EDGE;
+      const tw = Math.max(L.w - EDGE, L.w * 0.4), th = Math.max(L.h - EDGE, L.h * 0.4);   /* a speck keeps 40% of itself */
       /* a tile that gets a coloured (or dashed) outline below draws no grey edge of its own */
       const outlined = !!it.accent || it.legacy > 0;
       plate(g, L.x, L.y, tw, th,

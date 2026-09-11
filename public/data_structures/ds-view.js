@@ -310,11 +310,15 @@ const MAX_ZOOM = 40;   /* was 4: the smallest tile caption (tomoseq/) is ~0.2pt 
 const clampZ = z => Math.max(fitZ * MIN_ZOOM_OF_FIT, Math.min(MAX_ZOOM, z));
 /* --wz: tile walls are non-scaling, but below the fit zoom they shrink with the map (see plate()).
    Written only when it changes, so panning and zooming above fit touch no styles. */
-let wz = 1;
+let wz = 1, gp = -1;
 function apply() {
   root.setAttribute("transform", `translate(${cam.x},${cam.y}) scale(${cam.z})`);
   const nz = fitZ ? +Math.min(1, cam.z / fitZ).toFixed(3) : 1;
   if (nz !== wz) { wz = nz; root.style.setProperty("--wz", nz); }
+  /* --gap: the tile gap in screen px, quarter-px steps, clamped at 2.6 (walls cap at 1.6) so it
+     stops changing once zoomed in and pinch frames there restyle nothing */
+  const ng = Math.min(2.6, Math.round(TILE_GAP * S * cam.z * 4) / 4);
+  if (ng !== gp) { gp = ng; root.style.setProperty("--gap", ng + "px"); }
 }
 
 function contentBox() {
