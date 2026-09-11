@@ -12,11 +12,13 @@ which is no encoding at all. Steps are the reference theme's slots 1-4, and they
 through custom properties rather than being burnt into each row.
 """
 
+import os
 import pathlib
 import subprocess
 
 REPOS = pathlib.Path("/data/zsb-repos")
-OUT = pathlib.Path("/tmp/claude-1001/-usr-bin/03d08ecb-360f-4b56-876f-e00ce749f9b3/scratchpad")
+# scratchpads are per-session and get cleaned up, so the output dir is overridable
+OUT = pathlib.Path(os.environ.get("PANEL_OUT", "/tmp/claude-1001/-usr-bin/03d08ecb-360f-4b56-876f-e00ce749f9b3/scratchpad"))
 
 # Reference-theme categorical slots 1-4, dark and light. Validated as a set, not picked by eye.
 KINDS = [
@@ -210,22 +212,21 @@ def bronze_panel() -> str:
                  f"{loc(src / 'parse'):,} LOC shared", "".join(b))
 
     # ---- what it handles, and where those bytes come from
+    # chemfish/ left this block on 2026-09-11: its custody branch, with the other eighteen, was
+    # closed unmerged once open-source datasets got their own bucket (s3://zsb-open-source).
     d = []
     for mod, stages, origin in (
         ("minifin", "fetch · convert · build · publish", "Fort Knox · 132 keys · 947 MiB"),
         ("megafin", "fetch · convert · build · publish", "Fort Knox · 2×291 keys · 10.8 GiB"),
-        ("chemfish", "verify · upstream · runbook", "public origin · 12 rows · 6 URLs"),
     ):
         k = live(mod)
         tag = "" if k == "live" else "  [PR]"
         d.append(row(f"{mod}/{tag}", f"{loc(src / mod):,}", k, origin))
         d.append(row(stages, "", k, "no accession — chain stops here"
                      if mod == "chemfish" else "Parse delivery, placed by a human", 2))
-    d.append(row("chemfish has no fetch", "", "none",
-                 "a fetch would substitute, not repair"))
-    handles = block("what it handles", DARK["--k-live"], "3 datasets · 2 origins", "".join(d))
+    handles = block("what it handles", DARK["--k-live"], "2 datasets · 1 origin", "".join(d))
 
-    used = {"shared", "live", "none"} | {live(m) for m in ("minifin", "megafin", "chemfish")}
+    used = {"shared"} | {live(m) for m in ("minifin", "megafin")}
     return STYLE + legend(used) + runs + handles
 
 

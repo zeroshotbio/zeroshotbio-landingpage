@@ -465,6 +465,57 @@ prefix with no entry still draws, grey, in "Other". And any prefix starting with
 
 Checks: `check-overlaps` 0 pairs (140 text nodes), `check-clicks` 18, `check-fit` the known 7.
 
+## The state of the data — 2026-09-11, later. The custody PRs closed, and nothing hides on zoom.
+
+**Audit against the sources**, all read live today:
+
+| source | live | page |
+|---|---|---|
+| `zsb-bronze-fortknox` | 136,246 obj · 9.56 TiB; megafin-1/ megafin-2/ minifin/ (+ reference/, 2 probe files) | matches |
+| `zsb-silver-warehouse` | 79 obj · 65.64 GiB | matches |
+| `zsb-open-source` | 26 datasets, 902 obj · 566.22 GiB (+ the `_access_check/` probe, not drawn) | matches, per dataset |
+| zsb-bronze | 331 commits on main, **0 open PRs** | **was stale** — fixed below |
+| zsb-silver / zsb-gold / zsb-medallion | 98 / 59 commits, v0.13.0, 0 open PRs each | matches |
+
+**The GitHub column lost the `acquire` cell.** The 19 custody PRs (#103–#121) were closed unmerged
+on 2026-09-11 and labelled `archived-custody` (branches kept), because open-source datasets now live in
+`s3://zsb-open-source` with custody in each dataset's README. So:
+- `BACQ` and its `BAND_PUBLIC` ("PUBLIC ORIGIN") band are gone, as is the `Public origins · the internet`
+  group in `OVERVIEW.processes`.
+- `BREPO`'s floor shrank by the band's height: `y 24.45 → 22.45`, `h 22.4 → 18.4` (top edge unmoved at
+  13.25). Its two left-side conduit ports took `dy +2` (`-4.95 → -2.95`, `6 → 8`) so they land where
+  they did — a port is the side midpoint plus `dy`.
+- `BREPO`'s `sub`, `brief`, `built` and `kv` no longer claim open PRs, acquired modules or a dataset it
+  "only vouches for"; SILVER's closing sentence says the branches closed.
+- `gen_repo_panels.py` dropped chemfish from the zsb-bronze panel (2 datasets · 1 origin) and takes
+  `PANEL_OUT` for its output dir. Note the repo reader panels it builds are **not embedded on this page**
+  any more — the repo readers render `brief`/`kv` — so nothing was spliced.
+
+**No label is hidden at any zoom.** The fine tier (text below `FINE_PX`) used to be switched off below
+zoom 0.25 (`svg.coarse .fine{display:none}`). At an iPad-sized viewport the fit zoom is ~0.21 — already
+under that line — so small labels were gone before the reader touched anything, and pinching out shrank
+the rest toward nothing. The rule and `labelTier()` are removed; the `fine` class is still assigned. What
+keeps text legible now is a **zoom floor**: `MIN_ZOOM_OF_FIT = 0.6` of the fit zoom (recorded by `fit()`
+as `fitZ`), replacing the absolute `0.08`.
+
+**Pinch and pan, rewritten for iPad.** One Pointer Events path with a `Map` of live pointers: one pans,
+two pinch about the midpoint between the fingers (and pan with it), lifting one finger continues as a
+pan. The old split had `pointermove` panning while `touchmove` zoomed, so during a pinch each finger
+dragged the camera toward itself and the zoom scaled about the canvas corner. Also: camera writes are
+coalesced to one `apply()` per animation frame (`schedule()`); the conduit dots hold still while a
+gesture is moving (`gesturing`, cleared 160 ms after the last movement); `svg.moving` sets
+`text-rendering`/`shape-rendering` to `optimizeSpeed` for the duration; Safari's
+`gesturestart/change/end` are cancelled so the page itself never zooms. The lazy pointer-capture rule
+that keeps clicks working is untouched, and a pinch never reads as a click.
+
+**`check-pinch.mjs`** (new, beside the others; `node check-pinch.mjs <url>`) emulates a two-finger touch
+in Chromium at 1180×820: a 3× finger spread zooms exactly 3.000× with the midpoint's model point fixed
+(0.000 drift), a two-finger drag pans 100 px with no zoom, a heavy wheel zoom-out stops at 0.600× fit,
+and 0 of 137 text nodes are hidden. Real-device feel still wants a check on an actual iPad.
+
+**Checks.** `check-overlaps` 0 pairs (137 text nodes). `check-clicks` **17** stations (acquire gone).
+`check-fit` the same 7 pre-existing failures. `check-pinch` as above. No page errors.
+
 ## The state of the data — 2026-09-11. Silver's copies are deleted; silver is ours again.
 
 ```

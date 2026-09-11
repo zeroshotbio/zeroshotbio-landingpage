@@ -124,10 +124,11 @@
   svg.drag{cursor:grabbing}
   svg g[role=button]{cursor:pointer}
   svg text{pointer-events:none}
-  /* Below the fine-label zoom threshold the small strings are removed rather
-     than left to smear. The view sets .coarse; the tier is assigned in
-     ds-view.js by font size, so a shape never has to opt in. */
-  svg.coarse .fine{display:none}
+  /* No text is ever hidden by zoom (2026-09-11). While a pan or pinch is moving, text and
+     shapes render for speed rather than precision; the view clears .moving 160 ms after the
+     gesture settles, and the next frame paints them precisely again. */
+  svg.moving text{text-rendering:optimizeSpeed}
+  svg.moving{shape-rendering:optimizeSpeed}
   .stepnav{position:absolute;top:10px;right:10px;display:flex;gap:8px;z-index:5}
   .stepnav button{width:34px;height:34px;border-radius:50%;border:1px solid var(--fg);
                   background:var(--bg);color:var(--fg);display:grid;place-items:center;

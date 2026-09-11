@@ -285,8 +285,10 @@ RUNS.forEach((poly, i) => {
 let last = 0;
 function frame(now) {
   const dt = last ? Math.min((now - last) / 1000, 0.05) : 0; last = now;
-  if (motion) TICKERS.forEach(t => t(dt, now, cam.z));
-  labelTier();
+  /* The dots stand still while a finger or the wheel is moving the camera: every tick rewrites
+     three circles per conduit, and on an iPad that is the difference between a pinch that tracks
+     and one that stutters. They carry on from where they stopped once the gesture settles. */
+  if (motion && !gesturing) TICKERS.forEach(t => t(dt, now, cam.z));
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -299,6 +301,12 @@ requestAnimationFrame(frame);
    is a model point divided by the zoom, and that is the whole of it.
    ============================================================ */
 const cam = { x: 0, y: 0, z: 1 };
+/* The zoom floor is a fraction of the whole-plan zoom, not an absolute. Zooming out past the plan
+   shows only empty paper, and it was the absolute floor (0.08) that let every label shrink to a
+   speck - which read as the text disappearing. */
+const MIN_ZOOM_OF_FIT = 0.6;
+let fitZ = 0;
+const clampZ = z => Math.max(fitZ * MIN_ZOOM_OF_FIT, Math.min(4, z));
 function apply() { root.setAttribute("transform", `translate(${cam.x},${cam.y}) scale(${cam.z})`); }
 
 function contentBox() {
@@ -310,29 +318,17 @@ function contentBox() {
 }
 
 /* ============================================================
-   LABEL TIERS
+   LABEL TIERS — assigned, never hidden.
 
-   Anything below FINE_PX (9.5 * TYPE) is fine tier and is switched off below
-   FINE_Z: sub-labels, tile figures and rail commands. Station names, bucket
-   names, conduit captions and sliver callouts sit above it and stay up at
-   every zoom. Decoration that exists only to frame a fine label — the repo
-   command rails — carries the class explicitly, so an empty frame never
-   survives its own caption.
+   Text below FINE_PX (9.5 * TYPE) still gets the class "fine", so a tier can be styled, but no
+   zoom switches anything off any more. The old rule dropped the fine tier below zoom 0.25, and on
+   an iPad, whose fit zoom already sits near that line, the first pinch-out read as every label on
+   the page disappearing (2026-09-11). What keeps text from shrinking to nothing now is the zoom
+   floor, MIN_ZOOM_OF_FIT: you cannot zoom out much past the whole plan.
    ============================================================ */
-/* With the type tripled, fit-to-stage renders a 9px label at about 10 real
-   pixels, so the whole plan is legible without zooming and the coarse tier
-   only kicks in when somebody zooms a long way out. */
-const FINE_Z = 0.25;
 [...svg.querySelectorAll("text")].forEach(t => {
   if (parseFloat(t.getAttribute("font-size")) < FINE_PX) t.classList.add("fine");
 });
-let coarse = null;
-/* Deliberately not a TICKER: tickers are paused by the motion toggle and by
-   prefers-reduced-motion, and which words are on the page is not motion. */
-function labelTier() {
-  const want = cam.z < FINE_Z;
-  if (want !== coarse) { coarse = want; svg.classList.toggle("coarse", want); }
-}
 /* RESERVE THE READER. Selecting a station opens the reader, and the map deliberately does not re-fit
    while something is selected - so whatever the reader opens over is simply hidden. That cost nothing
    while the plan was height-bound and left slack on the right. The open-source lane made it wide
@@ -349,6 +345,7 @@ function fit() {
   const r = svg.getBoundingClientRect(), b = contentBox();
   const W = r.width - readerReserve();
   cam.z = Math.min(W / b.w, r.height / b.h);
+  fitZ = cam.z;
   cam.x = (W - b.w * cam.z) / 2 - b.x * cam.z;
   cam.y = (r.height - b.h * cam.z) / 2 - b.y * cam.z;
   apply();
@@ -376,13 +373,68 @@ function fit() {
    alive when the cursor leaves the canvas. A click never travels far enough
    to take it, so a click reaches the shape it landed on. */
 const PAN_SLOP = 3;
-let dragging = false, dragged = false, px = 0, py = 0, ox = 0, oy = 0, capId = null;
+/* Every live pointer, by id. One pointer pans; two pinch. Pointer Events carry mouse, pen and each
+   finger alike, so one path serves a desktop drag and an iPad pinch, and nothing listens to touch
+   events any more. The old split - pointermove panning while touchmove zoomed - ran both during a
+   pinch: each finger's pointermove dragged the camera toward itself, the zoom scaled about the
+   canvas corner rather than between the fingers, and the plan shook (2026-09-11). */
+const ptrs = new Map();
+let dragging = false, dragged = false, ox = 0, oy = 0, capId = null, pinch = null;
+
+/* Camera writes are coalesced to one per animation frame. A trackpad or an iPad delivers several
+   pointer or wheel events a frame, and each apply() re-renders the whole plan. */
+let queued = false;
+function schedule() {
+  if (queued) return;
+  queued = true;
+  requestAnimationFrame(() => { queued = false; apply(); });
+}
+/* A gesture counts as moving from its first real movement until it has been still for 160 ms.
+   While it moves, the conduit dots hold still (frame()) and text renders for speed (index.html). */
+let gesturing = false, settle = null;
+function moving() {
+  gesturing = true; svg.classList.add("moving");
+  clearTimeout(settle);
+  settle = setTimeout(() => { gesturing = false; svg.classList.remove("moving"); }, 160);
+}
+function mid() {
+  const [a, b] = [...ptrs.values()];
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) || 1 };
+}
+/* Zoom to z so that the model point under screen (x, y) lands under screen (nx, ny). With
+   (nx, ny) = (x, y) that is zoom-about-a-point; letting them differ is a pinch that also pans. */
+function zoomAbout(x, y, nx, ny, z) {
+  const r = svg.getBoundingClientRect();
+  z = clampZ(z);
+  cam.x = (nx - r.left) - ((x - r.left) - cam.x) * (z / cam.z);
+  cam.y = (ny - r.top) - ((y - r.top) - cam.y) * (z / cam.z);
+  cam.z = z;
+}
 
 svg.addEventListener("pointerdown", e => {
-  dragging = true; dragged = false;
-  px = ox = e.clientX; py = oy = e.clientY; capId = e.pointerId;
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (ptrs.size === 1) {
+    dragging = true; dragged = false; ox = e.clientX; oy = e.clientY; capId = e.pointerId;
+  } else if (ptrs.size === 2) {
+    /* a second finger turns the pan into a pinch, and a pinch is never a click */
+    const m = mid();
+    pinch = { x: m.x, y: m.y, d: m.d, z: cam.z };
+    dragged = true;
+    ptrs.forEach((_, id) => { try { svg.setPointerCapture(id); } catch (_) { /* touch has it */ } });
+  }
 });
 svg.addEventListener("pointermove", e => {
+  const p = ptrs.get(e.pointerId);
+  if (!p) return;
+  const dx = e.clientX - p.x, dy = e.clientY - p.y;
+  p.x = e.clientX; p.y = e.clientY;
+  if (pinch && ptrs.size >= 2) {
+    const m = mid();
+    zoomAbout(pinch.x, pinch.y, m.x, m.y, pinch.z * m.d / pinch.d);
+    pinch.x = m.x; pinch.y = m.y;
+    moving(); schedule();
+    return;
+  }
   if (!dragging) return;
   if (!dragged) {
     if (Math.abs(e.clientX - ox) + Math.abs(e.clientY - oy) <= PAN_SLOP) return;
@@ -391,43 +443,34 @@ svg.addEventListener("pointermove", e => {
     svg.classList.add("drag");
     try { svg.setPointerCapture(capId); } catch (_) { /* touch already has it */ }
   }
-  cam.x += e.clientX - px; cam.y += e.clientY - py;
-  px = e.clientX; py = e.clientY; apply();
+  cam.x += dx; cam.y += dy;
+  moving(); schedule();
 });
 ["pointerup", "pointercancel"].forEach(k => svg.addEventListener(k, e => {
-  dragging = false; svg.classList.remove("drag");
-  if (capId !== null) {
-    try { if (svg.hasPointerCapture(capId)) svg.releasePointerCapture(capId); } catch (_) {}
-    capId = null;
+  ptrs.delete(e.pointerId);
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (_) {}
+  if (ptrs.size < 2) pinch = null;
+  if (ptrs.size === 1) {
+    /* lifting one finger of a pinch leaves a pan with the other, not a jump */
+    const [id, q] = [...ptrs.entries()][0];
+    dragging = true; capId = id; ox = q.x; oy = q.y;
+  } else if (ptrs.size === 0) {
+    dragging = false; svg.classList.remove("drag"); capId = null;
   }
   /* `dragged` is read by the click handler, which fires after this one */
 }));
 /* Clicking the canvas itself clears the selection. A station's own handler
    calls stopPropagation, so this only sees clicks that hit no station — and
-   only when the gesture was not a pan. */
+   only when the gesture was not a pan or a pinch. */
 svg.addEventListener("click", () => { if (!dragged) select(null); });
 svg.addEventListener("wheel", e => {
   e.preventDefault();
-  const r = svg.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
-  const k = Math.exp(-e.deltaY * 0.0016), z = Math.max(0.08, Math.min(4, cam.z * k));
-  cam.x = mx - (mx - cam.x) * (z / cam.z); cam.y = my - (my - cam.y) * (z / cam.z);
-  cam.z = z; apply();
+  zoomAbout(e.clientX, e.clientY, e.clientX, e.clientY, cam.z * Math.exp(-e.deltaY * 0.0016));
+  moving(); schedule();
 }, { passive: false });
-
-/* pinch */
-let pinch = null;
-svg.addEventListener("touchstart", e => {
-  if (e.touches.length === 2) pinch = { d: tdist(e), z: cam.z };
-}, { passive: true });
-svg.addEventListener("touchmove", e => {
-  if (e.touches.length === 2 && pinch) {
-    e.preventDefault();
-    cam.z = Math.max(0.08, Math.min(4, pinch.z * tdist(e) / pinch.d)); apply();
-  }
-}, { passive: false });
-svg.addEventListener("touchend", () => { pinch = null; }, { passive: true });
-const tdist = e => Math.hypot(
-  e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+/* Safari's own pinch gesture would zoom the whole page on top of this one. */
+["gesturestart", "gesturechange", "gestureend"].forEach(k =>
+  svg.addEventListener(k, e => e.preventDefault(), { passive: false }));
 
 function esc(s) { return String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
 
