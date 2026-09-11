@@ -6098,8 +6098,12 @@ function drawCapture(g,n){
   const [KX,KY]=P(n.x, n.y, 0);
   /* THE GAP IS MEASURED ALONG THE LINE, from the ring to the rack's back face.
      A world unit of y is S pixels on screen down this diagonal, so the ring's
-     radius along it, found in pixels, divides straight back into units. */
-  const GAP=n.w*0.65/0.72;
+     radius along it, found in pixels, divides straight back into units.
+     Asked for from the page: more room between the two. 0.65 read as the
+     rack crowding the glass's magnet bar; 0.95 still leaves the rack well
+     clear of B7's lens, because the extra slides it down the line beside
+     B7's rack rather than towards it. */
+  const GAP=n.w*0.95/0.72;
   const rw=n.w*1.55, rd=n.d*0.56, rh=n.h*0.50;
   const RU=SC/Math.hypot(C30/LX, 0.5/LY);
   const rack={x:n.x, y:n.y+RU/S+GAP+rd/2,
