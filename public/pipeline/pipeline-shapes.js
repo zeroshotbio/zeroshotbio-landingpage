@@ -8519,20 +8519,16 @@ DRAW.fragmentligate = drawFragmentLigate;
    said this station made the whole molecule. It inherits most of it and adds
    the ends.
 
-   WHERE THE GLASS HANGS IS FORCED. The ground either side is spoken for —
-   C1's glass sits on its own tile to the left, C3 is
-   the next tile along — so "above" is the only air there is, and the sky
-   over any tile on this row is striped with the names of the stations to its
-   LEFT, running up and to the right at −30°. A bar this wide does not fit
-   between two of them; it fits above all of them, clear of where B7's name
-   runs out, and to the right of B8a's own glass, which is the only other
-   thing hanging in this stretch of sky.
-
-   IT STAYED UP THERE WHEN THE GROUND WENT, and that was forced too. B8a's
-   glass came down onto its own tile once it was all that was left, but
-   B8a's is half as wide. This bar is 212 px across, and centred on its tile
-   it would cover C1's glass to the left and C3's bench to the right. The leaders
-   went with the ground: they ran to a tube that is no longer drawn.
+   THE GLASS SITS ON ITS OWN BOX. It hung high in the sky for as long as a
+   bench stood under it, and stayed there after the bench went because a bar
+   212 px across, centred on this tile, reaches over C1's glass on one side
+   and C3's bench on the other. Asked for from "Edit visual" as "move the
+   inset to the rectangular prism", it came down anyway, centred on
+   P(n.x, n.y, n.h/2) as C1's and B8a's are: a glass floating a tile's
+   height clear of the box the editor outlines reads as belonging to
+   whatever is under it, which here is nothing. The overlap with the
+   neighbours is the price, and it was asked for. The leaders went with
+   the ground: they ran to a tube that is no longer drawn.
 
    Spends --ch4, --ch6, --ch8, --ch10 and --ch11, which are declared on
    /molecular_pipe — the only page carrying a node wearing this.
@@ -8560,8 +8556,8 @@ function drawIndexPcr(g,n){
      size this node happens to be authored at. A resize moves the glass, grows
      it, and takes the whole construct along. */
   const LX=106, LY=33;
-  const TOP=P(n.x,n.y,n.h);
-  const KX=TOP[0]+55*SC, KY=TOP[1]-275*SC;
+  const MID=P(n.x,n.y,n.h/2);
+  const KX=MID[0], KY=MID[1];
   const lens=el("g",{transform:
     `translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${SC.toFixed(4)})`});
   g.appendChild(lens);
