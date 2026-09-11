@@ -217,6 +217,18 @@ const nextConfig = {
       // Read public/fate_map_24_48/NOTES.md before changing the encoding of an
       // edge — the literature verdict in the stroke is the whole argument.
       { source: '/fate_map_24_48', destination: '/fate_map_24_48/index.html' },
+      // /compass is a plate-style essay on the COMPASS shared-response result (Liang & Singh
+      // 2026), reproduced on-instance across the six CRISPRi lines and then held against Tahoe
+      // and ChemFish. It REPLACED the old ChemFish "flotilla" app route (src/app/compass,
+      // deleted) — an app route would shadow this rewrite, so do not bring one back.
+      // Same shape as the fate maps: index.html + four classic scripts + meta.json/plates.json,
+      // no build step at serve time, absolute <script src> because the route has no trailing
+      // slash. Every number it prints is read from meta.json.
+      // SOURCE + rebuild: python3 scripts/build_compass.py, which only serialises the finished
+      // reproduction in /data/scratch/compass_repro (git-tracked; its COMPASS_REPRODUCTION.md and
+      // reproduction_meta.json are the record). Read public/compass/NOTES.md before changing any
+      // claim — in particular, the Tahoe axis is shown as confounded and must stay so.
+      { source: '/compass', destination: '/compass/index.html' },
     ]
   },
 
@@ -298,6 +310,17 @@ const nextConfig = {
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
       },
       // same shell-and-scripts coupling, same reason, for the 24-48 hpf skeleton
+      // same shell-and-scripts coupling for /compass: index.html names the elements the four
+      // scripts reach for, and cp-data.js refuses a plates.json whose asset_version differs from
+      // meta.json's, so a half-deployed set fails loudly instead of drawing stale numbers.
+      {
+        source: '/compass/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/compass',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
       {
         source: '/fate_map_24_48/:path*',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
