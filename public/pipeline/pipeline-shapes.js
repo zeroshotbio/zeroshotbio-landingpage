@@ -9106,11 +9106,12 @@ function drawReadCycle(g,n){
   setCover(cx1);
   /* slide out, rest closed, slide back, rest open — the clock starts at the
      rest, so the first thing a reader sees is the pane already across. The
-     closed rest is as long as NR rounds of the read and a settle of SET
-     either side, asked for from the page as "close, flash five times,
-     open": the cover waits for the fifth round rather than the rounds
-     fitting whatever wait the cover had. */
-  const SET=0.15, NR=5, CSL=2.2, CHC=2*SET+NR*CYC, CHO=1.6, CCY=2*CSL+CHC+CHO;
+     closed rest is NR rounds of the read and a settle of SET either side.
+     It was five rounds, asked for as "close, flash five times, open"; it was
+     then asked to last as long as the cloud takes to grow, so NR is however
+     many whole rounds fill GROW, and the cloud below fills over exactly
+     those rounds — empty as the lid closes, full as it opens. */
+  const GROW=18, SET=0.15, NR=Math.round((GROW-2*SET)/CYC), CSL=2.2, CHC=2*SET+NR*CYC, CHO=1.6, CCY=2*CSL+CHC+CHO;
   let cc=CSL;
 
   /* ---- THE DOOR, on the right wall, asked for so the reads have somewhere
@@ -9197,8 +9198,9 @@ function drawReadCycle(g,n){
   }
 
   /* THE CLOUD GROWS, asked for so the picture shows the run's reads
-     piling up. acc runs 0 to 1 over GROW seconds, holds, and a new
-     run starts empty. The ball's volume follows the count, so its radius
+     piling up. It fills over the rounds of one closed rest, holds full
+     while the cover is open, and the next closed rest starts it empty — a
+     run to a lid, which is why the rest is as long as GROW. The ball's volume follows the count, so its radius
      goes as the cube root, and bars join it one by one in the order they
      were drawn; the counter over it prints the count the fill stands for.
      A figure, not a readout: the rate is the picture's, not an instrument's.
@@ -9214,7 +9216,7 @@ function drawReadCycle(g,n){
      three billion, and prints every digit so the held figure is that exact
      number, not a rounded "3.66 billion". Grouped by hand rather than by
      toLocaleString, so the separator is a comma in every browser locale. */
-  const READS=3655719111, GROW=18, FULL=2.5, GR=5;
+  const READS=3655719111, GR=5;
   const tally=add(g,el("text",{x:f1(C[0]),y:f1(C[1]),"text-anchor":"middle",
     "font-size":f2(4.6*SC),"font-weight":"700",fill:"var(--fg2)",stroke:"var(--bg)",
     "stroke-width":f2(1.1*SC),"stroke-opacity":".85","paint-order":"stroke","stroke-linejoin":"round"}));
@@ -9296,13 +9298,13 @@ function drawReadCycle(g,n){
      are counted off the cover's own clock rather than started frame by
      frame, so a slow frame cannot cost the last round its place. Outside
      them the field is dark with t parked at CYC. */
-  let t=CYC, round=-1, litO="0", fo=0, ph=0, acc=0.85, fq=0, fqS="";
+  let t=CYC, round=-1, litO="0", fo=0, ph=0, fq=0, fqS="";
   /* THE READS LEAVE ONLY WHILE THEY ARE BEING READ, asked for from the page:
      the strands start once the cover has closed and the wells are lighting,
      run through the dark between rounds, and stop when the last round ends,
      so the cover never moves over a stream. The cloud grows only while they
      feed it; it keeps turning in between, since the file is still there. */
-  grow(acc); turn(0); flow.setAttribute("stroke-opacity","0");
+  grow(0); turn(0); flow.setAttribute("stroke-opacity","0");
   const run=dt=>{
     const dq=Math.min(dt,0.1);
     cc=(cc+dq)%CCY;
@@ -9314,8 +9316,7 @@ function drawReadCycle(g,n){
     if(qs!==fqS){ fqS=qs; flow.setAttribute("stroke-opacity",qs); }
     if(rd>=0){
       fo=(fo+VEL*dq)%(BW+SPc); flow.setAttribute("stroke-dashoffset",f2(-fo*SC));
-      acc+=dq/GROW; if(acc>=1+FULL/GROW) acc=0;
-      grow(Math.min(acc,1));
+      grow(Math.min(1,tc/(NR*CYC)));
     }
     ph=(ph+SPIN*dq)%(Math.PI*2); turn(ph);
     /* each round reads another base, so the clusters change colour in the
@@ -9340,9 +9341,11 @@ function drawReadCycle(g,n){
   /* THE FIRST FRAME IS MID-SCAN. A reader with motion off never advances the
      clock, so this is the whole station for them: the cover closed, the
      sweep partway across, the clusters above it lit and the ones it has just
-     reached still going off. The cover's clock starts at its closed rest, so
-     SET is the only wait before the round. */
-  for(let i=0;i<30;i++) run((SET+SCAN*0.55)/30);
+     reached still going off. It is the LAST round of the rest, so the cloud
+     beside it is nearly full; the cover's clock is set straight there rather
+     than run there, since every step turns all NB bars. */
+  cc+=SET+(NR-1)*CYC;
+  for(let i=0;i<30;i++) run(SCAN*0.55/30);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.readcycle = drawReadCycle;
