@@ -229,6 +229,10 @@ const nextConfig = {
       // reproduction_meta.json are the record). Read public/compass/NOTES.md before changing any
       // claim — in particular, the Tahoe axis is shown as confounded and must stay so.
       { source: '/compass', destination: '/compass/index.html' },
+      // /rhaister opens our analysis of Rhaister (Svensson et al., Tahoe 2026): the beginning of an
+      // analysis, not a reproduction — every number is the authors' own, from public/rhaister/meta.json.
+      // Same plate-style shape as /compass (index.html + rh-draw.js + rh-main.js + meta.json).
+      { source: '/rhaister', destination: '/rhaister/index.html' },
     ]
   },
 
@@ -315,6 +319,14 @@ const nextConfig = {
       // meta.json's, so a half-deployed set fails loudly instead of drawing stale numbers.
       {
         source: '/compass/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/rhaister/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/rhaister',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
       },
       {
