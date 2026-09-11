@@ -9195,6 +9195,24 @@ function drawReadCycle(g,n){
   tag(wt,"5 WELL WALL");
   tag(at(0.15,0.35),"6 GLASS");
 
+  /* ---- CORNER TAGS, asked for from the page for the same reason: so a
+     request can name a corner of the housing rather than describe it. The
+     seven the viewer can see, round the lid from the back and then along the
+     ground; the eighth, back and low, is behind the box and left unnamed.
+     Lower-case c, so a corner never reads as a face's number or a base's
+     letter. Each is a dot on the corner and its tag pushed off it in screen
+     pixels, outward where the corner is on the outline; the front top one is
+     inside the outline, so its tag sits on the lid. The front bottom one goes
+     left, since BOTTOM's tag is under it. */
+  [[x0,y0,h, 0,-4.2,"middle"],[x1,y0,h, 3.2,0.4,"start"],[x1,y1,h, 0,-4.0,"middle"],
+   [x0,y1,h,-3.2,0,"end"],[x0,y1,0,-3.2,0.8,"end"],[x1,y1,0,-2.4,2.6,"end"],
+   [x1,y0,0, 3.2,0.8,"start"]].forEach(([x,y,z,dx,dy,an],i)=>{
+    const p=P(x,y,z);
+    add(g,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(1.0*SC),fill:"var(--fg)",
+      stroke:"var(--bg)","stroke-width":f2(0.6*SC),"stroke-opacity":".85"}));
+    tag([p[0]+dx*SC,p[1]+dy*SC],`c${i+1}`,an);
+  });
+
   /* ---- THE CYCLE. The field comes up over the scan's first moment and
      goes down together after the hold; inside it, each cluster is written
      only when it changes — on when it fires, and its bloom while it dies
