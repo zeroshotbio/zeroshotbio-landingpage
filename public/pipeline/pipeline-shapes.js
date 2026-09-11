@@ -8764,7 +8764,8 @@ DRAW.sizecheck = drawSizeCheck;
    share it and go out with the field; a later request asked them to keep
    flashing, so they now run a clock of their own — first a C A T G chase,
    now each at random and never stopping, through the dark between rounds
-   as well. Only the
+   as well. They have since moved off the wall's right half and onto the
+   touchscreen on side 3, flaring as they did. Only the
    going-off is per cluster, because only the going-off was asked to be.
 
    A FIFTH REQUEST made it read as a flow chip: the cell is an ellipse
@@ -9001,35 +9002,8 @@ function drawReadCycle(g,n){
   add(g,el("path",{d:`M${ring2d(HB[MK+1].p)}Z M${ring2d(rimH)}Z`,
     fill:SKIN.works.top,"fill-rule":"evenodd"}));
 
-  /* ---- THE STATUS LIGHTS, along the front wall's right half, where the eye
-     lands after the cell. Asked to be more obvious, so each socket now holds
-     its own colour even while the field is dark, and flares — bloom, core
-     and a hot white centre — on the beat. The flare is its own group after
-     the lid, so the bloom is not cut off at the wall's top edge; each light
-     has a group of its own inside it, so they can go off one after another.
-     Set a little above the wall's middle, so each letter has the lower
-     third to itself. */
-  const zl=h*0.64, lamp=el("g",{}), lamps=[];
-  BASE.forEach((c,i)=>{
-    const p=P(X(0.10+i*0.105),y1,zl), cx=f1(p[0]), cy=f1(p[1]);
-    add(g,el("circle",{cx,cy,r:f2(2.6*SC),fill:c,"fill-opacity":".3",
-      stroke:"var(--fg)","stroke-width":f2(0.5*SC),"stroke-opacity":".5"}));
-    const one=add(lamp,el("g",{opacity:"0"}));
-    lamps.push({e:one, o:"0"});
-    add(one,el("circle",{cx,cy,r:f2(6.5*SC),fill:c,"fill-opacity":".22"}));
-    add(one,el("circle",{cx,cy,r:f2(4.2*SC),fill:c,"fill-opacity":".4"}));
-    add(one,el("circle",{cx,cy,r:f2(2.4*SC),fill:c}));
-    add(one,el("circle",{cx,cy,r:f2(0.9*SC),fill:"var(--fg)","fill-opacity":".85"}));
-    /* the letter under each light is the key: it stays when the field goes
-       dark, so which colour is which base is never left to be guessed */
-    const t=add(g,el("text",{x:cx,y:f1(p[1]+7.0*SC),"text-anchor":"middle",
-      "font-size":f2(4.2*SC),"font-weight":"700",fill:c}));
-    t.textContent=NT[i];
-  });
-  g.appendChild(lamp);
-
   /* ---- THE TOUCHSCREEN, on side 3, asked for from the page: a third of the
-     wall's width in its left half, which the lights leave empty. Recessed by
+     wall's width in its left half. The status lights now live on it. Recessed by
      showing the pocket's shadow along its top and left, the two reveals a
      viewer looking down from the front-left can see into; the glass is
      inset from them and glows by the housing's own trick of faint wide
@@ -9042,6 +9016,35 @@ function drawReadCycle(g,n){
     stroke:SKIN.glass.top,"stroke-width":f2(wd*SC),"stroke-opacity":o,"stroke-linejoin":"round"})));
   face(scr,"var(--bg)"); face(scr,SKIN.glass.top,.6); face(scr,"var(--fg)",.07);
   edge([P(sx0,y1,sz1),P(sx1,y1,sz1),P(sx1,y1,sz0),P(sx0,y1,sz0),P(sx0,y1,sz1)],".5",0.7);
+
+  /* ---- THE STATUS LIGHTS, on the touchscreen's glass, asked for from the
+     page in place of the row they had along the wall's right half, with
+     the same random flaring. Each socket holds its own colour even while
+     the field is dark, and flares — bloom, core and a hot white centre — on
+     its own beat. The flare is its own group after the screen, so the
+     bloom spills past the glass's edge rather than being cut off by it;
+     each light has a group of its own inside it, so they go off one after
+     another. The glass is a third of the width the row had, so the lights
+     are closer and a little smaller, set high so each letter has the
+     screen's lower part to itself. */
+  const zl=h*0.60, lamp=el("g",{}), lamps=[], lc=(sx0+rv+sx1)/2-n.x, lsp=n.w*0.075;
+  BASE.forEach((c,i)=>{
+    const p=P(n.x+lc+(i-1.5)*lsp,y1,zl), cx=f1(p[0]), cy=f1(p[1]);
+    add(g,el("circle",{cx,cy,r:f2(2.0*SC),fill:c,"fill-opacity":".3",
+      stroke:"var(--fg)","stroke-width":f2(0.45*SC),"stroke-opacity":".5"}));
+    const one=add(lamp,el("g",{opacity:"0"}));
+    lamps.push({e:one, o:"0"});
+    add(one,el("circle",{cx,cy,r:f2(5.0*SC),fill:c,"fill-opacity":".22"}));
+    add(one,el("circle",{cx,cy,r:f2(3.2*SC),fill:c,"fill-opacity":".4"}));
+    add(one,el("circle",{cx,cy,r:f2(1.85*SC),fill:c}));
+    add(one,el("circle",{cx,cy,r:f2(0.7*SC),fill:"var(--fg)","fill-opacity":".85"}));
+    /* the letter under each light is the key: it stays when the field goes
+       dark, so which colour is which base is never left to be guessed */
+    const t=add(g,el("text",{x:cx,y:f1(p[1]+6.2*SC),"text-anchor":"middle",
+      "font-size":f2(3.8*SC),"font-weight":"700",fill:c}));
+    t.textContent=NT[i];
+  });
+  g.appendChild(lamp);
 
   /* ---- THE CARTRIDGE SLOT, on side 4, in the wall's back half so the door
      keeps the front: a seam level in the world, with the recess under it
@@ -9253,7 +9256,7 @@ function drawReadCycle(g,n){
     "paint-order":"stroke","stroke-linejoin":"round"})); t.textContent=txt; };
   tag(P(X(-0.40),Y(-0.40),h),"1 TOP");
   tag(P(X(0.5+m),Y(0.5+m),0).map((v,i)=>v+(i?4.5*SC:0)),"2 BOTTOM");
-  tag(P(X(-0.27),y1,h*0.5),"3 LEFT");
+  tag(P(X(0.25),y1,h*0.5),"3 LEFT");        // in the half the lights left, clear of the screen
   tag(P(x1,Y(-0.36),h*0.25),"4 RIGHT");     // low and back, clear of the door and its strands
   const wa=at(-0.62,-0.78,(h+zc)/2), wt=at(-0.40,-0.42);
   add(g,el("line",{x1:f1(wa[0]),y1:f1(wa[1]),x2:f1(wt[0]),y2:f1(wt[1]-2.2*SC),
