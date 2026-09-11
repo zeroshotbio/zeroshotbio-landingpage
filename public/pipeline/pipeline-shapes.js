@@ -8760,8 +8760,9 @@ DRAW.sizecheck = drawSizeCheck;
 
    THE DIMMING IS STILL ONE GROUP'S OPACITY. The status lights used to
    share it and go out with the field; a later request asked them to keep
-   flashing in succession, so they now run a clock of their own, C A T G
-   round and round, through the dark between rounds as well. Only the
+   flashing, so they now run a clock of their own — first a C A T G chase,
+   now each at random and never stopping, through the dark between rounds
+   as well. Only the
    going-off is per cluster, because only the going-off was asked to be.
 
    A FIFTH REQUEST made it read as a flow chip: the cell is an ellipse
@@ -8861,13 +8862,12 @@ function drawReadCycle(g,n){
   /* ---- TIMING: asked from the page to be "almost a continuous cycle", so
      the scan crosses in under a second and the gap between rounds is only
      long enough to see that one has ended — a tenth of a second held, a
-     fifth dimming, a beat of dark. FLARE is how long a bulb takes to die
-     back to its dot, and it is short because the flash was asked to happen
-     only at the line's edge: each cluster fires the instant the line
-     reaches it, not scattered behind it, and not again until the next pass,
-     so the bloom is a thin band riding the line rather than a wake. */
-  const SCAN=0.9, FLARE=0.1, HOLD=0.3, DIM=0.2, DARK=0.12;
-  const CYC=SCAN+HOLD+DIM+DARK;
+     fifth dimming, a beat of dark. LAG is the most any cluster trails the
+     line, FLARE how long a bulb takes to die back to its dot. A request
+     once cut both to a thin band riding the line; the next asked for the
+     scatter back, so these are the values from before it. */
+  const SCAN=0.9, LAG=0.2, FLARE=0.28, HOLD=0.1, DIM=0.2, DARK=0.12;
+  const CYC=SCAN+LAG+HOLD+DIM+DARK;
 
   /* THE SCAN LINE'S DIRECTION, needed by the clusters as well as the line:
      the line is level ON THE SCREEN, which on this plane is a line of
@@ -8884,11 +8884,14 @@ function drawReadCycle(g,n){
      colour under it, which is the flashbulb and dies back as it fades. */
   const rest=el("g",{}), lit=el("g",{opacity:"0"}), bloom=el("g",{}), dot=[];
   g.appendChild(rest);
-  /* no wash over the whole cell any more: it lit the glass all at once as
-     the scan began, which is exactly the flash away from the line that was
-     asked to go */
+  /* a faint wash over the whole cell, so the flash is the surface lighting
+     and not only its dots */
+  add(lit,el("polygon",{points:pts(rimC),fill:"var(--fg)","fill-opacity":".05"}));
   lit.appendChild(bloom);
   g.appendChild(lit);
+  /* the lags come off a stream of their own, so the clusters' places and
+     first colours are the ones they always had */
+  const rl=rng(7193);
   for(let a=0;a<NU;a++)for(let b=0;b<NV;b++){
     const u=-1+2*(a+0.5+(r()-0.5)*0.3)/NU, v=-1+2*(b+0.5+(r()-0.5)*0.3)/NV, k=Math.floor(r()*4);
     if(u*u+v*v>0.86) continue;
@@ -8900,7 +8903,7 @@ function drawReadCycle(g,n){
     const node=add(lit,el("circle",{cx,cy,r:f2(1.45*SC),fill:BASE[k],opacity:"0",
       stroke:"var(--bg)","stroke-width":f2(0.35*SC),"stroke-opacity":".6"}));
     dot.push({k, node, flare, on:"0", fl:"0",
-      due:SCAN*(u*NN[0]+v*NN[1]+1)/2});
+      due:SCAN*(u*NN[0]+v*NN[1]+1)/2 + LAG*rl()});
   }
 
   /* ---- THE SCAN LINE, a bright core over a wide faint one, running top to
@@ -8975,19 +8978,20 @@ function drawReadCycle(g,n){
 
      IT LEAVES STRAIGHT OUT, square to the wall and level, and the cloud is a
      sphere — both asked for in place of a line running down the screen into
-     a flat disc. Two units was the length asked for; LEN is two at the
-     authored width and a fraction of it at any other, so a resize carries
-     the cloud with it, and the label prints what LEN actually is. The line
-     rides high in the doorway so the sphere, centred on it, sits on the
-     ground rather than through it. */
-  const LEN=n.w*2/1.60, dir=[1,0], za=h*0.66, ym=Y(0.17);
+     a flat disc. Two units was asked for first, then five; LEN is five at
+     the authored width and a fraction of it at any other, so a resize
+     carries the cloud with it, and the label prints what LEN actually is.
+     The line rides high in the doorway so the sphere, centred on it, sits
+     on the ground rather than through it. */
+  const LEN=n.w*5/1.60, dir=[1,0], za=h*0.66, ym=Y(0.17);
   const RS=n.w*0.28, xc=x1+dir[0]*LEN;
   const A=P(x1,ym,za), C=P(xc,ym,za);
   /* the line stops a little inside the sphere's near side, so the strands
-     are seen to arrive rather than to vanish under the haze */
+     are seen to arrive rather than to vanish under the haze; as the sphere
+     grows, grow() below pulls the end back to follow its surface */
   const E=P(xc-RS*0.8,ym,za);
   const line=`M${f1(A[0])} ${f1(A[1])}L${f1(E[0])} ${f1(E[1])}`;
-  add(g,el("path",{d:line,fill:"none",stroke:"var(--fg2)","stroke-width":f2(0.8*SC),"stroke-opacity":".25"}));
+  const wire=add(g,el("path",{d:line,fill:"none",stroke:"var(--fg2)","stroke-width":f2(0.8*SC),"stroke-opacity":".25"}));
   /* one dashed path whose offset moves, as C4's stream was: a train of
      strands for one attribute a frame, each dash a read's own bar */
   const BW=9.0, BH=2.4, SPc=5.0, VEL=56;
@@ -9022,23 +9026,46 @@ function drawReadCycle(g,n){
      the far, which is what makes a ring of bars read as a solid turning
      rather than a flat one swinging. */
   const HX=RS*S*C30*Math.SQRT2, HY=RS*S*Math.sqrt(0.5+CZ*CZ);
-  [[1.12,".06"],[0.85,".08"],[0.5,".11"]].forEach(([a,o])=>
-    add(g,el("ellipse",{cx:f1(C[0]),cy:f1(C[1]),rx:f1(HX*a),ry:f1(HY*a),
-      fill:"var(--fg2)","fill-opacity":o})));
-  const rn=rng(90417), neb=[], BL=n.w*0.045;
-  for(let i=0;i<90;i++){
+  const haze=[[1.12,".06"],[0.85,".08"],[0.5,".11"]].map(([a,o])=>({a,
+    e:add(g,el("ellipse",{cx:f1(C[0]),cy:f1(C[1]),rx:f1(HX*a),ry:f1(HY*a),
+      fill:"var(--fg2)","fill-opacity":o}))}));
+  const rn=rng(90417), neb=[], BL=n.w*0.045, NB=90;
+  for(let i=0;i<NB;i++){
     const rad=RS*Math.pow(0.15+0.85*rn(),0.4), cz=2*rn()-1, th=rn()*Math.PI*2;
     const bar=add(g,el("line",{x1:f1(C[0]),y1:f1(C[1]),x2:f1(C[0]+1),y2:f1(C[1]),
       stroke:"var(--fg2)","stroke-width":f2(BH*SC),"stroke-linecap":"round","stroke-opacity":"0"}));
     neb.push({bar, rad, cz, th, o:""});
   }
+
+  /* THE CLOUD GROWS, asked for so the picture shows the run's ~3 billion
+     reads piling up. acc runs 0 to 1 over GROW seconds, holds, and a new
+     run starts empty. The ball's volume follows the count, so its radius
+     goes as the cube root, and bars join it one by one in the order they
+     were drawn; the counter over it prints the count the fill stands for.
+     A figure, not a readout: the rate is the picture's, not an instrument's. */
+  const READS=3e9, GROW=18, FULL=2.5;
+  const cnt=P(xc,ym,za+RS);
+  const tally=add(g,el("text",{x:f1(cnt[0]),y:f1(cnt[1]-3*SC),"text-anchor":"middle",
+    "font-size":f2(4.6*SC),"font-weight":"700",fill:"var(--fg2)",stroke:"var(--bg)",
+    "stroke-width":f2(1.1*SC),"stroke-opacity":".85","paint-order":"stroke","stroke-linejoin":"round"}));
+  let gr=1, shown=NB, tallyS="";
+  const grow=acc=>{
+    gr=Math.cbrt(Math.max(acc,0.004)); shown=Math.ceil(acc*NB);
+    haze.forEach(H=>{ H.e.setAttribute("rx",f1(HX*H.a*gr)); H.e.setAttribute("ry",f1(HY*H.a*gr)); });
+    const Ep=P(xc-RS*gr*0.8,ym,za), d=`M${f1(A[0])} ${f1(A[1])}L${f1(Ep[0])} ${f1(Ep[1])}`;
+    wire.setAttribute("d",d); flow.setAttribute("d",d);
+    const nr=acc*READS;
+    const s=nr>=1e9 ? `${(nr/1e9).toFixed(2)} billion reads` : `${Math.round(nr/1e6)} million reads`;
+    if(s!==tallyS){ tallyS=s; tally.textContent=s; }
+  };
   const SPIN=Math.PI*2/12;
-  const turn=ph=>neb.forEach(R=>{
-    const a=R.th+ph, c=Math.cos(a), s=Math.sin(a), q=R.rad*Math.sqrt(1-R.cz*R.cz);
-    const x=xc+c*q, y=ym+s*q, z=za+R.rad*R.cz;
+  const turn=ph=>neb.forEach((R,i)=>{
+    if(i>=shown){ if(R.o!=="0"){ R.o="0"; R.bar.setAttribute("stroke-opacity","0"); } return; }
+    const rr=R.rad*gr, a=R.th+ph, c=Math.cos(a), s=Math.sin(a), q=rr*Math.sqrt(1-R.cz*R.cz);
+    const x=xc+c*q, y=ym+s*q, z=za+rr*R.cz;
     const p0=P(x+s*BL,y-c*BL,z), p1=P(x-s*BL,y+c*BL,z);
     /* the viewer looks down the x + y diagonal, so that is nearness */
-    const dep=((c+s)*Math.SQRT1_2*q/RS+1)/2;
+    const dep=((c+s)*Math.SQRT1_2*q/(RS*gr)+1)/2;
     R.bar.setAttribute("x1",f1(p0[0])); R.bar.setAttribute("y1",f1(p0[1]));
     R.bar.setAttribute("x2",f1(p1[0])); R.bar.setAttribute("y2",f1(p1[1]));
     const o=(0.25+0.55*dep).toFixed(2);
@@ -9072,21 +9099,26 @@ function drawReadCycle(g,n){
      back — so a frame touches the handful going off, not all of them. The
      scan is linear because a camera's pass is. */
   const ease=u=>u<0.5?2*u*u:1-2*(1-u)*(1-u);
-  /* the lights' own beat: one goes off every STEP and dies back over LFL,
-     a little longer than a step, so the run reads as a chase rather than
-     four separate blinks. Not tied to CYC, so they never stop for the dark. */
-  const STEP=0.2, LFL=0.3;
-  let t=0, lt=0, litO="0", scanU=-1, fo=0, ph=0;
+  /* the lights' own beat, asked to be random and constant rather than a
+     chase: each light waits a gap of its own, drawn fresh every time from a
+     stream of its own, flares and dies back over LFL, and waits again. Not
+     tied to CYC, so they never stop for the dark. */
+  const LFL=0.3, rq=rng(3301), gap=()=>0.08+0.5*rq();
+  lamps.forEach(L=>{ L.a=LFL+rq()*0.4; L.gap=gap(); });
+  let t=0, litO="0", scanU=-1, fo=0, ph=0, acc=0.85;
   /* the strands and the nebula run on their own clocks, through every beat
      of the cycle: the reads never stop leaving */
-  turn(0);
+  grow(acc); turn(0);
   const run=dt=>{
     t+=Math.min(dt,0.1);
-    lt=(lt+Math.min(dt,0.1))%(4*STEP);
     fo=(fo+VEL*Math.min(dt,0.1))%(BW+SPc); flow.setAttribute("stroke-dashoffset",f2(-fo*SC));
+    acc+=Math.min(dt,0.1)/GROW; if(acc>=1+FULL/GROW) acc=0;
+    grow(Math.min(acc,1));
     ph=(ph+SPIN*Math.min(dt,0.1))%(Math.PI*2); turn(ph);
-    lamps.forEach((L,i)=>{
-      const a=(lt-i*STEP+4*STEP)%(4*STEP);
+    lamps.forEach(L=>{
+      L.a+=Math.min(dt,0.1);
+      if(L.a>=L.gap+LFL){ L.a=0; L.gap=gap(); }
+      const a=L.a;
       const o=a<LFL ? ((1-a/LFL)*(1-a/LFL)).toFixed(2) : "0";
       if(o!==L.o){ L.o=o; L.e.setAttribute("opacity",o); }
     });
@@ -9094,7 +9126,7 @@ function drawReadCycle(g,n){
       dot.forEach(d=>{ d.k=(d.k+1+Math.floor(r()*3))%4;
         d.node.setAttribute("fill",BASE[d.k]); d.flare.setAttribute("fill",BASE[d.k]); });
     }
-    const e=SCAN+HOLD;
+    const e=SCAN+LAG+HOLD;
     const o = t<e ? Math.min(1,t/0.1) : t<e+DIM ? 1-ease((t-e)/DIM) : 0;
     const os=o.toFixed(2);
     if(os!==litO){ litO=os; lit.setAttribute("opacity",os); }
