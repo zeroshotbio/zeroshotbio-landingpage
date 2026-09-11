@@ -6082,13 +6082,18 @@ function drawCapture(g,n){
      of the anchor and the rack right of it, equally far out on screen, so the
      handle and label sit between the two things they name.
 
-     THE GLASS STEPS DOWN FROM THE RACK THE WAY B7'S DOES, and not only for
-     the likeness. Level, the pair is wider than the room it has: B7's rack
-     is on the left, and B8′a's strip and B8a's glass close off the right, so
-     the magnet bars either side of the ring land on plastic at both ends.
-     Dropped, the bars pass under the rack's left corner and under B7's rack,
-     while the rack stays below B8′a's strip. The rack stood on its own node
-     before this; now it is the pair that is centred on the node.
+     LEVEL, AND MIRRORED BY THEIR NEAR EDGES. Asked for again: the glass had
+     stepped down from the rack, and it was mirrored by centre, so a ring
+     twice the rack's width reached back across the anchor and only the rack
+     looked centred. Now the two share one height and the anchor sits in a gap
+     that is the same on both sides — the glass's right-hand bar stands as far
+     left of it as the rack's left corner stands right.
+
+     THE PAIR SITS A STEP BELOW THE ANCHOR because level at the rack's old
+     height it does not fit: B7's tube stand closes off the left and B8a's
+     glass the right, and the ring came down onto B7's plastic. Dropped by
+     just over a unit, the left bar clears the stand's near corner and the
+     rack, pulled in a little, stops short of B8a's ring.
 
      TWO STRIPS OF EIGHT, WHICH IS WHAT B7 NEXT DOOR SET DOWN. The eight
      sublibraries are split into sixteen tubes there and nothing between the
@@ -6096,7 +6101,7 @@ function drawCapture(g,n){
      plastic on its way across the tile. The two rows straddle where the one
      row stood — the block keeps its own footprint, and the near row is still
      well inside the near face. */
-  const rack={x:n.x+n.w*1.898, y:n.y+n.d*0.218,
+  const rack={x:n.x+n.w*3.204, y:n.y+n.d*2.021,
               w:n.w*1.55, d:n.d*0.56, h:n.h*0.50, tubes:8, strips:2,
               mag:"var(--ch1)"};
   const T=magnetRack(g, rack);
@@ -6149,10 +6154,15 @@ function drawCapture(g,n){
      authored at. A resize moves the glass and grows it, and everything in it
      travels with the transform rather than with a number somebody has to
      remember to change. */
-  const LX=53, LY=42;
-  /* as far left of the anchor on screen as the rack is right of it, and a
-     step lower — see the note at the top of this function */
-  const [KX,KY]=P(n.x+n.w*1.201, n.y+n.d*2.767, 0);
+  const LX=53, LY=42, MG=2.6, MW=6.2, MH=27;
+  /* placed off the rack rather than off numbers of its own, so the mirror
+     holds through a resize: the ring's outer bar ends as far left of the
+     anchor as the rack's left corner is right of it, and the ring's centre
+     is level with the rack's middle — block and tubes together, which is
+     what the eye takes for the rack — see the note at the top */
+  const [AX]=P(n.x, n.y, 0);
+  const RHW=(rack.w+rack.d)/2*S*C30, [RCX,RCY]=P(rack.x, rack.y, rack.h*1.2);
+  const KX=AX-(RCX-RHW-AX)-(LX+MG+MW)*SC, KY=RCY;
   /* the leaders name ONE tube — the near strip's left-hand one, which is the
      tube closest to the glass and the only end of the rack a leader can reach
      without crossing plastic standing in front of it — and they start ON the
@@ -6190,7 +6200,6 @@ function drawCapture(g,n){
      mistaken for a piece of an ellipse, the gap says it is a separate object,
      and --ch1 is a hue nothing else in the glass wears — the plates on the
      rack take the same, so the two still read as one fact at two scales. */
-  const MG=2.6, MW=6.2, MH=27;
   [-1,1].forEach(s=>lens.appendChild(el("rect",{
     x:(s<0 ? -LX-MG-MW : LX+MG).toFixed(1), y:(-MH).toFixed(1),
     width:MW.toFixed(1), height:(2*MH).toFixed(1), rx:"1.4",
