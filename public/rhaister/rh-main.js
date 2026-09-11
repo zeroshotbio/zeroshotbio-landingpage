@@ -81,7 +81,7 @@ function drawIdea(cv) {
   const by = rowY(S.C) + th + 12;
   penLine(ctx, x1 + 2, by, x1 + S.panel.length * tw - 2, by, 5, INK.ink, 0.9);
   text(ctx, 'the panel: measured in every context', x1, by + 16, { font: font.serif(11.5, true), color: INK['ink-2'] });
-  text(ctx, 'ochre: p* where it was measured', x1 + S.panel.length * tw + 8, by + 16, { font: font.serif(11.5, true), color: INK.t1 });
+  text(ctx, 'ochre: p* where it was measured', x1, by + 32, { font: font.serif(11.5, true), color: INK.t1 });
 
   // 2 · the weights, learned where p* was measured
   const my = top + 6, rh2 = Math.min(44, (H - my - 110) / S.panel.length), cx = x2 + w2 * 0.55, wmax = 0.7;
@@ -149,10 +149,15 @@ function drawReported(cv) {
 
 /* ---------------- Plate III — the shape of each screen, to one scale ---------------- */
 function drawShapes(cv) {
-  const { ctx, W, H } = setup(cv);
-  const S = RH.meta.shapes, L = Math.min(250, W * 0.31), R = Math.min(190, W * 0.2), T = 28, gap = 26;
-  const maxP = Math.max(...S.map((s) => s.perturbations)), sumC = S.reduce((a, s) => a + s.contexts, 0);
-  const unit = Math.min((W - L - R) / maxP, (H - T - 20 - gap * S.length) / sumC);   // one unit on both axes: area = pairs
+  // height follows the content: the unit is set by the width, then the rows are stacked
+  const S = RH.meta.shapes, gap = 26, T = 28;
+  const Wp = Math.max(280, cv.parentElement.clientWidth, +(cv.dataset.minw || 0));
+  const Lp = Math.min(250, Wp * 0.31), Rp = Math.min(190, Wp * 0.2), maxP = Math.max(...S.map((s) => s.perturbations));
+  const unit = (Wp - Lp - Rp) / maxP;   // one unit on both axes: area = pairs that could be measured
+  const need = T + S.reduce((a, s) => a + Math.max(s.contexts * unit, 14) + gap, 0) + 8;
+  cv.dataset.aspect = String(need / Wp);
+  const { ctx, W } = setup(cv);
+  const L = Lp, R = Rp;
   caps(ctx, 'width: perturbations · height: contexts · one scale for both, so area = pairs that could be measured', L, 14, { size: 8.5, clamp: W });
   let y = T;
   S.forEach((s, i) => {
