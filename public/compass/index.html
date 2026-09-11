@@ -128,6 +128,9 @@ table.cmp th{font-family:var(--sans);font-weight:500;font-size:10px;letter-spaci
 table.cmp td{padding:7px 10px;border-bottom:1px solid var(--rule-2);vertical-align:top;line-height:1.4}
 table.cmp td:first-child{font-style:italic;color:var(--ink-2);width:24%}
 table.cmp tr.key td{background:rgba(143,45,22,.045)}
+table.cmp.fin td:last-child{font-variant:small-caps;letter-spacing:.04em;white-space:nowrap}
+table.cmp.fin td.no{font-weight:600}
+table.cmp.fin td:first-child{width:22%}
 .tbl-wrap{overflow-x:auto}
 
 ol.lessons{padding-left:1.2em;margin:.6em 0 0}
@@ -275,6 +278,23 @@ ol.lessons li{margin-bottom:.8em}
       <figcaption id="cap7"></figcaption>
       <div class="sub">the screens side by side</div>
       <div class="tbl-wrap"><table class="cmp" id="cmpTable"></table></div>
+    </figure>
+
+    <!-- PLATE VIII -->
+    <figure class="plate wide" id="plate8">
+      <div class="plate-head"><span class="plate-num">Plate VIII</span>
+        <h2 class="plate-title">The test, run on our own screens</h2><span class="plate-when" id="w8"></span></div>
+      <div class="sub" style="margin-top:0">the checklist, measured &nbsp;·&nbsp; MegaFin and MiniFin against what COMPASS needed</div>
+      <div class="tbl-wrap"><table class="cmp fin" id="finTable"></table></div>
+      <div class="grid3" style="margin-top:30px">
+        <div><div class="sub" style="margin-top:0">two wells with no drug, against a drug</div>
+          <div class="canvas-hold"><canvas id="cvFinWells" data-aspect="0.78" data-minw="360"></canvas></div></div>
+        <div><div class="sub" style="margin-top:0">the dose check</div>
+          <div class="canvas-hold"><canvas id="cvFinDose" data-aspect="0.78" data-minw="360"></canvas></div></div>
+        <div><div class="sub" style="margin-top:0">how many wells per drug would be enough</div>
+          <div class="canvas-hold"><canvas id="cvFinRep" data-aspect="0.78" data-minw="360"></canvas></div></div>
+      </div>
+      <figcaption id="cap8"></figcaption>
       <section class="prose" style="margin-top:40px;max-width:760px" id="lessons"></section>
     </figure>
 

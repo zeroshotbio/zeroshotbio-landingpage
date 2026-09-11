@@ -5,7 +5,7 @@
  "asset_version": "1c6f505d2b8b",
  "source": {
   "repro_dir": "/data/scratch/compass_repro",
-  "repro_commit": "33d1bf9",
+  "repro_commit": "5e143de",
   "paper_doi": "10.64898/2026.08.03.742643",
   "paper_sha256": "871fe5651cfa80773a3a760baee67f9efe426ebbe836f45c2b5d503e32b1effd",
   "compass_repo": "https://github.com/rohitsinghlab/compass",
@@ -158,6 +158,7 @@
    "conditions": "DMSO + Sorafenib + 2 test drugs",
    "replicates": "12 wells per condition",
    "cells": 94864,
+   "median_umis": 3198,
    "context": "whole embryos, 48 hpf",
    "controls": "DMSO wells"
   },
@@ -166,8 +167,9 @@
    "conditions": "91 drugs x 2 doses (5 and 1 uM), 2 plates x 96 wells",
    "replicates": "one well per drug-dose",
    "cells": 1347643,
+   "median_umis": 3130,
    "context": "whole embryos; cell types share wells",
-   "controls": "dose-matched DMSO wells + 2 no-vehicle wells per plate"
+   "controls": "one DMSO well per dose per plate + 2 wells where the planned drug was never dispensed"
   }
  },
  "anchor": {
@@ -4614,6 +4616,816 @@
      0.36
     ]
    ]
+  }
+ },
+ "fin": {
+  "hvg": {
+   "megafin": {
+    "wells": 192,
+    "failed_wells": [
+     [
+      "m1_B12_CP01_LDE225_Erismodegib_1uM",
+      579.0
+     ],
+     [
+      "m1_B7_CP01_Dapagliflozin_1uM",
+      412.0
+     ],
+     [
+      "m1_D1_CP01_Entinostat_MS-275_1uM",
+      586.0
+     ],
+     [
+      "m1_G10_CP01_Budesonide_5uM",
+      872.0
+     ],
+     [
+      "m2_B8_CP02_MK-4827_Niraparib_1uM",
+      135.0
+     ],
+     [
+      "m2_D8_CP02_Quercetin_1uM",
+      268.0
+     ],
+     [
+      "m2_F4_CP02_Roscovitine_Seliciclib_1uM",
+      670.0
+     ],
+     [
+      "m2_H2_CP02_Loratadine_1uM",
+      358.0
+     ],
+     [
+      "m2_H4_CP02_Famotidine_1uM",
+      437.5
+     ],
+     [
+      "m2_H5_CP02_Nifedipine_1uM",
+      363.5
+     ]
+    ],
+    "gene_panel": 2000,
+    "composition": {
+     "drug_wells": 174,
+     "clusters": 40,
+     "frac_drug_well_x_cluster_ge25": 0.7895114942528736,
+     "clusters_ge25_in_90pct_of_wells": 22,
+     "clusters_ge25_in_50pct_of_wells": 34,
+     "share_of_cells_in_clusters_ge25_in_90pct": 0.8458429884362653,
+     "median_cells_per_drug_well": 6587.5
+    },
+    "contexts_with_axis": 38,
+    "per_context_median": {
+     "n_perturbations": 160.5,
+     "median_cells": 123.5,
+     "energy_on_axis": 0.3061,
+     "median_cos_alignment": 0.4727,
+     "frac_beta_positive": 0.8726,
+     "split_cos_uA_uB": 0.6525,
+     "split_beta_r": 0.829,
+     "split_residual_r_median": 0.3926,
+     "median_effect_norm": 3.3664,
+     "control_noise_norm": 1.7817,
+     "frac_effects_above_2x_noise": 0.4271
+    },
+    "conservation_pooled_ref": {
+     "contexts": 38,
+     "perturbations_in_all_contexts": 6,
+     "pairs_scored": 703,
+     "mean_pairwise_pearson_beta": 0.5451749658152842,
+     "median_pairwise_pearson_beta": 0.6072116214447474,
+     "frac_pairs_positive": 0.9231863442389758,
+     "W_block_contexts": 32,
+     "W_block_perturbations": 87,
+     "kendalls_W_beta": 0.6449101066992601,
+     "W_null_1_over_m": 0.03125,
+     "mean_pairwise_spearman_from_W": 0.6334555940121395
+    },
+    "conservation_dmso_only_ref": {
+     "contexts": 37,
+     "perturbations_in_all_contexts": 0,
+     "pairs_scored": 662,
+     "mean_pairwise_pearson_beta": 0.5081963633063822,
+     "median_pairwise_pearson_beta": 0.5440344661705192,
+     "frac_pairs_positive": 0.9501510574018127,
+     "W_block_contexts": 25,
+     "W_block_perturbations": 86,
+     "kendalls_W_beta": 0.609734829001368,
+     "W_null_1_over_m": 0.04,
+     "mean_pairwise_spearman_from_W": 0.5934737802097584
+    },
+    "conservation_plate": {
+     "plate_centred": {
+      "contexts": 38,
+      "perturbations_in_all_contexts": 6,
+      "pairs_scored": 703,
+      "mean_pairwise_pearson_beta": 0.47563673109955673,
+      "median_pairwise_pearson_beta": 0.4579201880142405,
+      "frac_pairs_positive": 0.9345661450924608,
+      "W_block_contexts": 32,
+      "W_block_perturbations": 87,
+      "kendalls_W_beta": 0.533513435681445,
+      "W_null_1_over_m": 0.03125,
+      "mean_pairwise_spearman_from_W": 0.5184654819937498
+     },
+     "within_CP01": {
+      "contexts": 38,
+      "perturbations_in_all_contexts": 0,
+      "pairs_scored": 666,
+      "mean_pairwise_pearson_beta": 0.510467089336775,
+      "median_pairwise_pearson_beta": 0.49697813197137,
+      "frac_pairs_positive": 0.9444444444444444,
+      "W_block_contexts": 32,
+      "W_block_perturbations": 43,
+      "kendalls_W_beta": 0.5047742727839022,
+      "W_null_1_over_m": 0.03125,
+      "mean_pairwise_spearman_from_W": 0.4887992493253184
+     },
+     "within_CP02": {
+      "contexts": 38,
+      "perturbations_in_all_contexts": 6,
+      "pairs_scored": 703,
+      "mean_pairwise_pearson_beta": 0.4707768942811873,
+      "median_pairwise_pearson_beta": 0.4762724190135632,
+      "frac_pairs_positive": 0.914651493598862,
+      "W_block_contexts": 32,
+      "W_block_perturbations": 45,
+      "kendalls_W_beta": 0.5840111371870883,
+      "W_null_1_over_m": 0.03125,
+      "mean_pairwise_spearman_from_W": 0.5705921416124783
+     },
+     "median_beta_CP02_minus_CP01_per_cluster": -1.2428708782260531
+    },
+    "pair_similarity_median": {
+     "raw_same": 0.1438,
+     "raw_random": 0.0243,
+     "residual_same": 0.1338,
+     "residual_random": 0.0004,
+     "u_cosine": 0.1624
+    },
+    "detectability_median": {
+     "3": {
+      "split_cos": 0.428,
+      "null_p95": 0.619,
+      "detectable": 0.21
+     },
+     "5": {
+      "split_cos": 0.525,
+      "null_p95": 0.603,
+      "detectable": 0.4
+     },
+     "10": {
+      "split_cos": 0.712,
+      "null_p95": 0.62,
+      "detectable": 0.76
+     },
+     "30": {
+      "split_cos": 0.884,
+      "null_p95": 0.584,
+      "detectable": 1.0
+     },
+     "60": {
+      "split_cos": 0.942,
+      "null_p95": 0.59,
+      "detectable": 1.0
+     }
+    },
+    "nodrug_within_plate": {
+     "clusters_scored": 36,
+     "median_diff_over_sampling": 1.5456975809103461,
+     "median_norm_diff": 3.604923028030488,
+     "median_raw_split_half_one_well": 3.411129157120675,
+     "median_abs_beta_well_over_median_drug_beta": 0.445220527790565,
+     "median_cos_diff_u": 0.08779284823635611,
+     "median_expected_sampling": 2.419
+    },
+    "by_pair": {
+     "cross-plate: DMSO 1 uM-matched": {
+      "diff_over_sampling": 1.74,
+      "norm_diff": 3.642,
+      "abs_beta_well_over_median_drug_beta": 1.033,
+      "cos_diff_u": -0.462
+     },
+     "cross-plate: DMSO 5 uM-matched": {
+      "diff_over_sampling": 4.316,
+      "norm_diff": 11.023,
+      "abs_beta_well_over_median_drug_beta": 2.482,
+      "cos_diff_u": -0.371
+     },
+     "cross-plate: Sorafenib 1 uM (the only replicated drug)": {
+      "diff_over_sampling": 3.789,
+      "norm_diff": 9.698,
+      "abs_beta_well_over_median_drug_beta": 1.68,
+      "cos_diff_u": -0.126
+     },
+     "cross-plate: Sorafenib 5 uM (the only replicated drug)": {
+      "diff_over_sampling": 2.115,
+      "norm_diff": 3.827,
+      "abs_beta_well_over_median_drug_beta": 0.644,
+      "cos_diff_u": -0.294
+     },
+     "no-drug: DMSO 5 vs 1 uM-matched": {
+      "diff_over_sampling": 1.647,
+      "norm_diff": 3.666,
+      "abs_beta_well_over_median_drug_beta": 0.437,
+      "cos_diff_u": 0.027
+     },
+     "no-drug: undispensed vs undispensed": {
+      "diff_over_sampling": 1.532,
+      "norm_diff": 3.525,
+      "abs_beta_well_over_median_drug_beta": 0.462,
+      "cos_diff_u": 0.147
+     }
+    },
+    "median_drug_effect_norm": 3.465380890264494,
+    "crosscluster_r_of_well_difference": {
+     "no-drug: undispensed vs undispensed (CP01)": 0.394,
+     "no-drug: DMSO 5 vs 1 uM-matched (CP01)": 0.215,
+     "no-drug: undispensed vs undispensed (CP02)": 0.152,
+     "no-drug: DMSO 5 vs 1 uM-matched (CP02)": 0.74,
+     "cross-plate: DMSO 5 uM-matched (CP01|CP02)": 0.717,
+     "cross-plate: DMSO 1 uM-matched (CP01|CP02)": 0.175,
+     "cross-plate: Sorafenib 5 uM (the only replicated drug) (CP01|CP02)": 0.135,
+     "cross-plate: Sorafenib 1 uM (the only replicated drug) (CP01|CP02)": 0.519
+    },
+    "crosscluster_r_of_drug_effect_mean": 0.199279703057489,
+    "effect_vs_single_well_null": {
+     "n": 5340,
+     "median_effect_over_null": 1.1116165600574965,
+     "frac_over_2x_null": 0.062172284644194754,
+     "median_effect_over_control_split": 1.9402218736295296,
+     "frac_over_2x_control_split": 0.47808988764044946
+    },
+    "dose": {
+     "pairs": 2356,
+     "frac_beta5_gt_beta1": 0.34507640067911716,
+     "frac_norm5_gt_norm1": 0.42614601018675724,
+     "median_beta_5uM": 1.3136763358513797,
+     "median_beta_1uM": 1.7114185686929475
+    },
+    "crosscluster_r_of_nodrug_difference_mean": 0.375
+   },
+   "minifin": {
+    "wells": 48,
+    "clusters": 34,
+    "clusters_scored": 22,
+    "composition": {
+     "drug_wells": 36,
+     "clusters": 34,
+     "frac_drug_well_x_cluster_ge25": 0.5580065359477124,
+     "clusters_ge25_in_90pct_of_wells": 13,
+     "clusters_ge25_in_50pct_of_wells": 19,
+     "share_of_cells_in_clusters_ge25_in_90pct": 0.774961651094687,
+     "median_cells_per_drug_well": 1789.0
+    },
+    "median_dmso_pair_diff_over_sampling": 1.4368652515716724,
+    "median_tau_over_sampling_at_1000_cells": 3.8889437884309257,
+    "crosscluster_r_of_dmso_well_difference": 0.12413837586376195,
+    "crosscluster_r_of_sorafenib_effect": 0.2006265086875165,
+    "Sorafenib": {
+     "median_single_well_over_null": 1.0763138817961748,
+     "clusters_single_well_over_2x_null": 0,
+     "median_12well_over_null": 1.3129166658596012,
+     "clusters_12well_over_2x_null": 1,
+     "median_single_vs_other11_r": 0.3547837703325893
+    },
+    "Dapagliflozin": {
+     "median_single_well_over_null": 1.0809132441907912,
+     "clusters_single_well_over_2x_null": 0,
+     "median_12well_over_null": 1.3732287823257519,
+     "clusters_12well_over_2x_null": 2,
+     "median_single_vs_other11_r": 0.38568110141827405
+    },
+    "Orlistat": {
+     "median_single_well_over_null": 1.0932434633870134,
+     "clusters_single_well_over_2x_null": 0,
+     "median_12well_over_null": 1.4094400224696575,
+     "clusters_12well_over_2x_null": 1,
+     "median_single_vs_other11_r": 0.4300151711147239
+    }
+   },
+   "bridge": {
+    "minifin_clusters_matched": 32,
+    "median_match_r": 0.9482570856386816,
+    "mutual_best_matches": 25,
+    "Dapagliflozin vs Dapagliflozin_5uM": {
+     "clusters": 17,
+     "median_r": -0.013,
+     "median_null_p95": 0.375,
+     "clusters_above_null_p95": 0
+    },
+    "Sorafenib vs Sorafenib_1uM@CP01": {
+     "clusters": 17,
+     "median_r": 0.246,
+     "median_null_p95": 0.58,
+     "clusters_above_null_p95": 0
+    },
+    "Sorafenib vs Sorafenib_1uM@CP02": {
+     "clusters": 1,
+     "median_r": -0.064,
+     "median_null_p95": 0.58,
+     "clusters_above_null_p95": 0
+    },
+    "Sorafenib vs Sorafenib_5uM@CP01": {
+     "clusters": 17,
+     "median_r": -0.173,
+     "median_null_p95": 0.58,
+     "clusters_above_null_p95": 0
+    },
+    "Sorafenib vs Sorafenib_5uM@CP02": {
+     "clusters": 17,
+     "median_r": -0.278,
+     "median_null_p95": 0.58,
+     "clusters_above_null_p95": 0
+    }
+   },
+   "params": {
+    "min_cells_per_half": 10,
+    "k_cells_threshold": 25,
+    "failed_well_median_transcripts": 1000,
+    "gold": "parse/v1 (both)",
+    "contexts": "Leiden clusters of each gold object",
+    "seed": 20260911
+   },
+   "replication": {
+    "projection": [
+     {
+      "wells_per_drug": 1,
+      "control_wells": 4,
+      "frac_over_2x_noise": 0.062172284644194754,
+      "median_ratio": 1.1116165600574965
+     },
+     {
+      "wells_per_drug": 2,
+      "control_wells": 4,
+      "frac_over_2x_noise": 0.13389513108614232,
+      "median_ratio": 1.1968652602333747
+     },
+     {
+      "wells_per_drug": 3,
+      "control_wells": 4,
+      "frac_over_2x_noise": 0.1940074906367041,
+      "median_ratio": 1.263019141244646
+     },
+     {
+      "wells_per_drug": 4,
+      "control_wells": 4,
+      "frac_over_2x_noise": 0.23632958801498127,
+      "median_ratio": 1.3171904433766335
+     },
+     {
+      "wells_per_drug": 6,
+      "control_wells": 6,
+      "frac_over_2x_noise": 0.31835205992509363,
+      "median_ratio": 1.4499951569783804
+     },
+     {
+      "wells_per_drug": 8,
+      "control_wells": 8,
+      "frac_over_2x_noise": 0.3767790262172285,
+      "median_ratio": 1.5716173947094314
+     },
+     {
+      "wells_per_drug": 12,
+      "control_wells": 12,
+      "frac_over_2x_noise": 0.4567415730337079,
+      "median_ratio": 1.7902434967344525
+     },
+     {
+      "wells_per_drug": 24,
+      "control_wells": 24,
+      "frac_over_2x_noise": 0.5451310861423221,
+      "median_ratio": 2.325928491714415
+     }
+    ],
+    "megafin_median_effect_over_tau": 0.8211072477055157,
+    "megafin_frac_effect_over_tau_gt_1": 0.44250936329588014,
+    "minifin_from_12_wells": {
+     "Sorafenib": {
+      "median_effect_over_tau": 0.5073026994266576,
+      "clusters_effect_over_tau_gt_1": 1,
+      "median_wells_per_arm_for_2x": 24.0,
+      "clusters": 21
+     },
+     "Dapagliflozin": {
+      "median_effect_over_tau": 0.5509714255297532,
+      "clusters_effect_over_tau_gt_1": 1,
+      "median_wells_per_arm_for_2x": 20.0,
+      "clusters": 21
+     },
+     "Orlistat": {
+      "median_effect_over_tau": 0.6778082110555086,
+      "clusters_effect_over_tau_gt_1": 1,
+      "median_wells_per_arm_for_2x": 14.0,
+      "clusters": 21
+     }
+    },
+    "n_drug_cluster": 5340
+   }
+  },
+  "expressed": {
+   "megafin": {
+    "wells": 192,
+    "failed_wells": [
+     [
+      "m1_B12_CP01_LDE225_Erismodegib_1uM",
+      579.0
+     ],
+     [
+      "m1_B7_CP01_Dapagliflozin_1uM",
+      412.0
+     ],
+     [
+      "m1_D1_CP01_Entinostat_MS-275_1uM",
+      586.0
+     ],
+     [
+      "m1_G10_CP01_Budesonide_5uM",
+      872.0
+     ],
+     [
+      "m2_B8_CP02_MK-4827_Niraparib_1uM",
+      135.0
+     ],
+     [
+      "m2_D8_CP02_Quercetin_1uM",
+      268.0
+     ],
+     [
+      "m2_F4_CP02_Roscovitine_Seliciclib_1uM",
+      670.0
+     ],
+     [
+      "m2_H2_CP02_Loratadine_1uM",
+      358.0
+     ],
+     [
+      "m2_H4_CP02_Famotidine_1uM",
+      437.5
+     ],
+     [
+      "m2_H5_CP02_Nifedipine_1uM",
+      363.5
+     ]
+    ],
+    "gene_panel": 2000,
+    "composition": {
+     "drug_wells": 174,
+     "clusters": 40,
+     "frac_drug_well_x_cluster_ge25": 0.7895114942528736,
+     "clusters_ge25_in_90pct_of_wells": 22,
+     "clusters_ge25_in_50pct_of_wells": 34,
+     "share_of_cells_in_clusters_ge25_in_90pct": 0.8458429884362653,
+     "median_cells_per_drug_well": 6587.5
+    },
+    "contexts_with_axis": 38,
+    "per_context_median": {
+     "n_perturbations": 160.5,
+     "median_cells": 123.5,
+     "energy_on_axis": 0.3457,
+     "median_cos_alignment": 0.4987,
+     "frac_beta_positive": 0.797,
+     "split_cos_uA_uB": 0.7059,
+     "split_beta_r": 0.9661,
+     "split_residual_r_median": 0.4509,
+     "median_effect_norm": 7.4866,
+     "control_noise_norm": 3.6349,
+     "frac_effects_above_2x_noise": 0.5773
+    },
+    "conservation_pooled_ref": {
+     "contexts": 38,
+     "perturbations_in_all_contexts": 6,
+     "pairs_scored": 703,
+     "mean_pairwise_pearson_beta": 0.777303481466045,
+     "median_pairwise_pearson_beta": 0.8630798680484763,
+     "frac_pairs_positive": 0.9487908961593172,
+     "W_block_contexts": 32,
+     "W_block_perturbations": 87,
+     "kendalls_W_beta": 0.8369074770927498,
+     "W_null_1_over_m": 0.03125,
+     "mean_pairwise_spearman_from_W": 0.8316464279667095
+    },
+    "conservation_dmso_only_ref": {
+     "contexts": 37,
+     "perturbations_in_all_contexts": 0,
+     "pairs_scored": 662,
+     "mean_pairwise_pearson_beta": 0.826128920963661,
+     "median_pairwise_pearson_beta": 0.8669239573572447,
+     "frac_pairs_positive": 1.0,
+     "W_block_contexts": 25,
+     "W_block_perturbations": 86,
+     "kendalls_W_beta": 0.8110022246332375,
+     "W_null_1_over_m": 0.04,
+     "mean_pairwise_spearman_from_W": 0.8031273173262891
+    },
+    "conservation_plate": {
+     "plate_centred": {
+      "contexts": 38,
+      "perturbations_in_all_contexts": 6,
+      "pairs_scored": 703,
+      "mean_pairwise_pearson_beta": 0.7166153751242856,
+      "median_pairwise_pearson_beta": 0.7991414852893605,
+      "frac_pairs_positive": 0.9487908961593172,
+      "W_block_contexts": 32,
+      "W_block_perturbations": 87,
+      "kendalls_W_beta": 0.7548377326576949,
+      "W_null_1_over_m": 0.03125,
+      "mean_pairwise_spearman_from_W": 0.7469292724208464
+     },
+     "within_CP01": {
+      "contexts": 38,
+      "perturbations_in_all_contexts": 0,
+      "pairs_scored": 666,
+      "mean_pairwise_pearson_beta": 0.7654313943166327,
+      "median_pairwise_pearson_beta": 0.8357866646917678,
+      "frac_pairs_positive": 0.996996996996997,
+      "W_block_contexts": 32,
+      "W_block_perturbations": 43,
+      "kendalls_W_beta": 0.7034110965342797,
+      "W_null_1_over_m": 0.03125,
+      "mean_pairwise_spearman_from_W": 0.6938437125515146
+     },
+     "within_CP02": {
+      "contexts": 38,
+      "perturbations_in_all_contexts": 6,
+      "pairs_scored": 703,
+      "mean_pairwise_pearson_beta": 0.7322048124377134,
+      "median_pairwise_pearson_beta": 0.799554927107584,
+      "frac_pairs_positive": 0.9487908961593172,
+      "W_block_contexts": 32,
+      "W_block_perturbations": 45,
+      "kendalls_W_beta": 0.7812018795289855,
+      "W_null_1_over_m": 0.03125,
+      "mean_pairwise_spearman_from_W": 0.7741438756428237
+     },
+     "median_beta_CP02_minus_CP01_per_cluster": -3.6897968052476515
+    },
+    "pair_similarity_median": {
+     "raw_same": 0.4302,
+     "raw_random": 0.0566,
+     "residual_same": 0.3515,
+     "residual_random": 0.001,
+     "u_cosine": 0.4255
+    },
+    "detectability_median": {
+     "3": {
+      "split_cos": 0.392,
+      "null_p95": 0.663,
+      "detectable": 0.14
+     },
+     "5": {
+      "split_cos": 0.494,
+      "null_p95": 0.651,
+      "detectable": 0.27
+     },
+     "10": {
+      "split_cos": 0.7,
+      "null_p95": 0.659,
+      "detectable": 0.6
+     },
+     "30": {
+      "split_cos": 0.876,
+      "null_p95": 0.66,
+      "detectable": 0.98
+     },
+     "60": {
+      "split_cos": 0.941,
+      "null_p95": 0.652,
+      "detectable": 1.0
+     }
+    },
+    "nodrug_within_plate": {
+     "clusters_scored": 36,
+     "median_diff_over_sampling": 1.6058408431729332,
+     "median_norm_diff": 7.0508153635951345,
+     "median_raw_split_half_one_well": 6.139643628260027,
+     "median_abs_beta_well_over_median_drug_beta": 0.25406225953309813,
+     "median_cos_diff_u": 0.019801546511022138,
+     "median_expected_sampling": 4.322
+    },
+    "by_pair": {
+     "cross-plate: DMSO 1 uM-matched": {
+      "diff_over_sampling": 1.963,
+      "norm_diff": 8.498,
+      "abs_beta_well_over_median_drug_beta": 1.302,
+      "cos_diff_u": -0.597
+     },
+     "cross-plate: DMSO 5 uM-matched": {
+      "diff_over_sampling": 2.772,
+      "norm_diff": 15.122,
+      "abs_beta_well_over_median_drug_beta": 1.755,
+      "cos_diff_u": -0.484
+     },
+     "cross-plate: Sorafenib 1 uM (the only replicated drug)": {
+      "diff_over_sampling": 2.585,
+      "norm_diff": 14.041,
+      "abs_beta_well_over_median_drug_beta": 1.363,
+      "cos_diff_u": -0.359
+     },
+     "cross-plate: Sorafenib 5 uM (the only replicated drug)": {
+      "diff_over_sampling": 1.804,
+      "norm_diff": 6.714,
+      "abs_beta_well_over_median_drug_beta": 0.186,
+      "cos_diff_u": -0.068
+     },
+     "no-drug: DMSO 5 vs 1 uM-matched": {
+      "diff_over_sampling": 1.648,
+      "norm_diff": 7.075,
+      "abs_beta_well_over_median_drug_beta": 0.257,
+      "cos_diff_u": -0.084
+     },
+     "no-drug: undispensed vs undispensed": {
+      "diff_over_sampling": 1.47,
+      "norm_diff": 6.987,
+      "abs_beta_well_over_median_drug_beta": 0.246,
+      "cos_diff_u": 0.054
+     }
+    },
+    "median_drug_effect_norm": 7.450141293924786,
+    "crosscluster_r_of_well_difference": {
+     "no-drug: undispensed vs undispensed (CP01)": 0.302,
+     "no-drug: DMSO 5 vs 1 uM-matched (CP01)": 0.355,
+     "no-drug: undispensed vs undispensed (CP02)": 0.346,
+     "no-drug: DMSO 5 vs 1 uM-matched (CP02)": 0.714,
+     "cross-plate: DMSO 5 uM-matched (CP01|CP02)": 0.652,
+     "cross-plate: DMSO 1 uM-matched (CP01|CP02)": 0.502,
+     "cross-plate: Sorafenib 5 uM (the only replicated drug) (CP01|CP02)": 0.231,
+     "cross-plate: Sorafenib 1 uM (the only replicated drug) (CP01|CP02)": 0.467
+    },
+    "crosscluster_r_of_drug_effect_mean": 0.4641321693357636,
+    "effect_vs_single_well_null": {
+     "n": 5340,
+     "median_effect_over_null": 1.2364844745906292,
+     "frac_over_2x_null": 0.11872659176029962,
+     "median_effect_over_control_split": 2.2174359230093406,
+     "frac_over_2x_control_split": 0.5664794007490637
+    },
+    "dose": {
+     "pairs": 2356,
+     "frac_beta5_gt_beta1": 0.33191850594227507,
+     "frac_norm5_gt_norm1": 0.3815789473684211,
+     "median_beta_5uM": 2.6539841066270995,
+     "median_beta_1uM": 3.5269619756181205
+    },
+    "crosscluster_r_of_nodrug_difference_mean": 0.429
+   },
+   "minifin": {
+    "wells": 48,
+    "clusters": 34,
+    "clusters_scored": 22,
+    "composition": {
+     "drug_wells": 36,
+     "clusters": 34,
+     "frac_drug_well_x_cluster_ge25": 0.5580065359477124,
+     "clusters_ge25_in_90pct_of_wells": 13,
+     "clusters_ge25_in_50pct_of_wells": 19,
+     "share_of_cells_in_clusters_ge25_in_90pct": 0.774961651094687,
+     "median_cells_per_drug_well": 1789.0
+    },
+    "median_dmso_pair_diff_over_sampling": 1.5156327951437638,
+    "median_tau_over_sampling_at_1000_cells": 4.154401690654328,
+    "crosscluster_r_of_dmso_well_difference": 0.3016146755933352,
+    "crosscluster_r_of_sorafenib_effect": 0.5480548716408078,
+    "Sorafenib": {
+     "median_single_well_over_null": 1.0864743519365634,
+     "clusters_single_well_over_2x_null": 0,
+     "median_12well_over_null": 1.546973924623771,
+     "clusters_12well_over_2x_null": 1,
+     "median_single_vs_other11_r": 0.4522423142263374
+    },
+    "Dapagliflozin": {
+     "median_single_well_over_null": 1.080223767275151,
+     "clusters_single_well_over_2x_null": 0,
+     "median_12well_over_null": 1.3466682901450884,
+     "clusters_12well_over_2x_null": 1,
+     "median_single_vs_other11_r": 0.34498675542275126
+    },
+    "Orlistat": {
+     "median_single_well_over_null": 1.1237050455811812,
+     "clusters_single_well_over_2x_null": 0,
+     "median_12well_over_null": 1.7790034030097024,
+     "clusters_12well_over_2x_null": 5,
+     "median_single_vs_other11_r": 0.4925926312875549
+    }
+   },
+   "bridge": {
+    "minifin_clusters_matched": 32,
+    "median_match_r": 0.9336047097748058,
+    "mutual_best_matches": 25,
+    "Dapagliflozin vs Dapagliflozin_5uM": {
+     "clusters": 17,
+     "median_r": 0.16,
+     "median_null_p95": 0.425,
+     "clusters_above_null_p95": 0
+    },
+    "Sorafenib vs Sorafenib_1uM@CP01": {
+     "clusters": 17,
+     "median_r": 0.092,
+     "median_null_p95": 0.693,
+     "clusters_above_null_p95": 0
+    },
+    "Sorafenib vs Sorafenib_1uM@CP02": {
+     "clusters": 1,
+     "median_r": -0.312,
+     "median_null_p95": 0.681,
+     "clusters_above_null_p95": 0
+    },
+    "Sorafenib vs Sorafenib_5uM@CP01": {
+     "clusters": 17,
+     "median_r": -0.438,
+     "median_null_p95": 0.693,
+     "clusters_above_null_p95": 0
+    },
+    "Sorafenib vs Sorafenib_5uM@CP02": {
+     "clusters": 17,
+     "median_r": -0.627,
+     "median_null_p95": 0.693,
+     "clusters_above_null_p95": 0
+    }
+   },
+   "params": {
+    "min_cells_per_half": 10,
+    "k_cells_threshold": 25,
+    "failed_well_median_transcripts": 1000,
+    "gold": "parse/v1 (both)",
+    "contexts": "Leiden clusters of each gold object",
+    "seed": 20260911
+   },
+   "replication": {
+    "projection": [
+     {
+      "wells_per_drug": 1,
+      "control_wells": 4,
+      "frac_over_2x_noise": 0.11872659176029962,
+      "median_ratio": 1.2364844745906292
+     },
+     {
+      "wells_per_drug": 2,
+      "control_wells": 4,
+      "frac_over_2x_noise": 0.23651685393258426,
+      "median_ratio": 1.4016316498643082
+     },
+     {
+      "wells_per_drug": 3,
+      "control_wells": 4,
+      "frac_over_2x_noise": 0.30786516853932583,
+      "median_ratio": 1.5251612296910184
+     },
+     {
+      "wells_per_drug": 4,
+      "control_wells": 4,
+      "frac_over_2x_noise": 0.3593632958801498,
+      "median_ratio": 1.6274111638709252
+     },
+     {
+      "wells_per_drug": 6,
+      "control_wells": 6,
+      "frac_over_2x_noise": 0.45636704119850185,
+      "median_ratio": 1.8635183507077264
+     },
+     {
+      "wells_per_drug": 8,
+      "control_wells": 8,
+      "frac_over_2x_noise": 0.5202247191011236,
+      "median_ratio": 2.072904771184626
+     },
+     {
+      "wells_per_drug": 12,
+      "control_wells": 12,
+      "frac_over_2x_noise": 0.5934456928838951,
+      "median_ratio": 2.438319356470969
+     },
+     {
+      "wells_per_drug": 24,
+      "control_wells": 24,
+      "frac_over_2x_noise": 0.6876404494382022,
+      "median_ratio": 3.300121598491212
+     }
+    ],
+    "megafin_median_effect_over_tau": 1.1680129581210212,
+    "megafin_frac_effect_over_tau_gt_1": 0.5621722846441948,
+    "minifin_from_12_wells": {
+     "Sorafenib": {
+      "median_effect_over_tau": 0.6957418766559937,
+      "clusters_effect_over_tau_gt_1": 1,
+      "median_wells_per_arm_for_2x": 13.0,
+      "clusters": 21
+     },
+     "Dapagliflozin": {
+      "median_effect_over_tau": 0.5499537774578359,
+      "clusters_effect_over_tau_gt_1": 0,
+      "median_wells_per_arm_for_2x": 20.0,
+      "clusters": 21
+     },
+     "Orlistat": {
+      "median_effect_over_tau": 0.8265964896069272,
+      "clusters_effect_over_tau_gt_1": 3,
+      "median_wells_per_arm_for_2x": 9.0,
+      "clusters": 21
+     }
+    },
+    "n_drug_cluster": 5340
+   }
   }
  },
  "biology": {

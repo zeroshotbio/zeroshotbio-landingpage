@@ -20,6 +20,7 @@ function redrawAll() {
   drawCount($('cvCount')); drawStrength($('cvStrength')); drawDepth($('cvDepth')); drawLanes($('cvLanes'));
   drawPhase($('cvPhase')); drawDepthSweep($('cvDepthSweep')); drawRemove($('cvRemove')); drawControls($('cvControls'));
   drawTahoe($('cvTahoe')); drawThree($('cvThree'));
+  drawFinWells($('cvFinWells')); drawFinDose($('cvFinDose')); drawFinRep($('cvFinRep'));
 }
 
 /* ---------------- controls ---------------- */
@@ -136,8 +137,8 @@ function writeProse() {
   const num = (s) => parseFloat(String(s).replace(/,/g, ''));
   const CRc = 'COMPASS source (Replogle/Nadig/X-Atlas CRISPRi)';
   $('mByline').textContent = `${nf(M.anchor.ensembl)} CRISPRi knockdowns · six human cell lines · three studies`;
-  ['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7'].forEach((id, i) => { $(id).textContent =
-    ['the two-part split', `${nf(M.anchor.ensembl)} knockdowns`, 'all protein-coding genes', 'Replogle / Nadig', 'what makes it visible', 'stress tests', 'Tahoe · ChemFish · MiniFin · MegaFin'][i]; });
+  ['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8'].forEach((id, i) => { $(id).textContent =
+    ['the two-part split', `${nf(M.anchor.ensembl)} knockdowns`, 'all protein-coding genes', 'Replogle / Nadig', 'what makes it visible', 'stress tests', 'Tahoe · ChemFish', 'MegaFin · MiniFin, measured'][i]; });
 
   $('intro').innerHTML =
     `<p class="lead">A CRISPRi screen turns down one gene in each cell, then reads out the activity of every other gene. Do that ` +
@@ -161,7 +162,8 @@ function writeProse() {
     `HepG2 and Jurkat (Nadig), HCT116 and HEK293T (X-Atlas/Orion), using the paper's methods and the authors' own code. It ` +
     `reproduces almost exactly (Plate II). The rest of the page asks: what is the typical response, biologically (III)? Where does ` +
     `the gene-specific biology show up (IV)? What about these screens lets you see all this (V), and how much data does it take (VI)? ` +
-    `And why don't two datasets closer to our own work, Tahoe-100M and ChemFish, show it cleanly (VII)?</p>` +
+    `Why don't two datasets closer to our own work, Tahoe-100M and ChemFish, show it cleanly (VII)? And would our own screens, ` +
+    `MegaFin and MiniFin, show it — measured, not guessed (VIII)?</p>` +
     `<p class="caution">What we did not reproduce: the paper's methods built on the STRING protein-interaction database (COMPASS-N, ` +
     `COMPASS-H) and its STRING-based prediction of where a knockdown lands. Everything here is about the two-part split itself and ` +
     `the paper's cross-cell-line predictor, COMPASS-X.</p>`;
@@ -274,7 +276,8 @@ function writeProse() {
     `3.5% of all genes.</p>` +
     `<p><b>3. Plenty of measurement</b> (bottom left). About ${nf(num(M.comparison['UMIs per cell (median, protein-coding)'][CRc]))} ` +
     `molecules read per cell, and a median of ${num(M.comparison['cells per perturbation x context (median)'][CRc])} cells per ` +
-    `knockdown in each line.</p>` +
+    `knockdown in each line. MegaFin sits between Tahoe and the CRISPRi screens on both: about ${nf(Z.MegaFin.median_umis)} molecules ` +
+    `per cell and a median of ${nf(Math.round(M.fin.hvg.megafin.per_context_median.median_cells))} cells per drug well and cell type.</p>` +
     `<p><b>4. Controls in the same place</b> (bottom right, a sketch). In a CRISPRi screen the control cells are mixed into the same ` +
     `pool as everything else, so they go through exactly the same handling. In Tahoe the controls sit in their own wells; in ` +
     `ChemFish, in separate embryos. Anything that differs between wells or embryos can then look like an effect.</p>`;
@@ -329,12 +332,81 @@ function writeProse() {
     `${f2(c.noise_ratio)}× the difference between control embryos, and tissues whose typical responses barely resemble one another ` +
     `(${f2(c.pair_similarity.u_cosine)} on a scale where 1 is identical). Its tissues agree on which drugs are strong at only ` +
     `${f2(c.checks.mean_pairwise_spearman_from_W)}.</p>` +
-    `<p><b>Right panel:</b> the same measurements for all three datasets; the black bar spans the six CRISPRi lines. On paper ` +
-    `Tahoe scores highest nearly everywhere, which is exactly why the no-drug-well test matters.</p>`;
+    `<p><b>Right panel:</b> the same measurements for each dataset; the black bar spans the six CRISPRi lines, and MegaFin, in plum, ` +
+    `is taken up in Plate VIII. On paper Tahoe scores highest nearly everywhere, which is exactly why the no-drug-well test matters.</p>`;
+  writeCap8();
+}
+
+function writeCap8() {
+  const M = CP.meta, FH = M.fin.hvg, FE = M.fin.expressed, mf = FH.megafin, mn = FH.minifin, br = FH.bridge;
+  const nd = mf.nodrug_within_plate, comp = mf.composition, cons = mf.conservation_pooled_ref, plate = mf.conservation_plate.plate_centred;
+  const at = (s, k) => s.replication.projection.find((r) => r.wells_per_drug === k).frac_over_2x_noise;
+  const need = ['Sorafenib', 'Dapagliflozin', 'Orlistat'].map((d) => FH.replication.minifin_from_12_wells[d].median_wells_per_arm_for_2x);
+  const sora = mf.by_pair['cross-plate: Sorafenib 5 uM (the only replicated drug)'];
+  $('cap8').innerHTML =
+    `<p><b>The short answer: not yet — and now we know why.</b> We ran this page's checks on MegaFin (both plates, ${mf.wells} wells) ` +
+    `and MiniFin, using each dataset's cell clusters as the contexts — the zebrafish stand-in for cell lines. ${mf.failed_wells.length} MegaFin ` +
+    `wells whose cells look like empty droplets were left out.</p>` +
+    `<p><b>What MegaFin has.</b> Enough drugs: a typical response shows up reliably once 30 drug wells are used. Enough cells: ` +
+    `${pct(comp.frac_drug_well_x_cluster_ge25)} of drug-well × cell-type pairs have at least 25 cells, and ${comp.clusters_ge25_in_90pct_of_wells} ` +
+    `of ${comp.clusters} clusters (${pct(comp.share_of_cells_in_clusters_ge25_in_90pct)} of all cells) clear that bar in nine wells out of ten. ` +
+    `Enough sequencing: about ${nf(M.zeroshot.MegaFin.median_umis)} molecules per cell. And run COMPASS on it and you get an answer that looks ` +
+    `like the CRISPRi one: the cell types agree on which drugs set off the typical response strongly (${f2(cons.mean_pairwise_spearman_from_W)}), ` +
+    `and that survives taking the plate out (${f2(plate.mean_pairwise_spearman_from_W)}).</p>` +
+    `<p><b>Why we don't believe it yet.</b> It fails the checks that told Tahoe's artefact from biology. <i>Left:</i> two wells with no drug in ` +
+    `them differ by ${f2(nd.median_norm_diff)} — ${f2(nd.median_diff_over_sampling)}× what sampling alone would give, and as much as a typical ` +
+    `drug differs from the controls (${f2(mf.median_drug_effect_norm)}). That no-drug difference pulls on the typical response ` +
+    `${pct(nd.median_abs_beta_well_over_median_drug_beta)} as hard as a drug does, and looks alike across cell types more than a drug's effect does ` +
+    `(${f2(mf.crosscluster_r_of_nodrug_difference_mean)} against ${f2(mf.crosscluster_r_of_drug_effect_mean)}). So a single drug well beats the ` +
+    `noise between wells twofold in only ${pct(mf.effect_vs_single_well_null.frac_over_2x_null)} of drug × cell-type pairs. <i>Middle:</i> the higher ` +
+    `dose pulls harder in only ${pct(mf.dose.frac_beta5_gt_beta1)} of pairs — worse than a coin toss. And Sorafenib, the one drug on both plates, ` +
+    `differs between them by ${f2(sora.diff_over_sampling)}× what sampling would give.</p>` +
+    `<p><b>MiniFin shows where the noise comes from.</b> With 12 wells per condition it measures the variation between wells directly: ` +
+    `it is about ${mn.median_tau_over_sampling_at_1000_cells.toFixed(1)}× the sampling noise of a 1,000-cell well. Each well is six pooled ` +
+    `embryos, and wells differ. A single Sorafenib well barely stands out from that noise ` +
+    `(${f2(mn.Sorafenib.median_single_well_over_null)}×), and one well matches the average of the other eleven at only ` +
+    `r = ${f2(mn.Sorafenib.median_single_vs_other11_r)}. MiniFin's cell types line up with MegaFin's (median r ${f2(br.median_match_r)}), but ` +
+    `Sorafenib's effect does not carry over from one experiment to the other.</p>` +
+    `<p><b>What would fix it</b> (right). Repeat wells. Treating each drug × cell-type effect as its true size plus the noise between wells ` +
+    `measured here: with one well per drug, ${pct(at(FH, 1))} of effects clear twice the noise; with 4 wells, ${pct(at(FH, 4))}; with 12, ` +
+    `${pct(at(FH, 12))} (${pct(at(FE, 1))}, ${pct(at(FE, 4))} and ${pct(at(FE, 12))} on the second gene panel). MiniFin's three drugs, ` +
+    `measured directly, would need about ${Math.min(...need)}–${Math.max(...need)} wells per condition in a typical cell type. ` +
+    `<b>What MegaFin lacks is repeats, not size.</b></p>` +
+    `<p class="small"><i>Caveats.</i> Clusters stand in for cell types. The curve on the right is a projection from one well per drug, ` +
+    `not a measurement. The second gene panel (the 2,000 most-expressed genes) changes the sizes but none of the verdicts.</p>`;
+}
+
+function writeFinTable() {
+  const M = CP.meta, FH = M.fin.hvg, mf = FH.megafin, mn = FH.minifin, br = FH.bridge, Z = M.zeroshot;
+  const comp = mf.composition, cmn = mn.composition, nd = mf.nodrug_within_plate, ev = mf.effect_vs_single_well_null;
+  const sora = mf.by_pair['cross-plate: Sorafenib 5 uM (the only replicated drug)'];
+  const brS = br['Sorafenib vs Sorafenib_1uM@CP01'];
+  const rows = [
+    ['enough perturbations (about 30 or more)', `${nf(M.anchor.ensembl)} per line`, `${comp.drug_wells} usable drug wells; a typical response shows reliably from 30`, `${Z.MiniFin.perturbations} drugs`, 'MegaFin yes', ''],
+    ['enough cells of each type (25 or more per perturbation)', `${M.comparison['cells per perturbation x context (median)']['COMPASS source (Replogle/Nadig/X-Atlas CRISPRi)']} per knockdown`,
+      `${pct(comp.frac_drug_well_x_cluster_ge25)} of well × cell-type pairs; ${comp.clusters_ge25_in_90pct_of_wells} of ${comp.clusters} clusters in 9 wells of 10`,
+      `${pct(cmn.frac_drug_well_x_cluster_ge25)}; ${cmn.clusters_ge25_in_90pct_of_wells} of ${cmn.clusters} clusters`, 'mostly', ''],
+    ['enough sequencing', `about ${M.comparison['UMIs per cell (median, protein-coding)']['COMPASS source (Replogle/Nadig/X-Atlas CRISPRi)']} molecules per cell`,
+      `about ${nf(Z.MegaFin.median_umis)}`, `about ${nf(Z.MiniFin.median_umis)}`, 'yes', ''],
+    ['responses bigger than the noise between wells', 'controls share every step',
+      `a drug well: ${f2(ev.median_effect_over_null)}× that noise; ${pct(ev.frac_over_2x_null)} over 2×`,
+      `a Sorafenib well ${f2(mn.Sorafenib.median_single_well_over_null)}×; 12 wells ${f2(mn.Sorafenib.median_12well_over_null)}×`, 'no', 'no'],
+    ['no-drug wells look like no-drug wells', '—',
+      `two differ ${f2(nd.median_diff_over_sampling)}× beyond sampling — as much as a drug; ${pct(nd.median_abs_beta_well_over_median_drug_beta)} of a drug's pull`,
+      `two DMSO wells differ ${f2(mn.median_dmso_pair_diff_over_sampling)}× beyond sampling`, 'no', 'no'],
+    ['the higher dose pulls harder', '—', `in ${pct(mf.dose.frac_beta5_gt_beta1)} of drug × cell-type pairs (a coin toss: 50%)`, 'one dose only', 'no', 'no'],
+    ['the same drug gives the same answer twice', 'several lines per knockdown',
+      `Sorafenib, plate 1 vs plate 2: ${f2(sora.diff_over_sampling)}× beyond sampling`,
+      `a Sorafenib well vs the other 11: r = ${f2(mn.Sorafenib.median_single_vs_other11_r)}`, 'no', 'no'],
+    ['MiniFin and MegaFin line up', '—', `cell types match (median r ${f2(br.median_match_r)})`,
+      `Sorafenib's effect does not (r ${f2(brS.median_r)}; a random drug reaches ${f2(brS.median_null_p95)})`, 'cell types only', ''],
+  ];
+  $('finTable').innerHTML = `<tr><th>what COMPASS needs</th><th>CRISPRi screens</th><th>MegaFin, measured</th><th>MiniFin, measured</th><th>so far</th></tr>` +
+    rows.map(([a, b, c, d, v, cls]) => `<tr><td>${a}</td><td>${b}</td><td>${c}</td><td>${d}</td><td class="${cls}">${v}</td></tr>`).join('');
 }
 
 function writeTable() {
-  const C = CP.meta.comparison, Z = CP.meta.zeroshot;
+  const C = CP.meta.comparison, Z = CP.meta.zeroshot, mf = CP.meta.fin.hvg.megafin, mn = CP.meta.fin.hvg.minifin;
   const cols = ['COMPASS source (Replogle/Nadig/X-Atlas CRISPRi)', 'Tahoe-100M', 'ChemFish 2026_09'];
   const pick = [
     ['perturbations per context (analysed)', 'perturbations per cell line or tissue', () => `${Z.MegaFin.perturbations} drug-doses`, () => `${Z.MiniFin.perturbations} drugs + DMSO`],
@@ -342,12 +414,12 @@ function writeTable() {
     ['contexts', 'in what', () => Z.MegaFin.context, () => Z.MiniFin.context],
     ['control design', 'control cells', () => Z.MegaFin.controls, () => Z.MiniFin.controls],
     ['independent replication', 'repeats', () => Z.MegaFin.replicates, () => Z.MiniFin.replicates],
-    ['cells per perturbation x context (median)', 'cells per perturbation, per line or tissue', () => `about ${nf(Math.round(Z.MegaFin.cells / 192 / 1000) * 1000)} per well (2 × 96 wells), split across cell types`, () => `about ${nf(Math.round(Z.MiniFin.cells / 48 / 100) * 100)} per well`],
-    ['effect size: median ||z|| / control-noise ||z||', 'response size ÷ control noise (typical line or tissue)', () => 'not yet measured', () => 'not yet measured'],
-    ['shared-axis strength: energy on axis (median over contexts)', 'share of a response that is the shared part', () => '—', () => '—'],
-    ['beta conservation across contexts (Kendall W)', 'lines or tissues agree on which perturbations are strong', () => '—', () => '—'],
-    ['residual reproducibility: split-half residual r (median)', 'own part repeats when measured twice', () => '—', () => '—'],
-    ['technical confounding: DMSO-well-vs-DMSO-well |beta| / median drug |beta|', 'no-drug well "effect" ÷ a real drug\'s', () => 'one well per drug-dose: cannot be checked', () => '12 replicate wells: can be checked',
+    ['cells per perturbation x context (median)', 'cells per perturbation, per line or tissue', () => `${nf(Math.round(mf.per_context_median.median_cells))} per drug well and cell type (${nf(mf.composition.median_cells_per_drug_well)} per well)`, () => `${nf(mn.composition.median_cells_per_drug_well)} per well`],
+    ['effect size: median ||z|| / control-noise ||z||', 'response size ÷ control noise (typical line or tissue)', () => `${f2(mf.effect_vs_single_well_null.median_effect_over_control_split)} · but ${f2(mf.effect_vs_single_well_null.median_effect_over_null)} against the noise between wells`, () => `a Sorafenib well: ${f2(mn.Sorafenib.median_single_well_over_null)} against the noise between wells`],
+    ['shared-axis strength: energy on axis (median over contexts)', 'share of a response that is the shared part', () => f2(mf.per_context_median.energy_on_axis), () => '— (3 drugs)'],
+    ['beta conservation across contexts (Kendall W)', 'lines or tissues agree on which perturbations are strong', () => `${f2(mf.conservation_pooled_ref.kendalls_W_beta)} (${mf.conservation_pooled_ref.W_block_contexts} clusters × ${mf.conservation_pooled_ref.W_block_perturbations} drug-doses; mean pairwise Spearman ${f2(mf.conservation_pooled_ref.mean_pairwise_spearman_from_W)})`, () => '—'],
+    ['residual reproducibility: split-half residual r (median)', 'own part repeats when measured twice', () => f2(mf.per_context_median.split_residual_r_median), () => '—'],
+    ['technical confounding: DMSO-well-vs-DMSO-well |beta| / median drug |beta|', 'no-drug well "effect" ÷ a real drug\'s', () => `${f2(mf.nodrug_within_plate.median_abs_beta_well_over_median_drug_beta)}: two no-drug wells differ as much as a drug does (Plate VIII)`, () => `two DMSO wells differ ${f2(mn.median_dmso_pair_diff_over_sampling)}× beyond sampling (Plate VIII)`,
       { 'Tahoe-100M': `${f2(CP.meta.external.tahoe.dmso_well.median_abs_beta_well_over_median_drug_beta)}: a no-drug well pulls on the typical response about a quarter as hard as a typical drug` }],
   ];
   const head = `<tr><th></th><th>CRISPRi (COMPASS)</th><th>Tahoe-100M</th><th>ChemFish</th><th>MegaFin</th><th>MiniFin</th></tr>`;
@@ -360,30 +432,27 @@ function writeTable() {
 }
 
 function writeLessons() {
-  const M = CP.meta, S = M.stress, ph = S.phase, Z = M.zeroshot, i300 = ph.n.indexOf(300);
+  const M = CP.meta, S = M.stress, ph = S.phase, FH = M.fin.hvg, mf = FH.megafin, i300 = ph.n.indexOf(300);
+  const at = (k) => FH.replication.projection.find((r) => r.wells_per_drug === k).frac_over_2x_noise;
   $('lessons').innerHTML =
-    `<h3>What follows for MiniFin, MegaFin and the screens after them</h3>` +
+    `<h3>What follows for the next screen</h3>` +
     `<ol class="lessons">` +
-    `<li><b>Put the controls where the perturbations are.</b> The CRISPRi result is trustworthy because its control cells share ` +
-    `every step with the perturbed ones. When controls live in their own wells (Tahoe, MegaFin) or their own embryos (ChemFish), ` +
-    `anything odd about those wells becomes part of every response. Spread several control wells across every plate, and put each ` +
-    `perturbation in at least two wells, so a well quirk can be told from a real effect. MiniFin's twelve wells per condition allow ` +
-    `this; MegaFin's one well per drug-dose does not.</li>` +
-    `<li><b>Get enough cells per perturbation first.</b> Here the agreement between lines is ${f2(ph.cons_RN[i300][ph.k.indexOf('10')])} ` +
-    `with 10 cells per knockdown, ${f2(ph.cons_RN[i300][ph.k.indexOf('25')])} with 25, and ${f2(ph.cons_RN[i300][ph.k.length - 1])} with ` +
-    `all of them. In a whole-embryo screen each cell type counts separately, so what matters is how many cells <i>of each type</i> you ` +
-    `get per perturbation, not the total per well.</li>` +
-    `<li><b>Then enough perturbations, including a few strong ones.</b> The typical response is defined mostly by the strongest ` +
-    `quarter of perturbations, so a few potent drugs that hit core growth machinery would anchor it. MegaFin's ` +
-    `${Z.MegaFin.perturbations} drug-doses are enough to find a typical response; MiniFin's ${Z.MiniFin.perturbations} drugs are not, ` +
-    `and were never meant to be.</li>` +
-    `<li><b>Shallow sequencing is fine if the cells are many.</b> Thinning the CRISPRi data down to Tahoe- and ChemFish-like depths ` +
-    `left the result largely intact. Few cells per cell type would hurt; shallow libraries mostly don't.</li>` +
-    `<li><b>Treat the typical response as background, not the finding.</b> It is a generic "stopped growing, under stress" ` +
-    `programme. The reusable biology is in the gene- or drug-specific own part, and that is the most expensive part to measure ` +
-    `well, so plan the screen around it.</li>` +
-    `<li><b>Judge predictions on whether they tell perturbations apart.</b> A "predictor" that gives the same average answer for ` +
-    `everything ties CompassX on accuracy in these data, and tells nothing apart.</li></ol>`;
+    `<li><b>Repeat wells before adding drugs.</b> In MegaFin two wells with no drug in them differ as much as a typical drug differs ` +
+    `from control, so an effect seen in one well cannot be told from a well quirk. With 4 wells per drug about ${pct(at(4))} of drug × ` +
+    `cell-type effects would clear twice that noise, against ${pct(at(1))} with one. For the same number of wells, fewer drugs in more ` +
+    `wells shows more.</li>` +
+    `<li><b>Put several no-drug wells on every plate, spread out.</b> MegaFin's reference for each dose on each plate is a single DMSO ` +
+    `well, and one of them yielded under a thousand cells. The CRISPRi result is trustworthy partly because its controls are thousands of ` +
+    `cells mixed through the whole screen.</li>` +
+    `<li><b>Keep the cells per cell type MegaFin already has.</b> About ${nf(mf.composition.median_cells_per_drug_well)} cells per well gave 25 ` +
+    `or more for most cell types — the level at which the CRISPRi lines still agree (${f2(ph.cons_RN[i300][ph.k.indexOf('25')])} at 25 cells, ` +
+    `${f2(ph.cons_RN[i300][ph.k.indexOf('10')])} at 10).</li>` +
+    `<li><b>Tie plates and experiments together with repeated reference drugs.</b> Only Sorafenib sits on both MegaFin plates, and it does ` +
+    `not come out the same on them — or in MiniFin. A few well-behaved drugs repeated on every plate would let plates and experiments be joined.</li>` +
+    `<li><b>Keep some strong drugs in the set.</b> The typical response is defined mostly by the strongest quarter of perturbations; MegaFin's ` +
+    `cytotoxic drugs are its best anchors.</li>` +
+    `<li><b>Shallow sequencing is fine; treat the typical response as background; judge predictions on telling perturbations apart.</b> ` +
+    `The thinning test, the biology of Plate III and the guess-the-average predictor of Plate II all say so.</li></ol>`;
 }
 
 function writeNotes() {
@@ -413,6 +482,11 @@ function writeNotes() {
     `(correlation of β with cell count about ` +
     `${f2(LINES.map((l) => M.decomposition.per_line[l].rho_beta_cells).sort((a, b) => a - b)[3])}), so part of what β measures ` +
     `is simply how much the knockdown slows the cell down.`,
+    `<b>The MegaFin and MiniFin checks (Plate VIII) are ours.</b> Both gold parse/v1 objects; contexts are each object's Leiden ` +
+    `clusters, not annotated cell types; effects are average log-normalised expression over a 2,000-gene panel against the plate's ` +
+    `pooled no-drug wells; ${M.fin.hvg.megafin.failed_wells.length} MegaFin wells with near-empty-droplet cells were excluded; a second ` +
+    `gene panel is reported beside the first. The wells-per-drug curve is a model: each effect's true size is estimated from one well by ` +
+    `subtracting the noise expected there.`,
   ];
   $('noteList').innerHTML = notes.map((s) => `<li>${s}</li>`).join('');
   const s = M.source;
@@ -436,7 +510,7 @@ window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer
     $('boot').hidden = true; $('stage').hidden = false;
     const pro = CP.plates.p4.clusters.find((c) => /proteasome/i.test(c.members));
     st.cluster = pro ? pro.id : -1;
-    writeProse(); writeTable(); writeLessons(); writeNotes();
+    writeProse(); writeTable(); writeFinTable(); writeLessons(); writeNotes();
     buildExemplars(); buildPrograms(); buildClusters(); wireResidual();
     redrawAll(); selectCluster(st.cluster);
   } catch (err) {

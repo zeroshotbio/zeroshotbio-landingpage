@@ -42,4 +42,5 @@ async function cpLoad() {
   });
   need(P.p4.x.length === P.p4.label.length && P.p4.x.length === M.anchor.ensembl, 'residual layout covers the anchor');
   need(P.p4.clusters.length === 20, 'twenty residual clusters');
+  need(M.fin && M.fin.hvg && M.fin.expressed && M.fin.hvg.replication, 'MegaFin / MiniFin readiness measurements present');
 }

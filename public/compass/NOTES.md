@@ -29,7 +29,18 @@ Rebuild: `python3 scripts/build_compass.py` (stdlib + numpy). It reads
 | IV · residual biology | `cvResid`, `cvReliab` | `06_biology.py` residual clustering + Enrichr terms, `11_page_assets.py` t-SNE layout → `plate4.json`; split-half reliability from `04_decomposition.py`; fig 7 |
 | V · why it can be seen | `cvCount`, `cvStrength`, `cvDepth`, `cvLanes` | `09_comparison_table.py` → `dataset_comparison.tsv`; effect/noise histograms from `05_stress.py` + `07b`/`07c` → `plate5.json`; `cvLanes` is a schematic (control share of K562 is real; Tahoe's 2 DMSO wells per 96 as deposited) |
 | VI · when it falls apart | `cvPhase`, `cvDepthSweep`, `cvRemove`, `cvControls` | **new** `12_phase.py` (n × k grid) and `13_depth.py` (UMI thinning); `05_stress.py` (removal of top loaders, control reference, detectability); fig 5 |
-| VII · Zeroshot | `cvTahoe`, `cvThree`, `#cmpTable`, `#lessons` | `07b`–`07f` (Tahoe axis, dose tiers, DMSO-well pseudo-drug test; ChemFish accumulate/axis), `dataset_comparison.tsv`, MiniFin/MegaFin design facts in `build_compass.py:ZEROSHOT`; figs 8–9 |
+| VII · Tahoe & ChemFish | `cvTahoe`, `cvThree` (MegaFin added), `#cmpTable` | `07b`–`07f` (Tahoe axis, dose tiers, DMSO-well pseudo-drug test; ChemFish accumulate/axis), `dataset_comparison.tsv`, MiniFin/MegaFin design facts in `build_compass.py:ZEROSHOT`; figs 8–9 |
+
+| VIII · our own screens | `#finTable`, `cvFinWells`, `cvFinDose`, `cvFinRep`, `#lessons` | **new** `14_fin_aggregate.py`, `15_fin_measure.py [hvg|expressed]`, `16_fin_replication.py` → `results/fin/` (write-up `results/fin/FIN_READINESS.md`), read by `build_compass.py:fin()` |
+
+## MegaFin / MiniFin readiness (Plate VIII)
+
+Stages 14–16 in the reproduction measure, on the gold `parse/v1` objects (clusters as contexts), every
+check the page applies to CRISPRi and Tahoe: cells per cell type, the COMPASS split, the no-drug-well
+test on MegaFin's own no-drug pairs, a single-well noise floor, the dose check, MiniFin's replicate-well
+noise, the MiniFin–MegaFin bridge, and a projection of how many wells per drug would be enough. Headline
+panel plus a most-expressed-genes panel. Verdict: MegaFin has the size but fails the artefact checks;
+what it lacks is replicate wells.
 
 ## New experiments run for this page (Plate VI)
 

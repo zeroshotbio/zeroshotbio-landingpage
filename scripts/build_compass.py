@@ -53,10 +53,10 @@ PAPER = {
 # Design facts for Zeroshot's own screens, from the zsb-bronze READMEs (minifin/, megafin/).
 ZEROSHOT = {
     "MiniFin": {"perturbations": 3, "conditions": "DMSO + Sorafenib + 2 test drugs", "replicates": "12 wells per condition",
-                "cells": 94864, "context": "whole embryos, 48 hpf", "controls": "DMSO wells"},
+                "cells": 94864, "median_umis": 3198, "context": "whole embryos, 48 hpf", "controls": "DMSO wells"},
     "MegaFin": {"perturbations": 182, "conditions": "91 drugs x 2 doses (5 and 1 uM), 2 plates x 96 wells",
-                "replicates": "one well per drug-dose", "cells": 1347643, "context": "whole embryos; cell types share wells",
-                "controls": "dose-matched DMSO wells + 2 no-vehicle wells per plate"},
+                "replicates": "one well per drug-dose", "cells": 1347643, "median_umis": 3130, "context": "whole embryos; cell types share wells",
+                "controls": "one DMSO well per dose per plate + 2 wells where the planned drug was never dispensed"},
 }
 
 
@@ -175,6 +175,20 @@ def external():
     return out
 
 
+def fin():
+    """MiniFin / MegaFin readiness (compass_repro stages 14-16): the headline gene panel ('hvg', the
+    stage-7d rule) and the robustness panel ('expressed', the 2,000 highest-mean genes)."""
+    out = {}
+    for p, base in (("hvg", RES / "fin"), ("expressed", RES / "fin" / "expressed")):
+        s = jload("fin_summary.json", base)
+        nod = [r for r in csv.DictReader(open(base / "megafin_nodrug_pairs.tsv"), delimiter="\t") if r["pair"].startswith("no-drug")]
+        s["megafin"]["nodrug_within_plate"]["median_expected_sampling"] = f(np.median([float(r["expected_sampling"]) for r in nod]))
+        wr = s["megafin"]["crosscluster_r_of_well_difference"]
+        s["megafin"]["crosscluster_r_of_nodrug_difference_mean"] = f(np.mean([v for k, v in wr.items() if k.startswith("no-drug")]))
+        out[p] = s
+    return out
+
+
 def histograms(p5):
     edges = np.round(np.arange(-0.6, 2.21, 0.06), 3)
     h = {}
@@ -208,7 +222,7 @@ def main():
                    "renamed": 54, "symbol_only": 7, "paper_matched_extracted": 2263},
         "data": {"cells": {"K562": 547949, "RPE1": 238932, "HepG2": 140479, "Jurkat": 254927, "HCT116": 491895, "HEK293T": 646231},
                  "controls": {"K562": 75328, "RPE1": 11485, "HepG2": 4976, "Jurkat": 12013, "HCT116": 165777, "HEK293T": 218838}},
-        "reproduction": reproduction(), "decomposition": decomposition(), "stress": stress(), "external": external(),
+        "reproduction": reproduction(), "decomposition": decomposition(), "stress": stress(), "external": external(), "fin": fin(),
         "biology": {"r2": {l: f(page["plate3"]["r2"][l]["R2_u_on_curated_signatures"], 2) for l in LINES},
                     "beta_vs_essential": page["plate3"]["r2"]["beta_vs_essentiality"]},
         "comparison": comp, "choices": choices,

@@ -335,18 +335,22 @@ function drawDepth(cv) {
   const num = (s) => parseFloat(String(s).replace(/,/g, ''));
   const col = 'COMPASS source (Replogle/Nadig/X-Atlas CRISPRi)';
   const umis = [['CRISPRi', num(C['UMIs per cell (median, protein-coding)'][col])], ['Tahoe', num(C['UMIs per cell (median, protein-coding)']['Tahoe-100M'])],
-    ['ChemFish', num(C['UMIs per cell (median, protein-coding)']['ChemFish 2026_09'])]];
+    ['ChemFish', num(C['UMIs per cell (median, protein-coding)']['ChemFish 2026_09'])], ['MegaFin', M.zeroshot.MegaFin.median_umis]];
   // the same medians the comparison table prints
   const CC = C['cells per perturbation x context (median)'];
-  const cells = [['CRISPRi', num(CC[col])], ['Tahoe', num(CC['Tahoe-100M'])], ['ChemFish', num(CC['ChemFish 2026_09'])]];
+  const cells = [['CRISPRi', num(CC[col])], ['Tahoe', num(CC['Tahoe-100M'])], ['ChemFish', num(CC['ChemFish 2026_09'])],
+    ['MegaFin', Math.round(M.fin.hvg.megafin.per_context_median.median_cells)]];
   const L = Math.min(150, W * 0.12), R = 30, sx = logs(20, 30000, L, W - R);
   [[umis, 'molecules per cell', H * 0.28], [cells, 'cells per perturbation, per context', H * 0.60]].forEach(([rows, lab, y]) => {
-    caps(ctx, lab, L, y - 34, { size: 9 });
+    caps(ctx, lab, L, y - 48, { size: 9 });
     penLine(ctx, L, y, W - R, y, 130 + y, INK.rule, 0.7);
-    const order = rows.map((r) => r[1]).sort((a, b) => a - b);
-    rows.forEach(([n, v], i) => {
-      const x = sx(v); dot(ctx, x, y, 4, i === 0 ? INK.ink : INK['ink-3']);
-      text(ctx, `${n} ${nf(v)}`, x, y + (order.indexOf(v) % 2 ? 22 : -10), { font: font.serif(12, true), align: 'center', color: i === 0 ? INK.ink : INK['ink-2'] });
+    // labels alternate below / above by rank; a label too close to the last one on its side steps further out
+    const order = rows.map((r) => r[1]).sort((a, b) => a - b), last = { up: -1e9, down: -1e9 };
+    rows.slice().sort((a, b) => a[1] - b[1]).forEach(([n, v]) => {
+      const i = rows.findIndex((r) => r[0] === n), x = sx(v), side = order.indexOf(v) % 2 ? 'down' : 'up';
+      const far = x - last[side] < 80; last[side] = x;
+      dot(ctx, x, y, 4, i === 0 ? INK.ink : INK['ink-3']);
+      text(ctx, `${n} ${nf(v)}`, x, y + (side === 'down' ? (far ? 36 : 22) : (far ? -24 : -10)), { font: font.serif(12, true), align: 'center', color: i === 0 ? INK.ink : INK['ink-2'] });
     });
   });
   axisX(ctx, sx, H - 34, [30, 100, 300, 1000, 3000, 10000, 30000], { fmt: (v) => (v >= 1000 ? v / 1000 + 'k' : v), range: [L, W - R] });
@@ -495,27 +499,99 @@ function drawThree(cv) {
   const { ctx, W, H } = setup(cv);
   const M = CP.meta, D = M.decomposition.per_line, E = M.external;
   const vals = (k) => LINES.map((l) => D[l][k]);
-  const tW = E.tahoe.checks, cW = E.chemfish.checks;
+  const tW = E.tahoe.checks, cW = E.chemfish.checks, FM = M.fin.hvg.megafin, FP = FM.per_context_median;
   const rows = [
-    ['share that is the shared part', vals('energy'), E.tahoe.energy, E.chemfish.energy],
-    ['typical response, measured twice', vals('split_cos_u'), E.tahoe.split_cos_u, E.chemfish.split_cos_u],
-    ['β, measured twice', vals('split_beta_r'), E.tahoe.split_beta_r, E.chemfish.split_beta_r],
-    ['own part, measured twice', vals('split_residual_r'), E.tahoe.split_residual_r, E.chemfish.split_residual_r],
-    ['agree on which are strong', [(6 * M.reproduction.kendall_W_beta_all6 - 1) / 5], tW.mean_pairwise_spearman_from_W, cW.mean_pairwise_spearman_from_W],
+    ['share that is the shared part', vals('energy'), E.tahoe.energy, E.chemfish.energy, FP.energy_on_axis],
+    ['typical response, measured twice', vals('split_cos_u'), E.tahoe.split_cos_u, E.chemfish.split_cos_u, FP.split_cos_uA_uB],
+    ['β, measured twice', vals('split_beta_r'), E.tahoe.split_beta_r, E.chemfish.split_beta_r, FP.split_beta_r],
+    ['own part, measured twice', vals('split_residual_r'), E.tahoe.split_residual_r, E.chemfish.split_residual_r, FP.split_residual_r_median],
+    ['agree on which are strong', [(6 * M.reproduction.kendall_W_beta_all6 - 1) / 5], tW.mean_pairwise_spearman_from_W, cW.mean_pairwise_spearman_from_W, FM.conservation_pooled_ref.mean_pairwise_spearman_from_W],
   ];
   const L = Math.min(190, W * 0.45), R = 20, T = 34, rh = (H - T - 40) / rows.length, sx = lin(0, 1, L, W - R);
   let lx = 8;
-  [['CRISPRi (bar spans six lines)', INK.ink], ['Tahoe', INK.t4], ['ChemFish', INK.t1]].forEach(([n, col]) => {
+  [['CRISPRi (bar spans six lines)', INK.ink], ['Tahoe', INK.t4], ['ChemFish', INK.t1], ['MegaFin (Plate VIII)', INK.t6]].forEach(([n, col]) => {
     dot(ctx, lx, 12, 3.2, col); text(ctx, n, lx + 8, 16, { font: font.serif(11.5, true), color: col });
-    ctx.font = font.serif(11.5, true); lx += ctx.measureText(n).width + 34; });
-  rows.forEach(([name, cr, ta, ch], i) => {
+    ctx.font = font.serif(11.5, true); lx += ctx.measureText(n).width + 26; });
+  rows.forEach(([name, cr, ta, ch, mf], i) => {
     const y = T + rh * (i + 0.5);
     text(ctx, name, L - 10, y + 4, { font: font.serif(12, true), align: 'right' });
     penLine(ctx, L, y, W - R, y, 220 + i, rgba(INK.rule, 0.6), 0.5);
     const lo = Math.min(...cr), hi = Math.max(...cr);
     ctx.beginPath(); ctx.moveTo(sx(lo), y); ctx.lineTo(sx(hi), y); ctx.strokeStyle = INK.ink; ctx.lineWidth = 2.4; ctx.stroke();
     cr.forEach((v) => dot(ctx, sx(v), y, 2.2, INK.ink));
-    dot(ctx, sx(ta), y - 7, 3.6, INK.t4); dot(ctx, sx(ch), y + 7, 3.6, INK.t1);
+    dot(ctx, sx(ta), y - 8, 3.6, INK.t4); dot(ctx, sx(ch), y + 8, 3.6, INK.t1); dot(ctx, sx(mf), y + 16, 3.6, INK.t6);
   });
   axisX(ctx, sx, H - 24, [0, 0.25, 0.5, 0.75, 1], { range: [L, W - R] });
+}
+
+/* ======================= PLATE VIII — the test, run on our own screens ======================= */
+
+const pct = (v) => Math.round(v * 100) + '%';
+
+function drawFinWells(cv) {
+  const { ctx, W } = setup(cv);
+  const F = CP.meta.fin.hvg.megafin, nd = F.nodrug_within_plate, L = Math.min(178, W * 0.44), R = 44;
+  const groups = [
+    { title: 'how big the difference is', max: Math.max(nd.median_norm_diff, F.median_drug_effect_norm) * 1.12, fmt: f2, bars: [
+      ['sampling alone would give', nd.median_expected_sampling, INK['ink-3']],
+      ['no-drug well vs no-drug well', nd.median_norm_diff, INK.select],
+      ['a typical drug vs the controls', F.median_drug_effect_norm, INK.ink]] },
+    { title: 'pull on the typical response', max: 1.12, fmt: pct, bars: [
+      ['the no-drug difference', nd.median_abs_beta_well_over_median_drug_beta, INK.select],
+      ['Tahoe’s no-drug difference', CP.meta.external.tahoe.dmso_well.median_abs_beta_well_over_median_drug_beta, INK['ink-3']]] },
+    { title: 'alike across cell types?', max: 1, fmt: (v) => 'r = ' + f2(v), bars: [
+      ['the no-drug difference', F.crosscluster_r_of_nodrug_difference_mean, INK.select],
+      ['a drug’s effect', F.crosscluster_r_of_drug_effect_mean, INK.ink]] },
+  ];
+  let y = 16;
+  groups.forEach((g) => {
+    caps(ctx, g.title, L, y, { size: 8.5 }); y += 10;
+    const sx = lin(0, g.max, L, W - R);
+    g.bars.forEach(([n, v, col]) => {
+      text(ctx, n, L - 8, y + 10, { font: font.serif(11.5, true), align: 'right' });
+      ctx.fillStyle = rgba(col, 0.75); ctx.fillRect(L, y, Math.max(1, sx(v) - L), 13);
+      text(ctx, g.fmt(v), sx(v) + 5, y + 10, { font: font.serif(11) });
+      y += 21;
+    });
+    y += 16;
+  });
+}
+
+function drawFinDose(cv) {
+  const { ctx, W, H } = setup(cv);
+  const M = CP.meta, L = Math.min(178, W * 0.44), R = 48, T = 34;
+  const rows = [['Tahoe (three doses)', M.external.tahoe.checks.frac_rho_positive, INK['ink-3']],
+    ['MegaFin', M.fin.hvg.megafin.dose.frac_beta5_gt_beta1, INK.t6], ['MegaFin, second gene panel', M.fin.expressed.megafin.dose.frac_beta5_gt_beta1, INK.t6]];
+  const sx = lin(0, 1, L, W - R), B = H - 40;
+  caps(ctx, 'share of drug × context pairs where the higher', 8, 12, { size: 8.5 });
+  caps(ctx, 'dose pulls harder on the typical response', 8, 24, { size: 8.5 });
+  rows.forEach(([n, v, col], i) => {
+    const y = T + 16 + i * 34;
+    text(ctx, n, L - 8, y + 10, { font: font.serif(11.5, true), align: 'right' });
+    ctx.fillStyle = rgba(col, 0.8); ctx.fillRect(L, y, sx(v) - L, 14);
+    text(ctx, pct(v), sx(v) + 5, y + 11, { font: font.serif(11.5) });
+  });
+  const x5 = sx(0.5); guide(ctx, x5, T + 6, x5, B, INK.select);
+  text(ctx, 'a coin toss', x5 + 4, B - 6, { font: font.serif(11, true), color: INK.select });
+  text(ctx, 'a real dose response sits well to the right', W - R, B + 34, { font: font.serif(11, true), color: INK['ink-2'], align: 'right' });
+  axisX(ctx, sx, B, [0, 0.25, 0.5, 0.75, 1], { fmt: pct, range: [L, W - R] });
+}
+
+function drawFinRep(cv) {
+  const { ctx, W, H } = setup(cv);
+  const F = CP.meta.fin, L = 46, R = 18, T = 30, B = H - 50;
+  const sx = logs(1, 24, L + 10, W - R), sy = lin(0, 1, B, T);
+  caps(ctx, 'share of drug × cell-type effects that clear', L, 12, { size: 8.5 });
+  caps(ctx, 'twice the well-to-well noise', L, 24, { size: 8.5 });
+  axisX(ctx, sx, B, [1, 2, 4, 8, 12, 24], { label: 'wells per drug (with at least 4 no-drug wells)', range: [L, W - R] });
+  axisY(ctx, sy, L, [0, 0.25, 0.5, 0.75, 1], { fmt: pct, range: [B, T] });
+  guide(ctx, L, sy(0.5), W - R, sy(0.5));
+  [['hvg', [], 'headline gene panel'], ['expressed', [4, 3], 'second gene panel']].forEach(([p, dash, lab], m) => {
+    const pr = F[p].replication.projection, xs = pr.map((r) => sx(r.wells_per_drug)), ys = pr.map((r) => sy(r.frac_over_2x_noise));
+    path(ctx, xs, ys, INK.ink, 1.5, dash.length ? dash : null); xs.forEach((x, i) => dot(ctx, x, ys[i], 2.3, INK.ink));
+    text(ctx, lab, xs.at(-1) - 2, ys.at(-1) + (m ? -9 : 16), { font: font.serif(11, true), align: 'right', back: true });
+  });
+  const x1 = sx(1), y1 = sy(F.hvg.replication.projection[0].frac_over_2x_noise);
+  dot(ctx, x1, y1, 5.5, null, INK.select);
+  text(ctx, 'MegaFin today', x1 + 9, y1 + 4, { font: font.serif(11.5, true), color: INK.select, back: true });
 }
