@@ -8418,14 +8418,18 @@ function drawFragmentLigate(g,n){
     mol.appendChild(e); return e;
   });
 
-  /* THE ONE LABEL, just outside the rim beside the far-left dot, with a hair
-     leader so it names that dot rather than the glass */
+  /* THE ONE LABEL, inside the rim beside the far-left dot, with a hair leader
+     so it names that dot rather than the glass. It used to stand just
+     outside the rim, and a leader crossing the boundary read as the A-tail
+     itself poking out of the lens: "make sure the strands fit inside the
+     circle." The gap between that dot and the rim is room enough for a
+     short leader and the letter, so everything the glass shows stays in it. */
   const p0=pieces[0], ly=waveY(p0.A.bot)+D+p0.rise;
   const lx=p0.A.bot-DR*2+p0.open;
   const tag=el("g",{opacity:"0"});
-  tag.appendChild(el("line",{x1:EX(lx),y1:EY(ly),x2:(-LRX-0.05*Q).toFixed(2),
+  tag.appendChild(el("line",{x1:EX(lx),y1:EY(ly),x2:(-LRX+0.34*Q).toFixed(2),
     y2:EY(ly),stroke:"var(--fg2)","stroke-width":LW(.7),"stroke-opacity":".6"}));
-  const lb=el("text",{x:(-LRX-0.09*Q).toFixed(2),y:EY(ly+2.3),"text-anchor":"end",
+  const lb=el("text",{x:(-LRX+0.30*Q).toFixed(2),y:EY(ly+2.3),"text-anchor":"end",
     "font-family":MONO,"font-size":(0.26*Q).toFixed(2),fill:ATAIL});
   lb.textContent="A"; tag.appendChild(lb);
   lens.appendChild(tag);
