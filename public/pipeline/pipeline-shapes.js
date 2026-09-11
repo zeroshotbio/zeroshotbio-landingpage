@@ -8230,11 +8230,11 @@ DRAW.sizerun = drawSizeRun;
    C1 · FRAGMENT AND END-PREP — one strand in, three blunt A-tailed pieces
    out, and nothing added yet.
 
-   ASKED FOR FROM THE PAGE, a third time, from "Edit visual", and this request
-   takes the drawing back to its first composition: one small machine on the
-   bench and the whole of the reading in a magnification hung off it. The
-   machine is B8′a's cased cycler because the request said "same style as
-   elsewhere", so it is the same function, not a lookalike.
+   THE BENCH IS BARE AGAIN, AT A REQUEST FROM THE PAGE: remove the white
+   chip, make the fragments the focus. The white chip was B8′a's cased
+   cycler, put back under the glass by an earlier request; it went the way
+   B8a's machine and C2's bench went, because nothing on this station can be
+   seen from outside a shut lid and the glass already tells all of it.
 
    THE ADAPTERS ARE GONE ON PURPOSE. The request says this step does not attach
    anything new to the strand yet, and it is right about the picture: a fork
@@ -8242,12 +8242,11 @@ DRAW.sizerun = drawSizeRun;
    still says "ligate adapters" because /pipeline owns the record; the drawing
    stops at the end the adapter will grip.
 
-   WHERE THE LENS HANGS IS UNCHANGED, AND IT IS NOT STRAIGHT UP. Above this
-   tile is the one direction it does not have: B9 throws its display back of
-   here and the station's own name runs up-right from the back edge. So the
-   glass stays clear of the near front corner, on two grey leaders to the
-   cycler — grey because a magnification is not a track and nothing travels
-   down those lines.
+   SO THE GLASS CAME DOWN ONTO THE TILE, B8a's reasoning verbatim: a view of
+   nothing is not a view. It used to hang off the near front corner on two
+   grey leaders to the cycler, placed to clear the name above; with the
+   cycler gone the glass is the station, and a station stands on its own box.
+   The leaders went with the thing they pointed at.
 
    A CUT, THEN A REPAIR, THEN A BASE — THREE BEATS, BECAUSE THE REQUEST ASKED
    FOR THREE. The cut is staggered: at each break the two strands part at
@@ -8299,30 +8298,12 @@ function drawFragmentLigate(g,n){
   const clamp=x=>x<0?0:x>1?1:x;
   const ease =x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
 
-  /* ---- THE BENCH: the cased cycler, a size up from B8′a's --------------
-     It stands alone here rather than beside a rack, so it takes most of the
-     tile; the track and the name still arrive at n.x, n.y. */
-  const cyc={x:n.x, y:n.y, w:n.w*0.66, d:n.d*0.58, h:n.h*0.55};
-  const {lit,RR}=casedCycler(g,cyc,n.h*0.24);
-
-  /* the leaders land on the body: the start of the lid's straight front
-     edge, and the foot of the rounded near corner, on the curve itself */
-  const tips=[P(cyc.x-cyc.w*0.5+RR, cyc.y+cyc.d*0.5, cyc.h),
-              P(cyc.x+cyc.w*0.5-RR*0.29, cyc.y+cyc.d*0.5-RR*0.29, 0)];
-
-  /* ---- THE MAGNIFICATION -------------------------------------------------
-     A thin solid ellipse, this map's idiom for a view drawn larger than life.
-     Leaders go down BEFORE the glass so its backing covers them, and both
-     start ON the boundary — a leader that begins under the glass crosses its
-     own line. */
+  /* ---- THE MAGNIFICATION, WHICH IS NOW THE WHOLE STATION ------------------
+     A thin solid ellipse, this map's idiom for a view drawn larger than life,
+     centred on the middle of the node's own box — through n.x, n.y and n.h,
+     so the three dimensions a resize changes still move it together. */
   const LRX=Q*1.80, LRY=Q*0.78;
-  const [KX,KY]=P(n.x-n.w*0.30, n.y+n.d*2.85, n.h*0.90);
-  tips.forEach(([tx,ty])=>{
-    const vx=tx-KX, vy=ty-KY, k=1/Math.hypot(vx/LRX, vy/LRY);
-    g.appendChild(el("line",{x1:(KX+vx*k).toFixed(1),y1:(KY+vy*k).toFixed(1),
-      x2:tx.toFixed(1),y2:ty.toFixed(1),stroke:"var(--fg2)",
-      "stroke-width":".8","stroke-opacity":".4"}));
-  });
+  const [KX,KY]=P(n.x, n.y, n.h/2);
   const lens=el("g",{transform:`translate(${KX.toFixed(1)},${KY.toFixed(1)})`});
   g.appendChild(lens);
   /* nearly opaque: glass you can read the ground grid through is a hole in
@@ -8473,9 +8454,6 @@ function drawFragmentLigate(g,n){
     ticks.forEach(e=>e.setAttribute("stroke-opacity",(0.75*tk).toFixed(2)));
     tag.setAttribute("opacity",(clamp((t-t4-0.3)/0.5)*
       (t<t6?1:clamp(1-(t-t6)/BACK))).toFixed(2));
-    /* the screen is lit while the program runs and dark on the finished hold */
-    lit.setAttribute("fill-opacity",
-      (0.4*clamp((t-t1)/0.3)*(1-clamp((t-t5)/0.4))).toFixed(2));
   };
   /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion
      never advances it, so the starting frame is the whole station for that
@@ -8542,7 +8520,7 @@ DRAW.fragmentligate = drawFragmentLigate;
    the ends.
 
    WHERE THE GLASS HANGS IS FORCED. The ground either side is spoken for —
-   C1 throws its own magnification into the near ground to the left, C3 is
+   C1's glass sits on its own tile to the left, C3 is
    the next tile along — so "above" is the only air there is, and the sky
    over any tile on this row is striped with the names of the stations to its
    LEFT, running up and to the right at −30°. A bar this wide does not fit
@@ -8553,7 +8531,7 @@ DRAW.fragmentligate = drawFragmentLigate;
    IT STAYED UP THERE WHEN THE GROUND WENT, and that was forced too. B8a's
    glass came down onto its own tile once it was all that was left, but
    B8a's is half as wide. This bar is 212 px across, and centred on its tile
-   it would cover C1's bench to the left and C3's to the right. The leaders
+   it would cover C1's glass to the left and C3's bench to the right. The leaders
    went with the ground: they ran to a tube that is no longer drawn.
 
    Spends --ch4, --ch6, --ch8, --ch10 and --ch11, which are declared on

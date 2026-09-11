@@ -282,9 +282,9 @@ const NODES = [
 
 /* THE DRAWING HAS BEEN REDRAWN FROM "EDIT VISUAL" MORE THAN ONCE AND THE
    RECORD HAS NOT MOVED, which is the rule for a lifted station: /pipeline owns
-   this prose. The latest request put a cycler back on the bench and stopped
-   the glass at blunt, A-tailed ends, with no adapter drawn — the ligation is
-   left to the next station's picture. The record still names it because the
+   this prose. One request stopped the glass at blunt, A-tailed ends, with
+   no adapter drawn — the ligation is left to the next station's picture —
+   and the latest took the cycler off and set the glass on the tile. The record still names it because the
    protocol does; nothing below ever leaned on the drawing, and none of the
    three sentences names an instrument. */
 {id:"FRG", key:"C1", group:"Sequencing library prep", shape:"fragmentligate", name:"Fragment, end-prep, ligate adapters", x:15.6, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
