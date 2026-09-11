@@ -16,11 +16,14 @@ const res = await p.evaluate(() => {
   const ts = [...document.querySelectorAll('#svg text')];
   const boxes = ts.map(t => {
     const b = t.getBBox();
-    return { s: t.textContent, x: b.x, y: b.y, w: b.width, h: b.height, fine: t.classList.contains('fine') };
+    return { s: t.textContent, x: b.x, y: b.y, w: b.width, h: b.height, sh: t.getBoundingClientRect().height, fine: t.classList.contains('fine') };
   }).filter(b => b.w > 0 && b.s.trim());
   const hits = [];
   for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
     const a = boxes[i], c = boxes[j];
+    // specks: at the fit zoom Chrome rounds a 1-3px glyph box up a pixel, so two stacked rows on a
+    // tiny tile "touch" here and clear once zoomed in. Unreadable at this zoom either way - skip.
+    if (a.sh < 4 && c.sh < 4) continue;
     // shrink by 1px each side: touching baselines are not a collision
     const ox = Math.min(a.x+a.w, c.x+c.w) - Math.max(a.x, c.x) - 2;
     const oy = Math.min(a.y+a.h, c.y+c.h) - Math.max(a.y, c.y) - 2;

@@ -465,6 +465,35 @@ prefix with no entry still draws, grey, in "Other". And any prefix starting with
 
 Checks: `check-overlaps` 0 pairs (140 text nodes), `check-clicks` 18, `check-fit` the known 7.
 
+## Tile outlines sit on the tile, captions fill it, bands breathe — 2026-09-11
+
+**One rectangle per tile.** Every wall `drawTiles` draws — base edge, accent outline, split-tile legacy
+band, stale overlay — now uses the same `tw × th = L.w − EDGE, L.h − EDGE` (`EDGE = 0.10`). The accent
+outline used to be drawn on a different rectangle from the base edge, so on zoom the coloured border
+drifted off the tile it belonged to. An outlined tile (accent or any legacy) no longer draws the
+grey base edge underneath at all.
+
+**Captions fill small tiles.** Padding scales with the tile (`padX = 5%`, `padY = 6%`, floors 0.03 /
+0.02, was 8% / 10%). Each tile now sets whichever layout gives the bigger key: two rows, or one
+line `key  size`. A narrow, tall tile (farrell/, human/nadig/) stacks; a wide sliver (linnaeus/,
+trunk30hpf/) strings out. A one-line caption is ONE `<text>` with two `<tspan>`s, and its height
+limit is 1.05 em rather than capH_'s 1.22 because there is no second row to clear. `MAX_ZOOM` is now
+40, up from 4 (`ds-view.js`), because tomoseq/ is 645 KiB against 316 GiB and its caption is ~0.2pt.
+Up to 4× it could never be read.
+
+**Name white, size grey.** The size row / tspan is always `var(--fg3)`; the key keeps `var(--fg)`.
+
+**Bands have gaps.** `BAND_GAP = 0.6` units between the OPEN vault's bands. OPEN `h 48 → 53`, `y 49.5 →
+52` (+10%, top edge still level with SILVER's at 25.5) pays for them.
+
+**check-overlaps skips specks.** At the fit zoom Chrome rounds a 1–3px glyph box up by a pixel, so the
+two stacked rows on tomoseq/ "touched" there. Measured zoomed in, linnaeus/ had 2px of clear gap, and
+changing the row pitch did not move the reported overlap. So pairs where both texts are under 4px
+on screen are now skipped.
+
+**Checks.** `check-overlaps` 0 pairs (146 text nodes). `check-clicks` 17/17. `check-fit` 2 (the
+pre-existing SPUB/GFETCH crowding). `check-pinch` 0 hidden, no page errors.
+
 ## The S3 lanes moved in, and tile walls hold their screen width — 2026-09-11
 
 **Both S3 lanes are 10 units further right**, 37% closer to GitHub: `COL_OPEN -18 → -8`,

@@ -306,7 +306,8 @@ const cam = { x: 0, y: 0, z: 1 };
    speck - which read as the text disappearing. */
 const MIN_ZOOM_OF_FIT = 0.6;
 let fitZ = 0;
-const clampZ = z => Math.max(fitZ * MIN_ZOOM_OF_FIT, Math.min(4, z));
+const MAX_ZOOM = 40;   /* was 4: the smallest tile caption (tomoseq/) is ~0.2pt and needs ~40x to read (2026-09-11) */
+const clampZ = z => Math.max(fitZ * MIN_ZOOM_OF_FIT, Math.min(MAX_ZOOM, z));
 function apply() { root.setAttribute("transform", `translate(${cam.x},${cam.y}) scale(${cam.z})`); }
 
 function contentBox() {

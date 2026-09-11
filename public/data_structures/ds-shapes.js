@@ -116,6 +116,11 @@ DRAW.vault = (g, n) => {
      half a pixel on a sliver. Zooming in therefore makes every wall thinner relative to its tile,
      and the full caption of even the smallest dataset reads once you are close enough. */
   const wallPx = (w, h, cap) => Math.max(0.5, Math.min(cap, cap * Math.min(w, h) / 1.8));
+  /* ONE RECTANGLE PER TILE (2026-09-11). The fill, the accent outline, a split tile's halves and the
+     stale overlay all share it, so the coloured border IS the box's edge. The accent used to sit 0.15
+     inside a grey edge; the old 4.2-unit stroke hid the gap, and once walls went thin it showed as a
+     coloured frame drifting away from its box. EDGE is the gap between neighbouring datasets. */
+  const EDGE = 0.10;
 
   const drawTiles = (tiles, x0, y0, w0, h0, max) => {
     layoutWide(tiles, x0, y0, w0, h0).forEach(L => {
@@ -124,7 +129,11 @@ DRAW.vault = (g, n) => {
          tiles of equal bytes are still distinguishable when one is a single
          16 GB zip and the other is 256 FASTQs */
       const heat = 0.10 + 0.30 * Math.sqrt(it.value / max);
-      plate(g, L.x, L.y, L.w - 0.07, L.h - 0.07, { fill: ink, fo: heat, stroke: ink, sw: wallPx(L.w, L.h, 0.6), so: 0.6, nss: true });
+      const tw = L.w - EDGE, th = L.h - EDGE;
+      /* a tile that gets a coloured (or dashed) outline below draws no grey edge of its own */
+      const outlined = !!it.accent || it.legacy > 0;
+      plate(g, L.x, L.y, tw, th,
+        { fill: ink, fo: heat, stroke: outlined ? "none" : ink, sw: wallPx(L.w, L.h, 0.6), so: 0.6, nss: true });
 
       /* A tile may be split: the part of a prefix that belongs to the
          aspirational six-stage layout, and the part still in the legacy
@@ -134,7 +143,7 @@ DRAW.vault = (g, n) => {
          sit together. */
       if (it.legacy > 0 && it.legacy < it.value) {
         const frac = it.legacy / it.value;
-        const w = L.w - 0.30, h = L.h - 0.30;   /* gap between datasets */
+        const w = tw, h = th;   /* the tile's own rect: halves and outline share its edge */
         const horiz = w >= h;
         const lw = horiz ? w * frac : w;
         const lh = horiz ? h : h * frac;
@@ -191,8 +200,8 @@ DRAW.vault = (g, n) => {
          architecture — is restroked in the drop colour so it reads even at a
          hairline width. */
       if (it.stale) {
-        plate(g, L.x, L.y, L.w - 0.07, L.h - 0.07, { fill: "url(#pHl)", stroke: "none" });
-        plate(g, L.x, L.y, Math.max(L.w - 0.07, 0.1), Math.max(L.h - 0.07, 0.1),
+        plate(g, L.x, L.y, tw, th, { fill: "url(#pHl)", stroke: "none" });
+        plate(g, L.x, L.y, Math.max(tw, 0.1), Math.max(th, 0.1),
           { fill: "none", stroke: "var(--drop)", sw: wallPx(L.w, L.h, 1.2), so: 0.95, nss: true });
       }
 
@@ -209,8 +218,15 @@ DRAW.vault = (g, n) => {
          tile edge and strokes 4.2px about that line, so text clearing only the
          tile would still sit on the rule. Reserve 0.31 a side horizontally and
          0.17 vertically: clear of the outline, and visibly clear of it. */
-      const availPx = Math.max((L.w - 0.62) * S, 1);
-      const availH = Math.max(L.h - 0.34, 0.01);
+      /* Padding scales with the tile (2026-09-11). It was a flat 0.31 a side across and 0.17 down, to
+         clear the old 4.2-unit outline; on a sliver that ate nearly all of the tile and left its
+         caption a speck in an empty box. Walls are hairlines now, so small tiles give their text
+         nearly all their own room, and large tiles keep the old margins. */
+      /* padding shrinks with the tile so the smallest captions get the room (2026-09-11: 8%/10% -> 5%/6%) */
+      const padX = Math.min(0.31, Math.max(0.03, 0.05 * tw));
+      const padY = Math.min(0.17, Math.max(0.02, 0.06 * th));
+      const availPx = Math.max((tw - 2 * padX) * S, 1);
+      const availH = Math.max(th - 2 * padY, 0.01);
       /* WHOLLY LEGACY. `legacy` is a byte count, and the split-tile path above
          handles a prefix that is part legacy. When it covers the whole prefix
          there is no boundary to draw — the tile itself is the legacy thing —
@@ -224,7 +240,8 @@ DRAW.vault = (g, n) => {
          are the data, rather than their lettering. */
       const base = [
         { t: it.key, z: CAP_KEY, c: wholly ? "var(--fg3)" : "var(--fg)" },
-        { t: fmtBytes(it.value) + (wholly ? " · legacy" : ""), z: CAP_SIZE, c: wholly ? "var(--fg3)" : "var(--fg2)" }
+        /* the size is grey so the dataset's name stands out (2026-09-11) */
+        { t: fmtBytes(it.value) + (wholly ? " · legacy" : ""), z: CAP_SIZE, c: "var(--fg3)" }
       ];
       /* SHRINK, THEN SHED ONE ROW — and only one. The rule above is that a
          caption shrinks rather than sheds, because a tile with a key and no
@@ -251,24 +268,36 @@ DRAW.vault = (g, n) => {
          back. Now walls hold their screen width and the map is meant to be zoomed into, so every
          tile keeps its key AND its size. A tile too small for two readable rows sets them on one
          line instead: one line cannot collide with itself, and wide tiles suit it. */
-      if (base[0].z * k < TWO_ROW_MIN) {
-        base.splice(0, 2, { t: `${base[0].t}  ${base[1].t}`, z: CAP_KEY, c: base[0].c });
-        k = fit(base);
+      /* ONE LINE: one <text> holding two <tspan>s - the key in the key colour, the size in grey -
+         so each keeps its own colour while the line stays a single object that centres as one and
+         cannot collide with itself (two side-by-side labels touched on the tiniest tiles, where
+         real glyphs run wider than the width estimate). Scaled until it fits on both axes. Used
+         only when two rows would fall under the floor AND one line sets bigger type - a narrow,
+         tall tile (farrell/, human/nadig/) reads larger stacked than strung out. Whichever sets the
+         bigger key wins. (At the overview Chrome rounds 1-3px glyph boxes up a pixel, so stacked specks
+         there can "touch"; zoomed in they clear - check-overlaps skips pairs under 4px.) */
+      const kt = base[0].t, st = base[1].t, GAP = "  ";
+      let z = Math.min(CAP_KEY, CAP_KEY * availPx / Math.max(textW(kt + GAP + st, CAP_KEY), 1));
+      z = Math.min(z, availH / (TYPE * 1.05 / S));   /* one line has no row below it to clear: 1.05, not capH_'s 1.22 */
+      if (base[0].z * k < TWO_ROW_MIN && z >= base[0].z * k) {
+        const t = label(g, L.x, L.y, "", { size: z, fill: it.stale ? "var(--drop)" : base[0].c, ls: 0.03 });
+        add(t, "tspan", {}).textContent = kt;
+        add(t, "tspan", { fill: it.stale ? "var(--drop)" : base[1].c }).textContent = GAP + st;
+      } else {
+        const rows = base.map(r => ({ t: r.t, z: r.z * k, c: r.c }));
+        const total = rows.reduce((a, b) => a + capH_(b.z), 0);
+        let cy = L.y - total / 2;
+        rows.forEach(r => {
+          cy += capH_(r.z) / 2;
+          label(g, L.x, cy, r.t, { size: r.z, fill: it.stale ? "var(--drop)" : r.c, ls: 0.03 });
+          cy += capH_(r.z) / 2;
+        });
       }
-      const rows = base.map(r => ({ t: r.t, z: r.z * k, c: r.c }));
-
-      const total = rows.reduce((a, b) => a + capH_(b.z), 0);
-      let cy = L.y - total / 2;
-      rows.forEach(r => {
-        cy += capH_(r.z) / 2;
-        label(g, L.x, cy, r.t, { size: r.z, fill: it.stale ? "var(--drop)" : r.c, ls: 0.03 });
-        cy += capH_(r.z) / 2;
-      });
 
       /* the dataset's own outline, in its category colour, drawn over the fill
          so a tile reads as the same kind of thing the reader's tree calls it */
       if (it.accent || wholly) {
-        plate(g, L.x, L.y, L.w - 0.30, L.h - 0.30,
+        plate(g, L.x, L.y, tw, th,
           wholly
             ? { fill: "none", stroke: "var(--fg3)", sw: wallPx(L.w, L.h, 1.2), so: 0.8, dash: "4 3", nss: true }
             : { fill: "none", stroke: it.accent, sw: wallPx(L.w, L.h, 1.6), so: 1, nss: true });
@@ -313,8 +342,9 @@ DRAW.vault = (g, n) => {
            is not a section. The floor is declared rather than hidden: a band
            sitting on it is captioned "(not to scale)". Within every band the
            tiles are exact, and the two top-level columns are exact. */
-        const FLOOR = 2.1, SUBCAP = 0.85;
-        const inner = fh - ch;
+        /* BAND_GAP: air between categories (2026-09-11), taken off before bytes share out the rest */
+        const FLOOR = 2.1, SUBCAP = 0.85, BAND_GAP = 0.6;
+        const inner = fh - ch - BAND_GAP * (gr.sub.length - 1);
         const subT = gr.sub.map(sg => sg.tiles.reduce((a, t) => a + t.value, 0));
         const subSum = subT.reduce((a, b) => a + b, 0);
         const wanted = subT.map(v => inner * v / subSum);
@@ -336,7 +366,7 @@ DRAW.vault = (g, n) => {
           label(g, gx + gw / 2, sy + SUBCAP / 2, stxt,
             { size: sz, fill: "var(--fg3)", ls: 0.06 });
           drawTiles(sg.tiles, gx, sy + SUBCAP, gw, sh - SUBCAP, max);
-          sy += sh;
+          sy += sh + BAND_GAP;
         });
       } else {
         drawTiles(gr.tiles, gx, fy + ch, gw, fh - ch, max);
