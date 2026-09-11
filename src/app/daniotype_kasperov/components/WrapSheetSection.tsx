@@ -159,6 +159,9 @@ const megaWell = (noVehicle: Set<string>) => (r: string, c: number): WellStyle =
 };
 
 // ── content ────────────────────────────────────────────────────────────────
+// Static table data. Each cell is one child of an already-keyed <td>, never a list React reorders,
+// so the array-literal key rule does not apply here - scoped off for these three tables only.
+/* eslint-disable react/jsx-key */
 const GLANCE: [string, React.ReactNode, React.ReactNode][] = [
   ["Kit", <>Evercode WT, chemistry v3<Chip c="m" /></>, <>Evercode WT Mega, chemistry v3, on two plates (CP01, CP02)<Chip c="m" /></>],
   ["Round-1 plate", "one 48-well half plate (rows A–D × 12)", "two 96-well plates = 192 wells"],
@@ -199,6 +202,8 @@ const RELEASES: React.ReactNode[][] = [
   [<Code>gold megafin/parse/v1/</Code>, "from silver v1 · 40 clusters", "1,161,303", "32,007,400,529", "2026-09-06"],
   [<Code>gold megafin/zsb/v1/</Code>, "from silver v1 · 41 clusters", "1,277,216", "54,976,420,856", "2026-09-06"],
 ];
+
+/* eslint-enable react/jsx-key */
 
 const CONFLICTS: [string, string][] = [
   ["Fish line", "TU wild type (both dataset READMEs, the bronze annotation note) vs Tg(fli1:egfp) or Tg(kdrl:egfp) in the PRISM planning spec."],
