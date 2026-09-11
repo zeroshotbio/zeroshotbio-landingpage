@@ -7523,10 +7523,23 @@ function drawPcrAmplify(g,n){
      and the line goes into the tube rather than across it. Lit through the
      hold on the full glass — what goes on is the amplified library, so the
      bead cannot leave before the cloud is made — and faint the rest of the
-     loop, because the connection is a fact about the station. */
+     loop, because the connection is a fact about the station.
+
+     ASKED FOR AGAIN — "draw a connector to the next step" — BECAUSE IT WAS
+     NOT BEING SEEN. The ends were right and still are (B9 stands 1.687 of
+     this width along); the weight was wrong. The 0.22 the other handovers
+     rest at is read against bare ground, and this one lies across a glass
+     full of strands, and the opaque glass hides the lane's own track from
+     here to B9, so for most of the loop nothing on screen joined the two. So
+     this one rests at REST rather than 0.22, and its stroke is heavier and
+     scaled with the node like everything else on the tile. */
+  const REST=0.55;
   const hand=flowLine(g, MID, P(n.x+n.w*1.42, n.y-n.d*0.227, n.h*0.6),
     "var(--fg2)", SC);
-  setFanLine(hand, 0.22, 0);
+  hand.line.setAttribute("stroke-width",(1.6*SC).toFixed(2));
+  /* the chevron already carries scale(SC), so its width is written unscaled */
+  hand.chev.setAttribute("stroke-width","1.6");
+  setFanLine(hand, REST, 0);
 
   /* ---- TIMING -------------------------------------------------------------
      Three strands adrift long enough to be counted; then copy after copy,
@@ -7596,7 +7609,7 @@ function drawPcrAmplify(g,n){
      the figure to end on. */
   let t=T_FULL+HOLD*0.5, ph=0;
   const run=dt=>{ t=(t+dt)%TOT; ph+=dt*1.7; place(t,ph);
-    setFanLine(hand, 0.22, (t-T_FULL)/HOLD); };
+    setFanLine(hand, REST, (t-T_FULL)/HOLD); };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
