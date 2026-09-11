@@ -6089,6 +6089,30 @@ function drawCapture(g,n){
               mag:"var(--ch1)"};
   const T=magnetRack(g, rack);
 
+  /* ---- THE HANDOVER -------------------------------------------------------
+     Asked for from the page: a connection to the next module. The lane's track
+     cannot be it — the rack is thrown forward off this node, so the track
+     leaves from bare ground and the plastic that does the work never touches
+     it. What B8′ draws first is a strip of tubes standing at a shoulder, which
+     its own note calls what B8 hands over, and it stands just up the page
+     from this rack. So one arc runs from the back strip's last tube into that
+     strip: the same line and chevron B8′ and the pool-and-split benches use
+     for a transfer, so it reads as material moving rather than as wiring.
+
+     THE FAR END IS A FRACTION OF THIS NODE, not a read of B8′'s — C4 reaches
+     back to Sa's lid the same way. A resize here moves both ends with the
+     rack; B8′ moving on its own would leave this one pointing where it was,
+     and that is the bargain every cross-tile reach on this row makes.
+
+     Neutral ink, and lit only once the wash has cleared the glass: what goes
+     on is the held cDNA, not the lysate, so the bead cannot leave before the
+     debris does. The line stays faintly drawn the rest of the loop, because
+     the connection is a fact about the station and not only about that beat. */
+  const from=T.rims[rack.tubes-1];
+  const hand=flowLine(g, [from.x, from.y-from.ry],
+    P(n.x-n.w*0.57, n.y-n.d*0.94, n.h*0.62), "var(--fg2)", SC);
+  setFanLine(hand, 0.22, 0);
+
   /* ---- THE MAGNIFICATION --------------------------------------------------
      A thin solid ellipse with two leaders back to one tube: the idiom this map
      uses everywhere for a view drawn larger than life. A solid ring means
@@ -6322,6 +6346,9 @@ function drawCapture(g,n){
       d.g.setAttribute("opacity",(1-clamp((out-0.35)/0.5)).toFixed(2));
     });
     T.setField(clamp((t-T_PULL+0.3)/0.5)*(1-clamp((t-(TOT-CLEAR))/CLEAR)));
+    /* the handover runs through the hold, when the held columns are all that
+       is left in the glass */
+    setFanLine(hand, 0.22, (t-T_WASH-WASHD)/HOLD);
   };
 
   let t=0, ph=0;
