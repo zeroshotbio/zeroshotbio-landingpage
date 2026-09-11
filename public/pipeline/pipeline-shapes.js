@@ -4069,25 +4069,35 @@ function drawLigation3(g0,n){
 
      THE RIGHT-HAND END IS THE BINDING CONSTRAINT and not the left. The tag
      has to land INSIDE the membrane — it is what a bead grabs at B8, and a
-     tag drawn on the wall would say the cell had already gone — and at 17.1
-     against a cell half-width of 18.1 it clears by about a base. Everything
-     to the right of the join is measured backwards from that.
+     tag drawn on the wall would say the cell had already gone — and at 16.0
+     against the 16.9 the cell's wall leaves clear at the strand's height it
+     clears by about a base. Everything to the right of the join is measured
+     backwards from that.
 
      ON B4'S SCALE, AS ASKED. B4 has since taken B2's unit, glass, spacing
      and row height, and a lens row left on the old numbers read as a
-     smaller bench beside it. So those are B4's numbers exactly again, the
-     molecule — authored in IN — just has a little more glass round it, and
+     smaller bench beside it. So those are B4's numbers exactly again, and
      the whole drawing is slid onto the middle of its box the way B4's is.
-     Those numbers and the slide are set up with the plate's seat, above. */
-  const RNA0=-15.6, CDNA0=-11.5, CHIP0=-7.0;
-  const CHW=3.0, CHP=6.4, CHH=3.2;        // chip half-width, pitch, half-height
+     Those numbers and the slide are set up with the plate's seat, above.
+
+     AT B2'S MAGNIFICATION, AS ASKED. The glass was already B2's; what sat
+     in it was drawn at two thirds the power — chips shorter, lettering
+     smaller, a wider cell and a larger enzyme — so the same lens read as a
+     lower zoom two tiles along. A chip is now B2's height with B2's
+     lettering, and the cell, pores, ligase and strands are B2's. What gives
+     is width, because B2's cell holds one chip and this one has to hold
+     three and a tail: a chip is as wide as its label, the bar is shortened,
+     the gap trimmed, and the history on the left is what is left over. */
+  const RNA0=-15.8, CDNA0=-13.7, CHIP0=-11.9;
+  const CHW=3.9, CHH=3.4;                 // chip half-width; half-height, B2's 6.8 halved
+  const CHP=2*CHW+0.3;                    // chip to chip
   const bcx=k=>CHIP0+CHW+k*CHP;           // the centre of chip k, k = 0,1,2
   const BCR=bcx(1)+CHW;                   // BC2's far edge, where its end is
-  const JOIN=BCR+0.2;                     // where the adapter is welded on
+  const JOIN=BCR+0.15;                    // where the adapter is welded on
   const AL=bcx(2)-CHW;                    // the adapter's near edge, seated
-  const GAP=4.5;                          // how far short the adapter stops
+  const GAP=4.0;                          // how far short the adapter stops
   const OV=1.1;                           // how far past the midline each reaches
-  const BAR0=bcx(2)+CHW, BARL=3.6;        // Read 2, drawn out of the sealed join
+  const BAR0=bcx(2)+CHW, BARL=2.2;        // Read 2, drawn out of the sealed join
   const TAGX=BAR0+BARL+0.7, TAGR=1.1;
   const GOLD="color-mix(in oklab, var(--ch2) 45%, var(--ch3))";
   /* THE TWO ALREADY ON THE STRAND. Mixed towards --fg3 rather than drawn at
@@ -4119,15 +4129,17 @@ function drawLigation3(g0,n){
     return d;
   };
   /* a chip is drawn in its own coordinates and placed by a transform, so one
-     description of a barcode serves all nine of them. It is B4's block to the
-     height — only the width gives, because three have to stand where two do */
+     description of a barcode serves all nine of them. It is B2's block to the
+     height and B2's lettering to the size — only the width gives, because
+     three have to stand where one does, and the tracking is closed up a
+     little so the label still sits clear of the chip's ends */
   const chip=(host,cx,fill,label,sw)=>{
     const c=el("g",{transform:`translate(${cx.toFixed(2)},0)`});
     c.appendChild(el("rect",{x:(-CHW*IN).toFixed(2),y:(-CHH*IN).toFixed(2),
       width:(CHW*2*IN).toFixed(2),height:(CHH*2*IN).toFixed(2),fill,
       stroke:"var(--stroke)","stroke-width":sw,"stroke-opacity":".9"}));
-    const t=el("text",{x:"0",y:(1.0*IN).toFixed(2),"text-anchor":"middle",
-      "font-size":(2.6*IN).toFixed(2),"letter-spacing":".2",fill:"var(--bg)"});
+    const t=el("text",{x:"0",y:(1.4*IN).toFixed(2),"text-anchor":"middle",
+      "font-size":(4.2*IN).toFixed(2),"letter-spacing":".1",fill:"var(--bg)"});
     t.textContent=label; c.appendChild(t);
     host.appendChild(c); return c;
   };
@@ -4184,18 +4196,18 @@ function drawLigation3(g0,n){
        it says the wall is there and things get across it, which is why an
        adapter can reach a transcript that never left the cell. A dashed
        boundary would say the wall had gone, and this is the last step before
-       it does. B4's proportions and B4's ten pores — the cell is the one
+       it does. B2's proportions and B2's nine pores — the cell is the one
        thing on this row that has no business changing between rounds. */
-    const cy0=IY+1.0*IN, crx=IRX*0.86, cry=IRY*0.76;
+    const cy0=IY+1.2*IN, crx=IRX*0.80, cry=IRY*0.78;
     g.appendChild(el("ellipse",{cx:ix.toFixed(2),cy:cy0.toFixed(2),
       rx:crx.toFixed(2),ry:cry.toFixed(2),fill:"var(--g-top)",
       "fill-opacity":".55",stroke:"var(--stroke)","stroke-width":"1.8",
       "stroke-opacity":".75"}));
-    const PORES=10;
+    const PORES=9;
     for(let i=0;i<PORES;i++){
       const a=(i+0.6+idx*0.3)*2*Math.PI/PORES;
       g.appendChild(el("circle",{cx:(ix+Math.cos(a)*crx).toFixed(2),
-        cy:(cy0+Math.sin(a)*cry).toFixed(2),r:((0.85+r()*0.3)*IN).toFixed(2),
+        cy:(cy0+Math.sin(a)*cry).toFixed(2),r:((0.9+r()*0.35)*IN).toFixed(2),
         fill:"var(--bg)",stroke:"var(--stroke)","stroke-width":".5",
         "stroke-opacity":".55"}));
     }
@@ -4220,16 +4232,18 @@ function drawLigation3(g0,n){
        a sine reads as a block that has come loose.
 
        Its phase is drawn per lens, so the three read as three cells rather
-       than as one cell printed three times. */
-    const M=mk(ix, cy0+2.0*IN, 1.6, 0.40);
+       than as one cell printed three times. It rides nearer the cell's
+       waist than B4's does, because that is where the wall is furthest
+       apart and three chips at B2's height need every unit of it. */
+    const M=mk(ix, cy0+1.4*IN, 1.6, 0.40);
     const BY=at(M,CHIP0)[1];                // the level line the blocks sit on
 
     g.appendChild(el("path",{d:pathOf(M,RNA0,CDNA0,16),fill:"none",
-      stroke:"var(--fg)","stroke-width":"1.6","stroke-opacity":".5",
+      stroke:"var(--fg)","stroke-width":"1.5","stroke-opacity":".5",
       "stroke-linecap":"round"}));
     /* the copy round one wrote — the only other bright thing on the line */
     g.appendChild(el("path",{d:pathOf(M,CDNA0,CHIP0,14),fill:"none",
-      stroke:"var(--signal)","stroke-width":"2","stroke-opacity":".95",
+      stroke:"var(--signal)","stroke-width":"1.8","stroke-opacity":".95",
       "stroke-linecap":"round"}));
 
     /* the two already on the end, drawn on the level line rather than inside
@@ -4314,14 +4328,14 @@ function drawLigation3(g0,n){
        the gap closes, and lifts straight off. It rides above the line so the
        pair of ends it is working on is never hidden by the thing working on
        them, and it leaves before the Read 2 bar draws — one enzyme, one bond,
-       and then the consequences. */
+       and then the consequences. B2's polymerase's size, as B4's is. */
     const lig=el("g",{opacity:"0",
       transform:`translate(${(ix+JOIN*IN).toFixed(2)},${(BY-4.8*IN).toFixed(2)})`});
-    lig.appendChild(el("ellipse",{cx:"0",cy:"0",rx:(3.4*IN).toFixed(2),
-      ry:(2.6*IN).toFixed(2),fill:"var(--a-top)","fill-opacity":".95",
+    lig.appendChild(el("ellipse",{cx:"0",cy:"0",rx:(3*IN).toFixed(2),
+      ry:(2.3*IN).toFixed(2),fill:"var(--a-top)","fill-opacity":".95",
       stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".85"}));
-    lig.appendChild(el("ellipse",{cx:(-1.0*IN).toFixed(2),cy:(-1.0*IN).toFixed(2),
-      rx:(1.7*IN).toFixed(2),ry:(1.2*IN).toFixed(2),fill:"var(--a-left)",
+    lig.appendChild(el("ellipse",{cx:(-0.9*IN).toFixed(2),cy:(-0.9*IN).toFixed(2),
+      rx:(1.5*IN).toFixed(2),ry:(1.1*IN).toFixed(2),fill:"var(--a-left)",
       "fill-opacity":".9"}));
     g.appendChild(lig);
 
