@@ -8301,8 +8301,16 @@ function drawFragmentLigate(g,n){
   /* ---- THE MAGNIFICATION, WHICH IS NOW THE WHOLE STATION ------------------
      A thin solid ellipse, this map's idiom for a view drawn larger than life,
      centred on the middle of the node's own box — through n.x, n.y and n.h,
-     so the three dimensions a resize changes still move it together. */
-  const LRX=Q*1.80, LRY=Q*0.78;
+     so the three dimensions a resize changes still move it together.
+
+     THE RING IS B8a's RING, AT A REQUEST FROM THE PAGE: "make this a circle
+     like in B8a." It used to be a flat lozenge cut to the strand's length,
+     which read as a different instrument two stations on from B8a's glass.
+     So the radii are B8a's own — 52 by 40 at its zoom of 1.32, through SC so a
+     resize still grows it — and so are the line's weight and ink. The strand
+     is untouched and sits in the middle with room above and below it, which
+     is what B8a's rounder glass has around its own strands. */
+  const LRX=52*1.32*SC, LRY=40*1.32*SC;
   const [KX,KY]=P(n.x, n.y, n.h/2);
   const lens=el("g",{transform:`translate(${KX.toFixed(1)},${KY.toFixed(1)})`});
   g.appendChild(lens);
@@ -8424,7 +8432,7 @@ function drawFragmentLigate(g,n){
 
   /* the boundary last, so nothing inside is drawn over its line */
   lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LRX.toFixed(1),ry:LRY.toFixed(1),
-    fill:"none",stroke:"var(--fg2)","stroke-width":"1","stroke-opacity":".55"}));
+    fill:"none",stroke:"var(--fg2)","stroke-width":"1.5","stroke-opacity":".85"}));
 
   /* ---- TIMING — the request's own: cut 2, ragged hold 2, repair 2, base 1,
      finished hold 3. WHOLE is a breath of uncut strand so the cut has

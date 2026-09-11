@@ -284,7 +284,8 @@ const NODES = [
    RECORD HAS NOT MOVED, which is the rule for a lifted station: /pipeline owns
    this prose. One request stopped the glass at blunt, A-tailed ends, with
    no adapter drawn — the ligation is left to the next station's picture —
-   and the latest took the cycler off and set the glass on the tile. The record still names it because the
+   and a later one took the cycler off and set the glass on the tile; the
+   latest rounded the glass into B8a's ring. The record still names it because the
    protocol does; nothing below ever leaned on the drawing, and none of the
    three sentences names an instrument. */
 {id:"FRG", key:"C1", group:"Sequencing library prep", shape:"fragmentligate", name:"Fragment, end-prep, ligate adapters", x:15.6, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
