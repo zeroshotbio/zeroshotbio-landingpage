@@ -3330,19 +3330,16 @@ DRAW.reversetranscription = drawReverseTranscription;
 
    THREE CELLS, NOT ONE, AND THE THREE ARE AN ARGUMENT. One lens can show a
    bond forming; it cannot show why anybody would run a second round. Three
-   can, because three cells drawn side by side are the smallest set in which
-   the pair of chips separates cells that neither chip separates on its own:
-   the left two came out of the SAME round-one well and carry the same green
-   BC1, and this round hands them different BC2s, so they are told apart from
-   here on. The right two landed in the SAME round-two well and carry the
-   same BC2, and only the round-one chip keeps them apart. Neither column of
-   colour is unique down the row. Every ROW of it is, and that is the whole
-   of what combining barcodes buys.
+   can: the left two came out of the SAME round-one well and carry the same
+   green BC1, so round one alone cannot tell them apart, and this round deals
+   them into different wells and hands them different BC2s, so they are told
+   apart from here on. The BC1 column repeats down the row. Every ROW of it
+   is unique, and that is the whole of what combining barcodes buys.
 
-   WHICH IS WHY TWO LENSES SHARE A WELL. A well holds thousands of cells and
-   deals one barcode to all of them; two tethers off one ring is that fact
-   drawn rather than asserted, and it is what makes the shared BC2 legible as
-   a shared WELL rather than as a colour that happened to repeat.
+   THREE LENSES, THREE WELLS, as asked. Every one of the 96 wells is a
+   barcode of its own, and a BC2 colour repeated down the row read as two
+   wells that shared one — the one thing this plate never does. So no two
+   lenses are tethered to the same ring.
 
    THE PLASTIC IS BLUE. Round one is green, round three is yellow, and the
    colour lives on the lip and the skirt because that is where a semi-skirted
@@ -3382,8 +3379,8 @@ DRAW.reversetranscription = drawReverseTranscription;
    the one thing that is never true after a pool. So the BC1s are flat and
    cool — --ch5 for the two cells that share a round-one well, which is B6's
    first old chip so the same molecule seen two stations apart carries the
-   same green, and --ch10 for the cell that does not — and the two wells this
-   plate is read at are both warm, which keeps every chip on the row readable
+   same green, and --ch10 for the cell that does not — and the three wells
+   this plate is read at are all warm, which keeps every chip on the row readable
    as "from this plate" or "from the last one" before its colour is compared
    to anything.
 
@@ -3461,31 +3458,31 @@ function drawLigation(g0,n){
     gp.appendChild(e); dots.push(e); shown.push("");
   });
 
-  /* ---- THE THREE CELLS, AND THE TWO WELLS THEY CAME OUT OF ----------
+  /* ---- THE THREE CELLS, AND THE THREE WELLS THEY CAME OUT OF --------
      Wells are named by row and column rather than by index, so ring, tether
      and BC2 chip cannot drift apart: all three read HUE() of the same number
      and there is one answer to what colour a well is.
 
-     WHICH wells is not free. Both have to sit clear of the deck edges or a
-     tether crawls across the plate to reach its lens, the second has to lie
-     to the RIGHT of the first on screen or the two lenses that share it pull
-     their tethers back across the one that does not, and both have to land
-     warm on the ramp for the reason the header gives. Column four of row
-     four lands between --ch1 and --ch2, a salmon; column five of row two
-     lands on --ch3 flat, a gold. Three columns apart in screen x, which is
-     the whole of why they are those two wells.
+     WHICH wells is not free. All three have to sit clear of the deck edges
+     or a tether crawls across the plate to reach its lens, they have to lie
+     left to right on screen in lens order or the tethers cross on the way
+     up, and all three have to land warm on the ramp for the reason the
+     header gives — and far enough apart on it that three BC2 chips read as
+     three. Screen x on this plate is column minus row. Column four of row
+     four sits at 0 and lands between --ch1 and --ch2, a salmon; column five
+     of row two sits at 3 and lands on --ch3 flat, a gold; column ten of row
+     five sits at 5 and lands on --ch12 leaning to --ch1 and lifted pale, a
+     rose, which sits apart from the salmon both in hue and in lightness.
 
      The order of this list is the order the lenses sit in left to right, and
-     it is the argument: same BC1 then different BC2, then same BC2 and
-     different BC1. */
-  const WA=Math.min(NW-1, 3*COLS+3), WB=Math.min(NW-1, 1*COLS+4);
+     it is the argument: same BC1 then different BC2, then a different BC1
+     as well. */
+  const WA=Math.min(NW-1, 3*COLS+3), WB=Math.min(NW-1, 1*COLS+4),
+        WC=Math.min(NW-1, 4*COLS+9);
   const CELLS=[{well:WA, first:"var(--ch5)"},
                {well:WB, first:"var(--ch5)"},
-               {well:WB, first:"var(--ch10)"}];
-  /* one ring per WELL and not per cell — two cells out of one well is the
-     point being made, and two rings drawn on top of each other would only
-     thicken the stroke and hide it */
-  CELLS.filter((c,i)=>CELLS.findIndex(o=>o.well===c.well)===i).forEach(c=>{
+               {well:WC, first:"var(--ch10)"}];
+  CELLS.forEach(c=>{
     const s=wells[c.well].e;
     gp.appendChild(el("ellipse",{cx:s.x,cy:s.y,rx:(s.rx*2.1).toFixed(2),
       ry:(s.ry*2.1).toFixed(2),fill:"none",stroke:"var(--fg)",
@@ -3758,17 +3755,12 @@ function drawLigation(g0,n){
 
   /* ---- WHEN EACH WELL COMES UP --------------------------------------
      A tethered well is pinned to the instant its own join closes, so the
-     well and the lens are one event seen at two scales; the well two lenses
-     share takes the earlier of the two, because it is one well and it only
-     reacts once. The other wells follow all three on a diagonal wash with
-     enough jitter to break the front — ligation is not dealt across a plate
-     in an order, and a tidy line would claim it is. */
+     well and the lens are one event seen at two scales. The other wells
+     follow all three on a diagonal wash with enough jitter to break the
+     front — ligation is not dealt across a plate in an order, and a tidy
+     line would claim it is. */
   const onAt=wells.map(w=>SEALT+2*STAGGER+0.4+(w.i/COLS+w.j/ROWS)/2*1.6+r()*0.8);
-  const pinned={};
-  CELLS.forEach((c,i)=>{
-    if(pinned[c.well]===undefined){ pinned[c.well]=SEALT+i*STAGGER;
-      onAt[c.well]=pinned[c.well]; }
-  });
+  CELLS.forEach((c,i)=>{ onAt[c.well]=SEALT+i*STAGGER; });
 
   /* ---- THE LOOP -----------------------------------------------------
      One pass per lens, a beat apart: the adapter drifts in through the
@@ -3878,10 +3870,9 @@ DRAW.ligation = drawLigation;
    yellow is a TINT over lit plastic and never a flat fill: the one
    saturated warm thing in this frame is the biotin.
 
-   THREE LENSES ON THREE WELLS, WHERE B4 PUTS THREE ON TWO. B4's three cells
-   are an argument about what a well IS — thousands of cells, one barcode,
-   so two lenses share a ring. Round three's argument is the other half of
-   the same fact: the barcode DIFFERS by well, and three cells that pooled
+   THREE LENSES ON THREE WELLS, AS B4 HAS. B4's three cells are an argument
+   about what a pair of chips separates that one chip cannot. Round three's
+   is simpler: the barcode DIFFERS by well, and three cells that pooled
    together and split apart carry the same first two chips and leave with
    three different third ones. 48 x 96 x 96 is a number written on the deck;
    this is what that number looks like from inside a cell, and it is not a
@@ -4097,8 +4088,8 @@ function drawLigation3(g0,n){
      BC1 IS B4'S BC1. B4 draws the chip a cell brought out of round one as
      flat --ch5, so the same molecule seen two stations apart carries the same
      green and only the strength moves. BC2 is the one hue that cannot follow
-     B4: there it is the round-two well's own colour, and both of those wells
-     are warm — which is fine on a tile with no biotin in it and not fine
+     B4: there it is the round-two well's own colour, and all three of those
+     wells are warm — which is fine on a tile with no biotin in it and not fine
      here, where a warm block in the lens would take the tag's job. So it
      keeps a cool --ch7 and stands for "the chip from the last plate" rather
      than for a particular well of it. */
