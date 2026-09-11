@@ -35,7 +35,7 @@ const topOf = n => n.shape==="works"   ? n.h*0.96
                  : n.shape==="tankrack"? 1.4
                  : n.shape==="machine" ? 1.42
                  : n.shape==="pyramid" ? n.h+n.w*PYRAMID_RISE
-                 : n.shape==="readcycle" ? n.h*1.32   /* the arm's rail over the flatbed */
+                 : n.shape==="readcycle" ? n.h*1.32   /* the arm's rail over the open box */
                  : n.shape==="vials"   ? n.h  : n.h;
 
 
@@ -8808,36 +8808,26 @@ DRAW.sizecheck = drawSizeCheck;
 /* ------------------------------------------------------------------
    Sa · THE READ CYCLE, CUT AWAY — the sequencer with its lid off.
 
-   ASKED FOR FROM THE PAGE, from the map's own "Add a module" button, as a
-   picture: a charcoal box, a pale flatbed on top with a small arm sliding
-   over it and changing colour as it goes, and the top panel cut away so the
-   flow cell inside can be watched. S one gap back is the instrument seen from
-   outside; this is the same instrument opened, and it claims no more about
-   the chemistry than S's own drawing does.
+   REBUILT FROM "EDIT VISUAL" as two of S's own parts put in one object: the
+   open box with a pool inside it, and the arm that reads it. S one gap back
+   is the instrument seen from outside; this is the same instrument opened,
+   and it claims no more about the chemistry than S's own drawing does.
 
-   THE LID IS CUT, NOT HIDDEN. The back third of the top panel stays — the
-   flatbed has to stand on something — and the front two thirds are gone, so
-   what the reader sees is a rim, two inner walls in shadow and a floor raised
-   to half the box's height. The floor is raised because the front walls are
-   left standing: at this projection a flow cell on the true bottom would be
+   THE POOL RUNS UNDER THE ARM LIKE A CONVEYOR. The pool's long axis is x, the
+   arm's rail runs along x on the back rim, and the arm itself reaches across
+   the pool in y — so it only ever moves in x, and a screen-space translate is
+   exact. The top is cut away down to a rim, but the front walls stand, so the
+   floor is raised: at this projection a pool on the true bottom would be
    mostly behind them, and a dollhouse whose room cannot be seen is a box.
+   The same walls are why the pool stops short of the right-hand wall.
 
-   TWO BEATS INSIDE, AND THE FIRST ONE HAPPENS ONCE. Dots arrive thinly and
-   multiply where they are into tight patches — nothing moves, a patch only
-   gets denser and brighter — and after a one-second hold on the full field
-   the clusters start reading out: every two seconds all of them go to one
-   new shared colour together, and a faint shutter line crosses the cell.
-   That second beat loops for as long as the page is open; the growth is not
-   replayed, because the request put the loop on the flashing alone. The
-   unison is the request's picture of a cycle being imaged and not a claim
-   that every cluster read the same base.
+   THE FLASH IS A TRAIL, NOT A BEAT. Every dot keeps its own age since the arm
+   last crossed it and fades on that age, so the bright strip is always the
+   one just behind the arm and nothing lights that the arm has not reached.
+   The request was explicit that the whole pool must not light at once.
 
-   THE ARM IS ON ITS OWN CLOCK. It sweeps and changes colour throughout, brisk
-   on purpose, and nothing inside waits for it.
-
-   Spends --ch1, --ch3, --ch8 and --ch11, which are declared on
-   /molecular_pipe and nowhere else; this shape is worn by that page alone,
-   the way C7's is.
+   THE FOUR CUBES ARE S'S REAGENTS, in S's order and S's colours, sitting on
+   the rim beside the rail the way S's bottles sit beside its gantry.
    ------------------------------------------------------------------ */
 function drawReadCycle(g,n){
   /* EVERY OFFSET IS EITHER A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC,
@@ -8845,10 +8835,10 @@ function drawReadCycle(g,n){
      this function runs again. Composed at w 1.60, d 1.30, h .46: an open box
      has to be wide enough to show a floor past its own front walls. */
   const SC=n.w/1.60;
-  const clamp=x=>x<0?0:x>1?1:x;
   const X=f=>n.x+f*n.w, Y=f=>n.y+f*n.d, Z=f=>f*n.h;
   const r=rng(52817);
-  const HUE=["var(--ch1)","var(--ch3)","var(--ch8)","var(--ch11)"];
+  const BASE=["var(--signal)","var(--drop)","var(--ok)","var(--c-top)"];
+  const LIT="var(--signal)";
   const add=(gg,e)=>{ gg.appendChild(e); return e; };
   const DX=dx=>`translate(${(dx*S*C30).toFixed(2)},${(dx*S*0.5).toFixed(2)})`;
   const quad=(a,b,c,d)=>pts([a,b,c,d]);
@@ -8865,11 +8855,13 @@ function drawReadCycle(g,n){
             face(gg,quad(P(b,c,z1),P(b,e,z1),P(b,e,z0),P(b,c,z0)),f[1],f[4]),
             face(gg,quad(P(a,c,z1),P(b,c,z1),P(b,e,z1),P(a,e,z1)),f[2],f[5])];
   };
+  const rim=(ps,o,wd)=>ps.forEach(p=>{ p.setAttribute("stroke","var(--fg)");
+    p.setAttribute("stroke-width",((wd||0.6)*SC).toFixed(2)); p.setAttribute("stroke-opacity",o||".7"); });
 
   const h=n.h, x0=X(-0.5), x1=X(0.5), y0=Y(-0.5), y1=Y(0.5);
-  /* the opening: rims of a twentieth of the width, and the back strip that
-     still carries the flatbed */
-  const ix0=X(-0.45), ix1=X(0.45), iy0=Y(-0.16), iy1=Y(0.44), zf=Z(0.44);
+  /* the opening: rims of a twentieth of the width, and a wider ledge at the
+     back, which is what the rail and the reagents stand on */
+  const ix0=X(-0.45), ix1=X(0.45), iy0=Y(-0.28), iy1=Y(0.44), zf=Z(0.48);
 
   /* ---- FOOTPRINT AND GLOW, both under the box ----------------------------
      The glow is the silhouette stroked wide and faint three times rather than
@@ -8896,39 +8888,38 @@ function drawReadCycle(g,n){
   [[P(ix0,iy0,h),P(ix0,iy0,zf),P(ix1,iy0,zf)],[P(ix0,iy0,zf),P(ix0,iy1,zf)]]
     .forEach(ps=>edge(g,ps,.35,0.8));
 
-  /* ---- THE FLOW CELL: a flat green slab on the raised floor --------------
-     Kept to the back and left of the floor, which is the part of it the
-     front walls do not cover. */
-  const sx0=X(-0.40), sx1=X(0.30), sy0=Y(-0.10), sy1=Y(0.30), zs=zf+Z(0.06);
-  block(g,(sx0+sx1)/2,(sy0+sy1)/2,sx1-sx0,sy1-sy0,zf,zs,
+  /* ---- THE POOL: a flat green slab, long in x ----------------------------
+     It ends at .32 because past there the right-hand wall covers it. */
+  const px0=X(-0.40), px1=X(0.32), py0=Y(-0.22), py1=Y(0.26), zs=zf+Z(0.06);
+  block(g,(px0+px1)/2,(py0+py1)/2,px1-px0,py1-py0,zf,zs,
     ["var(--ok)","var(--ok)","var(--ok)",.45,.35,.8]);
-  edge(g,[P(sx0,sy0,zs),P(sx1,sy0,zs),P(sx1,sy1,zs),P(sx0,sy1,zs),P(sx0,sy0,zs)],.45,0.6);
+  edge(g,[P(px0,py0,zs),P(px1,py0,zs),P(px1,py1,zs),P(px0,py1,zs),P(px0,py0,zs)],.45,0.6);
 
-  /* ---- THE CLUSTERS -------------------------------------------------------
-     Eighteen patches on a jittered six-by-three, so the first dots in land
-     scattered rather than on a lattice. Every dot is placed once, here, and
-     never moves: a patch grows by dots switching on inside it. The patch
-     radius is a fraction of the width, so it stays tight at any size. */
+  /* ---- THE DOTS -----------------------------------------------------------
+     Small patches on a jittered twelve-by-four, so the pool reads as clusters
+     rather than a lattice. Each keeps its world x, which is all the arm needs
+     to know whether it is over it. The patch radius is a fraction of the
+     width, so it stays tight at any size. */
   const field=el("g",{}); g.appendChild(field);
-  const NU=6, NV=3, PER=8, CR=n.w*0.024;
+  const NU=12, NV=4, PER=3, CR=n.w*0.016;
   const dot=[];
   for(let a=0;a<NU;a++)for(let b=0;b<NV;b++){
-    const cu=(a+0.5+(r()-0.5)*0.5)/NU, cv=(b+0.5+(r()-0.5)*0.5)/NV;
-    const cx=sx0+cu*(sx1-sx0), cy=sy0+cv*(sy1-sy0);
+    const cx=px0+((a+0.5+(r()-0.5)*0.5)/NU)*(px1-px0);
+    const cy=py0+((b+0.5+(r()-0.5)*0.5)/NV)*(py1-py0);
     for(let j=0;j<PER;j++){
-      const th=r()*Math.PI*2, rad=j?CR*Math.sqrt(r()):0;
-      const p=P(cx+Math.cos(th)*rad, cy+Math.sin(th)*rad, zs+0.001);
-      /* the first dot of a patch is its seed and comes early; the rest come
-         in through the three seconds, so the field thickens rather than fills */
-      const born=j? 0.35+((j-1)/(PER-1))*2.3+r()*0.3 : r()*0.5;
-      dot.push({born, node:add(field,el("circle",{cx:p[0].toFixed(1),cy:p[1].toFixed(1),
-        r:(0.95*SC).toFixed(2),fill:"var(--fg)","fill-opacity":"0"}))});
+      const th=r()*Math.PI*2, rad=j?CR*Math.sqrt(r()):0, x=cx+Math.cos(th)*rad;
+      const p=P(x, cy+Math.sin(th)*rad, zs+0.001);
+      dot.push({x, age:99, o:"", node:add(field,el("circle",{cx:p[0].toFixed(1),
+        cy:p[1].toFixed(1),r:(0.95*SC).toFixed(2),fill:"var(--fg)","fill-opacity":"0"}))});
     }
   }
-  /* the shutter, born on the cell's left edge and driven across it */
-  const shut=add(g,el("line",{x1:P(sx0,sy0,zs)[0].toFixed(1),y1:P(sx0,sy0,zs)[1].toFixed(1),
-    x2:P(sx0,sy1,zs)[0].toFixed(1),y2:P(sx0,sy1,zs)[1].toFixed(1),stroke:"var(--fg)",
-    "stroke-width":(1.1*SC).toFixed(2),"stroke-opacity":"0","stroke-linecap":"round"}));
+  /* the arm's line on the pool, born at the pool's left end. It is in the
+     room rather than on the arm because the front walls have to cover it. */
+  const beam=el("g",{}); g.appendChild(beam);
+  [[5,".15"],[1.4,".6"]].forEach(([wd,o])=>beam.appendChild(el("line",{
+    x1:P(px0,py0,zs+0.001)[0].toFixed(1),y1:P(px0,py0,zs+0.001)[1].toFixed(1),
+    x2:P(px0,py1,zs+0.001)[0].toFixed(1),y2:P(px0,py1,zs+0.001)[1].toFixed(1),
+    stroke:LIT,"stroke-width":(wd*SC).toFixed(2),"stroke-opacity":o,"stroke-linecap":"round"})));
 
   /* ---- THE SHELL, painted over the room so the front walls cover what they
      would cover. Fill only; the white edges go on afterwards as lines, so the
@@ -8944,85 +8935,58 @@ function drawReadCycle(g,n){
   edge(g,[P(x1,y1,h),P(x1,y1,0)]);
   edge(g,[P(ix0,iy0,h),P(ix1,iy0,h),P(ix1,iy1,h),P(ix0,iy1,h),P(ix0,iy0,h)],.75,1);
 
-  /* ---- THE FLATBED, on what is left of the lid --------------------------- */
-  const bz=h+Z(0.14), bx=n.x, by=Y(-0.33), bw=n.w*0.76, bd=n.d*0.24;
+  /* ---- THE TRACK, on the back ledge, a little longer than the pool at
+     either end so the arm turns round over the rim and not over the dots.
+     rz1 is the h*1.32 topOf() promises. */
   const PALE=[SKIN.monolith.left,SKIN.monolith.right,SKIN.monolith.top,1,1,1];
-  /* two posts and a rail behind the bed, which is what the arm rides; drawn
-     first because they stand behind it */
-  const rz0=bz+Z(0.13), rz1=bz+Z(0.18), ry=Y(-0.47);
-  [-0.42,0.42].forEach(f=>block(g,X(f),ry,n.w*0.03,n.d*0.03,h,rz1,PALE));
-  block(g,bx,by,bw,bd,h,bz,PALE);
-  edge(g,[P(bx-bw/2,by+bd/2,bz),P(bx+bw/2,by+bd/2,bz),P(bx+bw/2,by-bd/2,bz)],.6,0.8);
-  block(g,bx,ry,n.w*0.86,n.d*0.03,rz0,rz1,PALE);
+  const rx0=X(-0.44), rx1=X(0.36), ry=Y(-0.42), rz0=h+Z(0.24), rz1=h+Z(0.32);
+  [rx0,rx1].forEach(x=>block(g,x,ry,n.w*0.03,n.d*0.04,h,rz1,PALE));
+  block(g,(rx0+rx1)/2,ry,rx1-rx0,n.d*0.03,rz0,rz1,PALE);
 
-  /* ---- THE ARM: built at the left end of its travel, translated from there.
-     It only ever moves in x, so a screen-space translate is exact. The line
-     it throws on the bed takes its colour, which is how the colour reads as
-     the arm's doing rather than a lamp on it. */
-  const aL=X(-0.33), aR=X(0.33), ay=Y(-0.33), ad=n.d*0.30, aw=n.w*0.05;
+  /* ---- S'S FOUR REAGENTS, in front of the rail and under the arm's reach */
+  BASE.forEach((c,i)=>rim(block(g,X(0.02+i*0.09),Y(-0.34),n.w*0.045,n.d*0.07,h,h+Z(0.16),
+    [c,c,c,.8,.65,.95]),".5",0.5));
+
+  /* ---- THE ARM: built over the pool's left end, translated from there. A
+     carriage on the rail, a bar reaching across the pool, and the bright
+     head at its tip that the line on the pool is thrown from. */
   const arm=el("g",{}); g.appendChild(arm);
-  const beam=add(arm,el("line",{x1:P(aL,by-bd/2,bz+0.001)[0].toFixed(1),
-    y1:P(aL,by-bd/2,bz+0.001)[1].toFixed(1),x2:P(aL,by+bd/2,bz+0.001)[0].toFixed(1),
-    y2:P(aL,by+bd/2,bz+0.001)[1].toFixed(1),stroke:HUE[0],"stroke-width":(1.4*SC).toFixed(2),
-    "stroke-opacity":".6","stroke-linecap":"round"}));
-  const armF=block(arm,aL,ay,aw,ad,bz+Z(0.08),rz1,[HUE[0],HUE[0],HUE[0],.75,.6,.95]);
-  armF.forEach(p=>{ p.setAttribute("stroke","var(--fg)");
-    p.setAttribute("stroke-width",(0.6*SC).toFixed(2)); p.setAttribute("stroke-opacity",".7"); });
+  const az0=h+Z(0.22), az1=h+Z(0.29), ab=Y(-0.40), af=Y(0.30);
+  rim(block(arm,px0,ry,n.w*0.06,n.d*0.07,h+Z(0.20),rz1,PALE));
+  rim(block(arm,px0,(ab+af)/2,n.w*0.035,af-ab,az0,az1,PALE));
+  const hp=P(px0,af-n.d*0.03,az0-Z(0.03));
+  arm.appendChild(el("circle",{cx:hp[0].toFixed(1),cy:hp[1].toFixed(1),r:(4*SC).toFixed(2),
+    fill:LIT,"fill-opacity":".3"}));
+  rim(block(arm,px0,af-n.d*0.03,n.w*0.05,n.d*0.05,az0-Z(0.06),az0,[LIT,LIT,LIT,.9,.75,1]),".8");
 
   /* ---- TIMING -------------------------------------------------------------
-     The growth, the hold and the beat are the request's own numbers. SWEEP is
-     how long the shutter takes to cross, well inside a beat so it reads as one
-     pass per colour. The arm's clock wraps at 4.8 s, which is three sweeps and
-     sixteen colour steps, so it never drifts and never jumps. */
-  const BUILD=3, HOLD=1, BEAT=2, SWEEP=0.7, ARMP=1.6, STEP=0.3, AWRAP=4.8;
-  const tF=BUILD+HOLD, LOOP=BEAT*HUE.length;
-  /* THE CLOCK STARTS ON A LIT FIELD, and then goes back to the start. A
-     reader with motion off never advances it, so the first frame drawn is the
-     whole station for them and it has to be the clusters reading out, not an
-     empty cell. The first tick that does run rewinds to zero so everyone else
-     sees the field grow. */
-  let t=tF+1.0, ta=0, mode=-1, hue=-1, armHue=0, fresh=true;
-  const setHue=i=>{ if(i===hue) return; hue=i;
-    const f=i<0?"var(--fg)":HUE[i]; dot.forEach(d=>d.node.setAttribute("fill",f)); };
-  const enter=md=>{
-    mode=md;
-    dot.forEach(d=>d.node.setAttribute("fill-opacity", md===0?"0":"1"));
-    if(md<2) setHue(-1);
-    field.setAttribute("opacity", md===1?".95":"1");
-    shut.setAttribute("stroke-opacity","0");
-  };
+     One pass each way per PASS seconds, eased only at the turns so the scan
+     line runs at an even speed across the dots. A dot is struck when the arm
+     sweeps across its x between two frames — a range, not a point test, so a
+     long frame cannot step over one — and fades on its own age after that.
+     Ages stop at the cap rather than growing for as long as the page is open. */
+  const PASS=2.2, TAU=0.45, LO=0.22, REACH=n.w*0.012, CAP=10;
+  const at=t=>{ const ph=(t%(2*PASS))/(2*PASS), tri=ph<0.5?ph*2:2-ph*2;
+    const e=tri<0.1?5*tri*tri : tri>0.9?1-5*(1-tri)*(1-tri) : (tri-0.05)/0.9;
+    return px0+(px1-px0)*e; };
+  let t=0, ax=at(0);
   const run=dt=>{
-    t+=dt; ta=(ta+dt)%AWRAP;
-    if(t>=tF+LOOP) t=tF+((t-tF)%LOOP);
-
-    const ph=(ta%ARMP)/ARMP, tri=ph<0.5?ph*2:2-ph*2, e=tri*tri*(3-2*tri);
-    arm.setAttribute("transform",DX((aR-aL)*e));
-    const ai=Math.floor(ta/STEP)%HUE.length;
-    if(ai!==armHue){ armHue=ai; beam.setAttribute("stroke",HUE[ai]);
-      armF.forEach(p=>p.setAttribute("fill",HUE[ai])); }
-
-    const md = t<BUILD?0 : t<tF?1 : 2;
-    if(md!==mode) enter(md);
-    if(md===0){                         // dim seeds, then denser and brighter patches
-      const lum=0.28+0.67*clamp(t/BUILD);
-      dot.forEach(d=>d.node.setAttribute("fill-opacity",
-        (lum*clamp((t-d.born)/0.15)).toFixed(3)));
-      return;
-    }
-    if(md===2){                         // one colour for all of them, and the shutter
-      const k=t-tF, u=k%BEAT;
-      setHue(Math.floor(k/BEAT)%HUE.length);
-      field.setAttribute("opacity",(0.62+0.38*Math.exp(-u*4)).toFixed(3));
-      const su=u/SWEEP;
-      shut.setAttribute("transform",DX((sx1-sx0)*clamp(su)));
-      shut.setAttribute("stroke-opacity",(su<1?0.4*Math.sin(Math.PI*su):0).toFixed(3));
-    }
-    /* held: the full field, white, before the first colour */
+    t=(t+dt)%(2*PASS);
+    const nx=at(t), lo=Math.min(ax,nx)-REACH, hi=Math.max(ax,nx)+REACH;
+    ax=nx;
+    arm.setAttribute("transform",DX(ax-px0));
+    beam.setAttribute("transform",DX(ax-px0));
+    dot.forEach(d=>{
+      d.age = (d.x>=lo && d.x<=hi) ? 0 : Math.min(CAP,d.age+dt);
+      const o=(LO+(1-LO)*Math.exp(-d.age/TAU)).toFixed(2);
+      if(o!==d.o){ d.o=o; d.node.setAttribute("fill-opacity",o); }
+    });
   };
-  run(0);
-  TICKERS.push((dt,now,k)=>{ if(k<0.7) return;
-    if(fresh){ fresh=false; t=0; mode=-1; }
-    run(dt); });
+  /* THE FIRST FRAME IS MID-SWEEP. A reader with motion off never advances the
+     clock, so what is drawn now is the whole station for them: run the arm
+     most of the way across first, so they see it with its trail behind it. */
+  for(let i=0;i<48;i++) run(1/30);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.readcycle = drawReadCycle;
 
