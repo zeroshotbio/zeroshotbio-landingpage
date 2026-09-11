@@ -8969,6 +8969,80 @@ function drawReadCycle(g,n){
   face(quad(P(x1,ya,0),P(x1-dep,ya,0),P(x1,ya+dep,hd),P(x1,ya,hd)),SKIN.works.left);
   edge([P(x1,ya,0),P(x1,ya,hd),P(x1,yb,hd),P(x1,yb,0)],".9",1.1);
 
+  /* ---- THE READS LEAVING, asked for from the page: grey strands out of the
+     door, flying about five grid units in a single line and gathering there
+     into a rotating cloud like a nebula, with the distance labelled. The line
+     is this station's now rather than C4's, so the door feeds one line and
+     not two.
+
+     IT LEAVES AT FORTY-FIVE DEGREES, into the open ground in front of the
+     row. Square out of the wall it would run through C4, C5 and C6 and end
+     on C7; at forty-five it goes straight down the screen, clear of all
+     four. LEN is five units at the authored width and a fraction of it at
+     any other, so a resize carries the cloud with it, and the label prints
+     what LEN actually is rather than promising five. */
+  const LEN=n.w*5/1.60, dir=[Math.SQRT1_2,Math.SQRT1_2], za=h*0.35, ym=Y(0.17);
+  const A=P(x1,ym,za), C=P(x1+dir[0]*LEN,ym+dir[1]*LEN,za);
+  /* the nebula is a disc seen obliquely, authored in screen pixels like C4's
+     sphere and sized by SC; the line stops at its near rim, so the strands
+     are seen to arrive rather than to vanish under the haze */
+  const RX=48*SC, RY=22*SC;
+  const vl=Math.hypot(C[0]-A[0],C[1]-A[1]), E=[C[0]-(C[0]-A[0])/vl*RY*0.7, C[1]-(C[1]-A[1])/vl*RY*0.7];
+  const line=`M${f1(A[0])} ${f1(A[1])}L${f1(E[0])} ${f1(E[1])}`;
+  add(g,el("path",{d:line,fill:"none",stroke:"var(--fg2)","stroke-width":f2(0.8*SC),"stroke-opacity":".25"}));
+  /* one dashed path whose offset moves, as C4's stream was: a train of
+     strands for one attribute a frame, each dash a read's own bar */
+  const BW=9.0, BH=2.4, SPc=5.0, VEL=56;
+  const flow=add(g,el("path",{d:line,fill:"none",stroke:"var(--fg2)","stroke-width":f2(BH*SC),
+    "stroke-opacity":".75","stroke-dasharray":`${f2(BW*SC)} ${f2(SPc*SC)}`,"stroke-dashoffset":"0"}));
+
+  /* THE DISTANCE, on the ground: from the door's threshold out to the point
+     under the cloud, set off to the stream's right — the ground on its left
+     is under this box — with a tick at each end the way a drawing office
+     dimensions a run. */
+  const off=n.w*0.19, pr=[Math.SQRT1_2,-Math.SQRT1_2];
+  const g0=[x1+pr[0]*off, ym+pr[1]*off], g1=[g0[0]+dir[0]*LEN, g0[1]+dir[1]*LEN];
+  const tk=n.w*0.05, at0=(p,s)=>P(p[0]+pr[0]*tk*s, p[1]+pr[1]*tk*s, 0);
+  add(g,el("path",{d:`M${f1(P(x1,ym,0)[0])} ${f1(P(x1,ym,0)[1])}L${f1(at0(g0,1)[0])} ${f1(at0(g0,1)[1])}`+
+    `M${f1(P(g0[0],g0[1],0)[0])} ${f1(P(g0[0],g0[1],0)[1])}L${f1(P(g1[0],g1[1],0)[0])} ${f1(P(g1[0],g1[1],0)[1])}`+
+    `M${f1(at0(g0,-1)[0])} ${f1(at0(g0,-1)[1])}L${f1(at0(g0,1)[0])} ${f1(at0(g0,1)[1])}`+
+    `M${f1(at0(g1,-1)[0])} ${f1(at0(g1,-1)[1])}L${f1(at0(g1,1)[0])} ${f1(at0(g1,1)[1])}`,
+    fill:"none",stroke:"var(--fg2)","stroke-width":f2(0.7*SC),"stroke-opacity":".7"}));
+  const lp=P(g0[0]+dir[0]*LEN*0.72+pr[0]*off*0.5, g0[1]+dir[1]*LEN*0.72+pr[1]*off*0.5, 0);
+  const dim=add(g,el("text",{x:f1(lp[0]),y:f1(lp[1]),"font-size":f2(4.6*SC),"font-weight":"700",
+    fill:"var(--fg2)",stroke:"var(--bg)","stroke-width":f2(1.1*SC),"stroke-opacity":".85",
+    "paint-order":"stroke","stroke-linejoin":"round"}));
+  dim.textContent=`${+LEN.toFixed(1)} units from the door`;
+
+  /* ---- THE NEBULA: a haze of the reads' grey, three faint ellipses turned
+     against each other so no edge reads as drawn, and in it the reads on
+     two loose spiral arms, packed toward the core. The disc turns; the
+     near half is drawn a little larger and brighter than the far, which is
+     all that makes a flat ring of bars read as a disc seen from above. */
+  [[-5,2,1.15,1.10,-8,".07"],[6,-3,0.90,0.85,10,".09"],[0,1,0.55,0.60,0,".12"]]
+    .forEach(([ox,oy,a,b,rot,o])=>{
+      const cx=f1(C[0]+ox*SC), cy=f1(C[1]+oy*SC);
+      add(g,el("ellipse",{cx,cy,rx:f1(RX*a),ry:f1(RY*b),
+        transform:`rotate(${rot} ${cx} ${cy})`,fill:"var(--fg2)","fill-opacity":o}));
+    });
+  const rn=rng(90417), neb=[];
+  for(let i=0;i<70;i++){
+    const rad=0.12+0.88*Math.pow(rn(),0.7), th=(i%2)*Math.PI+rad*2.6+(rn()-0.5)*0.9;
+    const grp=add(g,el("g",{transform:`translate(${f1(C[0])},${f1(C[1])}) scale(${SC.toFixed(4)})`}));
+    const bar=add(grp,el("rect",{x:f2(-BW/2),y:f2(-BH/2),width:f2(BW),height:f2(BH),
+      fill:"var(--fg2)","fill-opacity":"0"}));
+    neb.push({grp, bar, rad, th, o:""});
+  }
+  const SPIN=Math.PI*2/12;
+  const turn=ph=>neb.forEach(R=>{
+    const a=R.th+ph, c=Math.cos(a), s=Math.sin(a);
+    const x=C[0]+c*R.rad*RX, y=C[1]+s*R.rad*RY, dep=(s+1)/2;
+    const rot=Math.atan2(c*RY,-s*RX)*180/Math.PI;          // along the arm's orbit
+    R.grp.setAttribute("transform",`translate(${f1(x)},${f1(y)}) rotate(${f1(rot)}) scale(${(SC*(0.8+0.35*dep)).toFixed(4)})`);
+    const o=(0.3+0.45*dep).toFixed(2);
+    if(o!==R.o){ R.o=o; R.bar.setAttribute("fill-opacity",o); }
+  });
+
   /* ---- SURFACE TAGS, asked for from the page so a later request can name a
      face by number rather than by describing it. Each sits on the face it
      names, drawn last so no part of the box covers it, and haloed in the page
@@ -8999,10 +9073,15 @@ function drawReadCycle(g,n){
      a little longer than a step, so the run reads as a chase rather than
      four separate blinks. Not tied to CYC, so they never stop for the dark. */
   const STEP=0.2, LFL=0.3;
-  let t=0, lt=0, litO="0", scanU=-1;
+  let t=0, lt=0, litO="0", scanU=-1, fo=0, ph=0;
+  /* the strands and the nebula run on their own clocks, through every beat
+     of the cycle: the reads never stop leaving */
+  turn(0);
   const run=dt=>{
     t+=Math.min(dt,0.1);
     lt=(lt+Math.min(dt,0.1))%(4*STEP);
+    fo=(fo+VEL*Math.min(dt,0.1))%(BW+SPc); flow.setAttribute("stroke-dashoffset",f2(-fo*SC));
+    ph=(ph+SPIN*Math.min(dt,0.1))%(Math.PI*2); turn(ph);
     lamps.forEach((L,i)=>{
       const a=(lt-i*STEP+4*STEP)%(4*STEP);
       const o=a<LFL ? ((1-a/LFL)*(1-a/LFL)).toFixed(2) : "0";
@@ -9156,20 +9235,14 @@ function drawDemux(g,n){
      leaves a little under half way up the opening. Like the lid it replaced,
      it is placed off this tile at the row's authored layout — a shape draws
      only its own node — so a resize of Sa alone moves the door off it. */
-  const A=P(n.x-n.w*1.02, n.y+n.d*0.23, n.h*0.53);
+  /* THE STREAM HAS MOVED TO SA. A request from Sa's "Edit visual" asked
+     for the door to put out a single straight line of strands, five grid
+     units long, into a nebula of its own, and one door feeding two lines
+     would say the reads went two ways. So Sa draws that line now, and this
+     drops its own: the reads still leave E one per GAP, the beat the
+     stream used to set. */
   const E=[C[0]-CU[0]*RS*0.55*SC, C[1]-CU[1]*RS*0.55*SC];
-  const dx=E[0]-A[0], dy=E[1]-A[1], len=Math.hypot(dx,dy), nx=-dy/len, ny=dx/len, bow=7*SC;
-  const d=`M${f1(A[0])} ${f1(A[1])}C${f1(A[0]+dx/3+nx*bow)} ${f1(A[1]+dy/3+ny*bow)} `+
-    `${f1(A[0]+dx*2/3-nx*bow)} ${f1(A[1]+dy*2/3-ny*bow)} ${f1(E[0])} ${f1(E[1])}`;
-  g.appendChild(el("path",{d,fill:"none",stroke:"var(--fg2)",
-    "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".25"}));
-  const BW=9.0, BH=2.4, SP=5.0, GAP=0.25, V=(BW+SP)/GAP;   // a strand in every GAP
-  const flow=el("path",{d,fill:"none",stroke:"var(--fg2)",
-    "stroke-width":(BH*SC).toFixed(2),"stroke-opacity":".70",
-    "stroke-dasharray":`${(BW*SC).toFixed(2)} ${(SP*SC).toFixed(2)}`,"stroke-dashoffset":"0"});
-  g.appendChild(flow);
-  g.appendChild(el("circle",{cx:f1(E[0]),cy:f1(E[1]),
-    r:(2.2*SC).toFixed(2),fill:"var(--fg2)","fill-opacity":".55"}));
+  const BW=9.0, BH=2.4, GAP=0.25;
 
   /* one group for everything in the air, so the end of the cycle is a single
      opacity rather than eighty of them */
@@ -9285,10 +9358,9 @@ function drawDemux(g,n){
      advances it, so whatever t begins at is the whole station for that reader —
      and for this one that has to be the finished cloud, which is the frame the
      request asks the row to end on. Half way through the hold. */
-  let t=t1+HOLD*0.45, ph=0, off=0, skyO="1", hazeO="0";
+  let t=t1+HOLD*0.45, ph=0, skyO="1", hazeO="0";
   const run=dt=>{
-    t=(t+dt)%t3; ph=(ph+dt*SPIN)%(Math.PI*2); off=(off+V*dt)%(BW+SP);
-    flow.setAttribute("stroke-dashoffset",(-off*SC).toFixed(2));
+    t=(t+dt)%t3; ph=(ph+dt*SPIN)%(Math.PI*2);
     const so=(t<t2 ? 1 : 1-clamp((t-t2)/FADE)).toFixed(3);   // nothing leaves — it dims where it is
     if(so!==skyO){ skyO=so; sky.setAttribute("opacity",so); }
     const ho=clamp(t/t1).toFixed(2);
