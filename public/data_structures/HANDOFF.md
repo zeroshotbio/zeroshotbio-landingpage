@@ -465,6 +465,35 @@ prefix with no entry still draws, grey, in "Other". And any prefix starting with
 
 Checks: `check-overlaps` 0 pairs (140 text nodes), `check-clicks` 18, `check-fit` the known 7.
 
+## The open-source vault is 1.6x taller, and its bands say which organism — 2026-09-11
+
+**OPEN is `h 30 → 48`**, centre `y 40.5 → 49.5`, so its top edge stays level with SILVER's at 25.5 and
+its foot lands at 73.5, inside the lane (`y1 83.5`). Every band gets the extra height in proportion, so
+each dataset tile has more room for its caption. Nothing else sits in the lane, so nothing moved.
+
+**Two bands renamed, exactly as the user wrote them:** `scRNA-seq → ZEBRAFISH scRNA-Seq` and
+`Human scRNA-seq → HUMAN scRNA-Seq`. The generator reads bands and accents from the OPEN node itself,
+so the rename lives in the node's `groups` and survives every re-splice.
+
+**Band captions are drawn as written.** `DRAW.vault` used to force every band caption to capitals
+(`upper: true`), which turned `scRNA-Seq` into `SCRNA-SEQ`. It no longer does, and it measures the
+caption at its real case for the fit-to-width scaling. The other four bands are stored in capitals
+(`IMAGING / TRACKING`, `SPATIAL`, `ANATOMY`, `REFERENCE`) so they look as they did, and the panel
+headings — which never uppercased — now match the map character for character. Column captions
+(`PARSE (OUR DATA)`) still force capitals.
+
+**No `~` after a floored band.** `DRAW.vault` still floors a small band's height at `FLOOR = 2.1`; it no
+longer appends `" ~"` to the caption. The user asked for the category names alone.
+
+**The reader panel mirrors the map.** `gen_open_source_panel.py`'s section headings are now the band
+captions word for word (the `Acquired · ` prefix is gone — everything in this vault is acquired), in the
+same order as the vault draws them: ZEBRAFISH scRNA-Seq, HUMAN scRNA-Seq, Imaging / tracking, Spatial,
+Anatomy, Reference. Re-spliced from a live listing: 902 obj · 566.22 GiB, 26 datasets.
+
+**Checks.** `check-overlaps` 0 pairs (139 text nodes). `check-clicks` 17/17. `check-fit` the same 7
+pre-existing failures, none in OPEN. `check-pinch` 3.000x about a fixed midpoint, floor 0.600x fit,
+0 of 139 hidden.
+
 ## The state of the data — 2026-09-11, later. The custody PRs closed, and nothing hides on zoom.
 
 **Audit against the sources**, all read live today:

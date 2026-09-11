@@ -159,7 +159,8 @@ for p in sorted(agg, key=lambda x: -agg[x][1]):
     bands[BAND.get(p, "Other")].append(p)
 for band, ps in bands.items():
     if not ps: continue
-    out.append(sec(f"Acquired · {band}", f"{len(ps)} dataset{'s' if len(ps) != 1 else ''}"))
+    # the heading is the band's own caption on the map, word for word, so panel and vault read alike
+    out.append(sec(band, f"{len(ps)} dataset{'s' if len(ps) != 1 else ''}"))
     out.extend(block(p) for p in ps)
 
 # What has not moved yet, so the reader can see the migration is partial rather than infer it.

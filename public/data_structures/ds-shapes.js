@@ -308,10 +308,14 @@ DRAW.vault = (g, n) => {
           /* Scale a band caption to its band, exactly as the column captions and
              the tile captions are. Left unscaled, the longer ones hung a grid
              unit off the side of the vault. */
-          const stxt = sg.label + (floored[si] ? " ~" : "");
-          const sz = Math.min(7.2, 7.2 * ((gw - 0.5) * S) / Math.max(textW(stxt.toUpperCase(), 7.2), 1));
+          /* No "~" on a floored band any more (2026-09-11): the reader asked for the category
+             names alone. The floor itself still applies; only the marker is gone. */
+          const stxt = sg.label;
+          /* Band captions are drawn exactly as written (2026-09-11): "ZEBRAFISH scRNA-Seq" must keep
+             its lower-case "sc", so no forced caps here; the data carries the capitals it wants. */
+          const sz = Math.min(7.2, 7.2 * ((gw - 0.5) * S) / Math.max(textW(stxt, 7.2), 1));
           label(g, gx + gw / 2, sy + SUBCAP / 2, stxt,
-            { size: sz, fill: "var(--fg3)", ls: 0.06, upper: true });
+            { size: sz, fill: "var(--fg3)", ls: 0.06 });
           drawTiles(sg.tiles, gx, sy + SUBCAP, gw, sh - SUBCAP, max);
           sy += sh;
         });
