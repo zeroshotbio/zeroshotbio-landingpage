@@ -6071,20 +6071,20 @@ function drawCapture(g,n){
      and a redraw is the only reason this function is running again. Composed
      at w .72, d .72, h .44.
 
-     THE RACK IS THROWN FORWARD AND RIGHT, not centred on its own node, and the
-     amount is the whole of the room this bench has. B7 next door is the widest
-     tile on the row and its body reaches to within six pixels of where this
-     block's back tube stands; B9's bench is ten pixels off its right corner.
-     Squaring the rack on the node puts it through one or the other.
+     THE RACK STANDS SQUARE ON ITS OWN NODE. Asked for from the page: it was
+     thrown forward and right, off its anchor, to keep clear of B7 and B9, and
+     that left the station's handle and label on bare ground a tile away from
+     the plastic they name. Everything tied to the rack — the glass and its
+     leaders — moves with it by the same fraction, so the composition is the
+     one that was approved, only sitting where the node says it is.
 
      TWO STRIPS OF EIGHT, WHICH IS WHAT B7 NEXT DOOR SET DOWN. The eight
      sublibraries are split into sixteen tubes there and nothing between the
      two stations recombines them, so a single strip here quietly halved the
      plastic on its way across the tile. The two rows straddle where the one
      row stood — the block keeps its own footprint, and the near row is still
-     well inside the near face — so the composition against B7 and B9 that the
-     throw above buys is untouched. */
-  const rack={x:n.x+n.w*0.30, y:n.y+n.d*1.05,
+     well inside the near face. */
+  const rack={x:n.x, y:n.y,
               w:n.w*1.55, d:n.d*0.56, h:n.h*0.50, tubes:8, strips:2,
               mag:"var(--ch1)"};
   const T=magnetRack(g, rack);
@@ -6126,7 +6126,8 @@ function drawCapture(g,n){
      travels with the transform rather than with a number somebody has to
      remember to change. */
   const LX=53, LY=42;
-  const [KX,KY]=P(n.x+n.w*2.80, n.y+n.d*4.10, n.h*0.50);
+  /* held at the offset it had from the rack before the rack came onto its node */
+  const [KX,KY]=P(n.x+n.w*2.50, n.y+n.d*3.05, n.h*0.50);
   /* the leaders name ONE tube — the near strip's left-hand one, which is the
      tube closest to the glass and the only end of the rack a leader can reach
      without crossing plastic standing in front of it — and they start ON the
