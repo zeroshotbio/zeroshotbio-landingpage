@@ -35,7 +35,7 @@ const topOf = n => n.shape==="works"   ? n.h*0.96
                  : n.shape==="tankrack"? 1.4
                  : n.shape==="machine" ? 1.42
                  : n.shape==="pyramid" ? n.h+n.w*PYRAMID_RISE
-                 : n.shape==="readcycle" ? n.h*1.32   /* the arm's rail over the open box */
+                 : n.shape==="readcycle" ? n.h*1.86   /* the gantry's girder over the roof */
                  : n.shape==="vials"   ? n.h  : n.h;
 
 
@@ -8806,48 +8806,64 @@ function drawSizeCheck(g,n){
 DRAW.sizecheck = drawSizeCheck;
 
 /* ------------------------------------------------------------------
-   Sa · THE READ CYCLE, CUT AWAY — the sequencer with its lid off.
+   Sa · THE READ CYCLE, AS A FACTORY — bases in on the roof, reads out the door.
 
-   REBUILT FROM "EDIT VISUAL" as two of S's own parts put in one object: the
-   open box with a pool inside it, and the arm that reads it. S one gap back
-   is the instrument seen from outside; this is the same instrument opened,
-   and it claims no more about the chemistry than S's own drawing does.
+   REBUILT FROM "EDIT VISUAL" a second time, as a factory rather than an
+   opened instrument. The charcoal block, the white edges, the glow and the
+   dashed footprint stay, so it is still S's material one gap along; what
+   changes is where things are. The pool moves up onto the roof, S's four
+   reagents become a bank of vats either side of it, and the arm becomes a
+   gantry crane of the kind that walks a shipyard.
 
-   THE POOL RUNS UNDER THE ARM LIKE A CONVEYOR. The pool's long axis is x, the
-   arm's rail runs along x on the back rim, and the arm itself reaches across
-   the pool in y — so it only ever moves in x, and a screen-space translate is
-   exact. The top is cut away down to a rim, but the front walls stand, so the
-   floor is raised: at this projection a pool on the true bottom would be
-   mostly behind them, and a dollhouse whose room cannot be seen is a box.
-   The same walls are why the pool stops short of the right-hand wall.
+   EACH BANK HOLDS ALL FOUR BASES, in S's order and S's colours, so either
+   side is a complete set. The crane alternates sides and takes a base from
+   the bank it has walked to, which keeps it crossing the whole roof instead
+   of shuttling at one end of it.
 
-   THE FLASH IS A TRAIL, NOT A BEAT. Every dot keeps its own age since the arm
-   last crossed it and fades on that age, so the bright strip is always the
-   one just behind the arm and nothing lights that the arm has not reached.
-   The request was explicit that the whole pool must not light at once.
+   THE CRANE MOVES ON THREE AXES AND EACH ONE IS A SINGLE TRANSFORM. The
+   gantry walks its rails in x, the trolley runs its girder in y and the grab
+   rides its cable in z, as three nested groups — so a frame is three
+   translates and one end of a line, and nothing is rebuilt. The back legs
+   are their own group under the same translate, because the vats stand in
+   front of them and have to be painted between the two halves.
 
-   THE FOUR CUBES ARE S'S REAGENTS, in S's order and S's colours, sitting on
-   the rim beside the rail the way S's bottles sit beside its gantry.
+   A DROP LIGHTS ONLY WHAT IT HITS. The dots within a short reach of where the
+   base lands take its colour, flare and settle to a glow in it, so the pool
+   fills as a mosaic of calls rather than lighting all at once — the request
+   before this one was explicit that it must not, and nothing here undoes it.
+
+   THE FILES LEAVE BY THE FRONT, NOT TOWARDS C4. C4 is half a gap away and
+   hangs its own reads in the sky behind this station, so a stream out of the
+   right-hand wall runs into C4's box, and a sphere behind the roof sits in
+   C4's cloud and across both names. The floor in front of the building is
+   the only open ground near it. Each landing sends a short line of grey
+   files out of the door; they run straight, then peel off onto a sphere that
+   turns in front of the building. It fills, holds, fades and starts again,
+   so the forming is seen and not only the result. Grey is C4's --fg2: a read
+   carries nothing that says which base or which cluster made it.
    ------------------------------------------------------------------ */
 function drawReadCycle(g,n){
   /* EVERY OFFSET IS EITHER A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC,
      and w, d and h are read at draw time because a resize is the only reason
-     this function runs again. Composed at w 1.60, d 1.30, h .46: an open box
-     has to be wide enough to show a floor past its own front walls. */
+     this function runs again. Composed at w 1.60, d 1.30, h .46. */
   const SC=n.w/1.60;
   const X=f=>n.x+f*n.w, Y=f=>n.y+f*n.d, Z=f=>f*n.h;
-  const r=rng(52817);
+  const r=rng(52817), rj=rng(90431);
   const BASE=["var(--signal)","var(--drop)","var(--ok)","var(--c-top)"];
-  const LIT="var(--signal)";
+  const PALE=[SKIN.monolith.left,SKIN.monolith.right,SKIN.monolith.top,1,1,1];
   const add=(gg,e)=>{ gg.appendChild(e); return e; };
-  const DX=dx=>`translate(${(dx*S*C30).toFixed(2)},${(dx*S*0.5).toFixed(2)})`;
+  const f1=v=>v.toFixed(1), f2=v=>v.toFixed(2);
+  const DX=dx=>`translate(${f2(dx*S*C30)},${f2(dx*S*0.5)})`;
+  const DY=dy=>`translate(${f2(-dy*S*C30)},${f2(dy*S*0.5)})`;
   const quad=(a,b,c,d)=>pts([a,b,c,d]);
   const face=(gg,points,fill,o)=>add(gg,el("polygon",{points,fill,"fill-opacity":o||1}));
-  /* a white line, not the map's usual --stroke: the request asked for the
-     edges to read white against the charcoal */
+  /* a white line, not the map's usual --stroke: the edges read white against
+     the charcoal, as they did on the box this was rebuilt from */
   const edge=(gg,ps,o,wd)=>add(gg,el("polyline",{points:pts(ps),fill:"none",
-    stroke:"var(--fg)","stroke-width":((wd||1.2)*SC).toFixed(2),"stroke-opacity":o||.9,
+    stroke:"var(--fg)","stroke-width":f2((wd||1.2)*SC),"stroke-opacity":o||.9,
     "stroke-linejoin":"round","stroke-linecap":"round"}));
+  const bar=(gg,a,b,c,wd)=>add(gg,el("line",{x1:f1(a[0]),y1:f1(a[1]),x2:f1(b[0]),y2:f1(b[1]),
+    stroke:c,"stroke-width":f2(wd*SC),"stroke-linecap":"round"}));
   /* a solid lifted to an arbitrary z, three faces, one fill each */
   const block=(gg,x,y,w,d,z0,z1,f)=>{
     const a=x-w/2,b=x+w/2,c=y-d/2,e=y+d/2;
@@ -8856,136 +8872,287 @@ function drawReadCycle(g,n){
             face(gg,quad(P(a,c,z1),P(b,c,z1),P(b,e,z1),P(a,e,z1)),f[2],f[5])];
   };
   const rim=(ps,o,wd)=>ps.forEach(p=>{ p.setAttribute("stroke","var(--fg)");
-    p.setAttribute("stroke-width",((wd||0.6)*SC).toFixed(2)); p.setAttribute("stroke-opacity",o||".7"); });
+    p.setAttribute("stroke-width",f2((wd||0.6)*SC)); p.setAttribute("stroke-opacity",o||".7"); });
 
   const h=n.h, x0=X(-0.5), x1=X(0.5), y0=Y(-0.5), y1=Y(0.5);
-  /* the opening: rims of a twentieth of the width, and a wider ledge at the
-     back, which is what the rail and the reagents stand on */
-  const ix0=X(-0.45), ix1=X(0.45), iy0=Y(-0.28), iy1=Y(0.44), zf=Z(0.48);
 
-  /* ---- FOOTPRINT AND GLOW, both under the box ----------------------------
+  /* ---- FOOTPRINT AND GLOW, both under the building ------------------------
      The glow is the silhouette stroked wide and faint three times rather than
      a blur filter: the selection halo is already a CSS filter on this group,
      and a second one inside it is a second thing to go wrong on a phone. */
   const m=0.07;
   g.appendChild(el("polygon",{points:quad(P(X(-0.5-m),Y(-0.5-m),0),P(X(0.5+m),Y(-0.5-m),0),
     P(X(0.5+m),Y(0.5+m),0),P(X(-0.5-m),Y(0.5+m),0)),fill:"none",stroke:"var(--fg)",
-    "stroke-width":SC.toFixed(2),"stroke-opacity":".45",
-    "stroke-dasharray":`${(4*SC).toFixed(1)} ${(3*SC).toFixed(1)}`}));
+    "stroke-width":f2(SC),"stroke-opacity":".45",
+    "stroke-dasharray":`${f1(4*SC)} ${f1(3*SC)}`}));
   const sil=pts([P(x0,y0,h),P(x1,y0,h),P(x1,y0,0),P(x1,y1,0),P(x0,y1,0),P(x0,y1,h)]);
   [[16,".035"],[10,".05"],[5,".07"]].forEach(([wd,o])=>g.appendChild(el("polygon",{points:sil,
-    fill:"none",stroke:"var(--fg)","stroke-width":(wd*SC).toFixed(2),"stroke-opacity":o,
+    fill:"none",stroke:"var(--fg)","stroke-width":f2(wd*SC),"stroke-opacity":o,
     "stroke-linejoin":"round"})));
 
-  /* ---- THE ROOM ----------------------------------------------------------
-     Inner walls and floor in the box's own skin under a wash of the page
-     ground, so the inside reads as the same material in shadow rather than
-     as something else put in there. */
-  const room=(points,fill)=>{ face(g,points,fill); face(g,points,"var(--bg)",.35); };
-  room(quad(P(ix0,iy0,h),P(ix1,iy0,h),P(ix1,iy0,zf),P(ix0,iy0,zf)),"var(--k-left)");
-  room(quad(P(ix0,iy0,h),P(ix0,iy1,h),P(ix0,iy1,zf),P(ix0,iy0,zf)),"var(--k-right)");
-  room(quad(P(ix0,iy0,zf),P(ix1,iy0,zf),P(ix1,iy1,zf),P(ix0,iy1,zf)),"var(--k-top)");
-  [[P(ix0,iy0,h),P(ix0,iy0,zf),P(ix1,iy0,zf)],[P(ix0,iy0,zf),P(ix0,iy1,zf)]]
-    .forEach(ps=>edge(g,ps,.35,0.8));
-
-  /* ---- THE POOL: a flat green slab, long in x ----------------------------
-     It ends at .32 because past there the right-hand wall covers it. */
-  const px0=X(-0.40), px1=X(0.32), py0=Y(-0.22), py1=Y(0.26), zs=zf+Z(0.06);
-  block(g,(px0+px1)/2,(py0+py1)/2,px1-px0,py1-py0,zf,zs,
-    ["var(--ok)","var(--ok)","var(--ok)",.45,.35,.8]);
-  edge(g,[P(px0,py0,zs),P(px1,py0,zs),P(px1,py1,zs),P(px0,py1,zs),P(px0,py0,zs)],.45,0.6);
-
-  /* ---- THE DOTS -----------------------------------------------------------
-     Small patches on a jittered twelve-by-four, so the pool reads as clusters
-     rather than a lattice. Each keeps its world x, which is all the arm needs
-     to know whether it is over it. The patch radius is a fraction of the
-     width, so it stays tight at any size. */
-  const field=el("g",{}); g.appendChild(field);
-  const NU=12, NV=4, PER=3, CR=n.w*0.016;
-  const dot=[];
-  for(let a=0;a<NU;a++)for(let b=0;b<NV;b++){
-    const cx=px0+((a+0.5+(r()-0.5)*0.5)/NU)*(px1-px0);
-    const cy=py0+((b+0.5+(r()-0.5)*0.5)/NV)*(py1-py0);
-    for(let j=0;j<PER;j++){
-      const th=r()*Math.PI*2, rad=j?CR*Math.sqrt(r()):0, x=cx+Math.cos(th)*rad;
-      const p=P(x, cy+Math.sin(th)*rad, zs+0.001);
-      dot.push({x, age:99, o:"", node:add(field,el("circle",{cx:p[0].toFixed(1),
-        cy:p[1].toFixed(1),r:(0.95*SC).toFixed(2),fill:"var(--fg)","fill-opacity":"0"}))});
-    }
-  }
-  /* the arm's line on the pool, born at the pool's left end. It is in the
-     room rather than on the arm because the front walls have to cover it. */
-  const beam=el("g",{}); g.appendChild(beam);
-  [[5,".15"],[1.4,".6"]].forEach(([wd,o])=>beam.appendChild(el("line",{
-    x1:P(px0,py0,zs+0.001)[0].toFixed(1),y1:P(px0,py0,zs+0.001)[1].toFixed(1),
-    x2:P(px0,py1,zs+0.001)[0].toFixed(1),y2:P(px0,py1,zs+0.001)[1].toFixed(1),
-    stroke:LIT,"stroke-width":(wd*SC).toFixed(2),"stroke-opacity":o,"stroke-linecap":"round"})));
-
-  /* ---- THE SHELL, painted over the room so the front walls cover what they
-     would cover. Fill only; the white edges go on afterwards as lines, so the
-     rim pieces do not draw seams between each other. */
+  /* ---- THE BUILDING: a closed block now, with a row of windows along each
+     visible wall and a door in the front one, which is what the files leave
+     by. The door is well right of centre so the line of files clears the
+     windows and heads for open floor. */
   face(g,quad(P(x0,y1,h),P(x1,y1,h),P(x1,y1,0),P(x0,y1,0)),SKIN.works.left);
   face(g,quad(P(x1,y0,h),P(x1,y1,h),P(x1,y1,0),P(x1,y0,0)),SKIN.works.right);
-  face(g,quad(P(x0,y0,h),P(x1,y0,h),P(x1,iy0,h),P(x0,iy0,h)),SKIN.works.top);
-  face(g,quad(P(x0,iy0,h),P(ix0,iy0,h),P(ix0,y1,h),P(x0,y1,h)),SKIN.works.top);
-  face(g,quad(P(ix1,iy0,h),P(x1,iy0,h),P(x1,y1,h),P(ix1,y1,h)),SKIN.works.top);
-  face(g,quad(P(ix0,iy1,h),P(ix1,iy1,h),P(ix1,y1,h),P(ix0,y1,h)),SKIN.works.top);
+  face(g,quad(P(x0,y0,h),P(x1,y0,h),P(x1,y1,h),P(x0,y1,h)),SKIN.works.top);
+  const pane=ps=>{ face(g,pts(ps),"var(--fg)",.1); edge(g,[...ps,ps[0]],.35,0.6); };
+  const wz0=Z(0.50), wz1=Z(0.80);
+  for(let i=0;i<5;i++){ const a=X(-0.44+i*0.12), b=a+n.w*0.07;
+    pane([P(a,y1,wz0),P(b,y1,wz0),P(b,y1,wz1),P(a,y1,wz1)]); }
+  for(let j=0;j<4;j++){ const a=Y(-0.40+j*0.2), b=a+n.d*0.12;
+    pane([P(x1,a,wz0),P(x1,b,wz0),P(x1,b,wz1),P(x1,a,wz1)]); }
+  const dx0=X(0.20), dx1=X(0.36), dz=Z(0.62);
+  face(g,quad(P(dx0,y1,0),P(dx1,y1,0),P(dx1,y1,dz),P(dx0,y1,dz)),"var(--bg)",.85);
+  edge(g,[P(dx0,y1,0),P(dx0,y1,dz),P(dx1,y1,dz),P(dx1,y1,0)],.7,0.8);
   edge(g,[P(x0,y1,h),P(x0,y0,h),P(x1,y0,h),P(x1,y1,h),P(x0,y1,h),P(x0,y1,0),P(x1,y1,0),
           P(x1,y0,0),P(x1,y0,h)]);
   edge(g,[P(x1,y1,h),P(x1,y1,0)]);
-  edge(g,[P(ix0,iy0,h),P(ix1,iy0,h),P(ix1,iy1,h),P(ix0,iy1,h),P(ix0,iy0,h)],.75,1);
 
-  /* ---- THE TRACK, on the back ledge, a little longer than the pool at
-     either end so the arm turns round over the rim and not over the dots.
-     rz1 is the h*1.32 topOf() promises. */
-  const PALE=[SKIN.monolith.left,SKIN.monolith.right,SKIN.monolith.top,1,1,1];
-  const rx0=X(-0.44), rx1=X(0.36), ry=Y(-0.42), rz0=h+Z(0.24), rz1=h+Z(0.32);
-  [rx0,rx1].forEach(x=>block(g,x,ry,n.w*0.03,n.d*0.04,h,rz1,PALE));
-  block(g,(rx0+rx1)/2,ry,rx1-rx0,n.d*0.03,rz0,rz1,PALE);
+  /* ---- THE RAILS, along both long edges of the roof, the whole length ---- */
+  const RY=[Y(-0.46),Y(0.46)], rz=h+Z(0.05);
+  RY.forEach(y=>block(g,n.x,y,n.w*0.94,n.d*0.025,h,rz,PALE));
 
-  /* ---- S'S FOUR REAGENTS, in front of the rail and under the arm's reach */
-  BASE.forEach((c,i)=>rim(block(g,X(0.02+i*0.09),Y(-0.34),n.w*0.045,n.d*0.07,h,h+Z(0.16),
-    [c,c,c,.8,.65,.95]),".5",0.5));
+  /* ---- THE CRANE'S HEIGHTS. ZG1 is the girder's top and the n.h*1.86 that
+     topOf() promises. The grab carries at ZHI, clear of the vats' rims, and
+     dips to ZLO, below them. */
+  const gx0=n.x, gy0=n.y, LEG=n.w*0.07;
+  const ZG0=h+Z(0.76), ZG1=h+Z(0.86), ZT=ZG0-Z(0.07);
+  const ZV=h+Z(0.40), ZHI=h+Z(0.54), ZLO=h+Z(0.34), HANG=Z(0.10);
+  /* one A-frame of legs, on its bogie, at the rail at y */
+  const legs=(gg,y)=>{
+    block(gg,gx0,y,n.w*0.18,n.d*0.045,rz,rz+Z(0.07),PALE);
+    const top=P(gx0,y,ZG0);
+    [-1,1].forEach(s=>bar(gg,P(gx0+s*LEG,y,rz+Z(0.07)),top,SKIN.monolith.top,2.0));
+    bar(gg,P(gx0-LEG*0.5,y,(rz+ZG0)/2),P(gx0+LEG*0.5,y,(rz+ZG0)/2),SKIN.monolith.left,1.2);
+  };
+  const back=el("g",{}); g.appendChild(back);
+  legs(back,RY[0]);
 
-  /* ---- THE ARM: built over the pool's left end, translated from there. A
-     carriage on the rail, a bar reaching across the pool, and the bright
-     head at its tip that the line on the pool is thrown from. */
-  const arm=el("g",{}); g.appendChild(arm);
-  const az0=h+Z(0.22), az1=h+Z(0.29), ab=Y(-0.40), af=Y(0.30);
-  rim(block(arm,px0,ry,n.w*0.06,n.d*0.07,h+Z(0.20),rz1,PALE));
-  rim(block(arm,px0,(ab+af)/2,n.w*0.035,af-ab,az0,az1,PALE));
-  const hp=P(px0,af-n.d*0.03,az0-Z(0.03));
-  arm.appendChild(el("circle",{cx:hp[0].toFixed(1),cy:hp[1].toFixed(1),r:(4*SC).toFixed(2),
-    fill:LIT,"fill-opacity":".3"}));
-  rim(block(arm,px0,af-n.d*0.03,n.w*0.05,n.d*0.05,az0-Z(0.06),az0,[LIT,LIT,LIT,.9,.75,1]),".8");
+  /* ---- THE POOL, in the middle of the roof: a low basin of dark water ---- */
+  const px0=X(-0.25), px1=X(0.25), py0=Y(-0.40), py1=Y(0.40), zs=h+Z(0.06);
+  rim(block(g,n.x,n.y,px1-px0,py1-py0,h,zs,[SKIN.works.left,SKIN.works.right,"var(--g-top)",1,1,1]),".7",0.7);
+
+  /* ---- THE DOTS -----------------------------------------------------------
+     Small patches on a jittered five-by-nine, so the pool reads as clusters
+     rather than a lattice. Each keeps its world x and y, which is all a drop
+     needs to know whether it landed on it. */
+  const field=el("g",{}); g.appendChild(field);
+  const NU=5, NV=9, PER=3, CR=n.w*0.018, dot=[];
+  for(let a=0;a<NU;a++)for(let b=0;b<NV;b++){
+    const cx=px0+((a+0.5+(r()-0.5)*0.6)/NU)*(px1-px0);
+    const cy=py0+((b+0.5+(r()-0.5)*0.6)/NV)*(py1-py0);
+    for(let j=0;j<PER;j++){
+      const th=r()*Math.PI*2, rad=j?CR*Math.sqrt(r()):0;
+      const x=cx+Math.cos(th)*rad, y=cy+Math.sin(th)*rad, p=P(x,y,zs+0.001);
+      dot.push({x, y, age:99, c:null, f:"", o:"", node:add(field,el("circle",{cx:f1(p[0]),
+        cy:f1(p[1]),r:f2(1.0*SC),fill:"var(--fg)","fill-opacity":".14"}))});
+    }
+  }
+  /* the flash where a base lands: a ring spreading over the water and a burst
+     of light at its centre, both born at the pool's middle and invisible */
+  const PC=P(n.x,n.y,zs+0.001);
+  const ring=add(g,el("ellipse",{cx:f1(PC[0]),cy:f1(PC[1]),rx:"0",ry:"0",fill:"none",
+    stroke:BASE[0],"stroke-width":f2(1.3*SC),"stroke-opacity":"0"}));
+  const burst=add(g,el("circle",{cx:f1(PC[0]),cy:f1(PC[1]),r:"0",fill:BASE[0],"fill-opacity":"0"}));
+
+  /* ---- THE VATS, four a side, one per base, painted back to front. A body
+     tinted in its base over the building's own grey, and the base itself
+     showing at the top. The bottom curve is sampled rather than an arc, so
+     every number in it is a point that moves with the node. */
+  const VR=Math.min(n.w*0.07,n.d*0.086);
+  const VATS=[];
+  [-1,1].forEach(s=>BASE.forEach((c,i)=>VATS.push({x:X(s*0.38), y:Y(-0.33+i*0.22), c})));
+  const VRX=VR*S*C30*Math.SQRT2, VRY=VR*S*0.5*Math.SQRT2;
+  VATS.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(v=>{
+    const t=P(v.x,v.y,ZV), b=P(v.x,v.y,h), arc=[];
+    for(let i=0;i<=8;i++){ const a=Math.PI*i/8; arc.push([b[0]-VRX*Math.cos(a), b[1]+VRY*Math.sin(a)]); }
+    const body=[[t[0]-VRX,t[1]],...arc,[t[0]+VRX,t[1]]];
+    face(g,pts(body),SKIN.works.left);
+    face(g,pts(body),v.c,.45);
+    edge(g,body,.7,0.7);
+    add(g,el("ellipse",{cx:f1(t[0]),cy:f1(t[1]),rx:f2(VRX),ry:f2(VRY),fill:SKIN.works.right,
+      stroke:"var(--fg)","stroke-width":f2(0.7*SC),"stroke-opacity":".8"}));
+    add(g,el("ellipse",{cx:f1(t[0]),cy:f1(t[1]+VRY*0.12),rx:f2(VRX*0.78),ry:f2(VRY*0.78),
+      fill:v.c,"fill-opacity":".95"}));
+  });
+
+  /* ---- THE GANTRY, built standing over the middle of the roof and moved
+     from there: the front legs, the girder across both rails, the trolley
+     slung under the girder, its cable, and the grab on the end of it. */
+  const crane=el("g",{}); g.appendChild(crane);
+  legs(crane,RY[1]);
+  rim(block(crane,gx0,gy0,n.w*0.05,(RY[1]-RY[0])+n.d*0.05,ZG0,ZG1,PALE),".6",0.5);
+  const trol=el("g",{}); crane.appendChild(trol);
+  rim(block(trol,gx0,gy0,n.w*0.08,n.d*0.08,ZT,ZG0,PALE),".7",0.5);
+  const T0=P(gx0,gy0,ZT);
+  const cable=add(trol,el("line",{x1:f1(T0[0]),y1:f1(T0[1]),x2:f1(T0[0]),
+    y2:f1(P(gx0,gy0,ZHI+Z(0.05))[1]),stroke:"var(--fg)","stroke-width":f2(0.8*SC),"stroke-opacity":".8"}));
+  const grab=el("g",{}); trol.appendChild(grab);
+  rim(block(grab,gx0,gy0,n.w*0.04,n.d*0.05,ZHI,ZHI+Z(0.05),PALE),".8",0.5);
+  [-1,1].forEach(s=>add(grab,el("polyline",{points:pts([P(gx0+s*n.w*0.018,gy0,ZHI),
+    P(gx0+s*n.w*0.028,gy0,ZHI-Z(0.07)),P(gx0+s*n.w*0.012,gy0,ZHI-Z(0.12))]),fill:"none",
+    stroke:SKIN.monolith.top,"stroke-width":f2(1.1*SC),"stroke-linejoin":"round"})));
+  /* the base in the grab's claws, and falling from them. Its own element
+     rather than part of the grab, so it can let go. */
+  const B0=P(gx0,gy0,ZHI-HANG);
+  const bead=add(g,el("circle",{cx:f1(B0[0]),cy:f1(B0[1]),r:f2(2.2*SC),fill:BASE[0],
+    "fill-opacity":"0",stroke:"var(--fg)","stroke-width":f2(0.5*SC),"stroke-opacity":"0"}));
+
+  /* ---- THE FILES AND THE SPHERE --------------------------------------------
+     The door, where the line ends and the sphere takes over, and the sphere's
+     centre — all world points in front of the building, projected once. The
+     sphere itself turns in screen space about the screen's own vertical, so
+     it reads as a ball at every zoom rather than an isometric egg. */
+  const D=P(X(0.28),y1,Z(0.30)), L=P(X(0.28),y1+n.d*0.50,Z(0.55));
+  const C=P(X(0.28),y1+n.d*0.85,Z(1.0)), RS=n.d*0.26*S;
+  const sky=el("g",{}); g.appendChild(sky);
+  /* a page with its corner turned, authored in screen pixels and scaled by SC
+     like C4's fragments — a glyph this size cannot be cut from a world width */
+  const PAGE=[[-2.4,-3.1],[1.1,-3.1],[2.4,-1.8],[2.4,3.1],[-2.4,3.1]];
+  const NF=36, files=[];
+  for(let i=0;i<NF;i++){
+    /* a Fibonacci lattice, so the finished ball is evenly covered */
+    const uz=1-2*(i+0.5)/NF, rr=Math.sqrt(1-uz*uz), th=i*2.39996;
+    const fg=el("g",{transform:`translate(${f1(D[0])},${f1(D[1])}) scale(${SC.toFixed(4)})`,opacity:"0"});
+    add(fg,el("polygon",{points:pts(PAGE),fill:"var(--fg2)"}));
+    add(fg,el("polyline",{points:pts([[1.1,-3.1],[1.1,-1.8],[2.4,-1.8]]),fill:"none",
+      stroke:"var(--bg)","stroke-width":".5","stroke-opacity":".6"}));
+    sky.appendChild(fg);
+    files.push({g:fg, u:[Math.cos(th)*rr, Math.sin(th)*rr, uz], tl:null, tr:"", op:""});
+  }
+  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
+  const FS=6.5*SC;
+  const cap=add(g,el("text",{x:f1(C[0]),y:f1(C[1]+RS+9*SC),"text-anchor":"middle",
+    "font-family":MONO,"font-size":f2(FS),"letter-spacing":f2(FS*0.12),
+    fill:"var(--fg2)","fill-opacity":".75"}));
+  cap.textContent="FASTQ";
 
   /* ---- TIMING -------------------------------------------------------------
-     One pass each way per PASS seconds, eased only at the turns so the scan
-     line runs at an even speed across the dots. A dot is struck when the arm
-     sweeps across its x between two frames — a range, not a point test, so a
-     long frame cannot step over one — and fades on its own age after that.
-     Ages stop at the cap rather than growing for as long as the page is open. */
-  const PASS=2.2, TAU=0.45, LO=0.22, REACH=n.w*0.012, CAP=10;
-  const at=t=>{ const ph=(t%(2*PASS))/(2*PASS), tri=ph<0.5?ph*2:2-ph*2;
-    const e=tri<0.1?5*tri*tri : tri>0.9?1-5*(1-tri)*(1-tri) : (tri-0.05)/0.9;
-    return px0+(px1-px0)*e; };
-  let t=0, ax=at(0);
+     One job is walk to a vat, dip, lift, carry over the pool, let go; the
+     base lands at the end of it and the next job starts from there. Eased at
+     every stop so the crane reads as heavy. A landing sends out a line of
+     BURST files GAPF apart; each runs F1 along the line and F2 onto its place
+     on the ball. The ball holds HOLD once the last file is on it, then fades
+     over FADE and starts again empty. */
+  const GO=0.8, DIP=0.24, CARRY=0.8, FALL=0.32, JOB=GO+2*DIP+CARRY+FALL;
+  const REACH=Math.min(n.w,n.d)*0.075, FL=0.55, LO=0.4, TAU=0.7, CAP=10;
+  const F1=0.30, F2=0.75, GAPF=0.13, BURST=3, HOLD=3.5, FADE=0.8, SPIN=0.7;
+  const ease=u=>u<0.5?2*u*u:1-2*(1-u)*(1-u);
+  const lerp=(a,b,u)=>a+(b-a)*u;
+
+  let jobs=0, jt=0, to=[n.x,n.y], from=to, vat=VATS[0];
+  const pick=()=>{
+    from=to; vat=VATS[(jobs%2)*4+Math.floor(rj()*4)]; jobs++;
+    to=[X(-0.19+0.38*rj()), Y(-0.32+0.64*rj())];
+    bead.setAttribute("fill",vat.c);
+  };
+  pick();
+
+  let clk=0, fired=0, full=-1, fl=-1;
+  const land=()=>{
+    const c=vat.c, p=P(to[0],to[1],zs+0.001);
+    [ring,burst].forEach(e=>{ e.setAttribute("cx",f1(p[0])); e.setAttribute("cy",f1(p[1])); });
+    ring.setAttribute("stroke",c); burst.setAttribute("fill",c); fl=0;
+    dot.forEach(d=>{ if(Math.hypot(d.x-to[0],d.y-to[1])<REACH){ d.c=c; d.age=0; } });
+    if(full<0) for(let k=0;k<BURST&&fired<NF;k++) files[fired++].tl=clk+k*GAPF;
+  };
+
+  let gx=gx0, gy=gy0, gz=ZHI, carry=0;
+  const pose=t=>{
+    if(t<GO){ const e=ease(t/GO); gx=lerp(from[0],vat.x,e); gy=lerp(from[1],vat.y,e); gz=ZHI; carry=0; }
+    else if(t<GO+DIP){ gx=vat.x; gy=vat.y; gz=lerp(ZHI,ZLO,ease((t-GO)/DIP)); carry=0; }
+    else if(t<GO+2*DIP){ gx=vat.x; gy=vat.y; gz=lerp(ZLO,ZHI,ease((t-GO-DIP)/DIP)); carry=1; }
+    else if(t<JOB-FALL){ const e=ease((t-GO-2*DIP)/CARRY);
+      gx=lerp(vat.x,to[0],e); gy=lerp(vat.y,to[1],e); gz=ZHI; carry=1; }
+    else { gx=to[0]; gy=to[1]; gz=ZHI; carry=2; }
+  };
+  /* where a file sits on the turning ball, and how near the reader it is.
+     The small lean on y tips the ball towards the reader, so a file crossing
+     the front is seen to cross it rather than slide sideways. */
+  const onBall=(F,T)=>{
+    const a=T*SPIN, c=Math.cos(a), s=Math.sin(a);
+    const ux=F.u[0]*c-F.u[1]*s, uy=F.u[0]*s+F.u[1]*c;
+    return [C[0]+ux*RS, C[1]-F.u[2]*RS*0.96+uy*RS*0.25, uy];
+  };
+  /* A FILE THAT HAS NOT MOVED IS NOT REWRITTEN — most of them are parked at
+     the door and invisible for most of the fill. */
+  const put=(F,x,y,sc,o)=>{
+    const tr=`translate(${f1(x)},${f1(y)}) scale(${(SC*sc).toFixed(3)})`, os=o.toFixed(2);
+    if(tr!==F.tr){ F.tr=tr; F.g.setAttribute("transform",tr); }
+    if(os!==F.op){ F.op=os; F.g.setAttribute("opacity",os); }
+  };
+
+  let T=0, skyO="";
   const run=dt=>{
-    t=(t+dt)%(2*PASS);
-    const nx=at(t), lo=Math.min(ax,nx)-REACH, hi=Math.max(ax,nx)+REACH;
-    ax=nx;
-    arm.setAttribute("transform",DX(ax-px0));
-    beam.setAttribute("transform",DX(ax-px0));
+    dt=Math.min(dt,0.1); T+=dt; clk+=dt;
+    jt+=dt;
+    if(jt>=JOB){ land(); jt-=JOB; if(jt>=JOB) jt=0; pick(); }
+    pose(jt);
+    const mv=DX(gx-gx0);
+    back.setAttribute("transform",mv); crane.setAttribute("transform",mv);
+    trol.setAttribute("transform",DY(gy-gy0));
+    grab.setAttribute("transform",`translate(0,${f2(-(gz-ZHI)*S*CZ)})`);
+    cable.setAttribute("y2",f1(P(gx0,gy0,gz+Z(0.05))[1]));
+
+    /* the base: in the claws while carried, then falling on its own */
+    if(carry===0){ bead.setAttribute("fill-opacity","0"); bead.setAttribute("stroke-opacity","0"); }
+    else {
+      const u=carry===2 ? (jt-(JOB-FALL))/FALL : 0;
+      const bz=carry===2 ? lerp(ZHI-HANG,zs,u*u) : gz-HANG;
+      const p=carry===2 ? P(to[0],to[1],bz) : P(gx,gy,bz);
+      bead.setAttribute("cx",f1(p[0])); bead.setAttribute("cy",f1(p[1]));
+      bead.setAttribute("fill-opacity","1"); bead.setAttribute("stroke-opacity",".6");
+    }
+
+    if(fl>=0){
+      fl+=dt; const u=Math.min(1,fl/FL);
+      const rx=(0.3+0.7*u)*REACH*1.8*S*C30*Math.SQRT2;
+      ring.setAttribute("rx",f2(rx)); ring.setAttribute("ry",f2(rx*0.5/C30));
+      ring.setAttribute("stroke-opacity",f2(0.9*(1-u)));
+      burst.setAttribute("r",f2((2+7*u)*SC));
+      burst.setAttribute("fill-opacity",f2(0.6*(1-u)*(1-u)));
+      if(u>=1) fl=-1;
+    }
     dot.forEach(d=>{
-      d.age = (d.x>=lo && d.x<=hi) ? 0 : Math.min(CAP,d.age+dt);
-      const o=(LO+(1-LO)*Math.exp(-d.age/TAU)).toFixed(2);
+      if(d.c) d.age=Math.min(CAP,d.age+dt);
+      const f=d.c||"var(--fg)", o=d.c ? (LO+(1-LO)*Math.exp(-d.age/TAU)).toFixed(2) : ".14";
+      if(f!==d.f){ d.f=f; d.node.setAttribute("fill",f); }
       if(o!==d.o){ d.o=o; d.node.setAttribute("fill-opacity",o); }
     });
+
+    /* the ball: fill, hold, fade, and start again empty */
+    if(fired===NF && full<0 && clk>=files[NF-1].tl+F1+F2) full=clk;
+    let so=1;
+    if(full>=0){
+      const since=clk-full;
+      if(since>HOLD+FADE){ files.forEach(F=>F.tl=null); fired=0; full=-1; clk=0; }
+      else if(since>HOLD) so=1-(since-HOLD)/FADE;
+    }
+    const sos=so.toFixed(2);
+    if(sos!==skyO){ skyO=sos; sky.setAttribute("opacity",sos); }
+    files.forEach(F=>{
+      const a=F.tl===null ? -1 : clk-F.tl;
+      if(a<0){ put(F,D[0],D[1],0.9,0); return; }
+      if(a<F1){ const e=1-(1-a/F1)*(1-a/F1);
+        put(F,lerp(D[0],L[0],e),lerp(D[1],L[1],e),0.9,0.85); return; }
+      const B=onBall(F,T), dsc=0.75+0.35*(B[2]+1)/2, dop=0.3+0.55*(B[2]+1)/2;
+      if(a<F1+F2){ const e=ease((a-F1)/F2);
+        put(F,lerp(L[0],B[0],e),lerp(L[1],B[1],e),lerp(0.9,dsc,e),lerp(0.85,dop,e)); return; }
+      put(F,B[0],B[1],dsc,dop);
+    });
   };
-  /* THE FIRST FRAME IS MID-SWEEP. A reader with motion off never advances the
-     clock, so what is drawn now is the whole station for them: run the arm
-     most of the way across first, so they see it with its trail behind it. */
-  for(let i=0;i<48;i++) run(1/30);
+  /* THE FIRST FRAME IS MID-BUILD. A reader with motion off never advances the
+     clock, so what is drawn now is the whole station for them: run until two
+     thirds of the ball is on, a line of files is just out of the door and
+     the flash of the base that sent them is still on the water. */
+  for(let i=0;i<4000;i++){
+    run(1/30);
+    if(fired>=24 && fired%BURST===0 && full<0){
+      const a=clk-files[fired-1].tl; if(a>=0.12 && a<0.2) break;
+    }
+  }
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.readcycle = drawReadCycle;
