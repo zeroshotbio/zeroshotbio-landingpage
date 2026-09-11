@@ -4743,7 +4743,7 @@ function setFanLine(L,dim,f){
    THE COLOURS ARE THE WHOLE POINT, and they are the DONOR PLATE'S OWN.
    What arrives here is the plate the round before handed over, wearing
    that round's lip: ninety-six wells and ninety-six different colours
-   in them, one per barcode, drawn by the same rampHue walk. It
+   in them, one per barcode, drawn by the same rampShade walk. It
    wore four treatment bands once, and four bands said the material was
    four things when it is ninety-six. Twelve tips lift twelve different
    colours a trip, the tube ends up holding every one of them, and every
@@ -4879,12 +4879,17 @@ function poolSplitBench(g,n,OPT){
      plateGrid runs row-major, so a slice of the list is a row of the plate and
      one trip of the head, and the map index is the same k round one walked the
      ramp with — same well, same colour. Each well keeps a handle on its own
-     liquid, because that is the thing the head takes away. */
+     liquid, because that is the thing the head takes away.
+     THE WALK IS rampShade, NOT rampHue, because that is what B2 and B4 now fill
+     their plates with: a donor left on hue alone was a different plate from the
+     one it claims to be, twelve colours dealt eight times beside a tile showing
+     ninety-six. Asked from the page for B3; B5 follows for free, since its donor
+     is B4's plate and B4 walks the same shade. */
   const deckSrc=skirtSlab(g,src,th,OPT.src);
   const WOP=0.85;              // full-strength: a tip's worth of it has to show
   const from=plateGrid(deckSrc,th,COLS,ROWS).map((w,k)=>{
     drawWell(g,w,false);
-    const hue=rampHue(k,COLS*ROWS);
+    const hue=rampShade(k,COLS*ROWS);
     const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
       ry:(w.e.ry*0.86).toFixed(2),fill:hue,"fill-opacity":WOP});
     g.appendChild(fill);
