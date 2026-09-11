@@ -4882,7 +4882,9 @@ function poolSplitBench(g,n,OPT){
      another road. The grey stays behind when the head drains a well, and that
      is what an emptied well should look like. */
   const deckSrc=skirtSlab(g,src,th,OPT.src);
-  const WOP=1;                 // B2's lit well: a tip's worth of it has to show
+  /* B2's lit well by default: a tip's worth of it has to show. The caller may
+     hand in the strength its own donor is seen at the station before — see B5 */
+  const WOP=OPT.wop||1;
   const from=plateGrid(deckSrc,th,COLS,ROWS).map((w,k)=>{
     drawWell(g,w,false);
     g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
@@ -5144,9 +5146,16 @@ DRAW.poolsplit = drawPoolSplit;
 
    THE DONOR PLATE IS B4'S --ch8, as asked from the page. It is the plate B3
    dealt into and B4 ligated, so it now wears the blue it wore at both of
-   those stations rather than a --ch9 of its own. */
+   those stations rather than a --ch9 of its own.
+
+   AND ITS WELLS WEAR B4'S PAINT, as asked from the page. The colours were
+   already B4's well for well — same rampShade, same row-major index — but
+   B4 rests at half strength over the grey for most of its loop, and the
+   donor laid the same colours at full, so it arrived here a louder plate
+   than the one beside it. It now takes B4's resting DIM; if that changes,
+   this .5 has to change with it. */
 function drawPoolSplit96(g,n){
-  poolSplitBench(g,n,{src:"var(--ch8)", dst:"var(--ch3)"});
+  poolSplitBench(g,n,{src:"var(--ch8)", dst:"var(--ch3)", wop:.5});
 }
 DRAW.poolsplit96 = drawPoolSplit96;
 
