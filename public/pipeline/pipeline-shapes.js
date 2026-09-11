@@ -8861,11 +8861,13 @@ function drawReadCycle(g,n){
   /* ---- TIMING: asked from the page to be "almost a continuous cycle", so
      the scan crosses in under a second and the gap between rounds is only
      long enough to see that one has ended — a tenth of a second held, a
-     fifth dimming, a beat of dark. LAG is the most any cluster trails the
-     line, FLARE how long a bulb takes to die back to its dot; both shrank
-     with the scan so the scatter behind the line keeps its proportions. */
-  const SCAN=0.9, LAG=0.2, FLARE=0.28, HOLD=0.1, DIM=0.2, DARK=0.12;
-  const CYC=SCAN+LAG+HOLD+DIM+DARK;
+     fifth dimming, a beat of dark. FLARE is how long a bulb takes to die
+     back to its dot, and it is short because the flash was asked to happen
+     only at the line's edge: each cluster fires the instant the line
+     reaches it, not scattered behind it, and not again until the next pass,
+     so the bloom is a thin band riding the line rather than a wake. */
+  const SCAN=0.9, FLARE=0.1, HOLD=0.3, DIM=0.2, DARK=0.12;
+  const CYC=SCAN+HOLD+DIM+DARK;
 
   /* THE SCAN LINE'S DIRECTION, needed by the clusters as well as the line:
      the line is level ON THE SCREEN, which on this plane is a line of
@@ -8882,14 +8884,11 @@ function drawReadCycle(g,n){
      colour under it, which is the flashbulb and dies back as it fades. */
   const rest=el("g",{}), lit=el("g",{opacity:"0"}), bloom=el("g",{}), dot=[];
   g.appendChild(rest);
-  /* a faint wash over the whole cell, so the flash is the surface lighting
-     and not only its dots */
-  add(lit,el("polygon",{points:pts(rimC),fill:"var(--fg)","fill-opacity":".05"}));
+  /* no wash over the whole cell any more: it lit the glass all at once as
+     the scan began, which is exactly the flash away from the line that was
+     asked to go */
   lit.appendChild(bloom);
   g.appendChild(lit);
-  /* the lags come off a stream of their own, so the clusters' places and
-     first colours are the ones they always had */
-  const rl=rng(7193);
   for(let a=0;a<NU;a++)for(let b=0;b<NV;b++){
     const u=-1+2*(a+0.5+(r()-0.5)*0.3)/NU, v=-1+2*(b+0.5+(r()-0.5)*0.3)/NV, k=Math.floor(r()*4);
     if(u*u+v*v>0.86) continue;
@@ -8901,7 +8900,7 @@ function drawReadCycle(g,n){
     const node=add(lit,el("circle",{cx,cy,r:f2(1.45*SC),fill:BASE[k],opacity:"0",
       stroke:"var(--bg)","stroke-width":f2(0.35*SC),"stroke-opacity":".6"}));
     dot.push({k, node, flare, on:"0", fl:"0",
-      due:SCAN*(u*NN[0]+v*NN[1]+1)/2 + LAG*rl()});
+      due:SCAN*(u*NN[0]+v*NN[1]+1)/2});
   }
 
   /* ---- THE SCAN LINE, a bright core over a wide faint one, running top to
@@ -8970,24 +8969,23 @@ function drawReadCycle(g,n){
   edge([P(x1,ya,0),P(x1,ya,hd),P(x1,yb,hd),P(x1,yb,0)],".9",1.1);
 
   /* ---- THE READS LEAVING, asked for from the page: grey strands out of the
-     door, flying about five grid units in a single line and gathering there
-     into a rotating cloud like a nebula, with the distance labelled. The line
-     is this station's now rather than C4's, so the door feeds one line and
-     not two.
+     door in a single line, gathering into a rotating cloud, with the
+     distance labelled. The line is this station's rather than C4's, so the
+     door feeds one line and not two.
 
-     IT LEAVES AT FORTY-FIVE DEGREES, into the open ground in front of the
-     row. Square out of the wall it would run through C4, C5 and C6 and end
-     on C7; at forty-five it goes straight down the screen, clear of all
-     four. LEN is five units at the authored width and a fraction of it at
-     any other, so a resize carries the cloud with it, and the label prints
-     what LEN actually is rather than promising five. */
-  const LEN=n.w*5/1.60, dir=[Math.SQRT1_2,Math.SQRT1_2], za=h*0.35, ym=Y(0.17);
-  const A=P(x1,ym,za), C=P(x1+dir[0]*LEN,ym+dir[1]*LEN,za);
-  /* the nebula is a disc seen obliquely, authored in screen pixels like C4's
-     sphere and sized by SC; the line stops at its near rim, so the strands
+     IT LEAVES STRAIGHT OUT, square to the wall and level, and the cloud is a
+     sphere — both asked for in place of a line running down the screen into
+     a flat disc. Two units was the length asked for; LEN is two at the
+     authored width and a fraction of it at any other, so a resize carries
+     the cloud with it, and the label prints what LEN actually is. The line
+     rides high in the doorway so the sphere, centred on it, sits on the
+     ground rather than through it. */
+  const LEN=n.w*2/1.60, dir=[1,0], za=h*0.66, ym=Y(0.17);
+  const RS=n.w*0.28, xc=x1+dir[0]*LEN;
+  const A=P(x1,ym,za), C=P(xc,ym,za);
+  /* the line stops a little inside the sphere's near side, so the strands
      are seen to arrive rather than to vanish under the haze */
-  const RX=48*SC, RY=22*SC;
-  const vl=Math.hypot(C[0]-A[0],C[1]-A[1]), E=[C[0]-(C[0]-A[0])/vl*RY*0.7, C[1]-(C[1]-A[1])/vl*RY*0.7];
+  const E=P(xc-RS*0.8,ym,za);
   const line=`M${f1(A[0])} ${f1(A[1])}L${f1(E[0])} ${f1(E[1])}`;
   add(g,el("path",{d:line,fill:"none",stroke:"var(--fg2)","stroke-width":f2(0.8*SC),"stroke-opacity":".25"}));
   /* one dashed path whose offset moves, as C4's stream was: a train of
@@ -8997,10 +8995,10 @@ function drawReadCycle(g,n){
     "stroke-opacity":".75","stroke-dasharray":`${f2(BW*SC)} ${f2(SPc*SC)}`,"stroke-dashoffset":"0"}));
 
   /* THE DISTANCE, on the ground: from the door's threshold out to the point
-     under the cloud, set off to the stream's right — the ground on its left
-     is under this box — with a tick at each end the way a drawing office
-     dimensions a run. */
-  const off=n.w*0.19, pr=[Math.SQRT1_2,-Math.SQRT1_2];
+     under the cloud, set off toward the front so it is not hidden under the
+     stream, with a tick at each end the way a drawing office dimensions a
+     run. */
+  const off=n.w*0.19, pr=[0,1];
   const g0=[x1+pr[0]*off, ym+pr[1]*off], g1=[g0[0]+dir[0]*LEN, g0[1]+dir[1]*LEN];
   const tk=n.w*0.05, at0=(p,s)=>P(p[0]+pr[0]*tk*s, p[1]+pr[1]*tk*s, 0);
   add(g,el("path",{d:`M${f1(P(x1,ym,0)[0])} ${f1(P(x1,ym,0)[1])}L${f1(at0(g0,1)[0])} ${f1(at0(g0,1)[1])}`+
@@ -9008,39 +9006,44 @@ function drawReadCycle(g,n){
     `M${f1(at0(g0,-1)[0])} ${f1(at0(g0,-1)[1])}L${f1(at0(g0,1)[0])} ${f1(at0(g0,1)[1])}`+
     `M${f1(at0(g1,-1)[0])} ${f1(at0(g1,-1)[1])}L${f1(at0(g1,1)[0])} ${f1(at0(g1,1)[1])}`,
     fill:"none",stroke:"var(--fg2)","stroke-width":f2(0.7*SC),"stroke-opacity":".7"}));
-  const lp=P(g0[0]+dir[0]*LEN*0.72+pr[0]*off*0.5, g0[1]+dir[1]*LEN*0.72+pr[1]*off*0.5, 0);
+  const lp=P(g0[0]+dir[0]*LEN*0.30+pr[0]*off*0.9, g0[1]+dir[1]*LEN*0.30+pr[1]*off*0.9, 0);
   const dim=add(g,el("text",{x:f1(lp[0]),y:f1(lp[1]),"font-size":f2(4.6*SC),"font-weight":"700",
     fill:"var(--fg2)",stroke:"var(--bg)","stroke-width":f2(1.1*SC),"stroke-opacity":".85",
     "paint-order":"stroke","stroke-linejoin":"round"}));
   dim.textContent=`${+LEN.toFixed(1)} units from the door`;
 
-  /* ---- THE NEBULA: a haze of the reads' grey, three faint ellipses turned
-     against each other so no edge reads as drawn, and in it the reads on
-     two loose spiral arms, packed toward the core. The disc turns; the
-     near half is drawn a little larger and brighter than the far, which is
-     all that makes a flat ring of bars read as a disc seen from above. */
-  [[-5,2,1.15,1.10,-8,".07"],[6,-3,0.90,0.85,10,".09"],[0,1,0.55,0.60,0,".12"]]
-    .forEach(([ox,oy,a,b,rot,o])=>{
-      const cx=f1(C[0]+ox*SC), cy=f1(C[1]+oy*SC);
-      add(g,el("ellipse",{cx,cy,rx:f1(RX*a),ry:f1(RY*b),
-        transform:`rotate(${rot} ${cx} ${cy})`,fill:"var(--fg2)","fill-opacity":o}));
-    });
-  const rn=rng(90417), neb=[];
-  for(let i=0;i<70;i++){
-    const rad=0.12+0.88*Math.pow(rn(),0.7), th=(i%2)*Math.PI+rad*2.6+(rn()-0.5)*0.9;
-    const grp=add(g,el("g",{transform:`translate(${f1(C[0])},${f1(C[1])}) scale(${SC.toFixed(4)})`}));
-    const bar=add(grp,el("rect",{x:f2(-BW/2),y:f2(-BH/2),width:f2(BW),height:f2(BH),
-      fill:"var(--fg2)","fill-opacity":"0"}));
-    neb.push({grp, bar, rad, th, o:""});
+  /* ---- THE CLOUD, a sphere in world units, so the projection shapes it
+     the way it shapes the boxes. The haze is three faint discs of the
+     sphere's own outline — which under this projection is an ellipse, its
+     axes read straight off P's two rows — nested so no edge reads as drawn.
+     In it the reads sit through the ball, packed toward its shell, and the
+     ball turns about the vertical; each read is a short bar laid along its
+     orbit, and the near side is drawn a little heavier and brighter than
+     the far, which is what makes a ring of bars read as a solid turning
+     rather than a flat one swinging. */
+  const HX=RS*S*C30*Math.SQRT2, HY=RS*S*Math.sqrt(0.5+CZ*CZ);
+  [[1.12,".06"],[0.85,".08"],[0.5,".11"]].forEach(([a,o])=>
+    add(g,el("ellipse",{cx:f1(C[0]),cy:f1(C[1]),rx:f1(HX*a),ry:f1(HY*a),
+      fill:"var(--fg2)","fill-opacity":o})));
+  const rn=rng(90417), neb=[], BL=n.w*0.045;
+  for(let i=0;i<90;i++){
+    const rad=RS*Math.pow(0.15+0.85*rn(),0.4), cz=2*rn()-1, th=rn()*Math.PI*2;
+    const bar=add(g,el("line",{x1:f1(C[0]),y1:f1(C[1]),x2:f1(C[0]+1),y2:f1(C[1]),
+      stroke:"var(--fg2)","stroke-width":f2(BH*SC),"stroke-linecap":"round","stroke-opacity":"0"}));
+    neb.push({bar, rad, cz, th, o:""});
   }
   const SPIN=Math.PI*2/12;
   const turn=ph=>neb.forEach(R=>{
-    const a=R.th+ph, c=Math.cos(a), s=Math.sin(a);
-    const x=C[0]+c*R.rad*RX, y=C[1]+s*R.rad*RY, dep=(s+1)/2;
-    const rot=Math.atan2(c*RY,-s*RX)*180/Math.PI;          // along the arm's orbit
-    R.grp.setAttribute("transform",`translate(${f1(x)},${f1(y)}) rotate(${f1(rot)}) scale(${(SC*(0.8+0.35*dep)).toFixed(4)})`);
-    const o=(0.3+0.45*dep).toFixed(2);
-    if(o!==R.o){ R.o=o; R.bar.setAttribute("fill-opacity",o); }
+    const a=R.th+ph, c=Math.cos(a), s=Math.sin(a), q=R.rad*Math.sqrt(1-R.cz*R.cz);
+    const x=xc+c*q, y=ym+s*q, z=za+R.rad*R.cz;
+    const p0=P(x+s*BL,y-c*BL,z), p1=P(x-s*BL,y+c*BL,z);
+    /* the viewer looks down the x + y diagonal, so that is nearness */
+    const dep=((c+s)*Math.SQRT1_2*q/RS+1)/2;
+    R.bar.setAttribute("x1",f1(p0[0])); R.bar.setAttribute("y1",f1(p0[1]));
+    R.bar.setAttribute("x2",f1(p1[0])); R.bar.setAttribute("y2",f1(p1[1]));
+    const o=(0.25+0.55*dep).toFixed(2);
+    if(o!==R.o){ R.o=o; R.bar.setAttribute("stroke-opacity",o);
+      R.bar.setAttribute("stroke-width",f2(BH*SC*(0.7+0.5*dep))); }
   });
 
   /* ---- SURFACE TAGS, asked for from the page so a later request can name a
@@ -9091,7 +9094,7 @@ function drawReadCycle(g,n){
       dot.forEach(d=>{ d.k=(d.k+1+Math.floor(r()*3))%4;
         d.node.setAttribute("fill",BASE[d.k]); d.flare.setAttribute("fill",BASE[d.k]); });
     }
-    const e=SCAN+LAG+HOLD;
+    const e=SCAN+HOLD;
     const o = t<e ? Math.min(1,t/0.1) : t<e+DIM ? 1-ease((t-e)/DIM) : 0;
     const os=o.toFixed(2);
     if(os!==litO){ litO=os; lit.setAttribute("opacity",os); }
