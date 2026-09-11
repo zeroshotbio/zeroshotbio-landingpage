@@ -8358,251 +8358,300 @@ function drawSizeRun(g,n,o){
 DRAW.sizerun = drawSizeRun;
 
 /* ------------------------------------------------------------------
-   C1 · FRAGMENT AND END-PREP — one strand in, three blunt A-tailed pieces
-   out, and nothing added yet.
+   C1 · FRAGMENT AND END-PREP — out of B8a's full glass, one molecule is
+   picked, cut, scattered and repaired, and the piece carrying the barcode is
+   the one the reader is left looking at, with its A on.
 
-   THE BENCH IS BARE AGAIN, AT A REQUEST FROM THE PAGE: remove the white
-   chip, make the fragments the focus. The white chip was B8′a's cased
-   cycler, put back under the glass by an earlier request; it went the way
-   B8a's machine and C2's bench went, because nothing on this station can be
-   seen from outside a shut lid and the glass already tells all of it.
+   REDRAWN FROM "EDIT VISUAL", four beats in the request's own order: start on
+   the full circle of amplified DNA B8a ends on; focus in on one strand, drawn
+   now as parts — the cDNA a green block, BC1, BC2 and BC3 at one end of it,
+   bare DNA running off the other; cut it, leaving ragged ends, and let the
+   pieces float out until they fill the glass; repair the ends, come back in on
+   the cDNA–BC1–BC2–BC3 piece and put the A base on it.
 
-   THE ADAPTERS ARE GONE ON PURPOSE. The request says this step does not attach
-   anything new to the strand yet, and it is right about the picture: a fork
-   drawn here would be the next station's news told early. The station's name
-   still says "ligate adapters" because /pipeline owns the record; the drawing
-   stops at the end the adapter will grip.
+   THE OPENING IS B8a's LAST FRAME, NOT A LIKENESS OF IT. Same strand builder,
+   same scale, same scatter of headings, so the handover from the station two
+   back reads as the same tube. The focus is a zoom rather than a cut to a new
+   picture: the cloud grows about the chosen strand and turns it flat, the rest
+   leave through the rim, and only then does the drawing change to parts —
+   because a strand swapped for a diagram with nothing between them reads as a
+   different molecule.
 
-   SO THE GLASS CAME DOWN ONTO THE TILE, B8a's reasoning verbatim: a view of
-   nothing is not a view. It used to hang off the near front corner on two
-   grey leaders to the cycler, placed to clear the name above; with the
-   cycler gone the glass is the station, and a station stands on its own box.
-   The leaders went with the thing they pointed at.
+   THE BLOCKS ARE A DIAGRAM OF THE SAME MOLECULE, not a new one. The chips keep
+   B8's colours in B8's order and the gold keeps its drop, so the three small
+   rounded marks of the cloud are recognisably the three blocks up close. The
+   green is --ch5, nearer to BC3's --ch4 than anything else on the tile would
+   like, and kept apart from it by size: one long block against three short.
 
-   A CUT, THEN A REPAIR, THEN A BASE — THREE BEATS, BECAUSE THE REQUEST ASKED
-   FOR THREE. The cut is staggered: at each break the two strands part at
-   different points, so every new end has one strand standing proud of its
-   partner, which is what an enzymatic cut leaves and why end-prep exists.
-   Then each end squares up to its bottom strand: where the top strand stands
-   proud it is trimmed back to it, where it falls short it is filled out to
-   it, so both kinds of repair are on screen and every end finishes flat. The
-   cap is a rung across the pair, drawn once the two strands end together.
+   THE CUTS ALL FALL IN THE BARE ARM, and the last one a little short of the
+   cDNA, so the cDNA and the barcode stay whole on one piece and that piece
+   keeps a stub of plain duplex for the repair and the A to happen on. A cut
+   through the cDNA would be truer to a real fragmentation and would be a claim
+   about where it lands that the request did not make.
 
-   THE BLUE DOT IS ONE BASE, NOT A PART. It sits on the 3-prime strand of each
-   end — the top strand on a right end, the bottom on a left — because that is
-   where an A-tail is, and it is the only colour at the ends of the pieces
-   so the eye goes to the thing the next station needs. It shares --ch8 with
-   the first chip and is kept apart from it by shape and by distance: a round
-   dot at an end, never a rounded block in the middle. It is labelled once, outside the rim,
-   on the far-left end where nothing else on the map is reaching.
+   THE CUT IS STAGGERED: at each break the two strands part at different
+   points, so every new end has one strand standing proud of its partner —
+   the ragged edge the request asked for, and why end-prep exists. The repair
+   squares each end to its bottom strand, trimming where the top stands proud
+   and filling where it falls short, and a rung closes the pair. Every piece is
+   repaired, because the enzyme does not choose; only the barcoded one gets
+   the A drawn, because that is the piece the request follows.
 
-   THE STRAND IS CARRIED OVER, NOT DRAWN AGAIN. Asked for a fourth time, and
-   this time the request said the strand should be the one the previous
-   panel left — so the duplex runs on B8's spine, the wobble B8a's glass
-   fills with, in B8's --c-top, stretched to the glass's width. B9 and B9a
-   between here and there draw no strand, so there is no nearer one to match.
-   ASKED FOR A FIFTH TIME: "make the DNA look like the barcoded ones in B8a.
-   Its the same DNA being used. But make the strand from the barcode longer."
-   So the chips and the gold come on — B8a's three, B8a's size against the
-   strand, B8a's drop at the tip — and the arm running away from the barcode
-   is drawn out to about three times B8a's, on the same wobble carried on
-   past where B8a's strand stops, so the stretch B8a draws is still sample
-   for sample the stretch here. The length is what gives the cuts somewhere
-   to land: both fall in that arm, so the barcode stays whole on one piece,
-   because a cut through a chip would be a claim about which piece keeps the
-   barcode and the request makes none. The gold end gets no rung and no
-   dot — it was never cut, and it is already capped by the drop.
+   THE BLUE DOT IS ONE BASE, NOT A PART. It sits on the 3-prime strand of the
+   repaired end — the bottom strand, on a left end — shares --ch8 with BC1 and
+   is kept apart from it by shape and distance: a round dot at an end, never a
+   rounded block. It is labelled once, beside itself, inside the rim.
 
-   AND THE LOOP CUTS RATHER THAN UNDOING ITSELF: a strand does not re-anneal,
-   so the pieces fade and the whole strand comes back.
+   THE ADAPTERS ARE STILL NOT DRAWN. The station's name says "ligate adapters"
+   because /pipeline owns the record; a fork here would be the next station's
+   news told early, which an earlier request from the page ruled out.
 
-   Spends --ch8 and --c-top, declared on /molecular_pipe; this shape is worn
-   by that page's C1 alone.
+   AND THE LOOP CUTS RATHER THAN UNDOING ITSELF: fragments do not rejoin, so
+   the glass fades and the cloud comes back.
+
+   Spends --c-top, --ch3, --ch4, --ch5, --ch8 and --ch11, all declared on
+   /molecular_pipe; this shape is worn by that page's C1 alone.
    ------------------------------------------------------------------ */
 function drawFragmentLigate(g,n){
-  /* EVERY OFFSET IS A FRACTION OF THE NODE. Q is the one ruler the inset is
-     written in, so the glass and everything in it grows with the tile by one
-     number. Composed at w .72, d .72, h .4 — the tile C2 and B9 stand on. */
-  const Q=n.w*S, SC=n.w/0.72;
-  const DNA="var(--c-top)", ATAIL="var(--ch8)";
+  /* EVERY COORDINATE BELOW IS IN B8a's GLASS PIXELS AND SCALED BY BEING
+     SCALED: the lens group carries B8a's own zoom times n.w / .72, so the
+     ring, the cloud and the molecule all grow with the tile by one number.
+     Composed at w .72, d .72, h .4 — the tile B8a and B9 stand on. */
+  const SC=n.w/0.72, GS=SC*1.32;
+  const LX=52, LY=40;
+  const DNA="var(--c-top)", ATAIL="var(--ch8)", CDNA="var(--ch5)";
+  const CHIP=["var(--ch8)","var(--ch11)","var(--ch4)"];
   const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
   const clamp=x=>x<0?0:x>1?1:x;
-  const ease =x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  const r=rng(613);
 
-  /* ---- THE MAGNIFICATION, WHICH IS NOW THE WHOLE STATION ------------------
-     A thin solid ellipse, this map's idiom for a view drawn larger than life,
-     centred on the middle of the node's own box — through n.x, n.y and n.h,
-     so the three dimensions a resize changes still move it together.
-
-     THE RING IS B8a's RING, AT A REQUEST FROM THE PAGE: "make this a circle
-     like in B8a." It used to be a flat lozenge cut to the strand's length,
-     which read as a different instrument two stations on from B8a's glass.
-     So the radii are B8a's own — 52 by 40 at its zoom of 1.32, through SC so a
-     resize still grows it — and so are the line's weight and ink. The strand
-     is untouched and sits in the middle with room above and below it, which
-     is what B8a's rounder glass has around its own strands. */
-  const LRX=52*1.32*SC, LRY=40*1.32*SC;
+  /* ---- THE MAGNIFICATION, WHICH IS THE WHOLE STATION ----------------------
+     B8a's ring — radii, weight, ink — centred on the middle of the node's own
+     box, through n.x, n.y and n.h, so a resize moves it with the tile. */
   const [KX,KY]=P(n.x, n.y, n.h/2);
-  const lens=el("g",{transform:`translate(${KX.toFixed(1)},${KY.toFixed(1)})`});
+  const lens=el("g",{transform:
+    `translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${GS.toFixed(4)})`});
   g.appendChild(lens);
   /* nearly opaque: glass you can read the ground grid through is a hole in
      the drawing rather than a lens over it */
-  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LRX.toFixed(1),ry:LRY.toFixed(1),
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,
     fill:"var(--bg)","fill-opacity":".92"}));
+  /* the zoom throws the cloud far past the rim and it has to stop existing
+     there. Uniqued: a checker draws this shape twice into one document. */
+  const cid=`frgglass${++UID}`;
+  const cp=el("clipPath",{id:cid});
+  cp.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY}));
+  lens.appendChild(cp);
+  const stage=el("g",{"clip-path":`url(#${cid})`});
+  lens.appendChild(stage);
 
-  /* ---- THE MOLECULE, written in B8a's own strand units --------------------
-     One unit is what B8a's builder calls a pixel, so HL, the chips and the
-     gold are B8a's numbers verbatim; U turns a unit into Q, which keeps every
-     one of them a fraction of the node. The strand runs from -L to HL and
-     then the drop; MIDV is the middle of that, set on the lens centre. GAP is
-     how far each outer piece steps off the middle one, D is half the spacing
-     of the pair — the two strands follow one wave, because a duplex is one
-     thing that bends — and OV is half the stagger at a cut. */
-  const U=Q/25.5;
-  const HL=15, L=52, TIP=HL+5.4, MIDV=(TIP-L)/2;
-  const GAP=3.3, D=1.4, OV=2.0, DR=1.65;
-  const CHIP=["var(--ch8)","var(--ch11)","var(--ch4)"];
-  /* B8's spine, carried on: a sample every three units at sin(s·0.86)·2.1,
-     s counted from B8a's first point, straight between. On -15..15 that is
-     B8a's strand exactly; left of it the same wave keeps going, which is
-     what the same molecule with a longer arm has to look like */
-  const waveY=v=>{
-    const u=(v+HL)/3, s=Math.floor(u), f=u-s;
-    return Math.sin(s*0.86)*2.1*(1-f)+Math.sin((s+1)*0.86)*2.1*f;
+  /* ---- BEAT ONE: B8a's FULL GLASS ----------------------------------------
+     B8a's builder, B8a's FS, B8a's headings, and its emptiest-of-a-dozen
+     placement, so the opening frame is the frame B8a holds on. Strand 0 is
+     the one the reader is taken into; it sits a little off centre so the
+     focus visibly travels to it. */
+  const FS=0.66, HL=15, TIP=HL+5.4, NC=30;
+  const spine=k=>{ let d=`M ${-HL} 0`;
+    for(let s=1;s<=10;s++)
+      d+=` L ${(-HL+2*HL*(s/10)).toFixed(1)} ${(Math.sin(s*0.86+k)*2.1).toFixed(1)}`;
+    return d; };
+  const strand=(parent,k,x,y,a)=>{
+    const sg=el("g",{transform:`translate(${x.toFixed(1)},${y.toFixed(1)}) `+
+      `rotate(${a.toFixed(1)}) scale(${FS})`});
+    parent.appendChild(sg);
+    sg.appendChild(el("path",{d:spine(k),fill:"none",stroke:DNA,
+      "stroke-width":"1.5","stroke-opacity":".75","stroke-linecap":"round"}));
+    CHIP.forEach((c,i)=>sg.appendChild(el("rect",{x:(-8.4+i*6.2).toFixed(1),
+      y:"-1.9",width:"4.6",height:"3.8",rx:"1.1",fill:c,"fill-opacity":".9",
+      stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".5"})));
+    sg.appendChild(el("path",{d:`M ${HL-0.6} 0 C ${HL+1.4} -3.3 ${TIP} -2.2 ${TIP} 0 `+
+      `C ${TIP} 2.2 ${HL+1.4} 3.3 ${HL-0.6} 0 Z`,fill:"var(--ch3)",
+      "fill-opacity":".95",stroke:"var(--stroke)","stroke-width":".5",
+      "stroke-opacity":".5"}));
+    return sg;
   };
-  const EX=v=>((v-MIDV)*U).toFixed(2), EY=v=>(v*U).toFixed(2),
-        LW=px=>(px*SC).toFixed(2);
+  const cloud=el("g",{transform:"translate(0,0)"});
+  stage.appendChild(cloud);
+  const others=el("g",{}); cloud.appendChild(others);
+  const X0=6, Y0=-3, A0=-14;
+  const H=[{x:X0,y:Y0}];
+  const inside=(x,y,e)=>(x/LX)*(x/LX)+(y/LY)*(y/LY)<=e*e;
+  for(let i=1;i<NC;i++){
+    let best=null, bs=-1;
+    for(let c=0;c<12;c++){
+      const a=r()*6.283, d=Math.sqrt(r())*0.9;
+      const x=Math.cos(a)*LX*d, y=Math.sin(a)*LY*d;
+      if(!inside(x,y,0.9)) continue;
+      const s=H.reduce((m,o)=>Math.min(m,Math.hypot(o.x-x,o.y-y)),1e9);
+      if(s>bs){ bs=s; best={x,y}; }
+    }
+    H.push(best||{x:0,y:0});
+    strand(others, i*1.9, H[i].x, H[i].y, (r()-0.5)*288);
+  }
+  /* the chosen one last, so nothing in the cloud lies over it */
+  const one=strand(cloud, 0, X0, Y0, A0);
+
+  /* ---- BEAT TWO: THE SAME MOLECULE AS PARTS ------------------------------
+     A duplex from XL to XR: bare DNA on the left on a wave that flattens as it
+     reaches the cDNA, then the green block, the three barcode blocks and the
+     gold drop. D is half the spacing of the pair; both strands follow one
+     wave, because a duplex is one thing that bends. */
+  const D=1.8, BH=7, XL=-46, XC=-6, XC2=16, BW=6.4, BG=0.8, XR=XC2+3*(BW+BG)+0.8;
+  const waveY=x=>1.5*Math.sin(x*0.42)*clamp((XC-x)/6);
+  const f1=v=>v.toFixed(2);
   const rail=(a,b,off)=>{
     const N=Math.max(2,Math.ceil(Math.abs(b-a)));
     let d="";
     for(let i=0;i<=N;i++){ const v=a+(b-a)*i/N;
-      d+=(i?" L ":"M ")+EX(v)+" "+EY(waveY(v)+off); }
+      d+=(i?" L ":"M ")+f1(v)+" "+f1(waveY(v)+off); }
     return d;
   };
-  const mol=el("g",{});
-  lens.appendChild(mol);
+  const mol=el("g",{opacity:"0"});
+  stage.appendChild(mol);
 
-  /* NOT EVEN THIRDS — a nuclease cuts where it lands, and equal pieces read
-     as a ruler. Both breaks are in the long arm, clear of the first chip at
-     -8.4. The stagger flips between the two cuts so the top strand is proud
-     on one side of each break and short on the other. */
-  const r=rng(613);
-  const cuts=[-37,-21].map(v=>v+(r()-0.5)*3);
-  const brk=cuts.map((c,j)=>{ const s=j?-1:1; return {c, top:c+s*OV, bot:c-s*OV}; });
-  const ends=[{top:-L,bot:-L}, ...brk, {top:HL,bot:HL}];
+  /* NOT EVEN PIECES — a nuclease cuts where it lands, and equal pieces read as
+     a ruler. The stagger flips at every cut so the top strand is proud on one
+     side of each break and short on the other. */
+  const OV=1.4, DR=1.7;
+  const cuts=[-38,-31,-24,-17,-10].map(v=>v+(r()-0.5)*2);
+  const brk=cuts.map((c,j)=>{ const s=j%2?-1:1; return {c, top:c+s*OV, bot:c-s*OV}; });
+  const ends=[{top:XL,bot:XL}, ...brk, {top:XR,bot:XR}];
+  const KEEP=cuts.length;
+  /* where each piece's middle floats to, and how far it turns on the way:
+     spread so that between them they fill the glass, the long barcoded piece
+     across the middle and the five short ones around it */
+  const HOME=[[-32,-18,38],[2,-25,-22],[32,-17,16],[-26,22,-44],[24,24,28],[6,5,-3]];
 
-  /* ---- THE PIECES --------------------------------------------------------
-     Built whole: the three meet end to end, each strand's break against its
-     neighbour's, so before the cut it is one duplex. Every cap, dot and the
-     label is born at its finished place behind an opacity of zero; the ticker
-     moves groups and rewrites the two top rails' ends and creates nothing. */
-  const pieces=[0,1,2].map(k=>{
-    const A=ends[k], B=ends[k+1];
+  const pieces=ends.slice(0,-1).map((A,k)=>{
+    const B=ends[k+1];
     const grp=el("g",{transform:"translate(0,0)"});
     mol.appendChild(grp);
     /* the bottom strand never moves: it is where every end squares up to */
     grp.appendChild(el("path",{d:rail(A.bot,B.bot,D),fill:"none",stroke:DNA,
-      "stroke-width":LW(1.2),"stroke-opacity":".75","stroke-linecap":"butt"}));
+      "stroke-width":"1.3","stroke-opacity":".8","stroke-linecap":"butt"}));
     const top=el("path",{d:rail(A.top,B.top,-D),fill:"none",stroke:DNA,
-      "stroke-width":LW(1.2),"stroke-opacity":".75","stroke-linecap":"butt"});
+      "stroke-width":"1.3","stroke-opacity":".8","stroke-linecap":"butt"});
     grp.appendChild(top);
-    /* the barcode rides the last piece: B8a's three chips over the pair and
-       its gold drop at the tip, each sat on the wave where it falls */
-    if(k===2){
-      CHIP.forEach((c,i)=>{ const x0=-8.4+i*6.2, y=waveY(x0+2.3);
-        grp.appendChild(el("rect",{x:EX(x0),y:EY(y-1.9),width:EY(4.6),
-          height:EY(3.8),rx:EY(1.1),fill:c,"fill-opacity":".9",
-          stroke:"var(--stroke)","stroke-width":LW(.5),"stroke-opacity":".5"})); });
-      const y0=waveY(HL), yy=v=>EY(y0+v);
-      grp.appendChild(el("path",{d:`M ${EX(HL-0.6)} ${yy(0)} C ${EX(HL+1.4)} ${yy(-3.3)} `+
-        `${EX(TIP)} ${yy(-2.2)} ${EX(TIP)} ${yy(0)} C ${EX(TIP)} ${yy(2.2)} `+
-        `${EX(HL+1.4)} ${yy(3.3)} ${EX(HL-0.6)} ${yy(0)} Z`,fill:"var(--ch3)",
-        "fill-opacity":".95",stroke:"var(--stroke)","stroke-width":LW(.5),
+    let dot=null;
+    const labels=[];
+    if(k===KEEP){
+      grp.appendChild(el("rect",{x:XC,y:-BH/2,width:XC2-XC,height:BH,rx:"1.4",
+        fill:CDNA,"fill-opacity":".9",stroke:"var(--stroke)","stroke-width":".5",
         "stroke-opacity":".5"}));
+      CHIP.forEach((c,i)=>grp.appendChild(el("rect",{x:f1(XC2+BG+i*(BW+BG)),
+        y:-BH/2,width:BW,height:BH,rx:"1.4",fill:c,"fill-opacity":".9",
+        stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".5"})));
+      grp.appendChild(el("path",{d:`M ${f1(XR-0.8)} 0 C ${f1(XR+1.6)} -4 ${f1(XR+6)} -2.7 `+
+        `${f1(XR+6)} 0 C ${f1(XR+6)} 2.7 ${f1(XR+1.6)} 4 ${f1(XR-0.8)} 0 Z`,
+        fill:"var(--ch3)","fill-opacity":".95",stroke:"var(--stroke)",
+        "stroke-width":".5","stroke-opacity":".5"}));
+      /* the request names the parts, so the parts are named — small and
+         grey, above the blocks, so they read as captions and not as parts */
+      [["cDNA",(XC+XC2)/2],["BC1·2·3",XC2+BG+1.5*(BW+BG)-BG/2]].forEach(([s,x])=>{
+        const t=el("text",{x:f1(x),y:f1(-BH/2-1.6),"text-anchor":"middle",
+          "font-family":MONO,"font-size":"4.4",fill:"var(--fg2)","fill-opacity":".85"});
+        t.textContent=s; grp.appendChild(t); labels.push(t);
+      });
     }
-    const caps=[], dots=[];
-    /* every end but the gold one, which this station never cut */
-    [[A.bot,-1],[B.bot,1]].filter(([e])=>e<HL).forEach(([e,dir])=>{
+    const caps=[];
+    /* every cut end; the two ends the molecule came with were never cut */
+    [[A.bot,-1],[B.bot,1]].filter(([e])=>e>XL&&e<XR).forEach(([e])=>{
       const y=waveY(e);
-      const cap=el("line",{x1:EX(e),y1:EY(y-D),x2:EX(e),y2:EY(y+D),stroke:DNA,
-        "stroke-width":LW(1.3),"stroke-opacity":"0","stroke-linecap":"butt"});
-      /* on the 3-prime strand: top on a right end, bottom on a left */
-      const dot=el("circle",{cx:EX(e+dir*DR),cy:EY(y+(dir>0?-D:D)),
-        r:(DR*U).toFixed(2),fill:ATAIL,"fill-opacity":"0"});
-      grp.appendChild(cap); grp.appendChild(dot);
-      caps.push(cap); dots.push(dot);
+      const cap=el("line",{x1:f1(e),y1:f1(y-D),x2:f1(e),y2:f1(y+D),stroke:DNA,
+        "stroke-width":"1.4","stroke-opacity":"0","stroke-linecap":"butt"});
+      grp.appendChild(cap); caps.push(cap);
     });
-    return {grp, top, caps, dots, A, B,
-            /* apart along the molecule, because the break is the news; the
-               small rise stops three pieces on one axis reading as a dash */
-            open:(k-1)*GAP, rise:(r()-0.5)*2.5};
+    if(k===KEEP){
+      /* on the 3-prime strand, which on a left end is the bottom one */
+      dot=el("circle",{cx:f1(A.bot-DR),cy:f1(waveY(A.bot)+D),r:DR,
+        fill:ATAIL,"fill-opacity":"0"});
+      grp.appendChild(dot);
+    }
+    const h=HOME[k];
+    return {grp, top, caps, dot, labels, A, B, mid:(A.bot+B.bot)/2,
+            hx:h[0]+(r()-0.5)*4, hy:h[1]+(r()-0.5)*4, ha:h[2]+(r()-0.5)*10,
+            ph:r()*6.283};
   });
 
   /* the cut marks follow the stagger — a step, not a slice — and stay where
-     the cut was rather than riding off with a piece. Grey like the leaders:
-     they are the drawing pointing, not part of the molecule */
+     the cut was rather than riding off with a piece. Grey: they are the
+     drawing pointing, not part of the molecule */
   const ticks=brk.map(b=>{
     const y=waveY(b.c);
-    const e=el("path",{d:`M ${EX(b.top)} ${EY(y-D-3.3)} L ${EX(b.top)} ${EY(y)}`+
-      ` L ${EX(b.bot)} ${EY(y)} L ${EX(b.bot)} ${EY(y+D+3.3)}`,fill:"none",
-      stroke:"var(--fg2)","stroke-width":LW(1),"stroke-opacity":"0"});
+    const e=el("path",{d:`M ${f1(b.top)} ${f1(y-D-3.6)} L ${f1(b.top)} ${f1(y)}`+
+      ` L ${f1(b.bot)} ${f1(y)} L ${f1(b.bot)} ${f1(y+D+3.6)}`,fill:"none",
+      stroke:"var(--fg2)","stroke-width":".9","stroke-opacity":"0"});
     mol.appendChild(e); return e;
   });
 
-  /* THE ONE LABEL, inside the rim beside the far-left dot, with a hair leader
-     so it names that dot rather than the glass. It used to stand just
-     outside the rim, and a leader crossing the boundary read as the A-tail
-     itself poking out of the lens: "make sure the strands fit inside the
-     circle." The gap between that dot and the rim is room enough for a
-     short leader and the letter, so everything the glass shows stays in it. */
-  const p0=pieces[0], ly=waveY(p0.A.bot)+D+p0.rise;
-  const lx=p0.A.bot-DR*2+p0.open;
-  const tag=el("g",{opacity:"0"});
-  tag.appendChild(el("line",{x1:EX(lx),y1:EY(ly),x2:(-LRX+0.34*Q).toFixed(2),
-    y2:EY(ly),stroke:"var(--fg2)","stroke-width":LW(.7),"stroke-opacity":".6"}));
-  const lb=el("text",{x:(-LRX+0.30*Q).toFixed(2),y:EY(ly+2.3),"text-anchor":"end",
-    "font-family":MONO,"font-size":(0.26*Q).toFixed(2),fill:ATAIL});
-  lb.textContent="A"; tag.appendChild(lb);
-  lens.appendChild(tag);
+  /* THE ONE LABEL, beside the dot where the focused piece finishes. FZ is
+     how far the last beat comes in on that piece; the label is placed from
+     the same numbers the ticker lands the dot with, so the two meet. */
+  const FZ=1.3, K=pieces[KEEP];
+  const ax=FZ*(K.A.bot-DR-K.mid), ay=FZ*(waveY(K.A.bot)+D);
+  const tag=el("text",{x:f1(ax-DR*FZ-1.6),y:f1(ay+2.2),"text-anchor":"end",
+    "font-family":MONO,"font-size":"6.2",fill:ATAIL,opacity:"0"});
+  tag.textContent="A";
+  stage.appendChild(tag);
 
   /* the boundary last, so nothing inside is drawn over its line */
-  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LRX.toFixed(1),ry:LRY.toFixed(1),
-    fill:"none",stroke:"var(--fg2)","stroke-width":"1.5","stroke-opacity":".85"}));
+  lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LX,ry:LY,fill:"none",
+    stroke:"var(--fg2)","stroke-width":"1.5","stroke-opacity":".85"}));
 
-  /* ---- TIMING — the request's own: cut 2, ragged hold 2, repair 2, base 1,
-     finished hold 3. WHOLE is a breath of uncut strand so the cut has
-     something to happen to; BACK is the fade the loop needs. */
-  const WHOLE=0.9, CUT=2.0, RAG=2.0, TRIM=2.0, DOT=1.0, HOLD=3.0, BACK=0.35;
-  const t1=WHOLE, t2=t1+CUT, t3=t2+RAG, t4=t3+TRIM, t5=t4+DOT, t6=t5+HOLD,
-        T=t6+BACK;
-  const place=t=>{
-    const part=ease(clamp((t-t1-0.4)/(CUT-0.4)));
-    const f=ease(clamp((t-t3)/TRIM));
-    const dt=ease(clamp((t-t4)/DOT));
-    mol.setAttribute("opacity",
-      (t<t6 ? clamp(t/0.3) : clamp(1-(t-t6)/BACK)).toFixed(2));
-    pieces.forEach(p=>{
-      p.grp.setAttribute("transform",
-        `translate(${EY(p.open*part)},${EY(p.rise*part)})`);
+  /* ---- TIMING — cloud, focus, parts, cut, float, ragged hold, repair, focus
+     on the barcoded piece, the A, a hold on the finished frame, and a fade
+     back to the cloud. PLACEMENT IS A PURE FUNCTION OF THE CLOCK, so a frame
+     long enough to skip a beat cannot leave a piece halfway to anywhere. */
+  const CLOUD=2.0, ZOOM=1.8, SHOW=1.4, CUT=0.5, FLOAT=2.0, RAG=0.8,
+        REP=1.6, FOC=1.6, BASE=0.9, HOLD=2.8, BACK=0.5, ZF=3.0;
+  const tz=CLOUD, tp=tz+ZOOM, tc=tp+SHOW, tf=tc+CUT, tr=tf+FLOAT+RAG,
+        tg=tr+REP, ta=tg+FOC, th=ta+BASE, tb=th+HOLD, T=tb+BACK;
+  const place=(t,ph)=>{
+    const out=t<tb?1:clamp(1-(t-tb)/BACK);
+    /* the cloud grows about the chosen strand and turns it flat; the rest
+       leave through the rim, and the strand hands over to its parts */
+    const e=ease(clamp((t-tz)/ZOOM)), x=clamp((e-0.55)/0.45);
+    cloud.setAttribute("transform",`scale(${(1+(ZF-1)*e).toFixed(3)}) `+
+      `rotate(${(-A0*e).toFixed(2)}) translate(${f1(-X0*e)},${f1(-Y0*e)})`);
+    cloud.setAttribute("opacity",(clamp(t/0.4)*(t<tp?1:0)).toFixed(2));
+    others.setAttribute("opacity",clamp(1-e*1.4).toFixed(2));
+    one.setAttribute("opacity",(1-x).toFixed(2));
+    mol.setAttribute("opacity",(x*out).toFixed(2));
+
+    const m=ease(clamp((t-tf)/FLOAT)), f=ease(clamp((t-tr)/REP)),
+          gz=ease(clamp((t-tg)/FOC)), dt=ease(clamp((t-ta)/BASE));
+    pieces.forEach((p,k)=>{
+      const keep=k===KEEP;
+      /* afloat, each piece bobs a little, so the scatter reads as a volume */
+      const bob=m*(1-gz);
+      let px=p.mid+(p.hx-p.mid)*m+Math.cos(ph*0.8+p.ph)*0.9*bob,
+          py=p.hy*m+Math.sin(ph*0.6+p.ph)*0.9*bob, pa=p.ha*m, sc=1;
+      /* the last focus: the barcoded piece comes to the middle and closer, the
+         rest carry on outward and go */
+      if(keep){ px*=1-gz; py*=1-gz; pa*=1-gz; sc=1+(FZ-1)*gz; }
+      else { px*=1+0.5*gz; py*=1+0.5*gz;
+             p.grp.setAttribute("opacity",(1-gz).toFixed(2)); }
+      p.grp.setAttribute("transform",`translate(${f1(px)},${f1(py)}) `+
+        `rotate(${pa.toFixed(1)}) scale(${sc.toFixed(3)}) translate(${f1(-p.mid)},0)`);
       p.top.setAttribute("d",rail(p.A.top+(p.A.bot-p.A.top)*f,
                                   p.B.top+(p.B.bot-p.B.top)*f,-D));
       /* the rung arrives as the two strands come level, not before */
       p.caps.forEach(c=>c.setAttribute("stroke-opacity",(0.85*clamp((f-0.7)/0.3)).toFixed(2)));
-      p.dots.forEach(c=>{
-        c.setAttribute("r",(DR*U*(0.3+0.7*dt)).toFixed(2));
-        c.setAttribute("fill-opacity",(0.95*clamp(dt/0.4)).toFixed(2));
-      });
+      if(p.dot){
+        p.dot.setAttribute("r",(DR*(0.3+0.7*dt)).toFixed(2));
+        p.dot.setAttribute("fill-opacity",(0.95*clamp(dt/0.4)).toFixed(2));
+      }
     });
-    const tk=t<t1 ? 0 : clamp((t-t1)/0.3)*clamp(1-part/0.5);
+    const tk=t<tc ? 0 : clamp((t-tc)/0.25)*clamp(1-m/0.4);
     ticks.forEach(e=>e.setAttribute("stroke-opacity",(0.75*tk).toFixed(2)));
-    tag.setAttribute("opacity",(clamp((t-t4-0.3)/0.5)*
-      (t<t6?1:clamp(1-(t-t6)/BACK))).toFixed(2));
+    tag.setAttribute("opacity",(clamp((t-ta-0.3)/0.5)*out).toFixed(2));
   };
   /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion
      never advances it, so the starting frame is the whole station for that
-     reader — the finished hold: three blunt pieces, five blue ends, one A. */
-  let t=t5+HOLD*0.5;
-  const run=dt=>{ t=(t+dt)%T; place(t); };
+     reader — the finished hold: the barcoded piece, repaired, with its A. */
+  let t=th+HOLD*0.5, ph=0;
+  const run=dt=>{ t=(t+dt)%T; ph+=dt*1.7; place(t,ph); };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }

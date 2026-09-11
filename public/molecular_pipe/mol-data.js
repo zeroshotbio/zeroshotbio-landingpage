@@ -285,7 +285,9 @@ const NODES = [
    this prose. One request stopped the glass at blunt, A-tailed ends, with
    no adapter drawn — the ligation is left to the next station's picture —
    and a later one took the cycler off and set the glass on the tile; the
-   latest rounded the glass into B8a's ring. The record still names it because the
+   next rounded the glass into B8a's ring; the latest opens on B8a's full glass,
+   focuses on one strand drawn as cDNA and barcode blocks, and follows the
+   barcoded piece through the cut and repair to its A. The record still names it because the
    protocol does; nothing below ever leaned on the drawing, and none of the
    three sentences names an instrument. */
 {id:"FRG", key:"C1", group:"Sequencing library prep", shape:"fragmentligate", name:"Fragment, end-prep, ligate adapters", x:15.6, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
