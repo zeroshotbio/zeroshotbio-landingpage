@@ -6076,24 +6076,14 @@ function drawCapture(g,n){
      and a redraw is the only reason this function is running again. Composed
      at w .72, d .72, h .44.
 
-     THE RACK AND THE GLASS STAND SIDE BY SIDE, ABOUT THE ANCHOR. Asked for
-     from the page, after B7: the glass hung straight under the rack, so the
-     station was a column with the anchor at its top. Now the glass is left
-     of the anchor and the rack right of it, equally far out on screen, so the
-     handle and label sit between the two things they name.
-
-     LEVEL, AND MIRRORED BY THEIR NEAR EDGES. Asked for again: the glass had
-     stepped down from the rack, and it was mirrored by centre, so a ring
-     twice the rack's width reached back across the anchor and only the rack
-     looked centred. Now the two share one height and the anchor sits in a gap
-     that is the same on both sides — the glass's right-hand bar stands as far
-     left of it as the rack's left corner stands right.
-
-     THE PAIR SITS A STEP BELOW THE ANCHOR because level at the rack's old
-     height it does not fit: B7's tube stand closes off the left and B8a's
-     glass the right, and the ring came down onto B7's plastic. Dropped by
-     just over a unit, the left bar clears the stand's near corner and the
-     rack, pulled in a little, stops short of B8a's ring.
+     THE GLASS IS THE ANCHOR, AND THE RACK STANDS LEFT OF IT. Asked for from
+     the page, after two passes that hung the pair either side of the anchor:
+     the glass is the focal point of the station, so its centre is the node's
+     own ground point and a drag on the node moves the glass first. The rack
+     stands level with it on the left, its right-hand corner three units clear
+     of the glass's left magnet bar, and that gap is dimensioned on the page.
+     Everything is solved off the glass rather than placed beside it, so a
+     resize keeps the gap at three units of the size the node is drawn at.
 
      TWO STRIPS OF EIGHT, WHICH IS WHAT B7 NEXT DOOR SET DOWN. The eight
      sublibraries are split into sixteen tubes there and nothing between the
@@ -6101,8 +6091,21 @@ function drawCapture(g,n){
      plastic on its way across the tile. The two rows straddle where the one
      row stood — the block keeps its own footprint, and the near row is still
      well inside the near face. */
-  const rack={x:n.x+n.w*3.204, y:n.y+n.d*2.021,
-              w:n.w*1.55, d:n.d*0.56, h:n.h*0.50, tubes:8, strips:2,
+  const LX=53, LY=42, MG=2.6, MW=6.2, MH=27;
+  const [KX,KY]=P(n.x, n.y, 0);
+  /* THE GAP IS A WORLD LENGTH. Level on screen is the ground diagonal on this
+     projection, where a unit is √2·S·cos30 pixels across rather than S, so
+     that is what the three units are measured along — the label is then the
+     truth about the ground, not about the screen. */
+  const GAP=n.w*3/0.72, GPX=GAP*Math.SQRT2*S*C30, OUT=(LX+MG+MW)*SC;
+  const rw=n.w*1.55, rd=n.d*0.56, rh=n.h*0.50;
+  /* the rack's centre from where its right-hand corner and its middle have to
+     land on screen: across is x−y, down is x+y, so the two solve directly.
+     Its middle is block and tubes together, which is what the eye takes for
+     the rack, and that is what is level with the glass's centre. */
+  const across=(-OUT-GPX)/(S*C30)-(rw+rd)/2, down=rh*1.2*CZ/0.5;
+  const rack={x:n.x+(across+down)/2, y:n.y+(down-across)/2,
+              w:rw, d:rd, h:rh, tubes:8, strips:2,
               mag:"var(--ch1)"};
   const T=magnetRack(g, rack);
 
@@ -6132,9 +6135,10 @@ function drawCapture(g,n){
      tubes, so it rests at REST and draws heavier, scaled with the node — the
      same answer B8a's handover got for the same complaint. */
   const REST=0.55;
-  /* from the back strip's FIRST tube since the rack moved right: the last one
-     would now throw the arc back across every rim in the strip to get there */
-  const from=T.rims[0];
+  /* from the back strip's LAST tube, now the rack stands left of the glass:
+     B8′'s strip is up and to the right, and the first would throw the arc
+     back across every rim in the strip to get there */
+  const from=T.rims[rack.tubes-1];
   const hand=flowLine(g, [from.x, from.y-from.ry],
     P(n.x-n.w*0.57, n.y-n.d*0.94, n.h*0.62), "var(--fg2)", SC);
   hand.line.setAttribute("stroke-width",(1.6*SC).toFixed(2));
@@ -6154,21 +6158,14 @@ function drawCapture(g,n){
      authored at. A resize moves the glass and grows it, and everything in it
      travels with the transform rather than with a number somebody has to
      remember to change. */
-  const LX=53, LY=42, MG=2.6, MW=6.2, MH=27;
-  /* placed off the rack rather than off numbers of its own, so the mirror
-     holds through a resize: the ring's outer bar ends as far left of the
-     anchor as the rack's left corner is right of it, and the ring's centre
-     is level with the rack's middle — block and tubes together, which is
-     what the eye takes for the rack — see the note at the top */
-  const [AX]=P(n.x, n.y, 0);
-  const RHW=(rack.w+rack.d)/2*S*C30, [RCX,RCY]=P(rack.x, rack.y, rack.h*1.2);
-  const KX=AX-(RCX-RHW-AX)-(LX+MG+MW)*SC, KY=RCY;
-  /* the leaders name ONE tube — the near strip's left-hand one, which is the
+  /* the glass's centre, KX KY, is set with the rack at the top of this
+     function: it is the anchor and the rack is solved from it */
+  /* the leaders name ONE tube — the near strip's right-hand one, which is the
      tube closest to the glass and the only end of the rack a leader can reach
      without crossing plastic standing in front of it — and they start ON the
      boundary rather than inside it, aimed at that tube's own rim, so glass
      that has moved or grown still points at the plastic */
-  const anchor=T.rims[T.near];
+  const anchor=T.rims[T.near+rack.tubes-1];
   [-1,1].forEach(s=>{
     const tx=anchor.x+s*anchor.rx, ty=anchor.y;
     const vx=tx-KX, vy=ty-KY, u=1/Math.hypot(vx/(LX*SC), vy/(LY*SC));
@@ -6176,6 +6173,27 @@ function drawCapture(g,n){
       x2:tx.toFixed(1),y2:ty.toFixed(1),stroke:"var(--fg2)",
       "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".4"}));
   });
+
+  /* THE THREE UNITS, dimensioned the way a drawing office does it and the
+     way C4 labels its run: an extension line down from each near edge — the
+     rack's right-hand corner, the glass's left bar — and the dimension line
+     between them, set below both so it crosses neither the leaders nor the
+     plastic. The label prints what GAP actually is, so a resized node says
+     its own number rather than the one it was authored at. */
+  const gx=KX-OUT, rxe=gx-GPX, DY=KY+(LY+8)*SC, TK=2.2*SC;
+  const [,RY]=P(rack.x+rack.w/2, rack.y-rack.d/2, 0);
+  const f1=v=>v.toFixed(1);
+  g.appendChild(el("path",{d:
+    `M${f1(rxe)} ${f1(RY+2*SC)}L${f1(rxe)} ${f1(DY+TK)}`+
+    `M${f1(gx)} ${f1(KY+(MH+2)*SC)}L${f1(gx)} ${f1(DY+TK)}`+
+    `M${f1(rxe)} ${f1(DY)}L${f1(gx)} ${f1(DY)}`,
+    fill:"none",stroke:"var(--fg2)","stroke-width":(0.7*SC).toFixed(2),"stroke-opacity":".7"}));
+  const dim=el("text",{x:f1((rxe+gx)/2),y:f1(DY+7*SC),"text-anchor":"middle",
+    "font-size":(5.5*SC).toFixed(2),"font-weight":"700",
+    fill:"var(--fg2)",stroke:"var(--bg)","stroke-width":(1.1*SC).toFixed(2),"stroke-opacity":".85",
+    "paint-order":"stroke","stroke-linejoin":"round"});
+  dim.textContent=`${+GAP.toFixed(1)} units`;
+  g.appendChild(dim);
 
   const lens=el("g",{transform:
     `translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${SC.toFixed(4)})`});
