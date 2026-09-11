@@ -8208,8 +8208,10 @@ DRAW.sizerun = drawSizeRun;
 
    THE BLUE DOT IS ONE BASE, NOT A PART. It sits on the 3-prime strand of each
    end — the top strand on a right end, the bottom on a left — because that is
-   where an A-tail is, and it is the only colour in the glass so the eye goes
-   to the thing the next station needs. It is labelled once, outside the rim,
+   where an A-tail is, and it is the only colour at the ends of the pieces
+   so the eye goes to the thing the next station needs. It shares --ch8 with
+   the first chip and is kept apart from it by shape and by distance: a round
+   dot at an end, never a rounded block in the middle. It is labelled once, outside the rim,
    on the far-left end where nothing else on the map is reaching.
 
    THE STRAND IS CARRIED OVER, NOT DRAWN AGAIN. Asked for a fourth time, and
@@ -8217,8 +8219,17 @@ DRAW.sizerun = drawSizeRun;
    panel left — so the duplex runs on B8's spine, the wobble B8a's glass
    fills with, in B8's --c-top, stretched to the glass's width. B9 and B9a
    between here and there draw no strand, so there is no nearer one to match.
-   The chips and the gold stay off: a cut through a chip would be a claim
-   about which piece keeps the barcode, and the request makes none.
+   ASKED FOR A FIFTH TIME: "make the DNA look like the barcoded ones in B8a.
+   Its the same DNA being used. But make the strand from the barcode longer."
+   So the chips and the gold come on — B8a's three, B8a's size against the
+   strand, B8a's drop at the tip — and the arm running away from the barcode
+   is drawn out to about three times B8a's, on the same wobble carried on
+   past where B8a's strand stops, so the stretch B8a draws is still sample
+   for sample the stretch here. The length is what gives the cuts somewhere
+   to land: both fall in that arm, so the barcode stays whole on one piece,
+   because a cut through a chip would be a claim about which piece keeps the
+   barcode and the request makes none. The gold end gets no rung and no
+   dot — it was never cut, and it is already capped by the drop.
 
    AND THE LOOP CUTS RATHER THAN UNDOING ITSELF: a strand does not re-anneal,
    so the pieces fade and the whole strand comes back.
@@ -8267,40 +8278,46 @@ function drawFragmentLigate(g,n){
   lens.appendChild(el("ellipse",{cx:"0",cy:"0",rx:LRX.toFixed(1),ry:LRY.toFixed(1),
     fill:"var(--bg)","fill-opacity":".92"}));
 
-  /* ---- THE MOLECULE, in multiples of Q from the lens centre ---------------
-     HL is half the strand; GAP is how far each outer piece steps off the
-     middle one, which with the dots on is what the rim has to hold. D is half
-     the spacing of the pair — the two strands follow one wave, because a
-     duplex is one thing that bends. OV is half the stagger at a cut. */
-  const HL=1.42, GAP=0.13, D=0.055, OV=0.08, DR=0.065;
-  /* B8's spine, sample for sample: eleven points, sin(s·0.86)·2.1 on a
-     half-length of 15, its first point on the axis, straight between. Only
-     the ruler changes — 15 there is HL here — so the wobble has the same
-     number of turns and the same height for its length as the strand B8a
-     leaves in its glass */
-  const SPN=Array.from({length:11},(_,s)=>s ? Math.sin(s*0.86)*2.1*HL/15 : 0);
+  /* ---- THE MOLECULE, written in B8a's own strand units --------------------
+     One unit is what B8a's builder calls a pixel, so HL, the chips and the
+     gold are B8a's numbers verbatim; U turns a unit into Q, which keeps every
+     one of them a fraction of the node. The strand runs from -L to HL and
+     then the drop; MIDV is the middle of that, set on the lens centre. GAP is
+     how far each outer piece steps off the middle one, D is half the spacing
+     of the pair — the two strands follow one wave, because a duplex is one
+     thing that bends — and OV is half the stagger at a cut. */
+  const U=Q/25.5;
+  const HL=15, L=52, TIP=HL+5.4, MIDV=(TIP-L)/2;
+  const GAP=3.3, D=1.4, OV=2.0, DR=1.65;
+  const CHIP=["var(--ch8)","var(--ch11)","var(--ch4)"];
+  /* B8's spine, carried on: a sample every three units at sin(s·0.86)·2.1,
+     s counted from B8a's first point, straight between. On -15..15 that is
+     B8a's strand exactly; left of it the same wave keeps going, which is
+     what the same molecule with a longer arm has to look like */
   const waveY=v=>{
-    const u=clamp((v+HL)/(2*HL))*10, s=Math.min(9,Math.floor(u));
-    return SPN[s]+(SPN[s+1]-SPN[s])*(u-s);
+    const u=(v+HL)/3, s=Math.floor(u), f=u-s;
+    return Math.sin(s*0.86)*2.1*(1-f)+Math.sin((s+1)*0.86)*2.1*f;
   };
-  const EX=v=>(v*Q).toFixed(2), LW=px=>(px*SC).toFixed(2);
+  const EX=v=>((v-MIDV)*U).toFixed(2), EY=v=>(v*U).toFixed(2),
+        LW=px=>(px*SC).toFixed(2);
   const rail=(a,b,off)=>{
-    const N=Math.max(2,Math.ceil(Math.abs(b-a)*30));
+    const N=Math.max(2,Math.ceil(Math.abs(b-a)));
     let d="";
     for(let i=0;i<=N;i++){ const v=a+(b-a)*i/N;
-      d+=(i?" L ":"M ")+EX(v)+" "+EX(waveY(v)+off); }
+      d+=(i?" L ":"M ")+EX(v)+" "+EY(waveY(v)+off); }
     return d;
   };
   const mol=el("g",{});
   lens.appendChild(mol);
 
   /* NOT EVEN THIRDS — a nuclease cuts where it lands, and equal pieces read
-     as a ruler. The stagger flips between the two cuts so the top strand is
-     proud on one side of each break and short on the other. */
+     as a ruler. Both breaks are in the long arm, clear of the first chip at
+     -8.4. The stagger flips between the two cuts so the top strand is proud
+     on one side of each break and short on the other. */
   const r=rng(613);
-  const cuts=[-0.47,0.43].map(v=>v+(r()-0.5)*0.08);
+  const cuts=[-37,-21].map(v=>v+(r()-0.5)*3);
   const brk=cuts.map((c,j)=>{ const s=j?-1:1; return {c, top:c+s*OV, bot:c-s*OV}; });
-  const ends=[{top:-HL,bot:-HL}, ...brk, {top:HL,bot:HL}];
+  const ends=[{top:-L,bot:-L}, ...brk, {top:HL,bot:HL}];
 
   /* ---- THE PIECES --------------------------------------------------------
      Built whole: the three meet end to end, each strand's break against its
@@ -8313,25 +8330,40 @@ function drawFragmentLigate(g,n){
     mol.appendChild(grp);
     /* the bottom strand never moves: it is where every end squares up to */
     grp.appendChild(el("path",{d:rail(A.bot,B.bot,D),fill:"none",stroke:DNA,
-      "stroke-width":LW(1.2),"stroke-opacity":".7","stroke-linecap":"butt"}));
+      "stroke-width":LW(1.2),"stroke-opacity":".75","stroke-linecap":"butt"}));
     const top=el("path",{d:rail(A.top,B.top,-D),fill:"none",stroke:DNA,
-      "stroke-width":LW(1.2),"stroke-opacity":".7","stroke-linecap":"butt"});
+      "stroke-width":LW(1.2),"stroke-opacity":".75","stroke-linecap":"butt"});
     grp.appendChild(top);
+    /* the barcode rides the last piece: B8a's three chips over the pair and
+       its gold drop at the tip, each sat on the wave where it falls */
+    if(k===2){
+      CHIP.forEach((c,i)=>{ const x0=-8.4+i*6.2, y=waveY(x0+2.3);
+        grp.appendChild(el("rect",{x:EX(x0),y:EY(y-1.9),width:EY(4.6),
+          height:EY(3.8),rx:EY(1.1),fill:c,"fill-opacity":".9",
+          stroke:"var(--stroke)","stroke-width":LW(.5),"stroke-opacity":".5"})); });
+      const y0=waveY(HL), yy=v=>EY(y0+v);
+      grp.appendChild(el("path",{d:`M ${EX(HL-0.6)} ${yy(0)} C ${EX(HL+1.4)} ${yy(-3.3)} `+
+        `${EX(TIP)} ${yy(-2.2)} ${EX(TIP)} ${yy(0)} C ${EX(TIP)} ${yy(2.2)} `+
+        `${EX(HL+1.4)} ${yy(3.3)} ${EX(HL-0.6)} ${yy(0)} Z`,fill:"var(--ch3)",
+        "fill-opacity":".95",stroke:"var(--stroke)","stroke-width":LW(.5),
+        "stroke-opacity":".5"}));
+    }
     const caps=[], dots=[];
-    [[A.bot,-1],[B.bot,1]].forEach(([e,dir])=>{
+    /* every end but the gold one, which this station never cut */
+    [[A.bot,-1],[B.bot,1]].filter(([e])=>e<HL).forEach(([e,dir])=>{
       const y=waveY(e);
-      const cap=el("line",{x1:EX(e),y1:EX(y-D),x2:EX(e),y2:EX(y+D),stroke:DNA,
+      const cap=el("line",{x1:EX(e),y1:EY(y-D),x2:EX(e),y2:EY(y+D),stroke:DNA,
         "stroke-width":LW(1.3),"stroke-opacity":"0","stroke-linecap":"butt"});
       /* on the 3-prime strand: top on a right end, bottom on a left */
-      const dot=el("circle",{cx:EX(e+dir*DR),cy:EX(y+(dir>0?-D:D)),
-        r:(DR*Q).toFixed(2),fill:ATAIL,"fill-opacity":"0"});
+      const dot=el("circle",{cx:EX(e+dir*DR),cy:EY(y+(dir>0?-D:D)),
+        r:(DR*U).toFixed(2),fill:ATAIL,"fill-opacity":"0"});
       grp.appendChild(cap); grp.appendChild(dot);
       caps.push(cap); dots.push(dot);
     });
     return {grp, top, caps, dots, A, B,
             /* apart along the molecule, because the break is the news; the
                small rise stops three pieces on one axis reading as a dash */
-            open:(k-1)*GAP, rise:(r()-0.5)*0.10};
+            open:(k-1)*GAP, rise:(r()-0.5)*2.5};
   });
 
   /* the cut marks follow the stagger — a step, not a slice — and stay where
@@ -8339,8 +8371,8 @@ function drawFragmentLigate(g,n){
      they are the drawing pointing, not part of the molecule */
   const ticks=brk.map(b=>{
     const y=waveY(b.c);
-    const e=el("path",{d:`M ${EX(b.top)} ${EX(y-D-0.13)} L ${EX(b.top)} ${EX(y)}`+
-      ` L ${EX(b.bot)} ${EX(y)} L ${EX(b.bot)} ${EX(y+D+0.13)}`,fill:"none",
+    const e=el("path",{d:`M ${EX(b.top)} ${EY(y-D-3.3)} L ${EX(b.top)} ${EY(y)}`+
+      ` L ${EX(b.bot)} ${EY(y)} L ${EX(b.bot)} ${EY(y+D+3.3)}`,fill:"none",
       stroke:"var(--fg2)","stroke-width":LW(1),"stroke-opacity":"0"});
     mol.appendChild(e); return e;
   });
@@ -8350,9 +8382,9 @@ function drawFragmentLigate(g,n){
   const p0=pieces[0], ly=waveY(p0.A.bot)+D+p0.rise;
   const lx=p0.A.bot-DR*2+p0.open;
   const tag=el("g",{opacity:"0"});
-  tag.appendChild(el("line",{x1:EX(lx),y1:EX(ly),x2:(-LRX-0.05*Q).toFixed(2),
-    y2:EX(ly),stroke:"var(--fg2)","stroke-width":LW(.7),"stroke-opacity":".6"}));
-  const lb=el("text",{x:(-LRX-0.09*Q).toFixed(2),y:EX(ly+0.09),"text-anchor":"end",
+  tag.appendChild(el("line",{x1:EX(lx),y1:EY(ly),x2:(-LRX-0.05*Q).toFixed(2),
+    y2:EY(ly),stroke:"var(--fg2)","stroke-width":LW(.7),"stroke-opacity":".6"}));
+  const lb=el("text",{x:(-LRX-0.09*Q).toFixed(2),y:EY(ly+2.3),"text-anchor":"end",
     "font-family":MONO,"font-size":(0.26*Q).toFixed(2),fill:ATAIL});
   lb.textContent="A"; tag.appendChild(lb);
   lens.appendChild(tag);
@@ -8375,13 +8407,13 @@ function drawFragmentLigate(g,n){
       (t<t6 ? clamp(t/0.3) : clamp(1-(t-t6)/BACK)).toFixed(2));
     pieces.forEach(p=>{
       p.grp.setAttribute("transform",
-        `translate(${EX(p.open*part)},${EX(p.rise*part)})`);
+        `translate(${EY(p.open*part)},${EY(p.rise*part)})`);
       p.top.setAttribute("d",rail(p.A.top+(p.A.bot-p.A.top)*f,
                                   p.B.top+(p.B.bot-p.B.top)*f,-D));
       /* the rung arrives as the two strands come level, not before */
       p.caps.forEach(c=>c.setAttribute("stroke-opacity",(0.85*clamp((f-0.7)/0.3)).toFixed(2)));
       p.dots.forEach(c=>{
-        c.setAttribute("r",(DR*Q*(0.3+0.7*dt)).toFixed(2));
+        c.setAttribute("r",(DR*U*(0.3+0.7*dt)).toFixed(2));
         c.setAttribute("fill-opacity",(0.95*clamp(dt/0.4)).toFixed(2));
       });
     });
@@ -8395,7 +8427,7 @@ function drawFragmentLigate(g,n){
   };
   /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion
      never advances it, so the starting frame is the whole station for that
-     reader — the finished hold: three blunt pieces, six blue ends, one A. */
+     reader — the finished hold: three blunt pieces, five blue ends, one A. */
   let t=t5+HOLD*0.5;
   const run=dt=>{ t=(t+dt)%T; place(t); };
   run(0);
