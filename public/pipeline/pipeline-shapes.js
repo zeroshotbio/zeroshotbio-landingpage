@@ -8808,6 +8808,73 @@ function drawReadCycle(g,n){
     a.push(at(Math.cos(t),Math.sin(t),z)); } return a; };
   const rimH=ring(h), rimC=ring(zc);
 
+  /* ---- EVERY EDGE IS ROUNDED, asked for from the page of both boxes, the
+     housing and the module behind it: the corners in plan, and each lid's
+     rim by a quarter-round stepped up in MK bands, each band the plan outline
+     inset and raised a step. box() returns those outlines, the floor first
+     and the flat top last, and paint() fills the strip between two of them. */
+  const MK=3, SIL=10;
+  /* a rounded rectangle in plan, seven points a corner whatever the radius,
+     so the outlines of every band line up point for point. Corners run back
+     left, back right, front right, front left; index 10 is the back right
+     round at forty-five degrees, where a wall turns away from the viewer. */
+  const plan=(xa,xb,ya,yb,rs)=>{ const a=[];
+    [[xa,ya,1,1],[xb,ya,-1,1],[xb,yb,-1,-1],[xa,yb,1,-1]].forEach(([cx,cy,sx,sy],c)=>{
+      const r=rs[c]; for(let i=0;i<=6;i++){ const t=Math.PI*(1+c/2)+i/6*Math.PI/2;
+        a.push([cx+sx*r+r*Math.cos(t), cy+sy*r+r*Math.sin(t)]); } });
+    return a; };
+  const rrect=(xa,xb,ya,yb,rs,z)=>plan(xa,xb,ya,yb,rs).map(q=>P(q[0],q[1],z));
+  const box=(xa,xb,ya,yb,r,top,f)=>{ const R=[{pl:plan(xa,xb,ya,yb,[r,r,r,r]),z:0}];
+    for(let j=0;j<=MK;j++){ const th=j/MK*Math.PI/2, s=f*(1-Math.cos(th)), rs=Math.max(r-s,0);
+      R.push({pl:plan(xa+s,xb-s,ya+s,yb-s,[rs,rs,rs,rs]), z:top-f+f*Math.sin(th)}); }
+    R.forEach(q=>{ q.p=q.pl.map(v=>P(v[0],v[1],q.z)); });
+    return R; };
+  const ring2d=ps=>ps.map(p=>`${f1(p[0])} ${f1(p[1])}`).join("L");
+  /* THE STRIP BETWEEN TWO OUTLINES is the region one covers and not both,
+     which on the screen is the band's own outline, so it goes down as one
+     even-odd path with no seam through it; the band behind is hidden later
+     by the bands above it and the lid. Over it, segment by segment where the
+     wall faces the viewer, the front's skin comes in as the outline turns
+     from the right side round the corner, and last the lid's skin at a, so
+     the rim reads as turning from wall to top. */
+  const paint=(A,B,a)=>{
+    add(g,el("path",{d:`M${ring2d(A.p)}Z M${ring2d(B.p)}Z`,fill:SKIN.works.right,"fill-rule":"evenodd"}));
+    const N=A.pl.length; let run=null;
+    const flush=()=>{ if(run) face(pts([...run.a,...run.b.reverse()]),SKIN.works.left,run.t); run=null; };
+    for(let i=0;i<N;i++){
+      const k=(i+1)%N, dx=A.pl[k][0]-A.pl[i][0], dy=A.pl[k][1]-A.pl[i][1], L=Math.hypot(dx,dy);
+      if(L<1e-9) continue;
+      const nx=dy/L, ny=-dx/L, t=+Math.min(1,Math.max(0,(1+ny-nx)/2)).toFixed(2);
+      if(nx+ny<=1e-6 || t<0.01){ flush(); continue; }
+      if(run && run.t===t){ run.a.push(A.p[k]); run.b.push(B.p[k]); continue; }
+      flush(); run={t, a:[A.p[i],A.p[k]], b:[B.p[i],B.p[k]]};
+    }
+    flush();
+    if(a) add(g,el("path",{d:`M${ring2d(A.p)}Z M${ring2d(B.p)}Z`,fill:SKIN.works.top,
+      "fill-opacity":f2(a),"fill-rule":"evenodd"}));
+  };
+  const rim=R=>{ for(let j=1;j<=MK;j++) paint(R[j],R[j+1],(j-0.5)/MK); };
+  /* the outline of a convex box on the screen is the hull of its outlines */
+  const hull=ps=>{ const a=ps.slice().sort((p,q)=>p[0]-q[0]||p[1]-q[1]), lo=[], up=[];
+    const cr=(o,p,q)=>(p[0]-o[0])*(q[1]-o[1])-(p[1]-o[1])*(q[0]-o[0]);
+    a.forEach(p=>{ while(lo.length>1&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0) lo.pop(); lo.push(p); });
+    a.reverse().forEach(p=>{ while(up.length>1&&cr(up[up.length-2],up[up.length-1],p)<=0) up.pop(); up.push(p); });
+    const o=lo.slice(0,-1).concat(up.slice(0,-1)); return [...o,o[0]]; };
+  const every=R=>R.flatMap(q=>q.p);
+
+  /* THE BACK MODULE stands against the face c1, c2 and c7 bound, the side
+     the housing turns away from the viewer, as wide as the housing so it
+     meets all three, and — asked for from the page — taller than it, by
+     over half again, so it reads as the instrument's tower and the housing
+     as the bench in front of it. Its front corners are rounded too, now
+     that the part above the lid is free. */
+  const md=n.d*0.30, mr=Math.min(n.w,n.d)*0.10, hm=h*1.6, ym0=y0-md;
+  const MB=box(x0,x1,ym0,y0,mr,hm,h*0.12);
+  /* the housing's corners are rounder than a hair and tighter than the
+     module's, so the touchscreen and the lights on its walls keep flat
+     ground under them, and its rim is rounded above the screen's top */
+  const hf=h*0.12, HB=box(x0,x1,y0,y1,Math.min(n.w,n.d)*0.05,h,hf);
+
   /* ---- FOOTPRINT AND GLOW, both under the box ----------------------------
      The glow is the silhouette stroked wide and faint three times rather than
      a blur filter: the selection halo is already a CSS filter on this group,
@@ -8817,63 +8884,35 @@ function drawReadCycle(g,n){
     P(X(0.5+m),Y(0.5+m),0),P(X(-0.5-m),Y(0.5+m),0)),fill:"none",stroke:"var(--fg)",
     "stroke-width":f2(SC),"stroke-opacity":".45",
     "stroke-dasharray":`${f1(4*SC)} ${f1(3*SC)}`}));
-  const sil=pts([P(x0,y0,h),P(x1,y0,h),P(x1,y0,0),P(x1,y1,0),P(x0,y1,0),P(x0,y1,h)]);
+  const sil=pts(hull([...every(MB),...every(HB)]));
   [[16,".035"],[10,".05"],[5,".07"]].forEach(([wd,o])=>add(g,el("polygon",{points:sil,
     fill:"none",stroke:"var(--fg)","stroke-width":f2(wd*SC),"stroke-opacity":o,
     "stroke-linejoin":"round"})));
 
-  /* ---- THE BACK MODULE, asked for from the page: a box of its own against
-     the face c1, c2 and c7 bound, the side the housing turns away from the
-     viewer, as wide and as tall as the housing so it meets all three. Drawn
-     before the housing, which stands in front of it and hides the face they
-     share — so that face stays square and every edge left free is rounded:
-     the corners in plan, and the top's rim by a quarter-round stepped up in
-     MK bands, each band the plan outline inset and raised a step. */
-  const md=n.d*0.30, mr=Math.min(n.w,n.d)*0.10, mf=h*0.15, ym0=y0-md, MK=3;
-  /* a rounded rectangle in plan, seven points a corner whatever the radius,
-     so the outlines of every band line up point for point. Corners run back
-     left, back right, front right, front left. */
-  const rrect=(xa,xb,ya,yb,rs,z)=>{ const a=[];
-    [[xa,ya,1,1],[xb,ya,-1,1],[xb,yb,-1,-1],[xa,yb,1,-1]].forEach(([cx,cy,sx,sy],c)=>{
-      const r=rs[c]; for(let i=0;i<=6;i++){ const t=Math.PI*(1+c/2)+i/6*Math.PI/2;
-        a.push(P(cx+sx*r+r*Math.cos(t), cy+sy*r+r*Math.sin(t), z)); } });
-    return a; };
-  const band=j=>{ const th=j/MK*Math.PI/2, s=mf*(1-Math.cos(th));
-    return rrect(x0+s,x1-s,ym0+s,y0,[Math.max(mr-s,0),Math.max(mr-s,0),0,0],h-mf+mf*Math.sin(th)); };
-  const mb=[]; for(let j=0;j<=MK;j++) mb.push(band(j));
-  /* the free path, front-left round to front-right; index 10 is the back
-     right round at forty-five degrees, where the wall turns away */
-  const FREE=[27,...Array.from({length:15},(_,i)=>i)], SIL=10;
-  const floor0=rrect(x0,x1,ym0,y0,[mr,mr,0,0],0);
-  face(pts([...floor0.slice(SIL,15),...mb[0].slice(SIL,15).reverse()]),SKIN.works.right);
-  for(let j=0;j<MK;j++){
-    const strip=pts([...FREE.map(i=>mb[j][i]),...FREE.map(i=>mb[j+1][i]).reverse()]);
-    face(strip,SKIN.works.right); face(strip,SKIN.works.top,(j+0.5)/MK);
-  }
-  face(pts(mb[MK]),SKIN.works.top);
-  edge(FREE.map(i=>mb[MK][i]),".35",0.7);
-  edge([...FREE.slice(0,SIL+2).map(i=>mb[1][i]),mb[0][SIL],floor0[SIL],...floor0.slice(SIL+1,15)],".9",1.2);
+  /* the module, whole, before the housing that stands in front of it */
+  paint(MB[0],MB[1]); rim(MB);
+  face(pts(MB[MK+1].p),SKIN.works.top);
+  edge([...MB[MK+1].p,MB[MK+1].p[0]],".35",0.7);
+  edge(hull(every(MB)),".9",1.2);
 
   /* THE PAD on its top, a touchscreen raised a hair off it in the left two
-     thirds, clear of the docked screen that stands in front on the lid. A
-     rounded tablet: its near rim is the outline from the back-right round's
-     turn to the front-left's, and its glass glows by the housing's wide faint
-     strokes rather than a filter. */
-  const pdh=h*0.04, pdr=md*0.14, px0=X(-0.42), px1=X(0.20), py0=ym0+md*0.22, py1=y0-md*0.18;
-  const padB=rrect(px0,px1,py0,py1,[pdr,pdr,pdr,pdr],h), padT=rrect(px0,px1,py0,py1,[pdr,pdr,pdr,pdr],h+pdh);
+     thirds, inside the rim's rounding. A rounded tablet: its near rim is the
+     outline from the back-right round's turn to the front-left's, and its
+     glass glows by the housing's wide faint strokes rather than a filter. */
+  const pdh=h*0.04, pdr=md*0.14, px0=X(-0.42), px1=X(0.20), py0=ym0+md*0.26, py1=y0-md*0.26;
+  const padB=rrect(px0,px1,py0,py1,[pdr,pdr,pdr,pdr],hm), padT=rrect(px0,px1,py0,py1,[pdr,pdr,pdr,pdr],hm+pdh);
   face(pts([...padB.slice(SIL,25),...padT.slice(SIL,25).reverse()]),SKIN.works.left);
   face(pts(padT),SKIN.works.top); face(pts(padT),"var(--bg)",.35);
-  const pdi=md*0.07, pdg=pdr-pdi, padG=pts(rrect(px0+pdi,px1-pdi,py0+pdi,py1-pdi,[pdg,pdg,pdg,pdg],h+pdh));
+  const pdi=md*0.07, pdg=pdr-pdi, padG=pts(rrect(px0+pdi,px1-pdi,py0+pdi,py1-pdi,[pdg,pdg,pdg,pdg],hm+pdh));
   [[6,".06"],[3,".1"]].forEach(([wd,o])=>add(g,el("polygon",{points:padG,fill:"none",
     stroke:SKIN.glass.top,"stroke-width":f2(wd*SC),"stroke-opacity":o,"stroke-linejoin":"round"})));
   face(padG,"var(--bg)"); face(padG,SKIN.glass.top,.7); face(padG,"var(--fg)",.1);
   edge([...padT,padT[0]],".85",0.8);
 
-  /* ---- THE HOUSING'S TWO WALLS. The lid goes on after everything in the
-     well, so it can simply cover the front of the floor rather than every
-     piece in the well having to stop at the rim. */
-  face(quad(P(x0,y1,h),P(x1,y1,h),P(x1,y1,0),P(x0,y1,0)),SKIN.works.left);
-  face(quad(P(x1,y0,h),P(x1,y1,h),P(x1,y1,0),P(x1,y0,0)),SKIN.works.right);
+  /* ---- THE HOUSING'S WALLS. The rim and the lid go on after everything in
+     the well, so they can simply cover the front of the floor rather than
+     every piece in the well having to stop at the rim. */
+  paint(HB[0],HB[1]);
 
   /* the well: the opening filled in the housing's skin under a wash of the
      page ground, which is its wall in shadow wherever the floor, dropped
@@ -8965,10 +9004,11 @@ function drawReadCycle(g,n){
       stroke:"var(--fg)","stroke-width":f2(wd*SC),"stroke-linecap":"round","stroke-opacity":"0"}))};
   });
 
-  /* ---- THE LID, one path with the ellipse cut out of it by even-odd, laid
-     over the well so it hides the front of the dropped floor */
-  const ring2d=ps=>ps.map(p=>`${f1(p[0])} ${f1(p[1])}`).join("L");
-  add(g,el("path",{d:`M${ring2d([P(x0,y0,h),P(x1,y0,h),P(x1,y1,h),P(x0,y1,h)])}Z M${ring2d(rimH)}Z`,
+  /* ---- THE RIM AND THE LID, the lid one path with the ellipse cut out of
+     it by even-odd, laid over the well so they hide the front of the
+     dropped floor */
+  rim(HB);
+  add(g,el("path",{d:`M${ring2d(HB[MK+1].p)}Z M${ring2d(rimH)}Z`,
     fill:SKIN.works.top,"fill-rule":"evenodd"}));
 
   /* ---- THE STATUS LIGHTS, along the front wall's right half, where the eye
@@ -9021,70 +9061,41 @@ function drawReadCycle(g,n){
   edge([P(x1,ky0,kz-kd),P(x1,ky1,kz-kd)],".3",0.6);
   edge([P(x1,ky0,kz),P(x1,ky1,kz)],".85",0.9);
 
-  /* ---- THE EDGES, over everything they bound. The well's rim is fainter
-     than the box's, so the housing is drawn once and the opening inside it. */
-  edge([P(x0,y1,h),P(x0,y0,h),P(x1,y0,h),P(x1,y1,h),P(x0,y1,h),P(x0,y1,0),P(x1,y1,0),
-        P(x1,y0,0),P(x1,y0,h)],".9",1.2);
-  edge([P(x1,y1,h),P(x1,y1,0)],".9",1.2);
+  /* ---- THE EDGES, over everything they bound. A rounded edge has no line
+     of its own, so what is drawn is the outline and, fainter, where the
+     flat lid meets the rim; the well's rim is fainter than the box's. */
+  edge(hull(every(HB)),".9",1.2);
+  edge([...HB[MK+1].p,HB[MK+1].p[0]],".35",0.7);
   edge([...rimH,rimH[0]],".75",1);
 
   /* ---- THE SLIDING COVER, asked for from the page: a translucent pane that
      runs out across the lid from its left edge, c4-c1, until it reaches the
      right, c3-c2, so the chip and its flashes are seen through it. It rests
-     closed, draws back and runs out again, on a clock of its own. Laid on
-     the lid under the docked screen, which is drawn after it and so stands
-     up through the pane. Born closed, so a reader with motion off sees the
-     station covered; only xl, its leading edge, ever moves. */
+     closed, draws back and runs out again, on a clock of its own. It lies on
+     the lid's flat, inside the rim's rounding, with its own corners rounded
+     like everything else on the box. Born closed, so a reader with motion
+     off sees the station covered; only xl, its leading edge, ever moves. */
   const cth=h*0.05, czt=h+cth;
+  const cx0=x0+hf, cx1=x1-hf, cy0=y0+hf, cy1=y1-hf, crr=Math.min(n.w,n.d)*0.03;
   const cTop=add(g,el("polygon",{points:"",fill:SKIN.glass.top,"fill-opacity":".22"}));
   const cSheen=add(g,el("polygon",{points:"",fill:"var(--fg)","fill-opacity":".05"}));
-  const cFront=add(g,el("polygon",{points:"",fill:SKIN.glass.top,"fill-opacity":".4"}));
-  const cLead=add(g,el("polygon",{points:"",fill:SKIN.glass.top,"fill-opacity":".4"}));
+  const cSide=add(g,el("polygon",{points:"",fill:SKIN.glass.top,"fill-opacity":".4"}));
   const cRim=add(g,el("path",{d:"",fill:"none",stroke:"var(--fg)","stroke-width":f2(0.8*SC),
     "stroke-opacity":".6","stroke-linejoin":"round"}));
-  const pathOf=ps=>`M${ring2d(ps)}`;
   let coverX="";
   const setCover=xl=>{
     const k=f1(xl*S); if(k===coverX) return; coverX=k;
-    const top=quad(P(x0,y0,czt),P(xl,y0,czt),P(xl,y1,czt),P(x0,y1,czt));
+    const rc=Math.min(crr,(xl-cx0)/2), R=[rc,rc,rc,rc];
+    const lo=rrect(cx0,xl,cy0,cy1,R,h), hi=rrect(cx0,xl,cy0,cy1,R,czt), top=pts(hi);
     cTop.setAttribute("points",top); cSheen.setAttribute("points",top);
-    cFront.setAttribute("points",quad(P(x0,y1,czt),P(xl,y1,czt),P(xl,y1,h),P(x0,y1,h)));
-    cLead.setAttribute("points",quad(P(xl,y0,czt),P(xl,y1,czt),P(xl,y1,h),P(xl,y0,h)));
-    cRim.setAttribute("d",pathOf([P(x0,y0,czt),P(xl,y0,czt),P(xl,y1,czt),P(x0,y1,czt)])+
-      pathOf([P(x0,y1,h),P(xl,y1,h),P(xl,y1,czt)])+pathOf([P(xl,y1,h),P(xl,y0,h)]));
+    cSide.setAttribute("points",pts([...lo.slice(SIL,25),...hi.slice(SIL,25).reverse()]));
+    cRim.setAttribute("d",`M${ring2d(hi)}Z M${ring2d(lo.slice(SIL,25))}`);
   };
-  setCover(x1);
+  setCover(cx1);
   /* slide out, rest closed, slide back, rest open — the clock starts at the
      rest, so the first thing a reader sees is the pane already across */
   const CSL=2.2, CHC=3.5, CHO=1.6, CCY=2*CSL+CHC+CHO;
   let cc=CSL;
-
-  /* ---- THE DOCKED SCREEN, asked for from the page as a unit of its own on
-     the lid's right edge rather than another thing painted on a wall. It
-     takes the lid's back-right corner, the one patch the ellipse leaves wide
-     enough, and stops a hair short of the right wall so its face does not
-     run on into the housing's and read as the same box. Drawn after the
-     housing's edges, so no line of the lid crosses it.
-     Its shadow is cast leftward along the back margin and kept off the glass
-     by the same arithmetic as the well: every corner of it lies outside the
-     ellipse. The screen is its top face, lit by the housing's wide faint
-     strokes rather than a filter. */
-  const bx0=X(0.34), bx1=X(0.49), by0=Y(-0.48), by1=Y(-0.30), bt=h*1.28;
-  const sh=n.w*0.06, cs=n.w*0.02;
-  face(quad(P(bx0-sh,by0,h),P(bx1,by0,h),P(bx1,by1,h),P(bx0-sh,by1,h)),"var(--bg)",.3);
-  face(quad(P(bx0-cs,by0,h),P(bx1,by0,h),P(bx1,by1+cs,h),P(bx0-cs,by1+cs,h)),"var(--bg)",.35);
-  face(quad(P(bx0,by1,bt),P(bx1,by1,bt),P(bx1,by1,h),P(bx0,by1,h)),SKIN.works.left);
-  face(quad(P(bx1,by0,bt),P(bx1,by1,bt),P(bx1,by1,h),P(bx1,by0,h)),SKIN.works.right);
-  face(quad(P(bx0,by0,bt),P(bx1,by0,bt),P(bx1,by1,bt),P(bx0,by1,bt)),SKIN.works.top);
-  const bi=0.14, BX=f=>bx0+f*(bx1-bx0), BY=f=>by0+f*(by1-by0);
-  const glass=quad(P(BX(bi),BY(bi),bt),P(BX(1-bi),BY(bi),bt),P(BX(1-bi),BY(1-bi),bt),P(BX(bi),BY(1-bi),bt));
-  [[6,".06"],[3,".1"]].forEach(([wd,o])=>add(g,el("polygon",{points:glass,fill:"none",
-    stroke:SKIN.glass.top,"stroke-width":f2(wd*SC),"stroke-opacity":o,"stroke-linejoin":"round"})));
-  face(glass,"var(--bg)"); face(glass,SKIN.glass.top,.7); face(glass,"var(--fg)",.1);
-  edge([P(bx0,by1,h),P(bx0,by1,bt),P(bx0,by0,bt),P(bx1,by0,bt),P(bx1,by0,h),P(bx1,by1,h),
-        P(bx0,by1,h)],".85",0.9);
-  edge([P(bx0,by1,bt),P(bx1,by1,bt),P(bx1,by0,bt)],".85",0.9);
-  edge([P(bx1,by1,bt),P(bx1,by1,h)],".85",0.9);
 
   /* ---- THE DOOR, on the right wall, asked for so the reads have somewhere
      to come out of. It stands on the ground in the wall's front half, the
@@ -9286,7 +9297,7 @@ function drawReadCycle(g,n){
     });
     cc=(cc+Math.min(dt,0.1))%CCY;
     const cu=cc<CSL ? ease(cc/CSL) : cc<CSL+CHC ? 1 : cc<2*CSL+CHC ? 1-ease((cc-CSL-CHC)/CSL) : 0;
-    setCover(x0+(x1-x0)*cu);
+    setCover(cx0+(cx1-cx0)*cu);
     if(t>=CYC){ t%=CYC;
       dot.forEach(d=>{ d.k=(d.k+1+Math.floor(r()*3))%4;
         d.node.setAttribute("fill",BASE[d.k]); d.flare.setAttribute("fill",BASE[d.k]); });
