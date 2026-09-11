@@ -8861,9 +8861,15 @@ DRAW.sizecheck = drawSizeCheck;
    recoloured, always to a base other than the one it just showed — the
    pattern visibly changes rather than happening to repeat.
 
-   THE SCAN IS THE CAMERA, NOT THE CHEMISTRY. One line crosses the full depth
-   of the cell, back edge to front, while the field is lit; the dots do not
+   THE SCAN IS THE CAMERA, NOT THE CHEMISTRY. One line crosses the whole
+   cell, top to bottom on the screen, while the field is lit; the dots do not
    answer it as it passes, because one exposure takes the whole surface.
+
+   A FIFTH REQUEST made it read as a flow chip: the cell is an ellipse
+   rather than a pane, its grid is the lattice the clusters sit in and drawn
+   to be seen, and the lights hold their colours between flashes. What the
+   cell puts out is drawn by C4 — the strands leave from above this box and
+   the cloud they build is that station's.
    ------------------------------------------------------------------ */
 function drawReadCycle(g,n){
   /* EVERY OFFSET IS A FRACTION OF THE NODE OR A SCREEN LENGTH TIMES SC, since
@@ -8887,13 +8893,17 @@ function drawReadCycle(g,n){
     "stroke-width":f2(wd*SC),"stroke-opacity":o,"stroke-linejoin":"round","stroke-linecap":"round"}));
 
   const h=n.h, x0=X(-0.5), x1=X(0.5), y0=Y(-0.5), y1=Y(0.5);
-  /* the well: a rim of about a twelfth of the node all round, and a floor a
-     sixth of the way down, which is deep enough to cast a wall and shallow
-     enough that the front rim hides none of the cell */
-  const cx0=X(-0.42), cx1=X(0.42), cy0=Y(-0.40), cy1=Y(0.40), zc=h*0.84;
-  const cw=cx1-cx0, cd=cy1-cy0;
-  const top=(u0,v0,u1,v1)=>quad(P(cx0+u0*cw,cy0+v0*cd,zc),P(cx0+u1*cw,cy0+v0*cd,zc),
-                                P(cx0+u1*cw,cy0+v1*cd,zc),P(cx0+u0*cw,cy0+v1*cd,zc));
+  /* THE CHIP IS AN ELLIPSE, asked for from the page as "a bit more
+     elliptical", with a rim of about a twelfth of the node at its narrowest
+     and a floor a sixth of the way down. Everything on the glass is placed in
+     the unit disk and mapped out to it, so the grid, the clusters and the
+     scan are clipped by arithmetic rather than by a clipPath — a clip needs
+     an id, and a node that redraws on every resize would mint a new one. */
+  const ex=0.42*n.w, ey=0.40*n.d, zc=h*0.84;
+  const at=(u,v,z)=>P(n.x+u*ex, n.y+v*ey, z===undefined?zc:z);
+  const ring=z=>{ const a=[]; for(let i=0;i<56;i++){ const t=i/56*Math.PI*2;
+    a.push(at(Math.cos(t),Math.sin(t),z)); } return a; };
+  const rimH=ring(h), rimC=ring(zc);
 
   /* ---- FOOTPRINT AND GLOW, both under the box ----------------------------
      The glow is the silhouette stroked wide and faint three times rather than
@@ -8909,55 +8919,58 @@ function drawReadCycle(g,n){
     fill:"none",stroke:"var(--fg)","stroke-width":f2(wd*SC),"stroke-opacity":o,
     "stroke-linejoin":"round"})));
 
-  /* ---- THE HOUSING: two walls and a lid with the well cut out of it. Fill
-     only; the white edges go on at the end as lines, so the four rim pieces
-     do not draw seams between each other. */
+  /* ---- THE HOUSING'S TWO WALLS. The lid goes on after everything in the
+     well, so it can simply cover the front of the floor rather than every
+     piece in the well having to stop at the rim. */
   face(quad(P(x0,y1,h),P(x1,y1,h),P(x1,y1,0),P(x0,y1,0)),SKIN.works.left);
   face(quad(P(x1,y0,h),P(x1,y1,h),P(x1,y1,0),P(x1,y0,0)),SKIN.works.right);
-  face(quad(P(x0,y0,h),P(x1,y0,h),P(x1,cy0,h),P(x0,cy0,h)),SKIN.works.top);
-  face(quad(P(x0,cy1,h),P(x1,cy1,h),P(x1,y1,h),P(x0,y1,h)),SKIN.works.top);
-  face(quad(P(x0,cy0,h),P(cx0,cy0,h),P(cx0,cy1,h),P(x0,cy1,h)),SKIN.works.top);
-  face(quad(P(cx1,cy0,h),P(x1,cy0,h),P(x1,cy1,h),P(cx1,cy1,h)),SKIN.works.top);
 
-  /* the well's two visible walls, the housing's own skin under a wash of the
-     page ground so they read as the same material in shadow */
-  [[quad(P(cx0,cy0,h),P(cx1,cy0,h),P(cx1,cy0,zc),P(cx0,cy0,zc)),SKIN.works.left],
-   [quad(P(cx0,cy0,h),P(cx0,cy1,h),P(cx0,cy1,zc),P(cx0,cy0,zc)),SKIN.works.right]]
-    .forEach(([ps,fill])=>{ face(ps,fill); face(ps,"var(--bg)",.35); });
+  /* the well: the opening filled in the housing's skin under a wash of the
+     page ground, which is its wall in shadow wherever the floor, dropped
+     below it, does not cover it */
+  face(pts(rimH),SKIN.works.left); face(pts(rimH),"var(--bg)",.35);
 
-  /* ---- THE GLASS, on the well's floor. The glass skin over charcoal, so the
-     cell is the one pale thing on the box and reads as the slide in it. */
-  face(top(0,0,1,1),SKIN.glass.top,.6);
+  /* ---- THE GLASS, on the well's floor, laid on the page ground so the
+     wall's skin does not tint it. The one pale thing on the box, so it reads
+     as the chip loaded in it. */
+  face(pts(rimC),"var(--bg)");
+  face(pts(rimC),SKIN.glass.top,.6);
 
-  /* the fine grid etched into it, as one path so a cell's worth of lines is
-     one element and not thirty */
-  const GU=20, GV=16; let gd="";
-  for(let i=1;i<GU;i++){ const x=cx0+i*cw/GU, a=P(x,cy0,zc), b=P(x,cy1,zc);
-    gd+=`M${f1(a[0])} ${f1(a[1])}L${f1(b[0])} ${f1(b[1])}`; }
-  for(let j=1;j<GV;j++){ const y=cy0+j*cd/GV, a=P(cx0,y,zc), b=P(cx1,y,zc);
-    gd+=`M${f1(a[0])} ${f1(a[1])}L${f1(b[0])} ${f1(b[1])}`; }
-  add(g,el("path",{d:gd,fill:"none",stroke:"var(--fg)","stroke-width":f2(0.45*SC),"stroke-opacity":".10"}));
+  /* THE GRID IS THE CHIP'S LATTICE, and it was asked to be obvious: one line
+     per column and row of clusters, so every cluster sits in a cell of its
+     own the way a patterned flow cell's wells do. One path, clipped to the
+     ellipse by solving each line's half-length in the unit disk. */
+  const NU=16, NV=13, seg=(a,b)=>`M${f1(a[0])} ${f1(a[1])}L${f1(b[0])} ${f1(b[1])}`;
+  let gd="";
+  for(let i=1;i<NU;i++){ const u=-1+2*i/NU, s=Math.sqrt(1-u*u); gd+=seg(at(u,-s),at(u,s)); }
+  for(let j=1;j<NV;j++){ const v=-1+2*j/NV, s=Math.sqrt(1-v*v); gd+=seg(at(-s,v),at(s,v)); }
+  add(g,el("path",{d:gd,fill:"none",stroke:"var(--fg)","stroke-width":f2(0.6*SC),"stroke-opacity":".32"}));
+  add(g,el("polygon",{points:pts(rimC),fill:"none",stroke:"var(--fg)",
+    "stroke-width":f2(0.8*SC),"stroke-opacity":".45"}));
 
   /* the reflection: two diagonal strips of faint light, which is what makes
-     a flat pale shape read as glass rather than as paper */
-  const at=(u,v)=>P(cx0+u*cw,cy0+v*cd,zc);
-  face(pts([at(0.28,1),at(0.44,1),at(0.80,0),at(0.64,0)]),"var(--fg)",.06);
-  face(pts([at(0.49,1),at(0.54,1),at(0.90,0),at(0.85,0)]),"var(--fg)",.045);
+     a flat pale shape read as glass rather than as paper. Each is the band
+     between two parallel chords of the disk, so it ends on the chip's edge. */
+  const strip=(s0,s1,o)=>{ const N=[0.8,0.6], T=[0.6,-0.8];
+    const c=(s,g)=>{ const q=g*Math.sqrt(1-s*s); return at(s*N[0]+q*T[0],s*N[1]+q*T[1]); };
+    face(pts([c(s0,1),c(s1,1),c(s1,-1),c(s0,-1)]),"var(--fg)",o); };
+  strip(-0.34,-0.12,.06); strip(0.02,0.09,.045);
 
   /* ---- THE CLUSTERS ---------------------------------------------------------
-     A jittered lattice, so they sit evenly over the whole cell without
-     reading as a printed grid on top of the etched one. Each is drawn twice
-     at the same point: a dim grey dot that is always there, and its coloured
-     twin in the lit group, which is the only thing the cycle fades. */
-  const NU=16, NV=13, IN=0.04, rest=el("g",{}), lit=el("g",{opacity:"0"}), dot=[];
+     One to a grid cell, jittered a little inside it, and only the cells that
+     lie wholly inside the ellipse. Each is drawn twice at the same point: a
+     dim grey dot that is always there, and its coloured twin in the lit
+     group, which is the only thing the cycle fades. */
+  const rest=el("g",{}), lit=el("g",{opacity:"0"}), dot=[];
   g.appendChild(rest);
   /* a faint wash over the whole cell, so the flash is the surface lighting
      and not only its dots */
-  add(lit,el("polygon",{points:top(0,0,1,1),fill:"var(--fg)","fill-opacity":".05"}));
+  add(lit,el("polygon",{points:pts(rimC),fill:"var(--fg)","fill-opacity":".05"}));
   g.appendChild(lit);
   for(let a=0;a<NU;a++)for(let b=0;b<NV;b++){
-    const u=IN+((a+0.5+(r()-0.5)*0.6)/NU)*(1-2*IN), v=IN+((b+0.5+(r()-0.5)*0.6)/NV)*(1-2*IN);
-    const p=at(u,v), k=Math.floor(r()*4);
+    const u=-1+2*(a+0.5+(r()-0.5)*0.3)/NU, v=-1+2*(b+0.5+(r()-0.5)*0.3)/NV, k=Math.floor(r()*4);
+    if(u*u+v*v>0.86) continue;
+    const p=at(u,v);
     add(rest,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(0.85*SC),fill:"var(--fg)","fill-opacity":".18"}));
     /* a hair of the page ground round each lit dot, so yellow still has an
        edge on the pale glass of the light theme */
@@ -8965,39 +8978,56 @@ function drawReadCycle(g,n){
       stroke:"var(--bg)","stroke-width":f2(0.35*SC),"stroke-opacity":".6"}))});
   }
 
+  /* ---- THE SCAN LINE, a bright core over a wide faint one. It is level ON
+     THE SCREEN, which on this plane is a line of constant x + y, so it runs
+     top to bottom as the page sees it — the request's words — rather than
+     along one of the chip's own axes, which the projection turns into a
+     sideways slide. In the unit disk that is a chord at distance d from the
+     centre along (ex, ey); born at the top of the ellipse, invisible. */
+  const L=Math.hypot(ex,ey), NN=[ex/L,ey/L], TT=[ey/L,-ex/L];
+  const chord=d=>{ const q=Math.sqrt(Math.max(0,1-d*d));
+    return [at(d*NN[0]+q*TT[0],d*NN[1]+q*TT[1]), at(d*NN[0]-q*TT[0],d*NN[1]-q*TT[1])]; };
+  const scan=[[3.5,".18"],[0.9,"1"]].map(([wd,o])=>{
+    const [a,b]=chord(-1);
+    return {o, e:add(g,el("line",{x1:f1(a[0]),y1:f1(a[1]),x2:f1(b[0]),y2:f1(b[1]),
+      stroke:"var(--fg)","stroke-width":f2(wd*SC),"stroke-linecap":"round","stroke-opacity":"0"}))};
+  });
+
+  /* ---- THE LID, one path with the ellipse cut out of it by even-odd, laid
+     over the well so it hides the front of the dropped floor */
+  const ring2d=ps=>ps.map(p=>`${f1(p[0])} ${f1(p[1])}`).join("L");
+  add(g,el("path",{d:`M${ring2d([P(x0,y0,h),P(x1,y0,h),P(x1,y1,h),P(x0,y1,h)])}Z M${ring2d(rimH)}Z`,
+    fill:SKIN.works.top,"fill-rule":"evenodd"}));
+
   /* ---- THE STATUS LIGHTS, along the front wall's right half, where the eye
-     lands after the cell. Each is a dim socket that is always there and, in
-     the lit group, its base's colour inside a soft bloom. */
-  const zl=h*0.42;
+     lands after the cell. Asked to be more obvious, so each socket now holds
+     its own colour even while the field is dark, and flares — bloom, core
+     and a hot white centre — on the beat. The flare is its own group after
+     the lid, so the bloom is not cut off at the wall's top edge; it is
+     written in the same frame and to the same value as the field's. */
+  const zl=h*0.58, lamp=el("g",{opacity:"0"});
   BASE.forEach((c,i)=>{
-    const p=P(X(0.16+i*0.085),y1,zl);
-    add(g,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(1.9*SC),fill:"var(--bg)","fill-opacity":".55",
-      stroke:"var(--fg)","stroke-width":f2(0.5*SC),"stroke-opacity":".35"}));
-    add(lit,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(3.6*SC),fill:c,"fill-opacity":".28"}));
-    add(lit,el("circle",{cx:f1(p[0]),cy:f1(p[1]),r:f2(1.6*SC),fill:c}));
+    const p=P(X(0.10+i*0.105),y1,zl), cx=f1(p[0]), cy=f1(p[1]);
+    add(g,el("circle",{cx,cy,r:f2(2.6*SC),fill:c,"fill-opacity":".3",
+      stroke:"var(--fg)","stroke-width":f2(0.5*SC),"stroke-opacity":".5"}));
+    add(lamp,el("circle",{cx,cy,r:f2(6.5*SC),fill:c,"fill-opacity":".22"}));
+    add(lamp,el("circle",{cx,cy,r:f2(4.2*SC),fill:c,"fill-opacity":".4"}));
+    add(lamp,el("circle",{cx,cy,r:f2(2.4*SC),fill:c}));
+    add(lamp,el("circle",{cx,cy,r:f2(0.9*SC),fill:"var(--fg)","fill-opacity":".85"}));
     /* the letter under each light is the key: it stays when the field goes
        dark, so which colour is which base is never left to be guessed */
-    const t=add(g,el("text",{x:f1(p[0]),y:f1(p[1]+5.4*SC),"text-anchor":"middle",
-      "font-size":f2(3.6*SC),"font-weight":"700",fill:c}));
+    const t=add(g,el("text",{x:cx,y:f1(p[1]+7.0*SC),"text-anchor":"middle",
+      "font-size":f2(4.2*SC),"font-weight":"700",fill:c}));
     t.textContent=NT[i];
   });
+  g.appendChild(lamp);
 
   /* ---- THE EDGES, over everything they bound. The well's rim is fainter
      than the box's, so the housing is drawn once and the opening inside it. */
   edge([P(x0,y1,h),P(x0,y0,h),P(x1,y0,h),P(x1,y1,h),P(x0,y1,h),P(x0,y1,0),P(x1,y1,0),
         P(x1,y0,0),P(x1,y0,h)],".9",1.2);
   edge([P(x1,y1,h),P(x1,y1,0)],".9",1.2);
-  edge([P(cx0,cy0,h),P(cx1,cy0,h),P(cx1,cy1,h),P(cx0,cy1,h),P(cx0,cy0,h)],".75",1);
-  edge([P(cx0,cy1,zc),P(cx0,cy0,zc),P(cx1,cy0,zc)],".35",0.7);
-  edge([P(cx0,cy0,h),P(cx0,cy0,zc)],".35",0.7);
-
-  /* ---- THE SCAN LINE, a bright core over a wide faint one, born on the back
-     edge of the cell and invisible */
-  const scan=[[3.5,".18"],[0.9,"1"]].map(([wd,o])=>{
-    const a=P(cx0,cy0,zc), b=P(cx1,cy0,zc);
-    return {o, e:add(g,el("line",{x1:f1(a[0]),y1:f1(a[1]),x2:f1(b[0]),y2:f1(b[1]),
-      stroke:"var(--fg)","stroke-width":f2(wd*SC),"stroke-linecap":"round","stroke-opacity":"0"}))};
-  });
+  edge([...rimH,rimH[0]],".75",1);
 
   /* ---- TIMING: flash under half a second, then half a second each of hold,
      scan, dim and dark. The flash eases out so it arrives as a flash; the
@@ -9016,12 +9046,12 @@ function drawReadCycle(g,n){
             : t<e ? 1
             : t<e+DIM ? 1-ease((t-e)/DIM) : 0;
     const os=o.toFixed(2);
-    if(os!==litO){ litO=os; lit.setAttribute("opacity",os); }
+    if(os!==litO){ litO=os; lit.setAttribute("opacity",os); lamp.setAttribute("opacity",os); }
 
     const u = t>=s && t<e ? (t-s)/SCAN : -1;
     if(u<0 && scanU<0) return;
     scanU=u;
-    const y=cy0+Math.max(u,0)*cd, a=P(cx0,y,zc), b=P(cx1,y,zc);
+    const [a,b]=chord(-1+2*Math.max(u,0));
     const fade=u<0 ? 0 : Math.min(1,u*10,(1-u)*10);
     scan.forEach(L=>{
       L.e.setAttribute("x1",f1(a[0])); L.e.setAttribute("y1",f1(a[1]));
@@ -9055,18 +9085,19 @@ DRAW.readcycle = drawReadCycle;
    inside it — this node is drawn after the machine, so anything overlapping
    it is painted on top of it and reads as part of it.
 
-   THE ACCUMULATION IS THE WHOLE MOTION, AND IT HAS ONE SOURCE. The
-   connector ends inside the cloud, at the near edge of its dense core, and
-   that end is the only place a read ever appears. About sixty come out of it
-   one at a time on a fixed quarter-second beat, each already moving, and
-   drift outward to where it will hang, slowing as it settles among the rest.
-   A later request asked for exactly that, and it overturned an earlier cut
-   in which every read materialised in place: that one said the reads came
-   from nowhere in particular, which read as the cloud arriving in one piece.
-   The source says only that they came out of the machine's line — every
-   read leaves the same point, so the stream still says nothing about which
-   read is which. Nearest places are filled first, so the mass is seen to
-   grow outward from the source rather than sweep across the frame.
+   THE STREAM IS CONTINUOUS AND THE CLOUD IS A SPHERE. A request from Sa's
+   own "Edit visual" asked for exactly this: the output running down the path
+   as an unbroken line of grey strands, piling up some way off into a
+   rotating cloud that keeps on building. So the connector is now the stream
+   itself — dashes moving along it, one arriving every quarter second — and it
+   starts above Sa's lid, which is where A has been since Sa went in between
+   the sequencer and this station. Where it ends, E, is still the only place
+   a read ever appears: each one leaves E as a strand arrives, already
+   moving, and eases out to its place in the sphere while the sphere turns
+   under it. Innermost places fill first, so the cloud is seen to thicken
+   from the core outward. The source says only that the reads came out of
+   the machine's line — every read leaves the same point, so the stream
+   still says nothing about which read is which.
 
    THE READS ARE ANONYMOUS, AND THAT IS THE CLAIM. This station used to draw
    the run folder splitting into eight coloured files, which put the
@@ -9085,22 +9116,22 @@ DRAW.readcycle = drawReadCycle;
    the FASTQ the name says. Relabel it only if the station stops including
    the demultiplex.
 
-   IT ENDS ON THE CLOUD. The stream runs for nearly the whole loop — the
-   request asked that it never visibly stop — then a beat of the full cloud,
-   and nothing leaves the frame: no files written, no handoff, no next
-   object. The short fade at the end is the loop's seam and not an event —
-   the reads do not go anywhere, the figure simply starts again.
+   IT ENDS ON THE CLOUD. The build runs for nearly the whole loop — the
+   stream never stops — then a beat of the full sphere, and nothing leaves
+   the frame: no files written, no handoff, no next object. The short fade
+   at the end is the loop's seam and not an event — the reads do not go
+   anywhere, the figure simply starts again.
 
-   THE CLOUD LIES ALONG THE MAP'S OWN AXIS, and that is not a taste decision
-   either. The free sky here is a CORRIDOR: the sequencer's name leaves its
-   back edge running up and to the right at −30°, this station's name leaves
-   its own back edge on exactly the same bearing, and between the two — and
-   clear of the machine's right face at the bottom of it — is a band about a
-   hundred and thirty pixels wide and parallel to both. A round cloud big
-   enough to read as dense does not fit in it and lands on one name
-   or the other, so this one is an ellipse lying ALONG the corridor. Every
-   offset that keeps it there is a screen length times SC, so the clearances
-   survive a resize.
+   THE CLOUD SITS IN THE MAP'S CORRIDOR, and that is not a taste decision
+   either. The free sky here is a band about a hundred and thirty pixels
+   wide, running up and to the right at −30° between the sequencer's name
+   and this station's own. The ellipse this replaced lay along it because a
+   round cloud as long as that ellipse lands on one name or the other; the
+   sphere is instead sized to the band's width, ninety-odd pixels across,
+   and turns rather than spreads — the spin and the shading from back to
+   front are what make it read as a volume at that size. Every offset that
+   keeps it there is a screen length times SC, so the clearances survive a
+   resize.
 
    The shape key is still `demux` — it is the node's, and this node wears it
    alone. Spends no hue: --fg2 for a read and for everything else.
@@ -9112,97 +9143,112 @@ function drawDemux(g,n){
      tile, so the three stations at the end of this row keep one size. */
   const SC=n.w/0.95;
   const clamp=x=>x<0?0:x>1?1:x;
-  const NREAD=60;
+  const NREAD=80;
   const r=rng(48211);
+  const f1=v=>v.toFixed(1);
 
   paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
 
   /* ---- WHERE THE CLOUD HANGS ---------------------------------------------
      In the corridor between the two names — see the note above — measured from
-     this tile's own top so it rides the box at any size, and lying along the
-     map's up-right axis rather than across it. The radius is filled with a
-     power under a half, which packs the middle harder than the rim: a cloud
-     uniform to its own edge reads as a shape somebody cut, and this one is
-     meant to read as weather. */
+     this tile's own top so it rides the box at any size. RS is the sphere's
+     radius in unscaled pixels. */
   const TOP=P(n.x,n.y,n.h);
-  const CU=[C30,-0.5], CV=[0.5,C30];        // along the corridor, and across it
-  const CDX=34, CUP=91, RU=72, RV=38;
+  const CU=[C30,-0.5];                       // along the corridor
+  const CDX=34, CUP=91, RS=46;
   const C=[TOP[0]+CDX*SC, TOP[1]-CUP*SC];
 
-  /* ---- THE CONNECTOR AND ITS SOURCE ---------------------------------------
-     A line from the machine's right face into the cloud, held well above the
-     ground: the lane's own track already draws the run from station to
-     station, and a second line beside it on the floor would say the reads
-     came by two routes. A is 1.80 tiles back and up at the sequencer's deck
-     height, which puts it just outside the 2.2-wide body rather than under
-     it. E is where the line stops and every read starts — on the cloud's long
-     axis, 0.45 of the way from the centre back toward the machine, which is
-     where the packing the radius power gives it starts to tell. The dot is
-     there so the end of the line reads as a mouth rather than a line that
-     ran out. */
+  /* ---- THE STREAM ---------------------------------------------------------
+     Held well above the ground: the lane's own track already draws the run
+     from station to station, and a second line beside it on the floor would
+     say the reads came by two routes. A is 1.80 tiles back and up, over Sa's
+     lid; E is on the sphere's near side, 0.55 of the way from its centre back
+     toward A, where the packing the radius power gives it starts to tell.
+
+     ONE PATH, DASHED, AND THE DASH OFFSET IS WHAT MOVES — a continuous train
+     of strands for one attribute a frame, and never a strand created or
+     destroyed. The dash is a read's own bar, BW by BH, so a strand in flight
+     and a read in the cloud are visibly the same thing. The path bows a
+     little either side of the straight line so it reads as flow rather than
+     as a dashed rule, and a faint undashed rail under it keeps the route on
+     screen between strands. The dot at E makes the end a mouth rather than a
+     line that ran out. */
   const A=P(n.x-n.w*1.80, n.y-n.d*0.30, n.h*2.40);
-  const E=[C[0]-CU[0]*RU*0.45*SC, C[1]-CU[1]*RU*0.45*SC];
-  g.appendChild(el("line",{x1:A[0].toFixed(1),y1:A[1].toFixed(1),
-    x2:E[0].toFixed(1),y2:E[1].toFixed(1),stroke:"var(--fg2)",
-    "stroke-width":(1.7*SC).toFixed(2),"stroke-opacity":".45",
-    "stroke-linecap":"round"}));
-  g.appendChild(el("circle",{cx:E[0].toFixed(1),cy:E[1].toFixed(1),
+  const E=[C[0]-CU[0]*RS*0.55*SC, C[1]-CU[1]*RS*0.55*SC];
+  const dx=E[0]-A[0], dy=E[1]-A[1], len=Math.hypot(dx,dy), nx=-dy/len, ny=dx/len, bow=7*SC;
+  const d=`M${f1(A[0])} ${f1(A[1])}C${f1(A[0]+dx/3+nx*bow)} ${f1(A[1]+dy/3+ny*bow)} `+
+    `${f1(A[0]+dx*2/3-nx*bow)} ${f1(A[1]+dy*2/3-ny*bow)} ${f1(E[0])} ${f1(E[1])}`;
+  g.appendChild(el("path",{d,fill:"none",stroke:"var(--fg2)",
+    "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".25"}));
+  const BW=9.0, BH=2.4, SP=5.0, GAP=0.25, V=(BW+SP)/GAP;   // a strand in every GAP
+  const flow=el("path",{d,fill:"none",stroke:"var(--fg2)",
+    "stroke-width":(BH*SC).toFixed(2),"stroke-opacity":".70",
+    "stroke-dasharray":`${(BW*SC).toFixed(2)} ${(SP*SC).toFixed(2)}`,"stroke-dashoffset":"0"});
+  g.appendChild(flow);
+  g.appendChild(el("circle",{cx:f1(E[0]),cy:f1(E[1]),
     r:(2.2*SC).toFixed(2),fill:"var(--fg2)","fill-opacity":".55"}));
 
   /* one group for everything in the air, so the end of the cycle is a single
-     opacity rather than sixty of them */
+     opacity rather than eighty of them */
   const sky=el("g",{}); g.appendChild(sky);
 
   /* ---- THE READS ----------------------------------------------------------
-     One group per read, born at its own place in the cloud with real
-     coordinates, so the ticker only ever moves something that already knows
-     where it is. The bar is authored in screen pixels — a read at this size is
-     a glyph and cannot be cut from a world width — and it grows by being
-     scaled: every group carries scale(SC), which is n.w over the width it was
-     drawn for. Square-cornered, because the request asked for fragments and a
-     rounded bar reads as a pill. */
-  const BW=9.0, BH=2.4;
-  const at=(x,y,a)=>`translate(${x.toFixed(1)},${y.toFixed(1)}) `+
-    `rotate(${a.toFixed(1)}) scale(${SC.toFixed(4)})`;
+     Each has a home in a unit ball, y its spin axis, with the radius filled
+     at a power under a half so the middle packs harder than the rim: a cloud
+     uniform to its own edge reads as a shape somebody cut, and this one is
+     meant to read as weather. Born on the centre with real coordinates, so
+     the ticker only ever moves something that already knows where it is. The
+     bar is authored in screen pixels — a read at this size is a glyph and
+     cannot be cut from a world width — and it grows by being scaled: every
+     group carries scale(SC) times its depth, SC being n.w over the width it
+     was drawn for. Square-cornered, because a rounded bar reads as a pill. */
+  const at=(x,y,a,s)=>`translate(${x.toFixed(1)},${y.toFixed(1)}) `+
+    `rotate(${a.toFixed(1)}) scale(${(SC*s).toFixed(4)})`;
   const read=[];
   for(let i=0;i<NREAD;i++){
-    const th=r()*Math.PI*2, rad=Math.pow(r(),0.62);
-    const cu=Math.cos(th)*RU*rad*SC, cv=Math.sin(th)*RV*rad*SC;
-    const T=[C[0]+cu*CU[0]+cv*CV[0], C[1]+cu*CU[1]+cv*CV[1]];
-    const ang=(r()*2-1)*18;                    // no two lie the same way
-    const grp=el("g",{transform:at(T[0],T[1],ang)});
+    const zz=r()*2-1, th=r()*Math.PI*2, rad=Math.pow(r(),0.62), q=Math.sqrt(1-zz*zz);
+    const ang=(r()*2-1)*30;                    // no two lie the same way
+    const grp=el("g",{transform:at(C[0],C[1],ang,1)});
     const bar=el("rect",{x:(-BW/2).toFixed(2),y:(-BH/2).toFixed(2),
       width:BW.toFixed(2),height:BH.toFixed(2),
       fill:"var(--fg2)","fill-opacity":"0"});
     grp.appendChild(bar); sky.appendChild(grp);
-    read.push({g:grp, bar, T, ang, f:null});
+    read.push({g:grp, bar, p:[Math.cos(th)*q*rad, zz*rad, Math.sin(th)*q*rad], ang, rad, o:null});
   }
-  /* THE ORDER OF ARRIVAL IS NEAREST THE SOURCE FIRST, so the mass grows
-     outward from E instead of sweeping across the frame. Sorted after the
-     draws rather than drawn in order, so the scatter is the same cloud it was.
-     Each read's flight is timed off its distance so that every one leaves E
-     at the same speed — a near read given the same flight as a far one would
-     crawl out, and the stream would look like it stuttered. V0 is that launch
-     speed in unscaled pixels a second; distance is divided back by SC, so
-     the timing is the same at any size. */
-  const V0=80, FMIN=0.6;
+  /* INNERMOST FIRST, so the sphere is seen to thicken from its core outward
+     rather than fill a side at a time. Sorted after the draws, so the scatter
+     is the same whatever the order. */
+  read.sort((a,b)=>a.rad-b.rad);
+
+  /* ---- THE SPIN -----------------------------------------------------------
+     A turn every fourteen seconds about an axis leaning back a fifth of a
+     radian, so the poles are not edge-on. Depth is spent on size and
+     opacity — the far side smaller and fainter — which is all that makes a
+     disc of bars read as a ball; nothing is re-sorted, because at this
+     opacity no reader can tell which bar is painted over which. */
+  const SPIN=Math.PI*2/14, TILT=0.35, cT=Math.cos(TILT), sT=Math.sin(TILT);
+  const home=(R,ph)=>{
+    const [x,y,z]=R.p, c=Math.cos(ph), s=Math.sin(ph);
+    const xr=x*c+z*s, zr=z*c-x*s, yr=y*cT-zr*sT, zd=y*sT+zr*cT;
+    return [C[0]+xr*RS*SC, C[1]+yr*RS*SC, (zd+1)/2];
+  };
+  /* each read's flight is timed off its distance so every one leaves E at
+     the same speed — a near read given a far one's flight would crawl out,
+     and the stream would look like it stuttered. V0 is that launch speed in
+     unscaled pixels a second; distance is divided back by SC, so the timing
+     is the same at any size. */
+  const V0=80, FMIN=0.35;
   for(const R of read){
-    const dx=R.T[0]-E[0], dy=R.T[1]-E[1];
-    R.dist=Math.hypot(dx,dy);
-    R.fly=Math.max(FMIN, 2*R.dist/SC/V0);      // ease-out below launches at 2×dist/fly
+    const H=home(R,0);
+    R.fly=Math.max(FMIN, 2*Math.hypot(H[0]-E[0],H[1]-E[1])/SC/V0);
   }
-  read.sort((a,b)=>a.dist-b.dist);
 
   /* ---- THE LABEL ----------------------------------------------------------
      Authored in screen pixels and sized off SC, the way C7's is: type cut from
      a world width shrinks with the tile and stops being legible long before
-     the drawing does.
-
-     IT SITS UNDER THE CLOUD RATHER THAN BESIDE IT. The corridor is full — a
-     caption at either end of the ellipse lands on a name or on the machine —
-     but the wedge between the cloud, the connector and this station's own
-     emission point is empty at every zoom, and it is directly under what it
-     names. */
+     the drawing does. It sits under the cloud, in the wedge between the
+     sphere, the stream and this station's own emission point, which is empty
+     at every zoom and directly under what it names. */
   const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
   const FS=7.0*SC;
   const cap=el("text",{x:(TOP[0]-11*SC).toFixed(1),y:(TOP[1]-32*SC).toFixed(1),
@@ -9211,64 +9257,42 @@ function drawDemux(g,n){
   cap.textContent="FASTQ"; sky.appendChild(cap);
 
   /* ---- TIMING -------------------------------------------------------------
-     GAP is the beat the request named: one read out of E every quarter
-     second, whatever else is happening, so the stream reads as a rate rather
-     than a burst. BUILD runs until the last and farthest read has settled, so
-     the stream is most of the loop; HOLD is the finished cloud for one beat,
-     long enough to be seen whole and short enough that the stream seems not
-     to stop; FADE is the seam and is kept short enough not to read as a beat
-     of its own. */
-  const GAP=0.25, HOLD=1.0, FADE=0.6;
+     GAP is the stream's beat: one read out of E per strand arriving, so the
+     cloud grows at the rate the line feeds it. BUILD runs until the last and
+     outermost read has settled, so the build is most of the loop; HOLD is the
+     finished sphere for a beat, and FADE is the seam, kept short enough not to
+     read as a beat of its own. The stream and the spin run through all three —
+     the request asked that the line never stop. */
+  const HOLD=1.5, FADE=0.6, DIM=0.75;
   let BUILD=0;
   read.forEach((R,i)=>{ R.t0=i*GAP; BUILD=Math.max(BUILD,R.t0+R.fly); });
   const t1=BUILD, t2=t1+HOLD, t3=t2+FADE;
-  const DIM=0.70;                              // one opacity for every read
-  /* A READ THAT HAS NOT MOVED IS NOT REWRITTEN. For most of the loop nearly
-     every group is parked — not yet out, or settled — so the flight fraction
-     is kept and a repeat is dropped here rather than in the caller. Below
-     zero is "not yet out": parked invisibly on the source rather than at its
-     place, so nothing is ever seen anywhere but E before it has flown. */
-  const put=(i,f)=>{
-    const R=read[i];
-    if(R.f===f) return; R.f=f;
-    const e=f<0?0:1-(1-f)*(1-f);               // eases out, so it settles rather than stops
-    R.g.setAttribute("transform",at(E[0]+(R.T[0]-E[0])*e,E[1]+(R.T[1]-E[1])*e,R.ang));
+  /* Below zero is "not yet out": parked invisibly on the source, so nothing
+     is ever seen anywhere but E before it has flown. A parked read is not
+     rewritten; every read that is out has to be, because the sphere turns. */
+  const put=(R,f,ph)=>{
+    if(f<0){ if(R.o==="0") return; R.o="0";
+      R.bar.setAttribute("fill-opacity","0");
+      R.g.setAttribute("transform",at(E[0],E[1],R.ang,1)); return; }
+    const H=home(R,ph), e=1-(1-f)*(1-f);        // eases out, so it settles rather than stops
+    R.g.setAttribute("transform",at(E[0]+(H[0]-E[0])*e,E[1]+(H[1]-E[1])*e,R.ang,0.8+0.35*H[2]));
     /* already moving when it appears, so it cannot also fade up for long —
        a few frames, just enough that it does not pop */
-    R.bar.setAttribute("fill-opacity",(f<0?0:DIM*clamp(f*R.fly/0.08)).toFixed(3));
+    const o=(DIM*(0.4+0.6*H[2])*clamp(f*R.fly/0.08)).toFixed(2);
+    if(o!==R.o){ R.o=o; R.bar.setAttribute("fill-opacity",o); }
   };
 
   /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion never
      advances it, so whatever t begins at is the whole station for that reader —
      and for this one that has to be the finished cloud, which is the frame the
      request asks the row to end on. Half way through the hold. */
-  let t=t1+HOLD*0.45, mode=-1;
-  /* every entry states the whole world it is entering rather than the delta
-     from the beat before, so a frame long enough to skip one — a tab coming
-     back, a step in trace mode — cannot leave the cloud half drawn. */
-  const enter=m=>{
-    mode=m;
-    sky.setAttribute("opacity","1");
-    for(let i=0;i<NREAD;i++) put(i, m===0?-1:1);
-  };
+  let t=t1+HOLD*0.45, ph=0, off=0, skyO="1";
   const run=dt=>{
-    t=(t+dt)%t3;
-    const m = t<t1?0 : t<t2?1 : 2;
-    if(m!==mode) enter(m);
-
-    if(m===0){                          // the stream: out of E on the beat, nearest first
-      for(let i=0;i<NREAD;i++){
-        const R=read[i], u=t-R.t0;
-        put(i, u<0?-1:clamp(u/R.fly));
-      }
-      return;
-    }
-    if(m===2){                          // the seam. Nothing leaves — it dims where it is
-      sky.setAttribute("opacity",(1-clamp((t-t2)/FADE)).toFixed(3));
-      return;
-    }
-    /* held: a cloud of reads over the grid, and not one of them saying what
-       is in it or which of the eight it belongs to */
+    t=(t+dt)%t3; ph=(ph+dt*SPIN)%(Math.PI*2); off=(off+V*dt)%(BW+SP);
+    flow.setAttribute("stroke-dashoffset",(-off*SC).toFixed(2));
+    const so=(t<t2 ? 1 : 1-clamp((t-t2)/FADE)).toFixed(3);   // nothing leaves — it dims where it is
+    if(so!==skyO){ skyO=so; sky.setAttribute("opacity",so); }
+    for(const R of read) put(R, t<t1 ? (t<R.t0 ? -1 : clamp((t-R.t0)/R.fly)) : 1, ph);
   };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
