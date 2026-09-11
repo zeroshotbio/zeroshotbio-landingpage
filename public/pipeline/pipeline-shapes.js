@@ -6076,14 +6076,17 @@ function drawCapture(g,n){
      and a redraw is the only reason this function is running again. Composed
      at w .72, d .72, h .44.
 
-     THE GLASS IS THE ANCHOR, AND THE RACK STANDS LEFT OF IT. Asked for from
-     the page, after two passes that hung the pair either side of the anchor:
-     the glass is the focal point of the station, so its centre is the node's
-     own ground point and a drag on the node moves the glass first. The rack
-     stands level with it on the left, its right-hand corner three units clear
-     of the glass's left magnet bar, and that gap is dimensioned on the page.
-     Everything is solved off the glass rather than placed beside it, so a
-     resize keeps the gap at three units of the size the node is drawn at.
+     THE GLASS IS THE ANCHOR: its centre is the node's own ground point, so a
+     drag on the node moves the glass first.
+
+     THE RACK STANDS ON B7's LINE, NOT LEVEL ON SCREEN. Asked for from the
+     page: B7 sets its strips and its plate down along the tile's depth, near-
+     left to far-right, and this pair now runs parallel to that instead of
+     straight across. The rack's centre is on the glass's own y axis, on the
+     near side, the way B7's strips are. It was three units clear of the glass
+     measured level; three units along this axis puts it on B7's lens, so the
+     gap is now what fits between B7's rack and the glass's left magnet bar.
+     Both are still solved off n, so a resize keeps the pair on its line.
 
      TWO STRIPS OF EIGHT, WHICH IS WHAT B7 NEXT DOOR SET DOWN. The eight
      sublibraries are split into sixteen tubes there and nothing between the
@@ -6093,18 +6096,13 @@ function drawCapture(g,n){
      well inside the near face. */
   const LX=53, LY=42, MG=2.6, MW=6.2, MH=27;
   const [KX,KY]=P(n.x, n.y, 0);
-  /* THE GAP IS A WORLD LENGTH. Level on screen is the ground diagonal on this
-     projection, where a unit is √2·S·cos30 pixels across rather than S, so
-     that is what the three units are measured along — the label is then the
-     truth about the ground, not about the screen. */
-  const GAP=n.w*3/0.72, GPX=GAP*Math.SQRT2*S*C30, OUT=(LX+MG+MW)*SC;
+  /* THE GAP IS MEASURED ALONG THE LINE, from the ring to the rack's back face.
+     A world unit of y is S pixels on screen down this diagonal, so the ring's
+     radius along it, found in pixels, divides straight back into units. */
+  const GAP=n.w*0.65/0.72;
   const rw=n.w*1.55, rd=n.d*0.56, rh=n.h*0.50;
-  /* the rack's centre from where its right-hand corner and its middle have to
-     land on screen: across is x−y, down is x+y, so the two solve directly.
-     Its middle is block and tubes together, which is what the eye takes for
-     the rack, and that is what is level with the glass's centre. */
-  const across=(-OUT-GPX)/(S*C30)-(rw+rd)/2, down=rh*1.2*CZ/0.5;
-  const rack={x:n.x+(across+down)/2, y:n.y+(down-across)/2,
+  const RU=SC/Math.hypot(C30/LX, 0.5/LY);
+  const rack={x:n.x, y:n.y+RU/S+GAP+rd/2,
               w:rw, d:rd, h:rh, tubes:8, strips:2,
               mag:"var(--ch1)"};
   const T=magnetRack(g, rack);
@@ -6160,12 +6158,12 @@ function drawCapture(g,n){
      remember to change. */
   /* the glass's centre, KX KY, is set with the rack at the top of this
      function: it is the anchor and the rack is solved from it */
-  /* the leaders name ONE tube — the near strip's right-hand one, which is the
-     tube closest to the glass and the only end of the rack a leader can reach
-     without crossing plastic standing in front of it — and they start ON the
-     boundary rather than inside it, aimed at that tube's own rim, so glass
-     that has moved or grown still points at the plastic */
-  const anchor=T.rims[T.near+rack.tubes-1];
+  /* the leaders name ONE tube — the back strip's right-hand one, now the glass
+     stands behind the rack on its line: a leader to the near strip would run
+     up across the back strip to get there — and they start ON the boundary
+     rather than inside it, aimed at that tube's own rim, so glass that has
+     moved or grown still points at the plastic */
+  const anchor=T.rims[rack.tubes-1];
   [-1,1].forEach(s=>{
     const tx=anchor.x+s*anchor.rx, ty=anchor.y;
     const vx=tx-KX, vy=ty-KY, u=1/Math.hypot(vx/(LX*SC), vy/(LY*SC));
@@ -6173,27 +6171,6 @@ function drawCapture(g,n){
       x2:tx.toFixed(1),y2:ty.toFixed(1),stroke:"var(--fg2)",
       "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".4"}));
   });
-
-  /* THE THREE UNITS, dimensioned the way a drawing office does it and the
-     way C4 labels its run: an extension line down from each near edge — the
-     rack's right-hand corner, the glass's left bar — and the dimension line
-     between them, set below both so it crosses neither the leaders nor the
-     plastic. The label prints what GAP actually is, so a resized node says
-     its own number rather than the one it was authored at. */
-  const gx=KX-OUT, rxe=gx-GPX, DY=KY+(LY+8)*SC, TK=2.2*SC;
-  const [,RY]=P(rack.x+rack.w/2, rack.y-rack.d/2, 0);
-  const f1=v=>v.toFixed(1);
-  g.appendChild(el("path",{d:
-    `M${f1(rxe)} ${f1(RY+2*SC)}L${f1(rxe)} ${f1(DY+TK)}`+
-    `M${f1(gx)} ${f1(KY+(MH+2)*SC)}L${f1(gx)} ${f1(DY+TK)}`+
-    `M${f1(rxe)} ${f1(DY)}L${f1(gx)} ${f1(DY)}`,
-    fill:"none",stroke:"var(--fg2)","stroke-width":(0.7*SC).toFixed(2),"stroke-opacity":".7"}));
-  const dim=el("text",{x:f1((rxe+gx)/2),y:f1(DY+7*SC),"text-anchor":"middle",
-    "font-size":(5.5*SC).toFixed(2),"font-weight":"700",
-    fill:"var(--fg2)",stroke:"var(--bg)","stroke-width":(1.1*SC).toFixed(2),"stroke-opacity":".85",
-    "paint-order":"stroke","stroke-linejoin":"round"});
-  dim.textContent=`${+GAP.toFixed(1)} units`;
-  g.appendChild(dim);
 
   const lens=el("g",{transform:
     `translate(${KX.toFixed(1)},${KY.toFixed(1)}) scale(${SC.toFixed(4)})`});
