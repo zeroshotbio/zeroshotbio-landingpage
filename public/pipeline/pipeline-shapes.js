@@ -2865,6 +2865,22 @@ const rampHue=(k,nw)=>{
     : `color-mix(in oklab, var(--ch${(a+1)%12+1}) ${(f*100).toFixed(0)}%, var(--ch${a+1}))`;
 };
 
+/* BUT 96 HUES ON A 12-STOP RAMP ARE AN EIGHTH OF A STOP APART, and at four
+   pixels a well an eighth of a stop is no difference at all: the plate read as
+   twelve colours dealt eight times, which is a plate of repeated barcodes. So
+   each well also takes one of eight lightnesses, pulled towards --bg or --fg by
+   up to 40%. The level is the hue sub-step times three mod eight, so the eight
+   wells that share a stop and sit side by side in hue land at least three
+   lightness levels apart — the second axis separates exactly the wells the
+   first one cannot. Hoisted when B4 was asked for 96 colours too, for the
+   reason rampHue was: two copies of the walk would be two plates. rampHue is
+   left as it is, because the other plates on the row still walk hue alone. */
+const rampShade=(k,nw)=>{
+  const m=(k*RAMP_STRIDE)%nw, l=(Math.floor(m*8*12/nw)%8*3)%8;
+  const t=(l-3.5)/3.5, pct=(Math.abs(t)*40).toFixed(0);
+  return `color-mix(in oklab, ${t<0?"var(--bg)":"var(--fg)"} ${pct}%, ${rampHue(k,nw)})`;
+};
+
 /* ------------------------------------------------------------------
    ROUND ONE · REVERSE TRANSCRIPTION
    A plate on the bench, and three of its wells opened up at once.
@@ -2977,24 +2993,10 @@ function drawReverseTranscription(g0,n){
   const plate={x:n.x, y:n.y+n.d*0.30, w:PW, d:PW*ROWS/COLS};
   const pth=n.h*0.714;
 
-  /* A WELL'S COLOUR starts as rampHue's, above — hoisted the moment B3 had to
-     draw this same plate, because two copies of the walk would be two plates.
-
-     BUT 96 HUES ON A 12-STOP RAMP ARE AN EIGHTH OF A STOP APART, and at four
-     pixels a well an eighth of a stop is no difference at all: the plate read
-     as twelve colours dealt eight times, which is the repeated-barcode plate
-     the header says this must not be. So each well also takes one of eight
-     lightnesses, pulled towards --bg or --fg by up to 40%. The level is the
-     hue sub-step times three mod eight, so the eight wells that share a stop
-     and sit side by side in hue land at least three lightness levels apart from
-     their neighbours — the second axis separates exactly the wells the first
-     one cannot. rampHue itself is left alone: every other plate on this row
-     walks it, and this is the request for this node. */
-  const HUE=k=>{
-    const m=(k*RAMP_STRIDE)%NW, l=(Math.floor(m*8*12/NW)%8*3)%8;
-    const t=(l-3.5)/3.5, pct=(Math.abs(t)*40).toFixed(0);
-    return `color-mix(in oklab, ${t<0?"var(--bg)":"var(--fg)"} ${pct}%, ${rampHue(k,NW)})`;
-  };
+  /* A WELL'S COLOUR is rampShade's, above: a hue off the ramp and a lightness
+     on top of it, because 96 hues alone read as twelve colours dealt eight
+     times — the repeated-barcode plate the header says this must not be. */
+  const HUE=k=>rampShade(k,NW);
 
   /* GREEN IS THE LIP AND THE SKIRT, NOT THE DECK, and that is skirtSlab's job
      now: B3 receives this plate and has to draw the same green plastic, so the
@@ -3423,7 +3425,10 @@ function drawLigation(g0,n){
   const PW=n.w*0.712;
   const plate={x:n.x, y:n.y+n.d*0.30, w:PW, d:PW*ROWS/COLS};
   const pth=n.h*0.714;
-  const HUE=k=>rampHue(k,NW);
+  /* 96 wells, 96 colours, as asked: hue alone puts eight wells on every
+     ramp stop, so this plate takes B2's lightness walk as well — rampShade,
+     above — and a well here is the colour its twin is there */
+  const HUE=k=>rampShade(k,NW);
   /* the plate and everything on it get a group of their own, because the
      plate is centred on the node's outline separately from the lens row —
      see ON ITS OWN, below, which is B2's move made again here */
