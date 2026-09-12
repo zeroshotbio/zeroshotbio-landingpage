@@ -1,0 +1,35 @@
+{
+  "schema": "rhaister_exhibits/v1",
+  "items": [
+    {
+      "id": "figure1_task",
+      "description": "Authors' original task schematic released with the paper code",
+      "paper_figure": "Figure 1 task schematic",
+      "source_url": "https://huggingface.co/tahoebio/Rhaister/blob/75fed20a1d97b05a09bf25c5341762141882106a/plots/Rhaister_split.png",
+      "paper_url": "https://doi.org/10.64898/2026.06.09.731197",
+      "upstream_commit": "75fed20a1d97b05a09bf25c5341762141882106a",
+      "license": "CC BY 4.0 paper; source repository Apache-2.0",
+      "attribution": "Svensson et al., 2026",
+      "original": "exhibits/original/rhaister_figure1_task_source.png",
+      "original_dimensions": [
+        1210,
+        782
+      ],
+      "original_sha256": "4475694a9512a5b9f59853ea008b6e9667b9fc341273b968fe7566160b46b132",
+      "crop": "exhibits/crops/rhaister_figure1_task_crop.png",
+      "crop_box_xyxy": [
+        38,
+        25,
+        1181,
+        737
+      ],
+      "crop_dimensions": [
+        1143,
+        712
+      ],
+      "crop_sha256": "0d7dc5b5e513f781d62b9fbcbf8aafac3837b619ceb4d2b8acf9f7ae668cbd62",
+      "pixel_edits": "crop only; no recolouring, retouching, or overlays"
+    }
+  ],
+  "asset_version": "a4088dbaaf51"
+}

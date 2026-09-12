@@ -1,5 +1,11 @@
 # Rhaister evidence page — reconnaissance and implementation plan
 
+> **Editorial status, 2026-09-12:** the seven-plate concept below was superseded
+> before implementation by the three-figure brief. The shipped page retains
+> this document's data, scope, provenance, and validation requirements, but
+> condenses the story to task → canonical evidence → panel titration. See
+> `NOTES.md` for the implemented contract.
+
 Prepared 2026-09-12. This is the plan for replacing the local,
 pre-reproduction prototype at `/rhaister`. It deliberately makes no website
 code or data change yet and does not authorize a push or deployment.

@@ -1,146 +1,153 @@
-/* /rhaister — drawing primitives (a copy of /compass/cp-draw.js; keep the two in step).
- *
- * The furniture (frames, rules, guide lines) is drawn with a small deterministic pen wobble.
- * Data marks are drawn exactly: no jitter, no smoothing, no nudging. Keep it that way — if you
- * need a wobble, it belongs in penLine/penRect, never in a data path.
- */
+/* Exact SVG furniture shared by the three /rhaister figures. */
 'use strict';
 
-const INK = {};
-function readInks() {
-  const cs = getComputedStyle(document.documentElement);
-  ['paper', 'paper-deep', 'ink', 'ink-2', 'ink-3', 'rule', 'rule-2', 'select', 't0', 't1', 't2', 't3', 't4', 't5', 't6']
-    .forEach((k) => { INK[k] = cs.getPropertyValue('--' + k).trim(); });
-  INK.serif = cs.getPropertyValue('--serif').trim();
-  INK.sans = cs.getPropertyValue('--sans').trim();
-}
+window.RHD = (() => {
+  const NS = 'http://www.w3.org/2000/svg';
+  const C = {
+    paper: '#f4efe4',
+    paperHi: '#fbf8f0',
+    ink: '#25211b',
+    ink2: '#5e574c',
+    ink3: '#8c8271',
+    rule: '#cbbfa9',
+    light: '#ded5c4',
+    madder: '#973820',
+    ochre: '#b27b25',
+    teal: '#286f69',
+    blue: '#4f627b',
+  };
+  const serif = '"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif';
+  const sans = 'ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif';
 
-function rgba(hex, a) {
-  const n = parseInt(hex.replace('#', ''), 16);
-  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
-}
-
-/* Size a canvas to its parent at devicePixelRatio (capped at 2) and work in CSS pixels.
- * A plate that cannot be read below a certain width declares data-minw; on a narrower screen it
- * keeps that width and its holder scrolls sideways, rather than being squeezed illegible. */
-function setup(cv) {
-  const avail = cv.parentElement.clientWidth, minW = +(cv.dataset.minw || 0);
-  const W = Math.max(280, avail, minW);
-  const H = Math.round(W * parseFloat(cv.dataset.aspect || '0.6'));
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.height = H + 'px';
-  cv.style.width = W > avail ? W + 'px' : '';
-  const ctx = cv.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, W, H);
-  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  return { ctx, W, H };
-}
-
-const font = {
-  serif: (px, italic) => `${italic ? 'italic ' : ''}${px}px ${INK.serif}`,
-  sans: (px) => `${px}px ${INK.sans}`,
-};
-
-/* A line drawn as a pen would draw it. Furniture only. */
-function penLine(ctx, x1, y1, x2, y2, seed = 1, color = INK.ink, width = 0.8) {
-  const L = Math.hypot(x2 - x1, y2 - y1), N = Math.max(2, Math.round(L / 6));
-  const nx = -(y2 - y1) / (L || 1), ny = (x2 - x1) / (L || 1);
-  ctx.beginPath();
-  for (let i = 0; i <= N; i++) {
-    const t = i / N, w = 0.35 * Math.sin(3.1 * t * Math.PI + seed) + 0.22 * Math.sin(7.3 * t * Math.PI + seed * 2.3);
-    const x = x1 + (x2 - x1) * t + nx * w, y = y1 + (y2 - y1) * t + ny * w;
-    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  function el(name, attrs = {}, parent = null) {
+    const node = document.createElementNS(NS, name);
+    Object.entries(attrs).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) node.setAttribute(key, String(value));
+    });
+    if (parent) parent.appendChild(node);
+    return node;
   }
-  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
-}
 
-function penRect(ctx, x, y, w, h, seed = 1, color = INK.rule, width = 0.8) {
-  penLine(ctx, x, y, x + w, y, seed, color, width);
-  penLine(ctx, x + w, y, x + w, y + h, seed + 1, color, width);
-  penLine(ctx, x + w, y + h, x, y + h, seed + 2, color, width);
-  penLine(ctx, x, y + h, x, y, seed + 3, color, width);
-}
-
-/* Text. `back` paints a paper rectangle behind the words so they read over marks. */
-function text(ctx, s, x, y, o = {}) {
-  ctx.save();
-  ctx.font = o.font || font.serif(13);
-  ctx.textAlign = o.align || 'left';
-  ctx.textBaseline = o.base || 'alphabetic';
-  if (o.spacing !== undefined && 'letterSpacing' in ctx) ctx.letterSpacing = o.spacing + 'px';
-  if (o.clamp) {                                   // keep the whole string inside [3, clamp - 3]
-    const w = ctx.measureText(s).width, a = o.align || 'left';
-    const left = () => (a === 'center' ? x - w / 2 : a === 'right' || a === 'end' ? x - w : x);
-    if (left() + w > o.clamp - 3) x -= left() + w - (o.clamp - 3);
-    if (left() < 3) x += 3 - left();
+  function svg(container, width, height, label = '') {
+    container.replaceChildren();
+    const out = el('svg', {
+      viewBox: `0 0 ${width} ${height}`,
+      width,
+      height,
+      preserveAspectRatio: 'xMidYMid meet',
+      'aria-hidden': 'true',
+      focusable: 'false',
+    });
+    if (label) el('title', {}, out).textContent = label;
+    container.appendChild(out);
+    return out;
   }
-  if (o.back) {
-    const m = ctx.measureText(s), w = m.width, a = o.align || 'left';
-    const x0 = a === 'center' ? x - w / 2 : a === 'right' ? x - w : x;
-    const hgt = parseFloat(ctx.font) || 12;
-    const top = o.base === 'middle' ? y - hgt / 2 : o.base === 'top' ? y : y - hgt * 0.85;
-    ctx.fillStyle = rgba(INK.paper, 0.9); ctx.fillRect(x0 - 3, top - 1, w + 6, hgt + 3);
+
+  function group(parent, attrs = {}) {
+    return el('g', attrs, parent);
   }
-  ctx.fillStyle = o.color || INK.ink;
-  ctx.fillText(s, x, y);
-  ctx.restore();
-}
 
-/* Machine furniture: small, wide-tracked, uppercase sans. */
-function caps(ctx, s, x, y, o = {}) {
-  text(ctx, String(s).toUpperCase().replace(/Β/g, 'β').replace(/CRISPRI/g, 'CRISPRi'), x, y, { font: font.sans(o.size || 9.5), color: o.color || INK['ink-3'], spacing: o.spacing ?? 1.6, ...o });
-}
-
-const lin = (d0, d1, r0, r1) => (v) => r0 + ((v - d0) / (d1 - d0)) * (r1 - r0);
-const logs = (d0, d1, r0, r1) => (v) => r0 + ((Math.log10(v) - Math.log10(d0)) / (Math.log10(d1) - Math.log10(d0))) * (r1 - r0);
-const nf = (n, d = 0) => Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-// a true minus sign, not a hyphen
-const f2 = (x) => (x === null || x === undefined ? '–' : Number(x).toFixed(2).replace(/^-/, '−'));
-const f3 = (x) => (x === null || x === undefined ? '–' : Number(x).toFixed(3).replace(/^-/, '−'));
-
-/* A labelled horizontal axis with ticks (values, positions via scale). */
-function axisX(ctx, sx, y, ticks, o = {}) {
-  const [a, b] = o.range || [sx(ticks[0]), sx(ticks[ticks.length - 1])];
-  penLine(ctx, a, y, b, y, o.seed || 3, INK['ink-3'], 0.7);
-  ticks.forEach((t) => {
-    const x = sx(t);
-    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 4); ctx.strokeStyle = INK['ink-3']; ctx.lineWidth = 0.7; ctx.stroke();
-    caps(ctx, o.fmt ? o.fmt(t) : t, x, y + 15, { align: 'center', spacing: 0.6, size: 9 });
-  });
-  if (o.label) text(ctx, o.label, (a + b) / 2, y + 32, { font: font.serif(12.5, true), color: INK['ink-2'], align: 'center', clamp: ctx.canvas.clientWidth });
-}
-
-function axisY(ctx, sy, x, ticks, o = {}) {
-  const [a, b] = o.range || [sy(ticks[0]), sy(ticks[ticks.length - 1])];
-  penLine(ctx, x, a, x, b, o.seed || 5, INK['ink-3'], 0.7);
-  ticks.forEach((t) => {
-    const y = sy(t);
-    ctx.beginPath(); ctx.moveTo(x - 4, y); ctx.lineTo(x, y); ctx.strokeStyle = INK['ink-3']; ctx.lineWidth = 0.7; ctx.stroke();
-    caps(ctx, o.fmt ? o.fmt(t) : t, x - 7, y + 3, { align: 'right', spacing: 0.4, size: 9 });
-  });
-  if (o.label) {
-    ctx.save(); ctx.translate(x - (o.labelGap || 38), (a + b) / 2); ctx.rotate(-Math.PI / 2);
-    text(ctx, o.label, 0, 0, { font: font.serif(12.5, true), color: INK['ink-2'], align: 'center' });
-    ctx.restore();
+  function line(parent, x1, y1, x2, y2, attrs = {}) {
+    return el('line', { x1, y1, x2, y2, stroke: C.ink, 'stroke-width': 1, ...attrs }, parent);
   }
-}
 
-/* A guide line: faint, dashed, furniture. */
-function guide(ctx, x1, y1, x2, y2, color = INK.rule) {
-  ctx.save(); ctx.setLineDash([2, 3]); ctx.strokeStyle = color; ctx.lineWidth = 0.8;
-  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.restore();
-}
+  function rect(parent, x, y, width, height, attrs = {}) {
+    return el('rect', { x, y, width, height, fill: 'none', ...attrs }, parent);
+  }
 
-function dot(ctx, x, y, r, fill, stroke) {
-  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
-  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
-  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.1; ctx.stroke(); }
-}
+  function circle(parent, cx, cy, r, attrs = {}) {
+    return el('circle', { cx, cy, r, ...attrs }, parent);
+  }
 
-/* A polyline through data points (exact, not smoothed). */
-function path(ctx, xs, ys, color, width = 1.3, dash) {
-  ctx.save(); if (dash) ctx.setLineDash(dash);
-  ctx.beginPath(); xs.forEach((x, i) => (i ? ctx.lineTo(x, ys[i]) : ctx.moveTo(x, ys[i])));
-  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); ctx.restore();
-}
+  function path(parent, d, attrs = {}) {
+    return el('path', { d, fill: 'none', stroke: C.ink, 'stroke-width': 1, ...attrs }, parent);
+  }
+
+  function text(parent, x, y, value, attrs = {}) {
+    const node = el('text', {
+      x,
+      y,
+      fill: C.ink,
+      'font-family': serif,
+      'font-size': 13,
+      ...attrs,
+    }, parent);
+    node.textContent = value;
+    return node;
+  }
+
+  function multiline(parent, x, y, lines, attrs = {}, leading = 16) {
+    const node = text(parent, x, y, '', attrs);
+    lines.forEach((value, index) => {
+      const span = el('tspan', { x, dy: index ? leading : 0 }, node);
+      span.textContent = value;
+    });
+    return node;
+  }
+
+  function scale(domainMin, domainMax, rangeMin, rangeMax) {
+    const span = domainMax - domainMin || 1;
+    return (value) => rangeMin + ((value - domainMin) / span) * (rangeMax - rangeMin);
+  }
+
+  function polylinePath(points) {
+    return points.map((point, index) => `${index ? 'L' : 'M'}${point[0].toFixed(2)},${point[1].toFixed(2)}`).join(' ');
+  }
+
+  function areaPath(top, bottom) {
+    if (!top.length) return '';
+    const forward = polylinePath(top);
+    const reverse = bottom.slice().reverse().map((point) => `L${point[0].toFixed(2)},${point[1].toFixed(2)}`).join(' ');
+    return `${forward} ${reverse} Z`;
+  }
+
+  function caps(parent, x, y, value, attrs = {}) {
+    return text(parent, x, y, value.toUpperCase(), {
+      'font-family': sans,
+      'font-size': 9,
+      'letter-spacing': 1.4,
+      fill: C.ink3,
+      ...attrs,
+    });
+  }
+
+  function arrow(parent, x1, y1, x2, y2, color = C.ink3) {
+    line(parent, x1, y1, x2, y2, { stroke: color, 'stroke-width': 1.2 });
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    const size = 7;
+    const a = [
+      [x2, y2],
+      [x2 - size * Math.cos(angle - 0.48), y2 - size * Math.sin(angle - 0.48)],
+      [x2 - size * Math.cos(angle + 0.48), y2 - size * Math.sin(angle + 0.48)],
+    ];
+    path(parent, `M${a[0][0]},${a[0][1]} L${a[1][0]},${a[1][1]} L${a[2][0]},${a[2][1]} Z`, {
+      fill: color,
+      stroke: 'none',
+    });
+  }
+
+  function fmt(value, digits = 3) {
+    return Number(value).toFixed(digits).replace(/^0\./, '.').replace(/^-0\./, '−.');
+  }
+
+  return {
+    C,
+    serif,
+    sans,
+    el,
+    svg,
+    group,
+    line,
+    rect,
+    circle,
+    path,
+    text,
+    multiline,
+    scale,
+    polylinePath,
+    areaPath,
+    caps,
+    arrow,
+    fmt,
+  };
+})();

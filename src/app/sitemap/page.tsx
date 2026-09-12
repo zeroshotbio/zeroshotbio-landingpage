@@ -37,7 +37,7 @@ const SECTIONS: Section[] = [
       { href: "/fate_map_zebrahub", label: "Fate map · Zebrahub — two maps of becoming", note: "120,444 cells from 40 individual embryos, plus 101,676 tracked nuclei" },
       { href: "/fate_map_24_48", label: "Fate map · 24–48 hpf — the inferred skeleton", note: "186 states, 173 transitions, each with its literature verdict; inferred, not observed" },
       { href: "/compass", label: "COMPASS, reproduced — the shared response of a perturbed cell", note: "2,317 CRISPRi knockdowns in six human lines; held against Tahoe, ChemFish and our own MegaFin / MiniFin" },
-      { href: "/rhaister", label: "Rhaister — predicting the responses you did not measure", note: "the beginning of an analysis: observed responses, simple combinations, unseen predictions; plan for MegaFin" },
+      { href: "/rhaister", label: "Rhaister, reproduced — predicting what was not measured", note: "a three-figure visual essay: task, canonical split evidence, panel-size titration" },
       { href: "/danio_specimen_poster.html", label: "DANIO — interactive specimen poster" },
       { href: "/d3_complexity_heatmap.html", label: "Complexity heatmap" },
       { href: "/prospective_diseases_treemap.html", label: "Prospective diseases treemap" },

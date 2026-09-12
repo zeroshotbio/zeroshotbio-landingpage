@@ -1,269 +1,431 @@
-/* /rhaister — the beginning of an analysis.
- *
- * Every number printed here is read from meta.json: the authors' reported values (with where they are
- * reported), the shapes of the screens and the plan. Plate I is a sketch built so that its combination
- * is exact; it is an illustration of the method, not data, and it says so on the plate.
- */
+/* /rhaister — three figures, all quantitative marks from generated JSON. */
 'use strict';
 
-const RH = { meta: null };
+const RH = { meta: null, plates: null, manifest: null };
 const $ = (id) => document.getElementById(id);
+const D = window.RHD;
+const { C, serif, sans } = D;
+
+function num(value, digits = 3) {
+  return Number(value).toFixed(digits);
+}
+
+function sci(value) {
+  const [mantissa, exponent] = Number(value).toExponential(2).split('e');
+  return `${mantissa} × 10<sup>${Number(exponent)}</sup>`;
+}
 
 async function load() {
-  const r = await fetch('/rhaister/meta.json', { cache: 'no-store' });
-  if (!r.ok) throw new Error(`could not fetch meta.json (${r.status})`);
-  RH.meta = await r.json();
-}
-
-/* ---------------- the sketch: a made-up screen in which the target IS a weighted sum of the panel ---------------- */
-const SK = (() => {
-  let seed = 11;
-  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-  const G = 8, C = 5, P = 8, panel = [0, 1, 2, 3], target = 5, w = [0.6, 0.35, -0.4, 0.15];
-  const base = Array.from({ length: P }, () => Array.from({ length: G }, () => rnd() * 2 - 1));
-  const shift = Array.from({ length: C + 1 }, () => Array.from({ length: G }, () => (rnd() * 2 - 1) * 0.5));
-  const gain = Array.from({ length: C + 1 }, () => 0.7 + rnd() * 0.6);
-  const raw = (c, p) => base[p].map((v, g) => gain[c] * v + shift[c][g] * (p % 3 === 0 ? 0.8 : 0.4));
-  const y = (c, p) => (p === target ? raw(c, 0).map((_, g) => panel.reduce((a, q, k) => a + w[k] * raw(c, q)[g], 0)) : raw(c, p));
-  let vmax = 0;
-  for (let c = 0; c <= C; c++) for (let p = 0; p < P; p++) y(c, p).forEach((v) => { vmax = Math.max(vmax, Math.abs(v)); });
-  return { G, C, P, panel, target, w, y, vmax, letters: ['A', 'B', 'C', 'D', 'E', 'p*', 'G', 'H'] };
-})();
-
-function glyph(ctx, x, y, w, h, vec, col) {
-  const mid = y + h / 2, bw = w / vec.length;
-  ctx.beginPath(); ctx.moveTo(x, mid); ctx.lineTo(x + w, mid); ctx.strokeStyle = rgba(INK.ink, 0.22); ctx.lineWidth = 0.6; ctx.stroke();
-  vec.forEach((v, g) => {
-    const bh = (v / SK.vmax) * (h / 2 - 1);
-    ctx.fillStyle = col; ctx.fillRect(x + g * bw + bw * 0.16, bh >= 0 ? mid - bh : mid, bw * 0.68, Math.abs(bh));
-  });
-}
-
-function arrow(ctx, x1, y1, x2, y2, col = INK['ink-3']) {
-  penLine(ctx, x1, y1, x2, y2, 17, col, 1);
-  const a = Math.atan2(y2 - y1, x2 - x1);
-  ctx.beginPath(); ctx.moveTo(x2, y2);
-  ctx.lineTo(x2 - 8 * Math.cos(a - 0.4), y2 - 8 * Math.sin(a - 0.4));
-  ctx.lineTo(x2 - 8 * Math.cos(a + 0.4), y2 - 8 * Math.sin(a + 0.4));
-  ctx.closePath(); ctx.fillStyle = col; ctx.fill();
-}
-
-/* ---------------- Plate I — observed, combined, predicted ---------------- */
-function drawIdea(cv) {
-  const { ctx, W, H } = setup(cv);
-  const S = SK, rows = S.C + 1, top = 70;
-  const x1 = 96, w1 = W * 0.34, x2 = x1 + w1 + 56, w2 = W * 0.2, x3 = x2 + w2 + 56, w3 = W - x3 - 16;
-  // two-line stage heads, so they never run into each other at the narrowest width
-  const heads = [[x1 - 80, '1 · observed', 'responses'], [x2, '2 · a simple combination', 'of known responses'], [x3, '3 · a prediction of', 'the unseen response']];
-  heads.forEach(([x, a, b]) => { caps(ctx, a, x, 14, { size: 10, color: INK.ink }); caps(ctx, b, x, 28, { size: 10, color: INK.ink }); });
-  caps(ctx, 'sketch · a made-up screen, built so the combination is exact', W - 16, 46, { size: 8.5, align: 'right', color: INK.select, clamp: W });
-
-  // 1 · the screen: reference contexts fully measured, the new context only on its panel
-  const tw = w1 / S.P, th = Math.min(40, (H - top - 92) / (rows + 0.7));
-  S.letters.forEach((l, p) => text(ctx, l, x1 + tw * (p + 0.5), top - 8, {
-    font: font.serif(12.5, true), align: 'center', color: p === S.target ? INK.select : S.panel.includes(p) ? INK.ink : INK['ink-3'] }));
-  const rowY = (c) => top + c * th + (c === S.C ? th * 0.7 : 0);
-  for (let c = 0; c <= S.C; c++) {
-    const isNew = c === S.C, yy = rowY(c);
-    text(ctx, isNew ? 'new context' : `reference ${c + 1}`, x1 - 10, yy + th / 2 + 4, { font: font.serif(12, true), align: 'right', color: isNew ? INK.ink : INK['ink-2'] });
-    for (let p = 0; p < S.P; p++) {
-      const x = x1 + p * tw + 2, gy = yy + 2, gw = tw - 4, gh = th - 4;
-      if (isNew && !S.panel.includes(p)) {
-        ctx.save(); ctx.setLineDash([2, 2]); ctx.strokeStyle = p === S.target ? INK.select : INK.rule; ctx.lineWidth = p === S.target ? 1.4 : 0.8;
-        ctx.strokeRect(x, gy, gw, gh); ctx.restore();
-        text(ctx, '?', x + gw / 2, gy + gh / 2 + 5, { font: font.serif(13, true), align: 'center', color: p === S.target ? INK.select : INK['ink-3'] });
-        continue;
-      }
-      ctx.strokeStyle = p === S.target ? INK.t1 : INK['rule-2']; ctx.lineWidth = p === S.target ? 1.4 : 0.6; ctx.strokeRect(x, gy, gw, gh);
-      glyph(ctx, x + 2, gy + 2, gw - 4, gh - 4, S.y(c, p), rgba(INK.ink, S.panel.includes(p) || p === S.target ? 0.8 : 0.32));
-    }
+  const [metaResponse, platesResponse, manifestResponse] = await Promise.all([
+    fetch('/rhaister/meta.json', { cache: 'no-store' }),
+    fetch('/rhaister/plates.json', { cache: 'no-store' }),
+    fetch('/rhaister/exhibits/manifest.json', { cache: 'no-store' }),
+  ]);
+  for (const response of [metaResponse, platesResponse, manifestResponse]) {
+    if (!response.ok) throw new Error(`could not load ${response.url} (${response.status})`);
   }
-  const by = rowY(S.C) + th + 12;
-  penLine(ctx, x1 + 2, by, x1 + S.panel.length * tw - 2, by, 5, INK.ink, 0.9);
-  text(ctx, 'the panel: measured in every context', x1, by + 16, { font: font.serif(11.5, true), color: INK['ink-2'] });
-  text(ctx, 'ochre: p* where it was measured', x1, by + 32, { font: font.serif(11.5, true), color: INK.t1 });
-
-  // 2 · the weights, learned where p* was measured
-  const my = top + 6, rh2 = Math.min(44, (H - my - 110) / S.panel.length), cx = x2 + w2 * 0.55, wmax = 0.7;
-  arrow(ctx, x1 + w1 + 8, top + (rows * th) / 2, x2 - 12, top + (rows * th) / 2);
-  S.panel.forEach((q, k) => {
-    const y = my + k * rh2, len = (S.w[k] / wmax) * (w2 * 0.42);
-    text(ctx, S.letters[q], x2, y + rh2 / 2 + 4, { font: font.serif(13, true) });
-    penLine(ctx, cx, y + 4, cx, y + rh2 - 4, 30 + k, INK.rule, 0.6);
-    ctx.fillStyle = S.w[k] >= 0 ? rgba(INK.t1, 0.8) : rgba(INK.t4, 0.8);
-    ctx.fillRect(Math.min(cx, cx + len), y + rh2 * 0.3, Math.abs(len), rh2 * 0.4);
-    text(ctx, (S.w[k] >= 0 ? '+' : '−') + Math.abs(S.w[k]).toFixed(2), cx + len + (len >= 0 ? 6 : -6), y + rh2 / 2 + 4,
-      { font: font.serif(12), align: len >= 0 ? 'left' : 'right' });
-  });
-  const ty = my + S.panel.length * rh2 + 18;
-  text(ctx, 'one weight per panel perturbation,', x2, ty, { font: font.serif(12, true), color: INK['ink-2'] });
-  text(ctx, 'shared by every gene, fitted across', x2, ty + 16, { font: font.serif(12, true), color: INK['ink-2'] });
-  text(ctx, 'the reference contexts (ridge regression)', x2, ty + 32, { font: font.serif(12, true), color: INK['ink-2'] });
-
-  // 3 · the new context's own panel, combined with the same weights
-  arrow(ctx, x2 + w2 + 8, top + (rows * th) / 2, x3 - 12, top + (rows * th) / 2);
-  const gw3 = Math.min(90, w3 * 0.34), gh3 = Math.min(40, rh2 - 6);
-  S.panel.forEach((q, k) => {
-    const y = my + k * rh2 + (rh2 - gh3) / 2;
-    text(ctx, `${S.w[k] >= 0 ? '+' : '−'}${Math.abs(S.w[k]).toFixed(2)} ×`, x3 + 44, y + gh3 / 2 + 4, { font: font.serif(12), align: 'right' });
-    ctx.strokeStyle = INK['rule-2']; ctx.lineWidth = 0.6; ctx.strokeRect(x3 + 50, y, gw3, gh3);
-    glyph(ctx, x3 + 52, y + 2, gw3 - 4, gh3 - 4, S.y(S.C, q), rgba(INK.ink, 0.8));
-    text(ctx, S.letters[q], x3 + 50 + gw3 + 6, y + gh3 / 2 + 4, { font: font.serif(12, true), color: INK['ink-3'] });
-  });
-  const px = x3 + 50, py = my + S.panel.length * rh2 + 20, pw = gw3, ph = gh3 + 8;
-  text(ctx, '=', px - 16, py + ph / 2 + 5, { font: font.serif(18), align: 'center' });
-  ctx.strokeStyle = INK.select; ctx.lineWidth = 1.6; ctx.strokeRect(px, py, pw, ph);
-  glyph(ctx, px + 2, py + 2, pw - 4, ph - 4, S.y(S.C, S.target), rgba(INK.select, 0.85));
-  text(ctx, 'predicted p*', px + pw + 8, py + ph / 2, { font: font.serif(12.5, true), color: INK.select });
-  text(ctx, 'in the new context', px + pw + 8, py + ph / 2 + 15, { font: font.serif(12.5, true), color: INK.select });
-
-  text(ctx, 'ŷ(new context, p*)  =  Σ over panel perturbations q  of  weight(q) × y(new context, q)', W / 2, H - 14,
-    { font: font.serif(14, true), align: 'center', color: INK.ink, clamp: W });
+  [RH.meta, RH.plates, RH.manifest] = await Promise.all([
+    metaResponse.json(),
+    platesResponse.json(),
+    manifestResponse.json(),
+  ]);
+  const versions = [RH.meta.asset_version, RH.plates.asset_version, RH.manifest.asset_version];
+  if (new Set(versions).size !== 1) throw new Error(`asset versions disagree: ${versions.join(' / ')}`);
+  if (RH.plates.example.points.length !== RH.meta.split.genes) throw new Error('example point count disagrees with meta.json');
+  if (RH.plates.compass.points.length !== RH.meta.compass.matched) throw new Error('COMPASS point count disagrees with meta.json');
 }
 
-/* ---------------- Plate II — what the authors report ---------------- */
-function drawReported(cv) {
-  const { ctx, W, H } = setup(cv);
-  const R = RH.meta.reported, mets = R.metrics, rows = R.rows;
-  const L = Math.min(250, W * 0.26), T = 52, cw = (W - L - 16) / mets.length, rh = (H - T - 14) / rows.length;
-  mets.forEach((m, j) => {
-    const x = L + cw * (j + 0.5);
-    caps(ctx, m.short, x, 16, { align: 'center', size: 9.5, color: INK.ink });
-    text(ctx, m.plain, x, 32, { font: font.serif(11, true), color: INK['ink-3'], align: 'center' });
+function responseGlyph(svg, x, y, width, height, values, color, opacity = 1) {
+  D.line(svg, x, y + height / 2, x + width, y + height / 2, { stroke: C.light, 'stroke-width': .7 });
+  const points = values.map((value, index) => [
+    x + (index / (values.length - 1)) * width,
+    y + height / 2 - value * height * .34,
+  ]);
+  D.path(svg, D.polylinePath(points), {
+    stroke: color,
+    'stroke-width': 1.7,
+    'stroke-linecap': 'round',
+    'stroke-linejoin': 'round',
+    opacity,
   });
-  penLine(ctx, 8, T - 10, W - 8, T - 10, 50, INK.ink, 0.8);
-  rows.forEach((r, i) => {
-    const y = T + rh * (i + 0.5);
-    text(ctx, r.label, L - 16, y + 1, { font: font.serif(14, true), align: 'right' });
-    text(ctx, `${r.mode} · ${r.splits} split${r.splits > 1 ? 's' : ''}`, L - 16, y + 17, { font: font.serif(11, true), align: 'right', color: INK['ink-3'] });
-    penLine(ctx, 8, T + rh * (i + 1), W - 8, T + rh * (i + 1), 60 + i, rgba(INK.rule, 0.6), 0.5);
-    mets.forEach((m, j) => {
-      const x0 = L + cw * j + 16, x1 = L + cw * (j + 1) - 16, sx = lin(0, 1, x0, x1), v = r.values[m.key];
-      penLine(ctx, x0, y, x1, y, 70 + i * 7 + j, INK['rule-2'], 0.7);
-      [0, 1].forEach((t) => caps(ctx, t, sx(t), y + 15, { align: 'center', size: 7.5, spacing: 0.3 }));
-      dot(ctx, sx(v), y, 5, INK.paper, INK.ink);
-      text(ctx, f2(v), sx(v), y - 10, { font: font.serif(12), align: 'center' });
+}
+
+function drawMethodFlow() {
+  const box = $('methodFlow');
+  const mobile = box.clientWidth < 540;
+  const width = Math.max(300, Math.round(box.clientWidth));
+  const height = mobile ? 470 : 420;
+  const svg = D.svg(box, width, height, 'Observed panel responses become a weighted prediction');
+  const waves = [
+    [-.2,.4,.1,.8,.25,-.35,-.6,.05,.5,.18],
+    [.5,.25,-.15,-.6,-.22,.35,.7,.2,-.18,-.35],
+    [-.35,-.55,.05,.25,.68,.35,-.1,-.45,.1,.42],
+    [.1,.55,.7,.2,-.2,-.1,.15,.5,.3,-.15],
+  ];
+
+  if (!mobile) {
+    const thirds = [24, width * .38, width * .72];
+    D.caps(svg, thirds[0], 42, '1 · observe', { fill: C.madder });
+    D.caps(svg, thirds[1], 42, '2 · weight');
+    D.caps(svg, thirds[2], 42, '3 · predict', { fill: C.madder });
+
+    D.text(svg, thirds[0], 65, 'new context', { 'font-size': 17, 'font-style': 'italic' });
+    waves.forEach((wave, index) => {
+      const y = 90 + index * 55;
+      D.rect(svg, thirds[0], y, Math.min(165, width * .25), 39, { stroke: C.light, fill: C.paperHi });
+      responseGlyph(svg, thirds[0] + 10, y + 5, Math.min(145, width * .22), 29, wave, C.ink2);
+      D.text(svg, thirds[0] + Math.min(165, width * .25) + 8, y + 24, `p${index + 1}`, {
+        'font-size': 11, fill: C.ink3, 'font-family': sans,
+      });
+    });
+    D.text(svg, thirds[0], 325, `${RH.meta.split.observed_panel} observed responses`, {
+      'font-size': 13, fill: C.ink2,
+    });
+    D.arrow(svg, width * .305, 189, width * .36, 189);
+
+    D.text(svg, thirds[1], 65, 'shared ridge weights', { 'font-size': 17, 'font-style': 'italic' });
+    const weights = [.62,.33,-.27,.14];
+    weights.forEach((weight, index) => {
+      const y = 99 + index * 50;
+      D.text(svg, thirds[1], y + 5, `w${index + 1}`, { 'font-size': 11, fill: C.ink3, 'font-family': sans });
+      const zero = thirds[1] + Math.min(75, width * .105);
+      D.line(svg, zero, y - 11, zero, y + 10, { stroke: C.rule });
+      D.rect(svg, Math.min(zero, zero + weight * 92), y - 7, Math.abs(weight * 92), 13, {
+        fill: weight > 0 ? C.teal : C.blue,
+      });
+    });
+    D.multiline(svg, thirds[1], 319, ['learned across', `${RH.meta.split.reference_contexts} reference contexts`], {
+      'font-size': 13, fill: C.ink2, 'font-style': 'italic',
+    }, 17);
+    D.arrow(svg, width * .65, 189, width * .70, 189);
+
+    const rightWidth = Math.max(125, width - thirds[2] - 26);
+    D.text(svg, thirds[2], 65, 'unseen perturbation', { 'font-size': 17, 'font-style': 'italic' });
+    D.rect(svg, thirds[2], 104, rightWidth, 168, {
+      stroke: C.madder, 'stroke-width': 1.2, 'stroke-dasharray': '4 4', fill: 'rgba(151,56,32,.025)',
+    });
+    const combined = waves[0].map((_, index) => (
+      .62 * waves[0][index] + .33 * waves[1][index] - .27 * waves[2][index] + .14 * waves[3][index]
+    ));
+    responseGlyph(svg, thirds[2] + 15, 143, rightWidth - 30, 95, combined, C.madder);
+    D.text(svg, thirds[2] + rightWidth / 2, 298, `${RH.meta.split.held_out} held out`, {
+      'font-size': 13, fill: C.madder, 'text-anchor': 'middle',
+    });
+    D.caps(svg, width - 20, height - 20, 'schematic · response profiles, not cells', {
+      'text-anchor': 'end', 'font-size': 8,
+    });
+    return;
+  }
+
+  const center = width / 2;
+  D.caps(svg, 20, 40, '1 · observe', { fill: C.madder });
+  D.text(svg, 20, 63, `${RH.meta.split.observed_panel} responses in the new context`, { 'font-size': 16, 'font-style': 'italic' });
+  waves.slice(0, 3).forEach((wave, index) => {
+    const y = 80 + index * 44;
+    D.rect(svg, 20, y, width - 40, 32, { stroke: C.light, fill: C.paperHi });
+    responseGlyph(svg, 31, y + 3, width - 62, 26, wave, C.ink2);
+  });
+  D.arrow(svg, center, 215, center, 244);
+  D.caps(svg, 20, 260, '2 · learn shared weights');
+  const zero = center;
+  [.62,.33,-.27].forEach((weight, index) => {
+    const y = 285 + index * 28;
+    D.line(svg, zero, y - 7, zero, y + 8, { stroke: C.rule });
+    D.rect(svg, Math.min(zero, zero + weight * 100), y - 5, Math.abs(weight * 100), 10, {
+      fill: weight > 0 ? C.teal : C.blue,
     });
   });
+  D.text(svg, 20, 374, `fit across ${RH.meta.split.reference_contexts} reference contexts`, {
+    'font-size': 13, fill: C.ink2, 'font-style': 'italic',
+  });
+  D.arrow(svg, center, 383, center, 406);
+  D.caps(svg, 20, 430, `3 · predict ${RH.meta.split.held_out} held-out responses`, { fill: C.madder });
+  responseGlyph(svg, 28, 440, width - 56, 25, [.1,.52,.18,-.38,.12,.58,.31,-.2,.08,.4], C.madder);
 }
 
-/* ---------------- Plate III — the shape of each screen, to one scale ---------------- */
-function drawShapes(cv) {
-  // height follows the content: the unit is set by the width, then the rows are stacked
-  const S = RH.meta.shapes, gap = 26, T = 28;
-  const Wp = Math.max(280, cv.parentElement.clientWidth, +(cv.dataset.minw || 0));
-  const Lp = Math.min(250, Wp * 0.31), Rp = Math.min(190, Wp * 0.2), maxP = Math.max(...S.map((s) => s.perturbations));
-  const unit = (Wp - Lp - Rp) / maxP;   // one unit on both axes: area = pairs that could be measured
-  const need = T + S.reduce((a, s) => a + Math.max(s.contexts * unit, 14) + gap, 0) + 8;
-  cv.dataset.aspect = String(need / Wp);
-  const { ctx, W } = setup(cv);
-  const L = Lp, R = Rp;
-  caps(ctx, 'width: perturbations · height: contexts · one scale for both, so area = pairs that could be measured', L, 14, { size: 8.5, clamp: W });
-  let y = T;
-  S.forEach((s, i) => {
-    const w = Math.max(2, s.perturbations * unit), h = Math.max(2, s.contexts * unit), ink = INK[s.ink] || INK.ink;
-    text(ctx, s.name, L - 14, y + Math.max(h, 14) / 2 + 2, { font: font.serif(14, true), align: 'right', color: ink });
-    text(ctx, `${nf(s.contexts)} ${s.context_word} × ${nf(s.perturbations)} ${s.pert_word}`, L - 14, y + Math.max(h, 14) / 2 + 17,
-      { font: font.serif(10.5, true), align: 'right', color: INK['ink-3'] });
-    ctx.fillStyle = rgba(ink, 0.28); ctx.fillRect(L, y, w, h);
-    ctx.strokeStyle = rgba(ink, 0.8); ctx.lineWidth = 0.8; ctx.strokeRect(L, y, w, h);
-    const note = s.pearson_delta == null ? 'not yet tested' : `reported Pearson Δ ${f2(s.pearson_delta)}`;
-    text(ctx, note, L + w + 12, y + Math.max(h, 14) / 2 + 4, { font: font.serif(12, s.pearson_delta == null), color: s.pearson_delta == null ? INK['ink-3'] : INK.ink, clamp: W });
-    y += Math.max(h, 14) + gap;
+function drawScorePanel() {
+  const m = RH.meta;
+  const paper = m.reproduction.paper_pearson;
+  const ours = m.reproduction.ours.pearson_delta;
+  const min = .38;
+  const max = .45;
+  const pct = (value) => ((value - min) / (max - min)) * 100;
+  const components = RH.plates.components;
+  const lo = Math.min(...components.map((row) => row.value));
+  const hi = Math.max(...components.map((row) => row.value));
+  $('scorePanel').innerHTML = `
+    <div class="panel-title">A · Paper result versus ours</div>
+    <div class="score-pair">
+      <div class="score-line"><span class="score-name">Paper · four-split mean</span><span class="score-value">${num(paper, 3)}</span></div>
+      <div class="score-line"><span class="score-name">Our canonical split_0</span><span class="score-value ours">${num(ours, 3)}</span></div>
+      <div class="match-axis" aria-hidden="true">
+        <i class="paper-dot" style="left:${pct(paper)}%"></i>
+        <i class="ours-dot" style="left:${pct(ours)}%"></i>
+      </div>
+      <div class="match-note">Pearson Δ · ring = published aggregate · red = our single split</div>
+    </div>
+    <ul class="component-list">
+      ${components.map((row) => `<li><span>${row.label}</span><span class="component-bar"><i style="width:${12 + ((row.value - lo) / (hi - lo)) * 88}%"></i></span><b>${num(row.value, 3)}</b></li>`).join('')}
+    </ul>
+    <div class="integrity">Independent reconstruction agrees to <strong>${sci(m.reproduction.reconstruction_max_abs_error)}</strong> maximum absolute error.</div>
+  `;
+}
+
+function drawExample() {
+  const box = $('examplePlot');
+  const width = Math.max(280, Math.round(box.clientWidth - 36));
+  const height = Math.max(350, box.clientHeight - 36);
+  const svg = D.svg(box, width, height, 'Observed versus predicted RABGGTA response');
+  const points = RH.plates.example.points;
+  const margin = { left: 52, right: 16, top: 52, bottom: 50 };
+  const values = points.flatMap((point) => [point.observed, point.predicted]);
+  const bound = Math.ceil(Math.max(...values.map(Math.abs)) * 5) / 5;
+  const x = D.scale(-bound, bound, margin.left, width - margin.right);
+  const y = D.scale(-bound, bound, height - margin.bottom, margin.top);
+  const plotW = width - margin.left - margin.right;
+  const plotH = height - margin.top - margin.bottom;
+
+  D.caps(svg, 0, 12, 'B · one real held-out response');
+  D.text(svg, 0, 38, 'RABGGTA', { 'font-size': 24, 'font-style': 'italic' });
+  D.text(svg, width, 36, `r = ${num(RH.meta.reproduction.example.pearson_full, 3)}`, {
+    'font-size': 17, fill: C.madder, 'text-anchor': 'end',
+  });
+  [-1, -.5, 0, .5, 1].filter((tick) => Math.abs(tick) <= bound).forEach((tick) => {
+    D.line(svg, x(tick), margin.top, x(tick), height - margin.bottom, { stroke: C.light, 'stroke-width': .55 });
+    D.line(svg, margin.left, y(tick), width - margin.right, y(tick), { stroke: C.light, 'stroke-width': .55 });
+    D.text(svg, x(tick), height - margin.bottom + 19, tick.toFixed(1), {
+      'font-size': 10, 'font-family': sans, fill: C.ink3, 'text-anchor': 'middle',
+    });
+    D.text(svg, margin.left - 8, y(tick) + 3, tick.toFixed(1), {
+      'font-size': 10, 'font-family': sans, fill: C.ink3, 'text-anchor': 'end',
+    });
+  });
+  D.line(svg, x(-bound), y(-bound), x(bound), y(bound), {
+    stroke: C.ink3, 'stroke-width': 1, 'stroke-dasharray': '4 4',
+  });
+  D.rect(svg, margin.left, margin.top, plotW, plotH, { stroke: C.ink, 'stroke-width': .8 });
+  const pointGroup = D.group(svg, { opacity: .34 });
+  points.forEach((point) => D.circle(pointGroup, x(point.observed), y(point.predicted), 1.55, {
+    fill: C.teal, stroke: 'none',
+  }));
+  const labels = ['NEAT1', 'MALAT1', 'STMN1', 'TUBA1B'];
+  labels.forEach((gene) => {
+    const point = points.find((row) => row.gene === gene);
+    if (!point) return;
+    D.circle(svg, x(point.observed), y(point.predicted), 2.6, { fill: C.madder });
+    const left = point.observed > .55;
+    D.text(svg, x(point.observed) + (left ? -5 : 5), y(point.predicted) - 5, gene, {
+      'font-size': 9.5, 'font-family': sans, fill: C.ink2, 'text-anchor': left ? 'end' : 'start',
+    });
+  });
+  D.text(svg, margin.left + plotW / 2, height - 10, 'observed HepG2 Δ', {
+    'font-size': 11, 'font-family': sans, fill: C.ink2, 'text-anchor': 'middle',
+  });
+  D.text(svg, 13, margin.top + plotH / 2, 'predicted HepG2 Δ', {
+    'font-size': 11, 'font-family': sans, fill: C.ink2, 'text-anchor': 'middle',
+    transform: `rotate(-90 13 ${margin.top + plotH / 2})`,
   });
 }
 
-/* ---------------- the written matter ---------------- */
-function writeText() {
-  const M = RH.meta, P = M.paper, rep = M.reported.rows, byLab = (l, m) => rep.find((r) => r.label === l && r.mode.startsWith(m)).values.pearson_delta;
-  $('mByline').textContent = `a first reading · ${P.org} · ${P.posted}`;
-  $('status').innerHTML = `<b>The beginning of an analysis.</b> Nothing on this page has been reproduced yet. Every number is the ` +
-    `authors' own, as reported with their released code (<a href="${M.code.repo}" target="_blank" rel="noopener">tahoebio/Rhaister</a>, ` +
-    `commit ${M.code.commit.slice(0, 7)}). ${P.reading}`;
-  $('intro').innerHTML =
-    `<p class="lead">Every new cell type, cell line or condition multiplies the cost of a perturbation screen. Rhaister, from ` +
-    `${P.org}, proposes a shortcut: in the new context, measure only a small panel of perturbations. Predict every other one as a ` +
-    `weighted sum of the panel's responses, using weights learned in other contexts where everything was measured.</p>` +
-    `<ul class="terms">` +
-    `<li><b>Context.</b> Where a perturbation is tested: a cell line, a donor's cell type — or, for us, a cell type in a zebrafish embryo.</li>` +
-    `<li><b>Response.</b> What the perturbation does to every gene, compared with untreated controls, as a screen already summarises it: ` +
-    `fold change, p-value and the change in expression.</li>` +
-    `<li><b>Panel.</b> The few perturbations actually measured in the new context.</li>` +
-    `<li><b>Reference contexts.</b> Contexts where the panel and the perturbations to be predicted were all measured. The weights are learned there.</li>` +
-    `</ul>` +
-    `<p>The authors report that this simple, linear rule matches or beats a far larger "virtual cell" model on their benchmarks. On ` +
-    `Tahoe-100M its predicted expression changes correlate with the real ones at ${f2(byLab('Tahoe-100M', 'few'))} — and at only ` +
-    `${f2(byLab('Replogle–Nadig', 'few'))} on the Replogle–Nadig CRISPRi screens we just reproduced for ` +
-    `<a href="/compass">COMPASS</a>.</p>` +
-    `<p>For us the question is practical: could the next zebrafish screen measure a small panel in each new condition and predict the ` +
-    `rest? This page sets out the idea and the plan. It is the first step of that analysis, not its result.</p>`;
-  $('cap1').innerHTML =
-    `<p><b>How to read it.</b> Each small tile is one perturbation's response in one context; its bars are the changes in a handful of genes. ` +
-    `<b>Left:</b> five reference contexts were measured on everything; the new context was measured only on its panel (A–D). ` +
-    `<b>Middle:</b> in the reference contexts, the response to p* (ochre) is found to equal a fixed mix of A–D: +0.60 A, +0.35 B, −0.40 C, ` +
-    `+0.15 D. <b>Right:</b> the same mix of the new context's own A–D gives its predicted p* (red).</p>` +
-    `<p>That is the whole of the core model: one weight per panel perturbation, shared by every gene, found by ridge regression across the ` +
-    `reference contexts. Around it the authors add an additive baseline — an average context effect plus an average perturbation effect ` +
-    `— that fills gaps and serves as a fallback, and a small network that calibrates the p-values. <i>The tiles are a made-up example ` +
-    `built so that the mix is exact; in real data it is only approximate, and how approximate is what the reproduction will measure.</i></p>`;
-  const sens = M.reported.sensitivity;
-  $('cap2').innerHTML =
-    `<p><b>How to read it.</b> Each ring is a number the authors report, averaged over their test splits; 1 is perfect. <i>Pearson Δ</i> asks ` +
-    `whether the predicted change in expression has the right shape across genes. <i>PR-AUC</i> asks whether it picks out the genes that ` +
-    `really changed. <i>Spearman LFC</i> asks whether it orders their fold changes correctly. <i>DE overlap</i> asks whether its top genes are ` +
-    `the real top genes. Our own numbers will be drawn beside these rings once the reproduction runs.</p>` +
-    `<p><b>What stands out.</b> Tahoe is far easier than the CRISPRi screens (Pearson Δ ${f2(byLab('Tahoe-100M', 'few'))} against ` +
-    `${f2(byLab('Replogle–Nadig', 'few'))}; PR-AUC ${f2(rep[0].values.pr_auc)} against ${f2(rep[2].values.pr_auc)}). The zero-shot variant, ` +
-    `Rhaister-O, predicts from a new cell line's untreated expression alone and still reaches ${f2(byLab('Tahoe-100M', 'zero'))}. For growth ` +
-    `rather than expression, the authors report R² ${f2(sens.emerald_bay_r2)} on Emerald Bay (${f2(sens.emerald_bay_r2_features)} with ` +
-    `transcriptomic features) and ${f2(sens.prism_r2)} on PRISM. They also report matching or beating the STATE virtual-cell model, and ` +
-    `approaching the ceiling set by how well half of the data predicts the other half; those comparison numbers are in the paper, which ` +
-    `we have not yet been able to retrieve.</p>`;
-  $('cap3').innerHTML =
-    `<p><b>How to read it.</b> Each block is one screen, drawn to one scale: its width is the number of perturbations, its height the ` +
-    `number of contexts, so its area is the number of (context, perturbation) pairs that could be measured. MegaFin's contexts are the ` +
-    `40 cell-type clusters we measured it in for COMPASS.</p>` +
-    `<p><b>Why the shape matters.</b> Rhaister learns its weights across reference contexts, so it needs many contexts that share a panel. ` +
-    `Replogle–Nadig is a thin sliver: 2,023 knockdowns but four cell lines, so each split learns from just three references. Tahoe has ` +
-    `fifty. MegaFin sits between them, with forty cell types, and it has one more thing in common with Tahoe: its contexts share every ` +
-    `well. <b>A hypothesis to test, not a finding:</b> our COMPASS work showed that in Tahoe a difference between two no-drug wells ` +
-    `looks just like a drug effect shared across cell lines. A linear combination of other drugs' responses will reproduce any structure ` +
-    `shared across contexts, biological or technical — so part of Tahoe's advantage may be the wells.</p>`;
-  $('plan').innerHTML = `<h3>What we will do, in order</h3><ol class="lessons">` +
-    M.plan.map((s) => `<li><b>${s.title}${/[?.!]$/.test(s.title) ? '' : '.'}</b> ${s.what} <span class="small"><i>Data: ${s.data}.</i></span></li>`).join('') +
-    `</ol><p class="small"><i>Stopped here on purpose:</i> nothing has been downloaded or run beyond reading the paper's metadata, ` +
-    `the code and the dataset cards. The first step needs about 1 GB and minutes of computing.</p>`;
-  const ds = M.datasets.map((d) => `${d.name} (${d.license}, revision ${d.rev})`).join('; ');
-  $('noteList').innerHTML = [
-    `<b>Reported, not reproduced.</b> Every number on this page is the authors' mean over their splits, from the README and ` +
-    `reproduction guide in their repository. We have run nothing yet.`,
-    `<b>The paper itself.</b> ${P.reading} Items that need the paper — the STATE and half-sample comparison numbers, per-split ` +
-    `values, supplementary tables — are marked as such in our notes.`,
-    `<b>Per-gene or shared weights?</b> The methods file writes the combination weights with one set per gene; the released code uses ` +
-    `one weight per (panel, target) pair shared by all genes, which is what Plate I draws. The code produced the reported numbers.`,
-    `<b>MegaFin's shape</b> uses our 40 Leiden clusters as contexts and its 182 designed drug-doses; it has not been run through Rhaister.`,
-    `<b>Plate I is a sketch.</b> Its responses are invented and constructed so that the combination is exact.`,
-  ].map((s) => `<li>${s}</li>`).join('');
-  $('colophon').innerHTML = `Paper: ${P.authors}, ${P.org}. <i>${P.title}.</i> bioRxiv ${P.posted}, ` +
-    `<a href="https://doi.org/${P.doi}" target="_blank" rel="noopener">doi:${P.doi}</a> (${P.license}). Code: ` +
-    `<a href="${M.code.repo}" target="_blank" rel="noopener">tahoebio/Rhaister</a> at ${M.code.commit} (${M.code.license}). Data cards: ${ds}. ` +
-    `Our notes, sources and exact commands: <code>/data/scratch/rhaister_repro/RHAISTER_NOTES.md</code>. Built ${M.built}. ` +
-    `The pen wobble on frames and rules is decoration.`;
+function drawWeights() {
+  const box = $('weightsPlot');
+  const width = Math.max(230, Math.round(box.clientWidth - 36));
+  const height = Math.max(190, box.clientHeight - 36);
+  const svg = D.svg(box, width, height, 'Largest measured-panel ridge weights for RABGGTA');
+  const wideShort = width > 500 && height < 300;
+  const rows = RH.plates.example.weights.slice(0, wideShort ? 8 : 9);
+  const margin = { left: wideShort ? 75 : Math.min(82, width * .34), right: 17, top: 51, bottom: 19 };
+  const max = Math.max(...rows.map((row) => Math.abs(row.value)));
+  const zero = D.scale(-max, max, margin.left, width - margin.right)(0);
+  const x = D.scale(-max, max, margin.left, width - margin.right);
+  const rowH = (height - margin.top - margin.bottom) / rows.length;
+
+  D.caps(svg, 0, 12, 'C · measured contributors');
+  D.text(svg, 0, 37, 'Ridge weights', { 'font-size': 20, 'font-style': 'italic' });
+  D.line(svg, zero, margin.top - 5, zero, height - margin.bottom + 2, { stroke: C.ink, 'stroke-width': .8 });
+  rows.forEach((row, index) => {
+    const cy = margin.top + (index + .5) * rowH;
+    D.text(svg, margin.left - 7, cy + 3.5, row.treatment, {
+      'font-size': wideShort ? 9 : 10.5,
+      'font-family': sans,
+      fill: C.ink2,
+      'text-anchor': 'end',
+    });
+    D.rect(svg, Math.min(zero, x(row.value)), cy - Math.max(3, rowH * .23), Math.abs(x(row.value) - zero), Math.max(6, rowH * .46), {
+      fill: row.value > 0 ? C.teal : C.blue,
+      opacity: .88,
+    });
+  });
+  D.text(svg, zero, height - 3, '0', {
+    'font-size': 9, 'font-family': sans, fill: C.ink3, 'text-anchor': 'middle',
+  });
 }
 
-function redraw() { drawIdea($('cvIdea')); drawReported($('cvReported')); drawShapes($('cvShapes')); }
-let resizeTimer = 0;
-window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(redraw, 150); });
+function drawTitration() {
+  const box = $('titrationPlot');
+  const width = Math.max(300, Math.round(box.clientWidth));
+  const height = Math.max(430, box.clientHeight);
+  const svg = D.svg(box, width, height, 'Panel-size titration across ten nested repeats');
+  const summary = RH.plates.titration.summary;
+  const raw = RH.plates.titration.raw;
+  const sizes = summary.map((row) => row.k);
+  const margin = { left: width < 480 ? 51 : 64, right: 14, top: 39, bottom: 66 };
+  const xAt = (k) => {
+    const index = sizes.indexOf(k);
+    return margin.left + (index / (sizes.length - 1)) * (width - margin.left - margin.right);
+  };
+  const yMin = .20;
+  const yMax = .44;
+  const y = D.scale(yMin, yMax, height - margin.bottom, margin.top);
+  const plotRight = width - margin.right;
+  const plotBottom = height - margin.bottom;
 
-(async function boot() {
-  try {
-    readInks();
-    await load();
-    $('boot').hidden = true; $('stage').hidden = false;
-    writeText(); redraw();
-  } catch (err) {
-    $('boot').hidden = true;
-    const f = $('fail'); f.hidden = false; f.textContent = 'The plates could not be drawn: ' + err.message;
-    console.error(err);
+  D.caps(svg, margin.left, 13, 'Mean held-out Pearson Δ · random nested panels');
+  [.20,.25,.30,.35,.40].forEach((tick) => {
+    D.line(svg, margin.left, y(tick), plotRight, y(tick), { stroke: C.light, 'stroke-width': .65 });
+    D.text(svg, margin.left - 8, y(tick) + 3.5, tick.toFixed(2), {
+      'font-size': 10, 'font-family': sans, fill: C.ink3, 'text-anchor': 'end',
+    });
+  });
+  const visibleTicks = width < 480 ? new Set([1, 4, 16, 64, 256, 395]) : new Set(sizes);
+  sizes.forEach((k) => {
+    D.line(svg, xAt(k), plotBottom, xAt(k), plotBottom + 5, { stroke: C.ink });
+    if (visibleTicks.has(k)) D.text(svg, xAt(k), plotBottom + 20, String(k), {
+      'font-size': 9.5, 'font-family': sans, fill: C.ink3, 'text-anchor': 'middle',
+    });
+  });
+  D.line(svg, margin.left, plotBottom, plotRight, plotBottom, { stroke: C.ink, 'stroke-width': .9 });
+  D.line(svg, margin.left, margin.top, margin.left, plotBottom, { stroke: C.ink, 'stroke-width': .9 });
+
+  const canonical = RH.meta.thresholds.canonical_additive;
+  D.line(svg, margin.left, y(canonical), plotRight, y(canonical), {
+    stroke: C.blue, 'stroke-width': 1.1, 'stroke-dasharray': '5 4',
+  });
+  D.text(svg, margin.left + 5, y(canonical) - 6, 'full-panel additive', {
+    'font-size': 9.5, 'font-family': sans, fill: C.blue, 'text-anchor': 'start',
+  });
+
+  for (let repeat = 0; repeat < RH.meta.thresholds.repeats; repeat += 1) {
+    const rows = raw.filter((row) => row.repeat === repeat).sort((a, b) => sizes.indexOf(a.k) - sizes.indexOf(b.k));
+    D.path(svg, D.polylinePath(rows.map((row) => [xAt(row.k), y(row.pearson)])), {
+      stroke: C.ink3, 'stroke-width': .75, opacity: .18,
+    });
   }
-})();
+  const bandTop = summary.filter((row) => row.high !== null).map((row) => [xAt(row.k), y(row.high)]);
+  const bandBottom = summary.filter((row) => row.low !== null).map((row) => [xAt(row.k), y(row.low)]);
+  D.path(svg, D.areaPath(bandTop, bandBottom), { fill: C.teal, opacity: .12, stroke: 'none' });
+  D.path(svg, D.polylinePath(summary.map((row) => [xAt(row.k), y(row.pearson)])), {
+    stroke: C.teal, 'stroke-width': 2.5, 'stroke-linejoin': 'round',
+  });
+  summary.forEach((row) => D.circle(svg, xAt(row.k), y(row.pearson), 3.1, {
+    fill: C.paperHi, stroke: C.teal, 'stroke-width': 1.7,
+  }));
+
+  const marks = [
+    { k: RH.meta.thresholds.first_useful, label: 'first useful', align: 'start', dx: 5 },
+    { k: RH.meta.thresholds.half_gain, label: '½ gain', align: 'end', dx: -5 },
+    { k: RH.meta.thresholds.near_saturation, label: '90% gain', align: 'end', dx: -4 },
+  ];
+  marks.forEach((mark, index) => {
+    const xx = xAt(mark.k);
+    D.line(svg, xx, margin.top + 22 + index * 15, xx, plotBottom, {
+      stroke: C.madder, 'stroke-width': .75, 'stroke-dasharray': '2 3', opacity: .75,
+    });
+    D.caps(svg, xx + mark.dx, margin.top + 16 + index * 15, `K=${mark.k} · ${mark.label}`, {
+      fill: C.madder, 'text-anchor': mark.align, 'font-size': width < 480 ? 7 : 8,
+    });
+  });
+  D.text(svg, margin.left + (plotRight - margin.left) / 2, height - 19, 'measured HepG2 panel perturbations', {
+    'font-size': 11, 'font-family': sans, fill: C.ink2, 'text-anchor': 'middle',
+  });
+  D.text(svg, 13, margin.top + (plotBottom - margin.top) / 2, 'prediction quality', {
+    'font-size': 11, 'font-family': sans, fill: C.ink2, 'text-anchor': 'middle',
+    transform: `rotate(-90 13 ${margin.top + (plotBottom - margin.top) / 2})`,
+  });
+}
+
+function drawCompass() {
+  const box = $('compassPlot');
+  const width = Math.max(210, Math.round(box.clientWidth));
+  const height = Math.max(120, box.clientHeight);
+  const svg = D.svg(box, width, height, 'COMPASS shared-response fraction and Rhaister predictability');
+  const points = RH.plates.compass.points;
+  const margin = { left: 27, right: 8, top: 15, bottom: 25 };
+  const x = D.scale(0, .85, margin.left, width - margin.right);
+  const y = D.scale(-.4, 1, height - margin.bottom, margin.top);
+  D.line(svg, margin.left, height - margin.bottom, width - margin.right, height - margin.bottom, { stroke: C.ink, 'stroke-width': .7 });
+  D.line(svg, margin.left, margin.top, margin.left, height - margin.bottom, { stroke: C.ink, 'stroke-width': .7 });
+  const group = D.group(svg, { opacity: .17 });
+  points.forEach((point) => D.circle(group, x(point.shared), y(point.pearson), 1.2, { fill: C.teal }));
+  const bins = Array.from({ length: 8 }, (_, index) => {
+    const lo = index * .1;
+    const rows = points.filter((point) => point.shared >= lo && point.shared < lo + .1);
+    if (!rows.length) return null;
+    const mean = (key) => rows.reduce((sum, row) => sum + row[key], 0) / rows.length;
+    return [x(mean('shared')), y(mean('pearson'))];
+  }).filter(Boolean);
+  D.path(svg, D.polylinePath(bins), { stroke: C.madder, 'stroke-width': 1.7 });
+  bins.forEach((point) => D.circle(svg, point[0], point[1], 2.2, { fill: C.madder }));
+  D.text(svg, width - margin.right, 12, `ρ = ${num(RH.meta.compass.accuracy_rho, 2)}`, {
+    'font-size': 11, 'font-family': sans, fill: C.madder, 'text-anchor': 'end',
+  });
+  D.text(svg, margin.left + (width - margin.right - margin.left) / 2, height - 5, 'shared-response fraction', {
+    'font-size': 9, 'font-family': sans, fill: C.ink3, 'text-anchor': 'middle',
+  });
+}
+
+function populateText() {
+  const m = RH.meta;
+  $('caption1').innerHTML = `<strong>The released split:</strong> ${m.split.observed_panel} measured HepG2 responses support ${m.split.held_out} held-out predictions across ${m.split.genes.toLocaleString()} genes. Its ridge basis also includes ${m.split.imputed_basis_terms} additive-imputed responses; it is not a pure measured-panel model.`;
+  $('caption2').innerHTML = `<strong>Consistent, not like-for-like:</strong> the paper’s ${num(m.reproduction.paper_pearson, 2)} is a four-split mean; ours is one exact split. RABGGTA was chosen before inspection because its gain was closest to the median—not because it was a best case.`;
+  $('caption3').innerHTML = `Ten random nested panels; mean and 95% t interval in teal, repeats in grey. At K=${m.thresholds.clear_canonical_additive}, the interval first clears the full-panel additive score. “Half” and “90%” refer to the attainable additive-to-full Rhaister gain, not a biological ceiling; the public release has no A/B ceiling for this screen.`;
+  $('thresholds').innerHTML = `
+    <div class="threshold"><span class="k">${m.thresholds.first_useful}</span><span><b>First useful</b><span>Ridge gain is reliably above its matching additive fit.</span></span></div>
+    <div class="threshold"><span class="k">${m.thresholds.half_gain}</span><span><b>≈50% of gain</b><span>Half of the full-panel uplift beyond canonical additive.</span></span></div>
+    <div class="threshold"><span class="k">${m.thresholds.near_saturation}</span><span><b>Near saturation</b><span>90% of that uplift needs the complete tested panel.</span></span></div>
+  `;
+  $('compassNote').textContent = `Shared responses are easier to predict (ρ=${num(m.compass.accuracy_rho, 2)}), but do not independently need smaller panels (partial ρ=${num(m.compass.panel_k50_partial_rho, 2)}; p=${num(m.compass.panel_k50_partial_p, 2)}).`;
+  $('provenanceGrid').innerHTML = `
+    <p><strong>Scope.</strong> Canonical Replogle–Nadig split_0 only; ${m.split.held_out} fixed HepG2 test perturbations. This is an operational pipeline reproduction, not all four paper splits.</p>
+    <p><strong>Code.</strong> Authors’ Rhaister <code>${m.provenance.authors_code_commit.slice(0, 7)}</code>; reproduction <code>${m.provenance.reproduction_commit.slice(0, 7)}</code>; generated by <code>scripts/build_rhaister.py</code>.</p>
+    <p><strong>Split.</strong> The pinned-code split has 945 targets. A legacy dataset definition has 946 because it retains non-targeting; the exact pinned-code split was used unchanged.</p>
+    <p><strong>Limit.</strong> The public release contains no Replogle A/B halves, so no half-sample ceiling is inferred. Panel thresholds are specific to this four-context CRISPR screen.</p>
+  `;
+  $('assetVersion').textContent = `figure data ${m.asset_version}`;
+}
+
+let resizeTimer = null;
+function drawAll() {
+  drawMethodFlow();
+  drawScorePanel();
+  drawExample();
+  drawWeights();
+  drawTitration();
+  drawCompass();
+}
+
+function scheduleDraw() {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(drawAll, 80);
+}
+
+async function boot() {
+  try {
+    await load();
+    populateText();
+    $('loading').hidden = true;
+    $('story').hidden = false;
+    $('provenance').hidden = false;
+    requestAnimationFrame(() => {
+      drawAll();
+      window.addEventListener('resize', scheduleDraw, { passive: true });
+    });
+  } catch (error) {
+    $('loading').hidden = true;
+    $('error').hidden = false;
+    $('error').textContent = `The three figures could not be set: ${error.message}`;
+    console.error(error);
+  }
+}
+
+boot();

@@ -229,9 +229,10 @@ const nextConfig = {
       // reproduction_meta.json are the record). Read public/compass/NOTES.md before changing any
       // claim — in particular, the Tahoe axis is shown as confounded and must stay so.
       { source: '/compass', destination: '/compass/index.html' },
-      // /rhaister opens our analysis of Rhaister (Svensson et al., Tahoe 2026): the beginning of an
-      // analysis, not a reproduction — every number is the authors' own, from public/rhaister/meta.json.
-      // Same plate-style shape as /compass (index.html + rh-draw.js + rh-main.js + meta.json).
+      // /rhaister is a deliberately compact three-figure reproduction note for Rhaister
+      // (Svensson et al., Tahoe 2026): task, canonical split_0 evidence, panel titration.
+      // Its exact marks come from generated meta.json/plates.json; rh-main.js refuses an
+      // asset-version mismatch. Rebuild and verify with scripts/build_rhaister.py --check.
       { source: '/rhaister', destination: '/rhaister/index.html' },
     ]
   },
