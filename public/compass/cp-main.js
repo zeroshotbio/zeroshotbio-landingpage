@@ -344,8 +344,12 @@ function writeProse() {
     `${Math.round((w.median_norm_well_diff / w.median_drug_effect_norm) * 100)}% the size of a typical drug's effect ` +
     `(${f2(w.median_drug_effect_norm)}). And this no-drug "effect" looks the same across the 50 lines exactly as much as a real ` +
     `drug's effect does (${f2(w.mean_crossline_r_of_well_diff)} against ${f2(w.mean_crossline_r_of_same_drug_effect)}). ` +
-    `<b>In this design, a quirk of one well cannot be told apart from a drug response shared by every line.</b> Tahoe's own ` +
-    `parts, by contrast, are strongly drug-specific and look like real signal.</p>` +
+    `<b>In this design, a quirk of one well cannot be told apart from a drug response shared by every line.</b> The same goes ` +
+    `for Tahoe's own parts. They look drug-specific (a drug's own part matches itself across lines at ` +
+    `${f2(E.tahoe.pair_similarity.residual_same)}, random pairs at ${f2(E.tahoe.pair_similarity.residual_random)}), but every line ` +
+    `sees a drug in the same well, and a drug keeps the same well position on every plate. Our separate Tahoe analysis found that ` +
+    `unrelated drugs at the same position on different plates look almost as alike as a drug does to itself, so this match is ` +
+    `mostly well position, not biology.</p>` +
     `<p><b>ChemFish is weak for plainer reasons:</b> about ${Math.round(c.n_perturbations)} conditions per tissue, effects only ` +
     `${f2(CP.plates.p5.chemfish.median)}× the difference between control embryos, and tissues whose typical responses barely resemble one another ` +
     `(${f2(c.pair_similarity.u_cosine)} on a scale where 1 is identical). Its tissues agree on which drugs are strong at only ` +
@@ -525,7 +529,8 @@ function writeNotes() {
     `Plate IV's map is a drawing aid. Every number and group comes from the full data.`,
     `<b>Tahoe is shown as confounded, and should stay that way.</b> The no-drug-well test shows the well problem exists and ` +
     `roughly how big it is; it can't remove it, because Tahoe has only two no-drug wells per plate and doesn't repeat drugs across ` +
-    `wells. Treat Tahoe's typical-response numbers as an upper limit on any real biology.`,
+    `wells. Treat Tahoe's typical-response and own-part numbers alike as upper limits on any real biology: our separate Tahoe ` +
+    `analysis found a well-position signature that recurs across plates, and a drug's doses share a position.`,
     `<b>ChemFish's "contexts" are tissues of the same embryos</b>, not independent cell lines; its genetic-perturbation arm is not ` +
     `in the released cell data; and only about 25 conditions are shared by most tissues. Its numbers cover the drugs only.`,
     `<b>The two data-requirement experiments are ours, not the paper's.</b> Cell and knockdown subsets are random draws with fixed ` +
