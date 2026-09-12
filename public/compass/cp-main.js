@@ -119,20 +119,12 @@ function writeCap1() {
     'a large response that is about half shared, half its own', 'a large response that is almost entirely its own'];
   const others = P.exemplars.filter((x) => x !== e).map((x) => `<i>${x.symbol}</i> (${pctShared(x)}% shared)`).join(' and ');
   $('cap1').innerHTML =
-    `<p><b>How to read it.</b> Each thin vertical line is one of ${nf(P.n_genes)} genes. Its height is how much that gene went up ` +
-    `(above the middle line) or down (below it) in ${P.line} cells with <i>${e.symbol}</i> knocked down, compared with control cells. ` +
-    `The genes are in the same order in all three rows: from the genes a typical knockdown raises most (left) to the ones it lowers most (right).</p>` +
-    `<p><b>Top row:</b> what was measured. <b>Middle row:</b> the shared part — the line's typical response, scaled to fit this ` +
-    `knockdown. Because the genes are sorted by the typical response, it comes out as one smooth curve; how tall the curve is ` +
-    `(β = ${f2(e.beta)}) says how strongly this knockdown sets off the typical response. <b>Bottom row:</b> what is left over — the ` +
-    `part only this knockdown does. Add the middle and bottom rows and you get the top row back. All three rows use the same vertical scale.</p>` +
-    `<p><b>This knockdown</b> is ${WHY[st.ex]}: ${pctShared(e)}% of its response is the shared part. Compare ${others}. ` +
-    `<i>These three were picked to show the range, not as a random sample.</i></p>`;
-  $('capVector').innerHTML = `The same split, as geometry. Think of each response as an arrow: its length is how big the response ` +
-    `is, its direction is which genes move and which way. The flat line is the typical response. Drop a line straight down from an ` +
-    `arrow's tip: the distance along the flat line is the shared part (β); the drop is the knockdown's own part (r). Angles and ` +
-    `lengths are the real ones. Squared lengths add up exactly (β² + r² = length²), which is why shares on this page are quoted by ` +
-    `squared size: <i>${e.symbol}</i>'s shared part is ${pctShared(e)}% of it.`;
+    `<p>Each line is one of ${nf(P.n_genes)} genes in ${P.line} cells with <i>${e.symbol}</i> knocked down, sorted by the typical ` +
+    `response. <b>Top:</b> measured. <b>Middle:</b> the typical response, scaled by its strength β = ${f2(e.beta)}. ` +
+    `<b>Bottom:</b> what is left, this knockdown's own part. Middle plus bottom gives the top.</p>` +
+    `<p><i>${e.symbol}</i> is ${WHY[st.ex]}: ${pctShared(e)}% shared. Compare ${others}.</p>`;
+  $('capVector').innerHTML = `The same split as geometry: β runs along the typical response, the own part is the drop. ` +
+    `Squared lengths add, so <i>${e.symbol}</i> is ${pctShared(e)}% shared.`;
 }
 
 function writeProse() {
@@ -145,32 +137,10 @@ function writeProse() {
     ['the two-part split', `${nf(M.anchor.ensembl)} knockdowns`, 'all protein-coding genes', 'Replogle / Nadig', 'what makes it visible', 'stress tests', 'Tahoe · ChemFish', 'MegaFin · MiniFin, measured', 'the synthesis · the next screen'][i]; });
 
   $('intro').innerHTML =
-    `<p class="lead">A CRISPRi screen turns down one gene in each cell, then reads out the activity of every other gene. Do that ` +
-    `for two thousand genes and something odd appears: if you simply average all the responses together, that average predicts ` +
-    `any single knockdown's response about as well as sophisticated machine-learning models do. Liang and Singh's COMPASS offers ` +
-    `an explanation. Every knockdown's response, they say, has two parts: a <i>typical response</i> that any strong knockdown in ` +
-    `that cell line tends to produce, plus a part that belongs to the gene that was knocked down.</p>` +
-    `<ul class="terms">` +
-    `<li><b>Knockdown.</b> CRISPRi turns one chosen gene down in a cell. Cells given a guide that targets nothing are the <i>controls</i>.</li>` +
-    `<li><b>Response.</b> How the activity of every other gene changes in the knocked-down cells, compared with the control cells.</li>` +
-    `<li><b>Typical response</b> (the paper's <i>shared axis</i>). The average response over all ${nf(M.anchor.ensembl)} knockdowns in one ` +
-    `cell line — the usual way that cell reacts to losing a gene.</li>` +
-    `<li><b>β, the strength.</b> How far a knockdown's response goes in the direction of the typical response. Big β: it looks like ` +
-    `a strong dose of the typical response. β near zero: it doesn't.</li>` +
-    `<li><b>Own part</b> (the paper's <i>residual</i>). What is left after the shared part is taken away — what this knockdown does ` +
-    `that the typical one doesn't.</li></ul>` +
-    `<p>The paper makes three claims. First, the <i>same</i> knockdowns set off the typical response strongly in every cell line. ` +
-    `Second, you can predict how strongly a knockdown will set it off in a cell line where it was never measured. Third, the own ` +
-    `part carries the real biology — what makes one knockdown different from another.</p>` +
-    `<p>We rebuilt the analysis from the original data of three studies, six human cell lines in all: K562 and RPE1 (Replogle), ` +
-    `HepG2 and Jurkat (Nadig), HCT116 and HEK293T (X-Atlas/Orion), using the paper's methods and the authors' own code. It ` +
-    `reproduces almost exactly (Plate II). The rest of the page asks: what is the typical response, biologically (III)? Where does ` +
-    `the gene-specific biology show up (IV)? What about these screens lets you see all this (V), and how much data does it take (VI)? ` +
-    `Why don't two datasets closer to our own work, Tahoe-100M and ChemFish, show it cleanly (VII)? Would our own screens, ` +
-    `MegaFin and MiniFin, show it — measured, not guessed (VIII)? And what would the next one have to look like (IX)?</p>` +
-    `<p class="caution">What we did not reproduce: the paper's methods built on the STRING protein-interaction database (COMPASS-N, ` +
-    `COMPASS-H) and its STRING-based prediction of where a knockdown lands. Everything here is about the two-part split itself and ` +
-    `the paper's cross-cell-line predictor, COMPASS-X.</p>`;
+    `<p class="lead">We rebuilt COMPASS from the raw data of six human cell lines, with the authors' own code, and it reproduces ` +
+    `almost exactly. Three plates: the split itself (I), what the typical response is (III), and what a screen needs to see it (V). ` +
+    `The full ledger against the paper, the stress tests, the other screens and the notes are in the archive at the bottom; every ` +
+    `plate's "show the code" button traces its numbers to the raw files.</p>`;
 
   writeCap1();
 
@@ -215,29 +185,14 @@ function writeProse() {
   const myc = byName('Hallmark Myc Targets V1'), p53 = byName('p53 targets (core)');
   const ng = LINES.map((l) => P3.lines[l].n_genes);
   $('cap3').innerHTML =
-    `<p><b>What you're looking at.</b> One row per cell line. The grey curve is that line's typical response across all its genes ` +
-    `(${span(ng, nf)} of them), sorted from the genes it raises most (left) to those it lowers most (right); the few genes named ` +
-    `at each end are the most extreme. Under each curve, thin coloured ticks show where the genes of seven well-known programmes ` +
-    `fall. Click a programme below to see it alone. <i>The curves share one scale, with the extreme tips cut off so the middle is visible.</i></p>` +
-    `<p><b>What it shows.</b> In all six lines the same thing happens. Growth genes — MYC and E2F targets, the machinery for making ` +
-    `ribosomes, mitochondrial protein synthesis — pile up on the right: a typical knockdown turns them down. Stress and shut-down ` +
-    `genes — the p53 pathway, NF-κB inflammation signalling, cell death — sit on the left: it turns them up. The names at the ends ` +
-    `say it plainly: <i>CDKN1A, MDM2, GDF15</i> (the cell-cycle brake and the p53 alarm) go up; <i>MKI67, CENPF, TUBA1B</i> ` +
-    `(markers of dividing cells) go down. <b>In plain words, the typical response is a cell that has stopped growing and is under ` +
-    `stress.</b> Each line adds a bit of itself: K562, a blood-cell line, raises red-blood-cell genes like <i>HBZ</i> and ` +
-    `<i>ALAS2</i>; Jurkat, a T-cell line, raises T-cell genes like <i>LEF1</i> and <i>PTPRC</i>.</p>`;
+    `<p>Each row is one line's typical response over all its genes (${span(ng, nf)}), from most raised (left) to most lowered ` +
+    `(right); ticks mark seven known programmes. <b>In all six lines it is a cell that has stopped growing and is under stress:</b> ` +
+    `MYC, E2F and ribosome genes go down, p53 and NF-κB genes go up.</p>`;
   const r2 = Object.values(M.biology.r2);
   $('cap3b').innerHTML =
-    `<p><b>How to read it.</b> Each row is a gene programme, each column a cell line. Colour says which way the programme moves in a ` +
-    `typical knockdown, compared with control cells: ochre up, grey-blue down. The dot's area says how far its genes move — the ` +
-    `average, over the programme's genes, of each gene's standardised score on the typical response. A big dot means the programme ` +
-    `sits far out at one end; a tiny dot means it barely moves.</p>` +
-    `<p><b>What it shows.</b> MYC targets go down in every line (average scores between ${f2(Math.min(...LINES.map((l) => myc[l])))} and ${f2(Math.max(...LINES.map((l) => myc[l])))}); ` +
-    `core p53 targets go up in every line (between ${f2(Math.min(...LINES.map((l) => p53[l])))} and ${f2(Math.max(...LINES.map((l) => p53[l])))}). Heat-shock and protein-folding genes go down too, so this is not a generic ` +
-    `"all stress genes up" signal but a specific one. <b>Still, these familiar programmes explain only ` +
-    `${Math.round(Math.min(...r2) * 100)}–${Math.round(Math.max(...r2) * 100)}% of the typical response;</b> the rest is spread thinly ` +
-    `over many genes, part of it the cell line's own identity. And knocking down genes a cell cannot live without (core essential ` +
-    `genes) sets off the typical response more strongly, in every line.</p>`;
+    `<p>MYC targets go down in every line (${f2(Math.min(...LINES.map((l) => myc[l])))} to ${f2(Math.max(...LINES.map((l) => myc[l])))}), ` +
+    `p53 targets up (${f2(Math.min(...LINES.map((l) => p53[l])))} to ${f2(Math.max(...LINES.map((l) => p53[l])))}). Yet these ` +
+    `programmes explain only ${Math.round(Math.min(...r2) * 100)}–${Math.round(Math.max(...r2) * 100)}% of the typical response.</p>`;
 
   const pr = M.decomposition.pairs.filter((p) => p.a !== 'HCT116');
   const resSame = pr.map((p) => p.res_same), resRand = pr.map((p) => p.res_random);
@@ -266,35 +221,15 @@ function writeProse() {
     `there, but any one knockdown's own part is noisy;</b> it is the patterns across many knockdowns, like the groups above, that are solid.</p>`;
 
   const cr = CP.plates.p5.crispr, ta = CP.plates.p5.tahoe, cf = CP.plates.p5.chemfish;
-  const mfw = CP.plates.p5.megafin, mfn = CP.plates.p5.megafin_wells, MF = M.fin.hvg.megafin;
+  const mfn = CP.plates.p5.megafin_wells;
   $('cap5').innerHTML =
-    `<p>Four things about these CRISPRi screens make the typical response easy to see. Each panel sets them beside Tahoe-100M ` +
-    `(a large drug screen on 50 human cancer cell lines grown together), ChemFish (a drug screen on whole zebrafish embryos) and ` +
-    `our own MegaFin and MiniFin, measured rather than read off their designs (Plate VIII has the full check).</p>` +
-    `<p><b>1. Many perturbations</b> (top left). One stroke per perturbation at the same spacing in every row, so a row's length is ` +
-    `its count: ${nf(M.anchor.ensembl)} knockdowns per line, against ${nf(Math.round(E.tahoe.n_perturbations))} drug-doses per Tahoe line, ` +
-    `a median of ${Math.round(MF.per_context_median.n_perturbations)} usable drug wells per MegaFin cell type, ` +
-    `${Math.round(E.chemfish.n_perturbations)} conditions per ChemFish tissue, and ${Z.MiniFin.perturbations} drugs in MiniFin. The red ` +
-    `dashed lines mark roughly how many you need before a typical response shows up at all: about 30 in five of the six lines; in the hardest, HEK293T, 94% of draws show it at 100 and all of them at 300.</p>` +
-    `<p><b>2. Strong perturbations</b> (top right). For each perturbation: how big its response is, divided by how different two ` +
-    `random halves of the control cells look from each other. 1× means you can't tell it from noise. Nearly every knockdown is above ` +
-    `2× (median ${f2(cr.median)}×); Tahoe's median is ${f2(ta.median)}×; ChemFish's is ${f2(cf.median)}×, with most conditions under 2×. ` +
-    `MegaFin's drug wells, in plum, reach ${f2(mfw.median)}× on that yardstick. But each MegaFin drug sits in a single well, and the fair ` +
-    `yardstick for a single well is the noise between wells: against that they reach only ${f2(mfn.median)}× (the dashed outline). ` +
-    `Tahoe's drugs sit one to a well too, and on that fairer yardstick Tahoe falls to ` +
-    `${(E.tahoe.dmso_well.median_drug_effect_norm / E.tahoe.dmso_well.median_norm_well_diff).toFixed(1)}× (Plate IX). ` +
-    `MiniFin's three drugs are too few to draw a spread; a single Sorafenib well sits at ` +
-    `${f2(M.fin.hvg.minifin.Sorafenib.median_single_well_over_null)}× the noise between wells. The rows line up with the counts beside them. ` +
-    `The knockdowns are strong partly because many hit genes a cell cannot live without — a quarter of the targets, against about ` +
-    `3.5% of all genes.</p>` +
-    `<p><b>3. Plenty of measurement</b> (bottom left). About ${nf(num(M.comparison['UMIs per cell (median, protein-coding)'][CRc]))} ` +
-    `molecules read per cell, and a median of ${num(M.comparison['cells per perturbation x context (median)'][CRc])} cells per ` +
-    `knockdown in each line. MegaFin sits between Tahoe and the CRISPRi screens on both: about ${nf(Z.MegaFin.median_umis)} molecules ` +
-    `per cell and a median of ${nf(Math.round(CP.meta.fin.cells_pair_median.MegaFin))} cells per drug well and cell type.</p>` +
-    `<p><b>4. Controls in the same place</b> (bottom right, a sketch). In a CRISPRi screen the control cells are mixed into the same ` +
-    `pool as everything else, so they go through exactly the same handling. In Tahoe the controls sit in their own wells; in ` +
-    `ChemFish, in separate embryos; in MegaFin, in one DMSO well per dose on each plate, beside two wells that were never dosed. ` +
-    `Anything that differs between wells or embryos can then look like an effect — and in MegaFin it measurably does (Plate VIII).</p>`;
+    `<p>What lets these CRISPRi screens show it, beside Tahoe, ChemFish and our MegaFin and MiniFin:</p>` +
+    `<p><b>Many perturbations</b> (top left): ${nf(M.anchor.ensembl)} per line; a typical response appears from about 30 ` +
+    `(100–300 in HEK293T). <b>Strong ones</b> (top right): the median response is ${f2(cr.median)}× the noise between control ` +
+    `cells; Tahoe ${f2(ta.median)}×, ChemFish ${f2(cf.median)}×, MegaFin only ${f2(mfn.median)}× the noise between wells. ` +
+    `<b>Enough measurement</b> (bottom left): about ${nf(num(M.comparison['UMIs per cell (median, protein-coding)'][CRc]))} molecules ` +
+    `and ${num(M.comparison['cells per perturbation x context (median)'][CRc])} cells per knockdown. <b>Controls mixed in</b> ` +
+    `(bottom right, a sketch): elsewhere controls sit in separate wells or embryos, so a well's quirks look like effects.</p>`;
 
   const ph = S.phase, kAll = ph.k.length - 1, iN = (n) => ph.n.indexOf(n), kx = (k) => ph.k.indexOf(String(k));
   const kMin = ph.k.find((k, j) => ph.cons_RN[iN(300)][j] >= 0.5);
@@ -574,6 +509,8 @@ window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer
     writeProse(); writeTable(); writeFinTable(); writeLessons(); writeNotes();
     buildExemplars(); buildPrograms(); buildClusters(); wireResidual();
     redrawAll(); selectCluster(st.cluster);
+    // archived plates are drawn while their <details> is shut (zero width); draw them again when it opens
+    $('archive').addEventListener('toggle', () => { if ($('archive').open) requestAnimationFrame(redrawAll); });
   } catch (err) {
     $('boot').hidden = true;
     const f = $('fail'); f.hidden = false; f.textContent = 'The plates could not be drawn: ' + err.message;

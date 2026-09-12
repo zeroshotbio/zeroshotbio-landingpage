@@ -24,6 +24,13 @@ The reproduction repo is `github.com/zeroshotbio/compass_reproduction` (**privat
 Rebuild: `python3 scripts/build_compass.py` (stdlib + numpy; `COMPASS_REPRO` overrides the clone path). It reads
 `results/**` and `results/page/plate1..5.json`; never hand-edit the JSON.
 
+## Focused layout (2026-09-12)
+
+At the user's request the page shows only Plates I, III and V, with captions and intro cut to about a quarter
+(visible words 5,066 → 343). Plates II, IV, VI–IX and the notes live in a closed `<details id="archive">` at the
+bottom, unchanged; `cp-main.js` redraws them when it opens (canvases drawn while shut have no width). Plate
+numbers are kept so the archived plates' cross-references and the code panes still line up.
+
 ## Code panes
 
 `scripts/build_compass_code.py` (stdlib only; needs git and the aws CLI) writes `code.json`: per plate, a notebook

@@ -154,6 +154,17 @@ ol.lessons li{margin-bottom:.8em}
 .nb-toggle[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 @media(max-width:700px){.plate-head{flex-wrap:wrap}.plate-head .nb-toggle{margin-left:0}}
 #stage>figure.plate.code-open{max-width:1860px}
+details.archive{max-width:1100px;margin:110px auto 0;border-top:1px solid var(--ink);padding-top:8px}
+details.archive[open]{max-width:none}
+details.archive>summary{cursor:pointer;list-style:none;padding:8px 0;max-width:1100px;margin:0 auto}
+details.archive>summary::-webkit-details-marker{display:none}
+details.archive>summary .arch-t{font-family:var(--sans);font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-3)}
+details.archive>summary .arch-t::before{content:"+ ";letter-spacing:0}
+details.archive[open]>summary .arch-t::before{content:"\2212  "}
+details.archive>summary .arch-note{display:block;font-style:italic;font-size:14px;color:var(--ink-2);margin-top:4px;max-width:660px}
+details.archive>figure.plate,details.archive>section.notes{max-width:1100px;margin-left:auto;margin-right:auto}
+details.archive>figure.plate.wide{max-width:1320px}
+details.archive>figure.plate.code-open{max-width:1860px}
 .plate-grid{display:block}
 figure.plate:not(.code-open) aside.nb{display:none}
 /* while the notebook is open the plate gets one column, so its own side-by-side panels stack rather than clip */
@@ -243,21 +254,6 @@ details.nb-chain[open]>summary{margin-bottom:6px}
       <figcaption id="cap1"></figcaption>
     </figure>
 
-    <!-- PLATE II -->
-    <figure class="plate wide" id="plate2">
-      <div class="plate-head"><span class="plate-num">Plate II</span>
-        <h2 class="plate-title">The reproduction, set beside the paper</h2><span class="plate-when" id="w2"></span></div>
-      <div class="sub">every knockdown, in six cell lines &nbsp;·&nbsp; how big its response is, against how much it looks like the average</div>
-      <div class="canvas-hold"><canvas id="cvCont" data-minw="720" data-aspect="0.36"></canvas></div>
-      <figcaption id="cap2a"></figcaption>
-      <div class="sub">our numbers against the paper&rsquo;s &nbsp;·&nbsp; open ring the paper, solid dot us</div>
-      <div class="canvas-hold"><canvas id="cvLedger" data-aspect="0.40"></canvas></div>
-      <div class="grid2" style="margin-top:18px">
-        <div class="canvas-hold"><canvas id="cvBudget" data-minw="480" data-aspect="0.55"></canvas></div>
-        <figcaption id="cap2b" style="margin-top:0"></figcaption>
-      </div>
-    </figure>
-
     <!-- PLATE III -->
     <figure class="plate wide" id="plate3">
       <div class="plate-head"><span class="plate-num">Plate III</span>
@@ -269,23 +265,6 @@ details.nb-chain[open]>summary{margin-bottom:6px}
         <div><div class="sub" style="margin-top:0">which gene programmes a typical knockdown turns up or down</div>
           <div class="canvas-hold"><canvas id="cvSig" data-minw="560" data-aspect="0.95"></canvas></div></div>
         <figcaption id="cap3b" style="margin-top:28px"></figcaption>
-      </div>
-    </figure>
-
-    <!-- PLATE IV -->
-    <figure class="plate wide" id="plate4">
-      <div class="plate-head"><span class="plate-num">Plate IV</span>
-        <h2 class="plate-title">Where the particular biology lives</h2><span class="plate-when" id="w4"></span></div>
-      <div class="grid21">
-        <div class="canvas-hold"><canvas id="cvResid" data-aspect="0.86"></canvas></div>
-        <div class="card" id="clusterCard"></div>
-      </div>
-      <div class="legend" id="clusterLegend"></div>
-      <figcaption id="cap4"></figcaption>
-      <div class="grid2" style="margin-top:26px">
-        <div><div class="sub" style="margin-top:0">measure it twice: what repeats, and what barely does</div>
-          <div class="canvas-hold"><canvas id="cvReliab" data-aspect="0.62"></canvas></div></div>
-        <figcaption id="cap4b" style="margin-top:28px"></figcaption>
       </div>
     </figure>
 
@@ -304,6 +283,41 @@ details.nb-chain[open]>summary{margin-bottom:6px}
           <div class="canvas-hold"><canvas id="cvLanes" data-minw="640" data-aspect="0.66"></canvas></div></div>
       </div>
       <figcaption id="cap5"></figcaption>
+    </figure>
+
+    <details class="archive" id="archive">
+      <summary><span class="arch-t">Archive</span><span class="arch-note">the full reproduction ledger, where the gene-specific biology lives, stress tests, Tahoe and ChemFish, our own screens, the next screen, and the notes. Click to open.</span></summary>
+
+    <!-- PLATE II -->
+    <figure class="plate wide" id="plate2">
+      <div class="plate-head"><span class="plate-num">Plate II</span>
+        <h2 class="plate-title">The reproduction, set beside the paper</h2><span class="plate-when" id="w2"></span></div>
+      <div class="sub">every knockdown, in six cell lines &nbsp;·&nbsp; how big its response is, against how much it looks like the average</div>
+      <div class="canvas-hold"><canvas id="cvCont" data-minw="720" data-aspect="0.36"></canvas></div>
+      <figcaption id="cap2a"></figcaption>
+      <div class="sub">our numbers against the paper&rsquo;s &nbsp;·&nbsp; open ring the paper, solid dot us</div>
+      <div class="canvas-hold"><canvas id="cvLedger" data-aspect="0.40"></canvas></div>
+      <div class="grid2" style="margin-top:18px">
+        <div class="canvas-hold"><canvas id="cvBudget" data-minw="480" data-aspect="0.55"></canvas></div>
+        <figcaption id="cap2b" style="margin-top:0"></figcaption>
+      </div>
+    </figure>
+
+    <!-- PLATE IV -->
+    <figure class="plate wide" id="plate4">
+      <div class="plate-head"><span class="plate-num">Plate IV</span>
+        <h2 class="plate-title">Where the particular biology lives</h2><span class="plate-when" id="w4"></span></div>
+      <div class="grid21">
+        <div class="canvas-hold"><canvas id="cvResid" data-aspect="0.86"></canvas></div>
+        <div class="card" id="clusterCard"></div>
+      </div>
+      <div class="legend" id="clusterLegend"></div>
+      <figcaption id="cap4"></figcaption>
+      <div class="grid2" style="margin-top:26px">
+        <div><div class="sub" style="margin-top:0">measure it twice: what repeats, and what barely does</div>
+          <div class="canvas-hold"><canvas id="cvReliab" data-aspect="0.62"></canvas></div></div>
+        <figcaption id="cap4b" style="margin-top:28px"></figcaption>
+      </div>
     </figure>
 
     <!-- PLATE VI -->
@@ -378,6 +392,8 @@ details.nb-chain[open]>summary{margin-bottom:6px}
       <ol id="noteList"></ol>
       <p class="colophon" id="colophon"></p>
     </section>
+
+    </details>
 
   </main>
 </div>
