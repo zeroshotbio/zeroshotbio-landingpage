@@ -14,10 +14,37 @@ this route (`src/app/compass/` removed; an app route would shadow the rewrite).
 | `cp-draw.js` | canvas setup (parent width, dpr ≤ 2), pen-wobble furniture, axes, text |
 | `cp-plates.js` | one function per canvas |
 | `cp-main.js` | bootstrap, interactions (exemplar switch, isolate legends, cluster card), every caption — all numbers read from `meta.json` |
-| `meta.json`, `plates.json` | written by `scripts/build_compass.py` from `/data/scratch/compass_repro` (commit recorded in `meta.source`) |
+| `meta.json`, `plates.json` | written by `scripts/build_compass.py` from the reproduction repo (commit recorded in `meta.source`) |
+| `cp-code.js`, `code.json` | the "show the code" pane beside every plate; `code.json` is written by `scripts/build_compass_code.py` |
 
-Rebuild: `python3 scripts/build_compass.py` (stdlib + numpy). It reads
-`compass_repro/results/**` and `results/page/plate1..5.json`; never hand-edit the JSON.
+The reproduction repo is `github.com/zeroshotbio/compass_reproduction` (**private**, by decision), cloned at
+`/data/experiments/compass_reproduction`. It was built at `/data/scratch/compass_repro` on another machine
+(r7i.4xlarge), which is why its scripts still name that path.
+
+Rebuild: `python3 scripts/build_compass.py` (stdlib + numpy; `COMPASS_REPRO` overrides the clone path). It reads
+`results/**` and `results/page/plate1..5.json`; never hand-edit the JSON.
+
+## Code panes
+
+`scripts/build_compass_code.py` (stdlib only; needs git and the aws CLI) writes `code.json`: per plate, a notebook
+from the raw files to the plate's numbers. The rules that make it worth showing a skeptic:
+
+- **Code cells are quoted, never typed.** Each is pulled with `git show` from a pinned commit (reproduction
+  `a700359`, the authors' `compass` `fb4c9e1`, `tahoe_compass` `cefd298`, or this repo's `cp-plates.js`), by symbol
+  name or by a line range whose first line must contain an expected string. A moved line fails the build.
+- **Out cells are read from the committed results and checked against the page.** Every value is compared with
+  `meta.json` / `plates.json` at the precision the page prints; one mismatch stops the build. (The first build
+  caught Plate V's "about 100 in the hardest line": HEK293T is 94% of draws at 100, 100% at 300. Caption fixed.)
+- **Provenance is cross-checked.** Input sha256s in `reproduction_meta.json` are compared at build time with
+  the `SHA256SUMS` in `s3://zsb-open-source`. Inputs the reproduction never fingerprinted (Tahoe plate files,
+  the MegaFin/MiniFin gold objects) are shown as not recorded, not as verified.
+- The one uncommitted input is the Tahoe position-test summary (`tahoe_compass/results/` is git-ignored); the
+  pane names its sha256 and timestamp.
+- The repo is private, so excerpts carry `file · lines · commit` with no link; the authors' public package links
+  to GitHub at the pinned commit.
+
+Rebuild the panes after any change to the reproduction, the page's numbers, or `cp-plates.js` (commit first:
+the build refuses to quote an uncommitted page file).
 
 ## Plates and what feeds them
 

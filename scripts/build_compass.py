@@ -19,13 +19,16 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import os
 import pathlib
 import subprocess
 import time
 
 import numpy as np
 
-REPRO = pathlib.Path("/data/scratch/compass_repro")
+# the reproduction repository (github.com/zeroshotbio/compass_reproduction, private); it was built at
+# /data/scratch/compass_repro on another machine, which is the path its own scripts still name
+REPRO = pathlib.Path(os.environ.get("COMPASS_REPRO", "/data/experiments/compass_reproduction"))
 RES = REPRO / "results"
 OUT = pathlib.Path(__file__).resolve().parent.parent / "public" / "compass"
 LINES = ["K562", "RPE1", "HepG2", "Jurkat", "HCT116", "HEK293T"]

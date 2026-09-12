@@ -275,7 +275,7 @@ function writeProse() {
     `its count: ${nf(M.anchor.ensembl)} knockdowns per line, against ${nf(Math.round(E.tahoe.n_perturbations))} drug-doses per Tahoe line, ` +
     `a median of ${Math.round(MF.per_context_median.n_perturbations)} usable drug wells per MegaFin cell type, ` +
     `${Math.round(E.chemfish.n_perturbations)} conditions per ChemFish tissue, and ${Z.MiniFin.perturbations} drugs in MiniFin. The red ` +
-    `dashed lines mark roughly how many you need before a typical response shows up at all: about 30, or about 100 in the hardest line.</p>` +
+    `dashed lines mark roughly how many you need before a typical response shows up at all: about 30 in five of the six lines; in the hardest, HEK293T, 94% of draws show it at 100 and all of them at 300.</p>` +
     `<p><b>2. Strong perturbations</b> (top right). For each perturbation: how big its response is, divided by how different two ` +
     `random halves of the control cells look from each other. 1× means you can't tell it from noise. Nearly every knockdown is above ` +
     `2× (median ${f2(cr.median)}×); Tahoe's median is ${f2(ta.median)}×; ChemFish's is ${f2(cf.median)}×, with most conditions under 2×. ` +
@@ -550,9 +550,9 @@ function writeNotes() {
   ];
   $('noteList').innerHTML = notes.map((s) => `<li>${s}</li>`).join('');
   const s = M.source;
-  $('colophon').innerHTML = `Built by <code>${M.generated_by}</code> on ${M.built} from the reproduction at <code>${s.repro_dir}</code> ` +
-    `(commit ${s.repro_commit}; its <code>COMPASS_REPRODUCTION.md</code>, <code>choices.json</code> and <code>reproduction_meta.json</code> ` +
-    `are the record). Paper: Liang &amp; Singh 2026, <a href="https://doi.org/${s.paper_doi}" target="_blank" rel="noopener">bioRxiv ${s.paper_doi}</a> ` +
+  $('colophon').innerHTML = `Built by <code>${M.generated_by}</code> on ${M.built} from the reproduction repository ` +
+    `<code>zeroshotbio/compass_reproduction</code> (private; commit ${s.repro_commit}; its <code>COMPASS_REPRODUCTION.md</code>, ` +
+    `<code>choices.json</code> and <code>reproduction_meta.json</code> are the record, and every plate's "show the code" pane quotes it). Paper: Liang &amp; Singh 2026, <a href="https://doi.org/${s.paper_doi}" target="_blank" rel="noopener">bioRxiv ${s.paper_doi}</a> ` +
     `(PDF sha256 ${s.paper_sha256.slice(0, 12)}…). Decomposition and CompassX: the authors' <a href="${s.compass_repo}" target="_blank" rel="noopener">compass</a> ` +
     `package at ${s.compass_commit}. Data: Replogle 2022 (Figshare+ 20029387), Nadig 2025 (GEO GSE264667), X-Atlas/Orion (Hugging Face, ` +
     `commit 53a5bc98, CC BY-NC-SA 4.0), Tahoe-100M (Arc Institute, 2025-02-25), ChemFish (Trapnell lab, 2026-09 release), ` +
