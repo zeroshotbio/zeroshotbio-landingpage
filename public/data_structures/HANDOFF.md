@@ -440,6 +440,47 @@ a reason to open. The pins are now a `pins` command in two repos — ask the
 machine — but the prose has no such check, and `check-fit.mjs` cannot read.
 
 
+## The state of the data — 2026-09-13. Bronze and silver shed everything outside the convention.
+
+```
+bronze   135,504 obj · 5.94 TiB    (was 136,246 · 9.56)   six stages per dataset + reference/, nothing else
+silver        18 obj · 60.64 GiB  (was 79 · 65.64)       megafin/ · minifin/
+```
+
+**A person deleted every legacy prefix, in two passes.** Between the 2026-09-11 audit and 2026-09-13,
+`raw-fastq/` in all three datasets (529 objects, 3.40 TiB, the second copy of every FASTQ). On
+2026-09-13, everything else outside the six stages: `5_RDS/`, `parse-output/`, `retired-2026-09/`,
+`archive/`, the per-dataset `reference/` and `dataset-reference/`, `minifin/results/`, both reference
+notes and the two write-probe files (213 objects, 227.85 GiB). The same day silver lost
+`megafin-1/characterization/` (61 objects, 5.00 GiB), so both copies of the characterization set went
+together. Every stage figure in the bronze panel was unchanged to the hundredth of a GiB.
+
+**BRONZE:** `legacy` is gone from all three tiles, so they draw solid. `right`, `brief`, `built`, `cond`
+and `kv` are rewritten (the `5_RDS` row is gone). The hand-written panel lost its three grey legacy
+groups and the "Legacy — leaves Fort Knox" legend row; its per-dataset totals and closing note are new,
+and the stage groups are labelled "six stages" rather than "aspirational". **SILVER:** the `megafin-1/`
+tile is gone; `gen_silver_panel.py` lost its `megafin-1/` block and was re-run against the new listing
+and spliced into the SILVER node. **GOLD**'s brief and `vs silver` kv, BFETCH's cell note
+(`132 of 135,504`), the header comment's MegaFin share, OVERVIEW's record fields and a new read-log
+entry followed.
+
+**Nothing downstream broke.** All 714 bronze keys that zsb-bronze's source names are still live, so no
+conduit changed state.
+
+**Six deleted objects have no same-size copy in any bucket this role can list**: three files, each
+held twice (once under `retired-2026-09/`). They are MegaFin-1's rerun `processed-matrix.rds`
+(5.47 GiB), MegaFin-2's pre-delivery `processed-matrix.rds` (5.46 GiB) and MegaFin-2's `settings.txt`
+(49,606 B). Everything else has a same-size twin somewhere, mostly in `zeroshot-megafin-2m-part1`,
+`zsb-megafin-p1-backup-20260621-100229` and `zsb-sandbox`, none of them drawn. Size is not a checksum:
+the six are certainly gone, the rest are matched by size only.
+
+`READ_DATE` stays 2026-09-09. The repos were not re-read, and the overview note would claim they were.
+
+Checks: `check-overlaps` 0 pairs (128 text nodes, down from 144 with the legacy captions gone),
+`check-clicks` 17, `check-fit` 2 (SPUB/GFETCH crowding, unchanged from before the edit), `check-pinch`
+0 hidden, 0 page errors. Five briefs were already over the 100-word cap before this edit and still are:
+BREPO 114, BFETCH 127, SREPO 108, GOLD 104, MED 101. BRONZE's was 124 and is now 89.
+
 ## The state of the data — 2026-09-11, later. Three human datasets arrive, straight to open source.
 
 ```

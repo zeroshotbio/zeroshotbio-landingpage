@@ -40,7 +40,7 @@ def row(path,size,kind,note,depth=1):
 PINNED={'chemfish/','zscape/','zebrahub/','daniocell/','platt/','zmap/','wagner/','raj/',
         'linnaeus/','trunk30hpf/','micdropseq/','zesta/','farrell/','zcl2/','celloracle/','zcl1/',
         'farnsworth/','zfin/','itec/'}
-OURS={'megafin/','minifin/','megafin-1/'}
+OURS={'megafin/','minifin/'}
 def custody(name):
     if name in OURS: return ''
     return ' · pinned' if name in PINNED else ' · NO RECORD'
@@ -81,16 +81,9 @@ B['megafin/']=block('megafin/','#C08552',n,s,''.join(b))
 # 2026-09-11; their blocks are drawn by gen_open_source_panel.py now. Their hand-written
 # blocks from this file are in git history (last in fa9034e7).
 
-# ---- megafin-1/
-n,s=agg('megafin-1/')
-g=collections.Counter(); c=collections.Counter()
-for sz,k in get('megafin-1/'):
-    p='/'.join(k.split('/')[:3]); g[p]+=sz; c[p]+=1
-b=[row('characterization/',s,'leg',
-        f'{n} objects — already archived to bronze 2026-08-29, byte-identical, zero size disagreements')]
-for p,sz in g.most_common(4):
-    b.append(row(p.split('/')[-1],sz,'leg',f'{c[p]} obj',2))
-B['megafin-1/']=block('megafin-1/','#6E8CA0',n,s,''.join(b),legacy=True)
+# ---- megafin-1/ is not here any more. characterization/ (61 objects, 5.00 GiB) was deleted
+# in the console on 2026-09-13, the same day as its bronze archive copy. Its block is in git
+# history (last in acd200fb).
 
 # ---- minifin/
 n,s=agg('minifin/')
@@ -118,7 +111,7 @@ def sec(t, note):
 
 out.append(sec("Parse (Our Data)",
                "produced here from a Parse delivery; a disagreement with the source is our bug"))
-for k in ('minifin/','megafin/','megafin-1/'):
+for k in ('minifin/','megafin/'):
     out.append(B[k])
 out.append(sec("Acquired (Open Source) \u00b7 moved out",
                "every dataset somebody else published lives in s3://zsb-open-source, the OPEN vault in "
