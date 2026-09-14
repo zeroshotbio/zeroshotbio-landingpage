@@ -25,6 +25,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Fate maps & developmental atlases",
+    image: { src: "/images/sitemap_fate_maps.jpg", href: "/fate_map_daniocell", alt: "The DanioCell fate map transcriptional landscape: half a million cells as a UMAP, the cells present at the selected stage inked in red" },
     links: [
       { href: "/fate_map_wang_2026", label: "Fate map · Wang 2026: 5.5–11.3 hpf zebrafish gastrula", note: "one embryo, every followable lineage; ITEC reconstruction" },
       { href: "/fate_map_daniocell", label: "Fate map · DanioCell: five days of becoming a fish", note: "489,686 cells, 3.3–120 hpf; transcriptional identity, not lineage" },
@@ -35,6 +36,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Reproductions & analysis notes",
+    image: { src: "/images/sitemap_reproductions.jpg", href: "/compass", alt: "COMPASS Plate I: one knockdown response split into a shared part and its own part, with the split drawn as geometry beside it" },
     links: [
       { href: "/compass", label: "COMPASS, reproduced: the shared response of a perturbed cell", note: "six CRISPRi lines, held against Tahoe, ChemFish, MegaFin and MiniFin" },
       { href: "/rhaister", label: "Rhaister, reproduced: predicting what was not measured", note: "three figures: task, canonical split, panel-size titration" },
@@ -45,6 +47,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Cell-type labelling & annotation",
+    image: { src: "/images/sitemap_labelling.jpg", href: "/cell_labelling_hierarchy", alt: "The cell-labelling hierarchy audit: cell and tissue types ranked by how consistently the labelling wizard gets them right" },
     links: [
       { href: "/daniotype_kasperov", label: "DanioType · Kasperov auto-pilot labeller", note: "access-gated" },
       { href: "/meta_reasoner", label: "Meta-Reasoner replay & judgement", note: "access-gated" },
@@ -57,6 +60,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Zebrafish anatomy ontology (ZFA)",
+    image: { src: "/images/sitemap_zfa.jpg", href: "/zfa_mapping", alt: "The ZSCAPE to ZFA consensus map: the ZFA vocabulary on the left, ribbons into ZSCAPE anatomical categories on the right" },
     links: [
       { href: "/zebrafish_ontology", label: "ZFA Atlas: dataset menus on the anatomy ontology", note: "access-gated" },
       { href: "/zfa_mapping", label: "ZSCAPE ↔ ZFA consensus map", note: "Steven + Darien consensus, read-only" },
@@ -66,6 +70,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Chat & workflows",
+    image: { src: "/images/sitemap_workflows.jpg", href: "/POC_workflow", alt: "The Zeroshot compound workflow: choose a therapeutic modality, monoclonal antibody, RNA therapeutic or small molecule" },
     links: [
       { href: "/zscape_chat", label: "ZSCAPE chat" },
       { href: "/POC_workflow", label: "Zeroshot compound workflow (POC)" },
@@ -73,6 +78,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "Other pages",
+    image: { src: "/images/sitemap_other.jpg", href: "/danio_specimen_poster.html", alt: "The DANIO specimen poster: a zebrafish drawn in glowing green and violet cells on black" },
     links: [
       { href: "/patrick", label: "Patrick: R4b decision dashboard", note: "access-gated" },
       { href: "/danio_specimen_poster.html", label: "DANIO: interactive specimen poster" },
@@ -91,7 +97,15 @@ const BG = "#fdfbf7";
 export default function SiteMapPage() {
   return (
     <div style={{ minHeight: "100vh", background: BG, color: INK, fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif" }}>
-      <div style={{ maxWidth: 820, margin: "0 auto", padding: "64px 28px 80px" }}>
+      <style>{`
+        .sm-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr); gap: 20px; align-items: start; }
+        .sm-shot { position: sticky; top: 24px; }
+        @media (max-width: 860px) {
+          .sm-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+          .sm-shot { position: static; order: -1; }
+        }
+      `}</style>
+      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "64px 28px 80px" }}>
         <a href="/" style={{ fontSize: 13, color: ACCENT, textDecoration: "none", fontWeight: 600 }}>← zeroshot.bio</a>
         <h1 style={{ fontSize: 34, fontWeight: 800, margin: "14px 0 6px", lineHeight: 1.1 }}>Site map</h1>
         <p style={{ fontSize: 15, color: MUTE, lineHeight: 1.55, margin: "0 0 36px", maxWidth: 640 }}>
@@ -104,12 +118,7 @@ export default function SiteMapPage() {
             {s.blurb ? (
               <p style={{ fontSize: 14, color: INK, lineHeight: 1.55, margin: "0 0 14px", maxWidth: 680 }}>{s.blurb}</p>
             ) : null}
-            {s.image ? (
-              <a href={s.image.href} style={{ display: "block", marginBottom: 12, borderRadius: 12, overflow: "hidden", border: "1px solid #2a2d2b", background: "#151817" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={s.image.src} alt={s.image.alt} style={{ display: "block", width: "100%", height: "auto" }} />
-              </a>
-            ) : null}
+            <div className="sm-grid">
             <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 2 }}>
               {s.links.map((l) => (
                 <li key={l.href}>
@@ -127,6 +136,13 @@ export default function SiteMapPage() {
                 </li>
               ))}
             </ul>
+            {s.image ? (
+              <a className="sm-shot" href={s.image.href} style={{ display: "block", borderRadius: 12, overflow: "hidden", border: "1px solid #e4dccf", background: "#151817" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={s.image.src} alt={s.image.alt} style={{ display: "block", width: "100%", aspectRatio: "16 / 10", objectFit: "cover", objectPosition: "top center" }} />
+              </a>
+            ) : null}
+            </div>
           </section>
         ))}
 
