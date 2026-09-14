@@ -74,6 +74,7 @@ const SECTIONS: Section[] = [
     links: [
       { href: "/zscape_chat", label: "ZSCAPE chat" },
       { href: "/POC_workflow", label: "Zeroshot compound workflow (POC)" },
+      { href: "/trailmaker_UI", label: "Trailmaker UI: MegaFin exploration", note: "prototype · drug × cell-type shifts vs DMSO and Sorafenib" },
     ],
   },
   {

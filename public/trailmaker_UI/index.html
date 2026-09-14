@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trailmaker UI — MegaFin exploration</title>
+<meta name="description" content="A prototype for exploring the MegaFin drug screen: every drug against every cell type, as the change in cell-type proportion against DMSO, with Sorafenib as the reference response.">
+<style>
+  /* The instrument shell: /pipeline's palette and type, so this reads as one of that family.
+     Added here: the three comparison colours. DMSO is grey, Sorafenib green, the searched drug
+     gold, and they never appear in the heatmap ramp, whose two ends (blue = fewer than DMSO,
+     red = more) belong to the data alone. */
+  :root{
+    --bg:#131816; --panel:#181f1c; --panel2:#1c2421;
+    --fg:#dfe6df; --fg2:#a3b0a6; --fg3:#7d8a81; --rule:#39443e;
+    --signal:#74b0f0; --drop:#e0765c; --ok:#5aa46b; --gd:#d8b657;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,Consolas,monospace;
+  }
+  body.light{
+    --bg:#ccd4cb; --panel:#d5dcd3; --panel2:#c3ccc2;
+    --fg:#161e19; --fg2:#4c5a52; --fg3:#6c7a72; --rule:#98a498;
+    --signal:#1e4c8a; --drop:#8a3324; --ok:#3f7d4d; --gd:#8a6d13;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--mono);font-size:12px;line-height:1.5;
+       -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;height:100dvh}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:0}
+  input,select{font:inherit;font-size:12px;color:var(--fg);background:var(--bg);border:1px solid var(--rule);
+               padding:3px 7px;border-radius:0;min-width:0}
+  input:focus-visible,select:focus-visible,button:focus-visible{outline:1px solid var(--gd);outline-offset:1px}
+  a{color:var(--signal)}
+  ::-webkit-scrollbar{width:7px;height:7px}
+  ::-webkit-scrollbar-thumb{background:var(--rule)}
+  ::-webkit-scrollbar-track{background:transparent}
+  .d{color:var(--fg3)}
+  .up{color:var(--drop)} .dn{color:var(--signal)}
+
+  header{display:flex;align-items:stretch;flex-wrap:wrap;border-bottom:1px solid var(--fg);flex:none}
+  .brand{display:flex;align-items:baseline;gap:10px;padding:8px 14px;border-right:1px solid var(--rule)}
+  .brand b{font-size:13px}
+  .brand i{font-style:normal;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3)}
+  .dsw{display:flex;align-items:center;padding:6px 12px}
+  .dsw button,.seg button{border:1px solid var(--rule);padding:4px 9px;font-size:9px;letter-spacing:.12em;
+                          text-transform:uppercase;white-space:nowrap;margin-left:-1px}
+  .dsw button[aria-pressed=true],.seg button[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg);position:relative}
+  .controls{margin-left:auto;display:flex;gap:6px;align-items:center;padding:6px 12px}
+  .ctl{border:1px solid var(--fg);padding:4px 9px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+  .ctl:hover,.ctl:focus-visible{background:var(--fg);color:var(--bg)}
+
+  .compare{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;padding:10px 14px;background:var(--panel);
+           border-bottom:1px solid var(--rule);flex:none}
+  .lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3)}
+  .chip{border:1px solid var(--rule);padding:5px 11px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+  .chip:hover{border-color:var(--fg)}
+  .chip[aria-pressed=true]{border-color:var(--fg)}
+  .sw{display:inline-block;width:9px;height:9px;flex:none}
+  .sw0{background:var(--fg3)} .sw1{background:var(--ok)} .sw2{background:var(--gd)}
+  .vs{color:var(--fg3);font-size:10px}
+  .search{position:relative;display:flex;align-items:center}
+  .search .sw{position:absolute;left:10px;pointer-events:none}
+  #drugQ{width:270px;padding:5px 10px 5px 27px;border-color:var(--gd);background:var(--bg)}
+  #drugList{position:absolute;z-index:20;left:0;top:calc(100% + 2px);margin:0;padding:0;list-style:none;width:max(100%,300px);
+            max-height:340px;overflow:auto;background:var(--panel2);border:1px solid var(--fg)}
+  #drugList li{padding:4px 10px;display:flex;justify-content:space-between;gap:12px;cursor:pointer}
+  #drugList li span{color:var(--fg3)}
+  #drugList li[aria-selected=true]{background:var(--fg);color:var(--bg)}
+  #drugList li[aria-selected=true] span{color:inherit}
+  .hint{color:var(--fg3);font-size:10px}
+
+  .filters{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;padding:8px 14px;border-bottom:1px solid var(--rule);flex:none}
+  .filters label{display:flex;align-items:center;gap:6px}
+  #typeQ{width:170px} #geneQ{width:120px}
+  #geneQ.bad{border-color:var(--drop)}
+  .x{border:1px solid var(--rule);width:22px;height:22px;line-height:1}
+  .seg{display:flex}
+
+  main{flex:1;min-height:0;display:flex}
+  .mapcol{flex:1;min-width:0;display:flex;flex-direction:column;padding:10px 0 8px 14px}
+  .caption{font-size:11px;color:var(--fg2);padding:0 14px 4px 0}
+  .hmwrap{flex:1;min-height:0;display:flex;flex-direction:column;overflow-x:auto;overflow-y:hidden}
+  .hmwrap canvas{display:block;flex:none;cursor:crosshair}
+  .rowscroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;flex-shrink:1}
+  .legend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px 0 0;font-size:10px;color:var(--fg3)}
+  .legend i{display:inline-block;width:150px;height:8px;border:1px solid var(--rule)}
+  .legend b{font-weight:400}
+  .status{font-size:10px;color:var(--fg3);padding:4px 14px 0 0}
+  .status button{color:var(--signal);text-decoration:underline;text-underline-offset:2px}
+
+  aside{width:390px;flex:none;border-left:1px solid var(--fg);overflow-y:auto;padding:14px 16px 28px;background:var(--panel)}
+  aside .dk{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3)}
+  aside h2{font-size:16px;font-weight:500;margin:3px 0 2px;line-height:1.3}
+  aside .meta{color:var(--fg3);margin:0 0 10px;font-size:11px}
+  aside section{border-top:1px solid var(--rule);padding:10px 0 8px}
+  aside h3{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg2);margin:0 0 8px;font-weight:600}
+  aside p{margin:0 0 6px}
+  aside table{width:100%;border-collapse:collapse;font-size:11px}
+  aside th{font-weight:400;text-align:left;color:var(--fg3);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:0 4px 3px}
+  aside td{padding:3px 4px;border-top:1px solid var(--panel2);vertical-align:top}
+  aside .n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .lnk{text-align:left;text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:2px}
+  .lnk:hover{text-decoration-color:var(--fg)}
+  .big{font-size:24px;font-weight:500;margin-right:8px}
+  .keys{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:10px;color:var(--fg3);margin:2px 0 4px}
+  .keys span{display:inline-flex;align-items:center;gap:5px}
+  .note{font-size:10px;color:var(--fg3);margin:6px 0 0}
+  aside svg{display:block;overflow:visible}
+  svg text{font-family:var(--mono);font-size:9px;fill:var(--fg2)}
+  svg .k0{fill:var(--fg3)} svg .k1{fill:var(--ok)} svg .k2{fill:var(--gd)}
+  svg .dot{fill:var(--fg);opacity:.85}
+  svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--fg3);opacity:.55} svg .me{stroke:var(--gd);stroke-width:2.5}
+
+  #tip{position:fixed;z-index:30;pointer-events:none;background:var(--panel2);border:1px solid var(--fg);padding:6px 9px;
+       font-size:11px;max-width:330px;line-height:1.45}
+  dialog{background:var(--panel);color:var(--fg);border:1px solid var(--fg);max-width:640px;width:calc(100% - 32px);padding:18px 22px;
+         font-family:var(--mono);font-size:12px}
+  dialog::backdrop{background:rgba(0,0,0,.55)}
+  dialog h2{font-size:15px;font-weight:500;margin:0 0 4px}
+  dialog li{margin-bottom:6px}
+
+  @media (max-width:860px){
+    body{height:auto;display:block}
+    .brand{border-right:none;width:100%}
+    main{display:block}
+    .hmwrap{height:auto}
+    .rowscroll{max-height:62vh}
+    aside{width:auto;border-left:none;border-top:1px solid var(--fg)}
+    #drugQ{width:210px}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand"><b>Trailmaker UI</b><i>MegaFin exploration · prototype</i></div>
+    <div class="dsw" id="dsSwitch" role="group" aria-label="Dataset"></div>
+    <div class="controls">
+      <button class="ctl" id="btnAbout">About the data</button>
+      <button class="ctl" id="btnTheme">Light</button>
+    </div>
+  </header>
+
+  <section class="compare" aria-label="Comparison">
+    <span class="lbl">Compare</span>
+    <button class="chip" id="chipBase"><span class="sw sw0"></span><span id="chipBaseT">DMSO</span></button>
+    <span class="vs">vs</span>
+    <button class="chip" id="chipAnchor"><span class="sw sw1"></span><span id="chipAnchorT">Sorafenib</span></button>
+    <span class="vs">vs</span>
+    <div class="search">
+      <span class="sw sw2"></span>
+      <input id="drugQ" type="search" placeholder="Search a drug…" autocomplete="off" spellcheck="false"
+             role="combobox" aria-expanded="false" aria-controls="drugList" aria-label="Search a drug to compare">
+      <ul id="drugList" role="listbox" hidden></ul>
+    </div>
+    <label class="lbl" id="doseWrap">dose <select id="doseSel"></select></label>
+    <span class="hint">press / to search</span>
+  </section>
+
+  <section class="filters" aria-label="Filters">
+    <label class="lbl">tissue <select id="tissueSel"></select></label>
+    <label class="lbl">cell type <input id="typeQ" type="search" list="typeList" placeholder="filter columns…" autocomplete="off"><datalist id="typeList"></datalist></label>
+    <label class="lbl">gene <input id="geneQ" type="search" list="geneList" placeholder="optional" autocomplete="off" spellcheck="false"><datalist id="geneList"></datalist></label>
+    <button class="x" id="geneClear" aria-label="Clear gene" hidden>×</button>
+    <div class="seg" id="modeSeg" role="group" aria-label="Value shown">
+      <button data-mode="pct">% proportion</button><button data-mode="delta">ΔDMSO</button><button data-mode="z">z-score</button>
+    </div>
+    <label class="lbl">sort <select id="sortSel">
+      <option value="response">strongest response</option>
+      <option value="similar">most Sorafenib-like</option>
+      <option value="az">A–Z</option>
+      <option value="plate">plate</option>
+    </select></label>
+    <button class="ctl" id="btnRows">Expand rows</button>
+  </section>
+
+  <main>
+    <div class="mapcol">
+      <div class="caption" id="caption"></div>
+      <div class="hmwrap" id="hmwrap">
+        <canvas id="cvHead" aria-label="Cell-type columns"></canvas>
+        <canvas id="cvPin" aria-label="Pinned rows: DMSO, Sorafenib and the searched drug"></canvas>
+        <div class="rowscroll" id="rowscroll"><canvas id="cvRows" aria-label="Drug by cell-type heatmap"></canvas></div>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="status" id="status">Loading…</div>
+    </div>
+    <aside id="detail" aria-live="polite"></aside>
+  </main>
+
+  <div id="tip" role="tooltip" hidden></div>
+  <dialog id="about">
+    <div id="aboutBody"></div>
+    <form method="dialog"><button class="ctl" style="margin-top:12px">Close</button></form>
+  </dialog>
+
+  <script src="/trailmaker_UI/tm-stats.js"></script>
+  <script src="/trailmaker_UI/tm-view.js"></script>
+</body>
+</html>

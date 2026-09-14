@@ -234,6 +234,13 @@ const nextConfig = {
       // Its exact marks come from generated meta.json/plates.json; rh-main.js refuses an
       // asset-version mismatch. Rebuild and verify with scripts/build_rhaister.py --check.
       { source: '/rhaister', destination: '/rhaister/index.html' },
+      // /trailmaker_UI is a MegaFin exploration prototype in public/trailmaker_UI/ (index.html,
+      // tm-stats.js, tm-view.js, data/), in the /pipeline instrument shell. Same absolute
+      // <script src> rule, same reason: no trailing slash on the route. data/ holds COUNTS built
+      // by scripts/build_trailmaker_ui.py from the Gold h5ads; every statistic is computed in
+      // tm-stats.js. Read public/trailmaker_UI/NOTES.md before changing what a number means —
+      // MegaFin's z is a robust z against the plate, not against DMSO, because DMSO is two wells.
+      { source: '/trailmaker_UI', destination: '/trailmaker_UI/index.html' },
     ]
   },
 
@@ -366,6 +373,16 @@ const nextConfig = {
       },
       {
         source: '/molecular_pipe',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      // and for the Trailmaker prototype: tm-view.js reads the element ids index.html names, and
+      // tm-stats.js is written against the exact field set build_trailmaker_ui.py emits
+      {
+        source: '/trailmaker_UI/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/trailmaker_UI',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
       },
     ]
