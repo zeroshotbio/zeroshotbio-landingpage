@@ -204,6 +204,22 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
 .sc-text{font-size:17px;line-height:1.58;margin:0 0 12px;max-width:920px;min-height:3.2em;animation:scIn .45s ease}
 @keyframes scIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .sc-text b{font-weight:600}
+.storycard.has-viz .sc-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,480px);gap:4px 34px;align-items:start}
+@media(max-width:1060px){.storycard.has-viz .sc-body{grid-template-columns:minmax(0,1fr)}}
+.sc-viz{margin:2px 0 12px;animation:scIn .45s ease}
+.sc-viz figcaption{font-family:var(--sans);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-bottom:2px}
+.sc-viz svg{display:block;width:100%;height:auto;overflow:visible}
+.sc-viz text{font-family:var(--sans);font-size:10px;fill:var(--ink-3)}
+.sc-viz text.lab{font-family:var(--serif);font-style:italic;font-size:14px;fill:var(--ink-2)}
+.sc-viz text.lab.sm{font-size:12.5px}
+.sc-viz text.lab.on{fill:var(--ink);font-weight:600}
+.sc-viz text.sub{font-size:9px;letter-spacing:.06em}
+.sc-viz text.val{font-size:10.5px;font-weight:600;fill:var(--select)}
+.sc-viz text.val.thin{fill:var(--ink-3);font-weight:400}
+.sc-viz text.cv{font-size:8.5px;fill:var(--ink-2)}
+.sc-viz text.cv.inv{fill:var(--paper)}
+.sc-viz text.rv{font-size:10.5px;font-style:italic;fill:var(--ink-2)}
+.sc-viz .vnote{font-size:11.5px;font-style:italic;line-height:1.4;color:var(--ink-3);margin-top:3px}
 .sc-foot{display:flex;justify-content:space-between;align-items:center;gap:10px 16px;flex-wrap:wrap;border-top:1px solid var(--rule);padding-top:8px}
 .sc-set{margin:0;font-size:12.5px;font-style:italic;color:var(--ink-2);max-width:760px}
 .sc-set .lhead{font-style:normal;margin-right:6px}
@@ -327,7 +343,7 @@ ul.dsets b{font-weight:400;font-style:italic;color:var(--ink);font-size:15px}
       <div class="storycard" id="storyCard" hidden aria-live="polite">
         <div class="sc-top"><span class="sc-num" id="scNum"></span><button class="sc-x" id="storyExit">leave the story &times;</button></div>
         <h3 class="sc-title" id="scTitle"></h3>
-        <p class="sc-text" id="scText"></p>
+        <div class="sc-body"><p class="sc-text" id="scText"></p><figure class="sc-viz" id="scViz" hidden></figure></div>
         <div class="sc-foot"><p class="sc-set" id="scSet"></p>
           <div class="sc-nav"><button class="sc-btn" id="storyPrev">&lsaquo; back</button><span class="sc-dots" id="scDots"></span><button class="sc-btn" id="storyNext">next &rsaquo;</button></div></div>
       </div>

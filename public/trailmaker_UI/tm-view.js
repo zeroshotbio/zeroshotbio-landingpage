@@ -1038,14 +1038,149 @@
     };
   }
 
+  // ---------------------------------------------------------- side-by-side figures in the story card
+  // The plate shows one dataset at a time; these small figures put the same drug from MiniFin and both
+  // MegaFin parts on one axis. Every value is the same pooled share / change against the plate's own
+  // DMSO that the plate draws, read from the untouched copies in S.aux.
+  const XDS = ["minifin", "megafin", "megafin2"];
+  const XNAME = { minifin: "MiniFin", megafin: "Part 1", megafin2: "Part 2" };
+  // the sets all three projects drew, by their name on each (MiniFin, part 1, part 2)
+  const XSETS = [
+    ["vessels", "Vascular Endothelial Cells", "Vascular endothelial cells", "Vascular endothelial cells"],
+    ["erythrocytes", "Erythrocytes", "Erythrocytes", "Erythrocytes"],
+    ["macrophages", "Macrophages", "Macrophages", "Macrophages"],
+    ["basal epid.", "Basal Epidermis", "Basal epidermis", "Basal epidermis"],
+    ["superf. epid.", "Superficial Epidermis", "Superficial epidermis", "Superficial epidermis"],
+    ["fast muscle", "Fast-Twitch Muscle", "Fast twitch muscle", "Fast twitch muscle"],
+    ["slow muscle", "Slow-Twitch Muscle", "Slow twitch muscle", "Slow twitch muscle"],
+    ["notochord", "Notochord", "Notochord", "Notochord"],
+    ["forebrain", "Forebrain (Telencephalon)", "Forebrain", "Forebrain"],
+    ["midbrain", "Midbrain (Optic Tectum)", "Midbrain", "Midbrain"],
+    ["floor plate", "Floor Plate", "Floor plate", "Floorplate"],
+    ["Schwann", "Schwann Cell Precursors", "Schwann cells/peripheral glia", "Schwann cell precursors/peripheral glia"],
+    ["melanocytes", "Melanocytes", "Melanocytes/melanophores/melanoblasts", "Melanocytes/melanophores"],
+    ["liver", "Liver", "Liver/hepatoblasts", "Liver/hepatoblasts"],
+  ];
+  const xType = (X, key) => { const r = XSETS.find((x) => x[0] === key); return r ? X.types.findIndex((t) => t.name === r[1 + XDS.indexOf(X.dataset)]) : -1; };
+  const xCond = (X, d, dose) => X.conds.findIndex((c) => c.drug === d && (dose == null || c.dose === String(dose)));
+  const xCells = (X, i) => X.conds[i].units.reduce((a, u) => a + X.units[u].n, 0);
+  const xBase = (X, j) => TM.matrices(X, X.propLayer).pct[X.base * X.nt + j];
+  const xChg = (X, i, j) => TM.matrices(X, X.propLayer).pct[i * X.nt + j] / xBase(X, j) - 1;
+  const uChg = (X, u, j) => TM.unitVal(X.propLayer, u, j, X.nt) / xBase(X, j) - 1;
+  const xRms = (X, i) => TM.responseScore(TM.row(TM.matrices(X, X.propLayer).z, i, X.nt), X.types.map((_, j) => j).filter((j) => !X.types[j].umbrella && X.types[j].n >= 100));
+  const sgn = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(Math.round(100 * v))}%`;
+  const T = (x, y, str, cls, extra = "") => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" class="${cls}" ${extra}>${esc(str)}</text>`;
+  const band = () => rgb(mix(C.paper, C.ink, 0.1));
+
+  // one line per dataset: every sample / well of the plate as a tick, DMSO hollow, the drug in madder
+  function vizStrip(v) {
+    const W = 470, L = 104, R = 16, top = 24, rh = 46, H = top + v.rows.length * rh + 2, lo = -1, hi = 1.5;
+    const x = (c) => L + ((Math.max(lo, Math.min(hi, c)) - lo) / (hi - lo)) * (W - L - R);
+    let o = "";
+    [-1, -0.5, 0, 0.5, 1, 1.5].forEach((t) => {
+      o += `<line x1="${x(t)}" x2="${x(t)}" y1="${top - 5}" y2="${H - 4}" stroke="${rgb(C.rule)}" stroke-width="${t === 0 ? 1.3 : 0.6}"${t === 0 ? "" : ' stroke-dasharray="2 3"'}/>`;
+      o += T(x(t), top - 9, t === 0 ? "= DMSO" : sgn(t), "ax", 'text-anchor="middle"');
+    });
+    v.rows.forEach(([ds, doses], r) => {
+      const X = S.aux && S.aux[ds], cy = top + r * rh + rh / 2 - 2;
+      o += T(6, cy - 1, XNAME[ds], ds === S.ds ? "lab on" : "lab") + T(6, cy + 12, ds === "minifin" ? "fresh stock" : "older stock", "sub");
+      const j = X ? xType(X, v.set) : -1;
+      if (j < 0) return;
+      const cs = X.units.map((_, u) => u).filter((u) => X.units[u].n >= 1000).map((u) => uChg(X, u, j)).filter(Number.isFinite);
+      o += `<rect x="${x(TM.quantile(cs, 0.1))}" y="${cy - 7}" width="${Math.max(1, x(TM.quantile(cs, 0.9)) - x(TM.quantile(cs, 0.1)))}" height="14" fill="${band()}"/>`;
+      cs.forEach((c) => { o += `<line x1="${x(c)}" x2="${x(c)}" y1="${cy - 5}" y2="${cy + 5}" stroke="${rgb(C.ink3, 0.45)}" stroke-width="0.8"/>`; });
+      X.conds[X.base].units.forEach((u) => { const c = uChg(X, u, j); if (Number.isFinite(c)) o += `<circle cx="${x(c)}" cy="${cy}" r="3.3" fill="${rgb(C.paper)}" stroke="${rgb(C.ink2)}" stroke-width="1"/>`; });
+      (doses || [null]).forEach((dose, k) => {
+        const i = xCond(X, v.drug, dose);
+        if (i < 0) return;
+        const thin = xCells(X, i) < 1000, hollow = dose === "1", pc = xChg(X, i, j);
+        X.conds[i].units.forEach((u) => { const c = uChg(X, u, j); if (Number.isFinite(c)) o += `<circle cx="${x(c)}" cy="${cy}" r="4" fill="${hollow ? rgb(C.paper) : rgb(C.sel, 0.85)}" stroke="${rgb(C.sel, thin ? 0.55 : 1)}" stroke-width="1.3"${thin ? ' stroke-dasharray="2 1.6"' : ""}/>`; });
+        if (X.conds[i].units.length > 1) o += `<line x1="${x(pc)}" x2="${x(pc)}" y1="${cy - 11}" y2="${cy + 11}" stroke="${rgb(C.sel)}" stroke-width="2.2"/>`;
+        const lab = `${dose ? doseLabel(dose) + " " : ""}${sgn(pc)}${thin ? ` · ${nF(xCells(X, i))} cells` : ""}`;
+        o += T(Math.max(L + 34, Math.min(W - 46, x(pc))), k === 0 ? cy - 13 : cy + 21, lab, thin ? "val thin" : "val", 'text-anchor="middle"');
+      });
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" role="img">${o}</svg>`;
+  }
+
+  // the drug's change on every shared set, one row per dataset, r against the top row
+  function vizPrint(v) {
+    const ok = v.rows.every(([ds]) => S.aux && S.aux[ds]);
+    if (!ok) return "";
+    const cols = XSETS.filter(([key]) => v.rows.every(([ds]) => xType(S.aux[ds], key) >= 0));
+    const W = 470, L = 104, RC = 46, head = 62, rh = 24, cw = (W - L - RC) / cols.length, H = head + v.rows.length * rh + 2;
+    let o = "";
+    cols.forEach(([key], c) => { o += `<text transform="translate(${(L + c * cw + cw / 2 - 2).toFixed(1)},${head - 5}) rotate(-55)" class="ax">${esc(key)}</text>`; });
+    const vecs = v.rows.map(([ds, dose, label], r) => {
+      const X = S.aux[ds], i = xCond(X, v.drug, dose), y = head + r * rh;
+      o += T(6, y + rh / 2 + 4, label, ds === S.ds ? "lab on" : "lab");
+      return cols.map(([key], c) => {
+        const val = i < 0 ? NaN : xChg(X, i, xType(X, key)), x0 = L + c * cw;
+        if (!Number.isFinite(val)) return NaN;
+        const a = Math.min(1, Math.abs(val) / 0.6);
+        o += `<rect x="${(x0 + 0.6).toFixed(1)}" y="${y + 1}" width="${(cw - 1.2).toFixed(1)}" height="${rh - 2}" fill="${rgb(mix(C.paper, val > 0 ? C.up : C.down, 0.12 + 0.88 * a))}"><title>${esc(`${label} · ${key}: ${sgn(val)} against its own DMSO`)}</title></rect>`;
+        o += T(x0 + cw / 2, y + rh / 2 + 3.5, sgn(val).replace("%", ""), a > 0.6 ? "cv inv" : "cv", 'text-anchor="middle"');
+        return Math.log2(1 + val);
+      });
+    });
+    vecs.slice(1).forEach((vec, r) => {
+      const rr = TM.pearson(vecs[0], vec, vec.map((_, k) => k));
+      o += T(W - 3, head + (r + 1) * rh + rh / 2 + 4, `r ${Number.isFinite(rr) ? (rr >= 0 ? "+" : "−") + Math.abs(rr).toFixed(2) : "–"}`, "rv", 'text-anchor="end"');
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" role="img">${o}</svg>`;
+  }
+
+  // how much each named well moves anything, against the spread of every well on its plate
+  function vizResp(v) {
+    const W = 470, L = 204, RC = 44, top = 22, rh = 22, H = top + v.items.length * rh + 2, hi = 3;
+    const x = (z) => L + (Math.min(hi, Math.max(0, z)) / hi) * (W - L - RC);
+    const st = {};
+    let o = "";
+    [0, 1, 2, 3].forEach((t) => { o += `<line x1="${x(t)}" x2="${x(t)}" y1="${top - 5}" y2="${H - 2}" stroke="${rgb(C.rule)}" stroke-width="0.6" stroke-dasharray="2 3"/>` + T(x(t), top - 9, t === hi ? "3+" : String(t), "ax", 'text-anchor="middle"'); });
+    o += T(W - 3, top - 9, "cells", "ax", 'text-anchor="end"');
+    v.items.forEach(([ds, d, dose, short], r) => {
+      const X = S.aux && S.aux[ds];
+      if (!X) return;
+      if (!st[ds]) {
+        const all = X.conds.map((_, i) => i).filter((i) => !X.conds[i].control).map((i) => xRms(X, i)), ns = X.units.map((u) => u.n).sort((a, b) => a - b);
+        st[ds] = { lo: TM.quantile(all, 0.1), hi: TM.quantile(all, 0.9), med: TM.quantile(all, 0.5), medN: ns[ns.length >> 1] };
+      }
+      const p = st[ds], i = xCond(X, d, dose), cy = top + r * rh + rh / 2;
+      if (i < 0) return;
+      o += `<rect x="${x(p.lo)}" y="${cy - 6}" width="${x(p.hi) - x(p.lo)}" height="12" fill="${band()}"/>`;
+      o += `<line x1="${x(p.med)}" x2="${x(p.med)}" y1="${cy - 7}" y2="${cy + 7}" stroke="${rgb(C.ink3)}" stroke-width="1.2"/>`;
+      o += T(6, cy + 4, `${short} · ${doseLabel(dose)}`, ds === S.ds ? "lab on sm" : "lab sm") + T(L - 8, cy + 4, XNAME[ds].toLowerCase(), "sub", 'text-anchor="end"');
+      o += `<circle cx="${x(xRms(X, i))}" cy="${cy}" r="4.2" fill="${rgb(C.sel)}"/>`;
+      o += T(W - 3, cy + 4, `×${(xCells(X, i) / p.medN).toFixed(1)}`, "val", 'text-anchor="end"');
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" role="img">${o}</svg>`;
+  }
+
+  function crossViz(v) {
+    const body = v.kind === "strip" ? vizStrip(v) : v.kind === "print" ? vizPrint(v) : vizResp(v);
+    return body ? `<figcaption>${esc(v.title)}</figcaption>${body}<div class="vnote">${v.note}</div>` : "";
+  }
+  const VIZ_SOR_STRIP = { kind: "strip", drug: "Sorafenib", set: "vessels", rows: [["minifin"], ["megafin", ["5", "1"]], ["megafin2", ["5", "1"]]],
+    title: "Sorafenib · vascular endothelial cells, all three datasets",
+    note: "Change against each plate's own DMSO. Madder: Sorafenib (MiniFin's 11 samples, bar = pooled; filled 5 µM, hollow 1 µM, dashed = under 1,000 cells). Hollow grey: DMSO. Ticks: every other sample or well; band: the middle 80% of them." };
+  const PRINT_NOTE = "Each square: the drug's change in that set against its own plate's DMSO (ochre more, grey fewer). r: how well the row's pattern matches the top row's.";
+  const VIZ_SOR_PRINT = { kind: "print", drug: "Sorafenib", rows: [["minifin", null, "MiniFin"], ["megafin", "5", "Part 1 · 5 µM"], ["megafin2", "5", "Part 2 · 5 µM"]],
+    title: "Sorafenib's fingerprint, side by side", note: PRINT_NOTE };
+  const VIZ_DAPA_PRINT = { kind: "print", drug: "Dapagliflozin", rows: [["minifin", null, "MiniFin"], ["megafin", "5", "Part 1 · 5 µM"]],
+    title: "Dapagliflozin's fingerprint, side by side", note: PRINT_NOTE };
+  const VIZ_FLAT = { kind: "resp", title: "Drugs that should hit hard, on both MegaFin parts",
+    items: [["megafin2", "Paclitaxel Taxol", "5", "Paclitaxel"], ["megafin2", "Vinblastine sulfate", "5", "Vinblastine"], ["megafin2", "Epothilone B", "5", "Epothilone B"],
+      ["megafin", "Panobinostat", "1", "Panobinostat"], ["megafin", "Panobinostat", "5", "Panobinostat"], ["megafin", "Vorinostat SAHA", "5", "Vorinostat"], ["megafin", "17-AAG KOS953", "5", "17-AAG"]],
+    note: "Dot: how much the well moves any cell set (root-mean-square z). Band: the middle 80% of wells on its plate; tick: the median. Right: the well's cells against the plate's typical well." };
+
   const STORIES = [
     {
-      ds: "minifin", title: "Sorafenib thins the blood vessels",
+      ds: "minifin", title: "Sorafenib thins the blood vessels", aux: ["minifin", "megafin", "megafin2"],
       set: { mode: "z", ref: "Sorafenib", focus: ["Dapagliflozin"], sort: "set", type: "Vascular Endothelial Cells" },
       beats: [
         { types: ["Vascular Endothelial Cells"],
           text: (k) => `Start with one column: vascular endothelial cells, the lining of the blood vessels. In DMSO they make up ${k.b(k.basePct("Vascular Endothelial Cells"))} of a larva's cells.` },
-        { rows: [["Sorafenib"]], types: ["Vascular Endothelial Cells"],
+        { viz: VIZ_SOR_STRIP, rows: [["Sorafenib"]], types: ["Vascular Endothelial Cells"],
           text: (k) => `Sorafenib brings them down to ${k.b(k.pct("Sorafenib", null, "Vascular Endothelial Cells"))}, about ${k.fewer("Sorafenib", null, "Vascular Endothelial Cells")} fewer, at ${k.b("z " + k.z("Sorafenib", null, "Vascular Endothelial Cells"))}: `
             + `${k.strongest("Sorafenib", null, "Vascular Endothelial Cells") ? "the strongest move any drug makes on any set here" : "one of the strongest moves here"}, and it holds across ${k.units("Sorafenib")} samples against ${k.units("DMSO")} of DMSO.` },
         { rows: [["Dapagliflozin"], ["Orlistat"]], types: ["Vascular Endothelial Cells"],
@@ -1082,12 +1217,12 @@
       ],
     },
     {
-      ds: "megafin2", title: "Sorafenib again, one well at a time",
+      ds: "megafin2", title: "Sorafenib again, one well at a time", aux: ["minifin", "megafin", "megafin2"],
       set: { mode: "z", dose: "5", ref: "Sorafenib", focus: ["Pimecrolimus", "5"], sort: "set", type: "Vascular endothelial cells" },
       beats: [
         { rows: [["Sorafenib", "5"]], types: ["Vascular endothelial cells"],
           text: (k) => `Back to Sorafenib and the blood vessels, now on MegaFin part 2. Its 5 µM well takes vascular endothelial cells from ${k.b(k.basePct("Vascular endothelial cells"))} of cells to ${k.b(k.pct("Sorafenib", "5", "Vascular endothelial cells"))}: the direction MiniFin showed in story I.` },
-        { rows: [["Sorafenib", "5"]], types: ["Vascular endothelial cells"],
+        { viz: VIZ_SOR_STRIP, rows: [["Sorafenib", "5"]], types: ["Vascular endothelial cells"],
           text: (k) => `But at ${k.b("z " + k.z("Sorafenib", "5", "Vascular endothelial cells"))} it is only the ${k.rankDown("Sorafenib", "5", "Vascular endothelial cells")} wells at thinning this set, inside the ordinary wobble between wells. `
             + `Its 1 µM well holds just ${k.cells("Sorafenib", "1")} cells, too few to read.` },
         { text: () => `Same drug, same direction, but one well cannot tell a drug from its well (story III). The replicated MiniFin result is the one to trust; MegaFin would need repeat wells to say more.` },
@@ -1129,7 +1264,7 @@
       ],
     },
     {
-      ds: "megafin", label: "MegaFin parts 1 + 2", title: "Two plates, two baselines", aux: ["megafin", "megafin2"],
+      ds: "megafin", label: "MegaFin parts 1 + 2", title: "Two plates, two baselines", aux: ["minifin", "megafin", "megafin2"],
       set: { mode: "pct", dose: "5", ref: "Sorafenib", sort: "response" },
       beats: [
         { rows: [["DMSO"]], types: ["CNS", "Midbrain"],
@@ -1140,7 +1275,7 @@
             return `On part 2, the same vehicle reads ${k.b(b.basePct("CNS"))} CNS and ${k.b(b.basePct("Midbrain"))} midbrain. That gap between the plates, ${(gap * 100).toFixed(0)} points of CNS, `
               + `${gap > Math.max(ma, mb) ? "is larger than any drug's CNS effect within either plate" : "rivals the largest drug effects within a plate"} (at most ${(ma * 100).toFixed(0)} and ${(mb * 100).toFixed(0)} points). `
               + `The plates differ as batches, so every Δ here compares a drug with DMSO on its own plate.`; } },
-        { ds: "megafin2", rows: [["Sorafenib", "5"]],
+        { viz: VIZ_SOR_PRINT, ds: "megafin2", rows: [["Sorafenib", "5"]],
           text: (k) => { const a = k.other("megafin"), b = k.other("megafin2");
             return `Even the drug placed identically does not line up: Sorafenib at 5 µM sat in well ${a ? a.well("Sorafenib", "5") : "?"} on part 1 and ${b ? b.well("Sorafenib", "5") : "?"} on part 2, `
               + `and its two profiles across the shared sets correlate at ${k.b("r " + k.crossR("Sorafenib", "5"))}. That is why the parts sit side by side here and are never merged.`; } },
@@ -1150,22 +1285,22 @@
       ds: "minifin", label: "all three datasets", title: "Fresh stock, aged stock", aux: ["minifin", "megafin", "megafin2"],
       set: { mode: "delta", ref: "Sorafenib", sort: "set", type: "Vascular Endothelial Cells" },
       beats: [
-        { rows: [["Sorafenib"]], types: ["Vascular Endothelial Cells"],
+        { viz: VIZ_SOR_STRIP, rows: [["Sorafenib"]], types: ["Vascular Endothelial Cells"],
           text: (k) => `MiniFin was dosed from freshly made stock. There Sorafenib cuts vascular endothelial cells from ${k.b(k.basePct("Vascular Endothelial Cells"))} to ${k.b(k.pct("Sorafenib", null, "Vascular Endothelial Cells"))}, `
             + `${k.b(k.fewer("Sorafenib", null, "Vascular Endothelial Cells"))} fewer, and ${k.b(k.below("Sorafenib", null, "Vascular Endothelial Cells"))} samples sit below the DMSO average.` },
-        { ds: "megafin2", set: { dose: "5", type: "Vascular endothelial cells" }, rows: [["Sorafenib", "5"]], types: ["Vascular endothelial cells"],
+        { viz: VIZ_SOR_PRINT, ds: "megafin2", set: { dose: "5", type: "Vascular endothelial cells" }, rows: [["Sorafenib", "5"]], types: ["Vascular endothelial cells"],
           text: (k) => { const a = k.other("megafin"), b = k.other("megafin2"); if (!a || !b) return "–";
             return `MegaFin's stocks were older. At 5 µM the same drug moves the vessels ${k.b(a.chg("Sorafenib", "5", "Vascular endothelial cells"))} on part 1 and ${k.b(b.chg("Sorafenib", "5", "Vascular endothelial cells"))} on part 2 `
               + `(z ${zF(a.zv("Sorafenib", "5", "Vascular endothelial cells"))} and ${zF(b.zv("Sorafenib", "5", "Vascular endothelial cells"))}), inside the ordinary spread between wells. Its thin 1 µM wells (${a.cells("Sorafenib", "1")} and ${b.cells("Sorafenib", "1")} cells) even point up.`; } },
-        { ds: "megafin", set: { dose: "5", type: "Fast twitch muscle" }, rows: [["Dapagliflozin", "5"]], types: ["Fast twitch muscle"],
+        { viz: VIZ_DAPA_PRINT, ds: "megafin", set: { dose: "5", type: "Fast twitch muscle" }, rows: [["Dapagliflozin", "5"]], types: ["Fast twitch muscle"],
           text: (k) => { const f = k.other("minifin"), a = k.other("megafin"); if (!f || !a) return "–";
             return `Old stock can't be the whole answer. Dapagliflozin is chemically robust, yet its MiniFin signature fails too: fast-twitch muscle ${k.b(f.chg("Dapagliflozin", null, "Fast-Twitch Muscle"))} on MiniFin, `
               + `${k.b(a.chg("Dapagliflozin", "5", "Fast twitch muscle"))} on part 1. One well on a batch-shifted plate (stories III, VII) blurs even a stable drug.`; } },
-        { ds: "megafin2", set: { dose: "5", sort: "response", type: "" }, rows: [["Paclitaxel Taxol", "5"], ["Vinblastine sulfate", "5"], ["Epothilone B", "5"]],
+        { viz: VIZ_FLAT, ds: "megafin2", set: { dose: "5", sort: "response", type: "" }, rows: [["Paclitaxel Taxol", "5"], ["Vinblastine sulfate", "5"], ["Epothilone B", "5"]],
           text: (k) => { const b = k.other("megafin2"); if (!b) return "–";
             return `Where age could still show: drugs that should hit hard and don't. Paclitaxel and Vinblastine block cell division, yet Paclitaxel 5 µM is the ${k.b(b.flat("Paclitaxel Taxol", "5"))} flattest of ${b.nWells} wells, `
               + `and both keep more cells than a typical well (${b.cellsX("Paclitaxel Taxol", "5")}, ${b.cellsX("Vinblastine sulfate", "5")}). Epothilone B, same target, leaves ${k.b(b.cellsX("Epothilone B", "5"))}.`; } },
-        { ds: "megafin", set: { dose: "5", sort: "response", type: "" }, rows: [["Panobinostat", "5"], ["Vorinostat SAHA", "5"], ["17-AAG KOS953", "5"]],
+        { viz: VIZ_FLAT, ds: "megafin", set: { dose: "5", sort: "response", type: "" }, rows: [["Panobinostat", "5"], ["Vorinostat SAHA", "5"], ["17-AAG KOS953", "5"]],
           text: (k) => { const a = k.other("megafin"); if (!a) return "–"; const r = a.flat("17-AAG KOS953", "5");
             return `On part 1, Panobinostat, an HDAC inhibitor far more potent than Vorinostat, is among the flattest wells (${k.b(a.flat("Panobinostat", "1"))} and ${k.b(a.flat("Panobinostat", "5"))} of ${a.nWells}); `
               + `17-AAG at 5 µM is the ${k.b(r === "1st" ? "flattest of all" : r + " flattest")}. Paclitaxel and 17-AAG barely dissolve in water, so wet, refrozen stock can lose them by settling out. Re-make these from fresh powder first.`; } },
@@ -1193,6 +1328,10 @@
     const text = $("#scText"), html = st.beats[b].text(storyKit());
     if (text.dataset.key !== `${S.story.k}:${b}`) { text.style.animation = "none"; void text.offsetHeight; text.style.animation = ""; text.dataset.key = `${S.story.k}:${b}`; }
     text.innerHTML = html;
+    const vz = $("#scViz"), v = st.beats[b].viz, key = `${S.story.k}:${b}:${S.ds}`;
+    card.classList.toggle("has-viz", !!v);
+    vz.hidden = !v;
+    if (v && vz.dataset.key !== key) { vz.innerHTML = crossViz(v); vz.dataset.key = key; }
     $("#scSet").innerHTML = settingsLine();
     $("#scDots").innerHTML = st.beats.map((_, i) => `<i class="${i === b ? "on" : ""}"></i>`).join("");
     $("#storyPrev").disabled = b === 0;

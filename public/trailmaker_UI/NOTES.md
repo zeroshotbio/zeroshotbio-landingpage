@@ -121,6 +121,14 @@ the other plate come from a second, untouched copy of its data):
    stability column (chemical breakdown) does not score. MiniFin's dose is not recorded in its
    object; the matched dose is the team's statement.
 
+**Side-by-side figures in the story card.** The plate shows one dataset at a time, so beats that compare
+datasets (I.2, IV.2, VII.3, all of VIII) carry a small figure drawn from untouched copies of all three
+datasets: a *strip* (Sorafenib's vascular change against each plate's own DMSO, every sample / well as a
+tick, the middle 80% as a band), a *fingerprint* (a drug's change on the 14 sets all three projects
+drew, one row per dataset, r against the top row), and a *response* plot (how much named wells move
+anything, against their plate's spread, with cells against the typical well). The shared-set list is
+`XSETS` in `tm-view.js`; set names were matched by hand, not by ontology.
+
 Also measured: bottom-edge row H holds the fewest cells per well on both plates (median ~4,400 and
 ~2,600 vs ~6,500-8,000 elsewhere); part 1's column 3 is thin (median ~800 cells) and holds the
 no-DMSO controls (1,489 and 474 cells).
