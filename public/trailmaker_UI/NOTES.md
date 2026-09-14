@@ -14,10 +14,14 @@ trailing slash, so script `src` is absolute. Rebuild: `/data/.venv/bin/python sc
 - **Counts, not finished statistics, ship.** `data/<ds>.json` holds cells per (replicate unit ×
   cell type); `data/<ds>/g<i>.bin` holds cells expressing gene i per (unit × type). Proportions,
   ΔDMSO and z are computed in `tm-stats.js` from those, the same way for every layer.
-- **ΔDMSO** is the drug's pooled proportion minus the DMSO wells *on the same plate*.
-- **z** differs by dataset and says so on screen. MegaFin: each drug-dose is ONE well and each plate
-  has TWO DMSO wells, too few for a DMSO variance, so z is a robust z of the well against every well
-  on its plate (median, 1.4826 × MAD). MiniFin: a Welch t of the drug's samples against DMSO's.
+- **ΔDMSO** is the drug's pooled proportion minus the DMSO wells *on the same plate*. A condition
+  run on both plates (DMSO, Sorafenib) is compared plate for plate, weighted by cells.
+- **z** differs by dataset and says so on screen. MegaFin: most drug-doses are ONE well and each
+  plate has TWO DMSO wells, too few for a DMSO variance, so z is a robust z of each well against
+  every well on its own plate (median, 1.4826 × MAD), averaged over the condition's wells.
+  MiniFin: a Welch t of the drug's samples against DMSO's.
+- **Trap:** Sorafenib sits on both MegaFin plates. An earlier build treated any two-plate
+  condition as plateless and gave it no z, which silently emptied every similarity score.
 - **Similarity to Sorafenib** is Pearson r between z-score profiles over the columns currently
   visible, against Sorafenib at the same dose. It moves when you filter; that is intended.
 

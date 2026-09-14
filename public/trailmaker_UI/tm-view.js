@@ -81,11 +81,11 @@
   }
   const anchorIdx = () => TM.anchorFor(S.m, -1, S.dose || S.m.doses[0] || "");
 
-  function simList(mats, cols, keep) {
+  function simList(mats, cols, keep, dose = S.dose) {
     const m = S.m, nt = m.nt;
     return m.conds.map((_, k) => k)
-      .filter((k) => k === keep || (!m.conds[k].control && !m.anchors.includes(k) && (!S.dose || m.conds[k].dose === S.dose)))
-      .map((k) => [k, TM.pearson(TM.row(mats.z, k, nt), TM.row(mats.z, TM.anchorFor(m, k, S.dose), nt), cols)])
+      .filter((k) => k === keep || (!m.conds[k].control && !m.anchors.includes(k) && (!dose || m.conds[k].dose === dose)))
+      .map((k) => [k, TM.pearson(TM.row(mats.z, k, nt), TM.row(mats.z, TM.anchorFor(m, k, dose), nt), cols)])
       .filter((p) => Number.isFinite(p[1]))
       .sort((a, b) => b[1] - a[1]);
   }
@@ -414,7 +414,7 @@
     }
 
     if (!isBase && !c.control) {
-      const sim = simList(mats, cols, i);
+      const sim = simList(mats, cols, i, c.dose || S.dose);
       if (isAnchor) {
         const list = sim.filter((p) => p[0] !== i).slice(0, 8);
         h += section("Response similarity to Sorafenib",

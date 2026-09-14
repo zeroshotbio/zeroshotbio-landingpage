@@ -8,10 +8,12 @@
  *   gene        num = expressing counts den = counts                  -> % of that type expressing
  * and the three display modes are the same three functions of a layer:
  *   pct    the condition's pooled value (sum num / sum den over its units)
- *   delta  pct minus the pooled baseline (DMSO) on the condition's own plate
- *   z      MegaFin ("robust"): (pct - median) / (1.4826 MAD) over every well on the plate, since a
- *          drug-dose is one well and DMSO is two; MiniFin ("welch"): Welch t of the drug's sample
- *          values against the DMSO samples.
+ *   delta  pct minus the DMSO baseline of each unit's own plate (weighted like pct), so a
+ *          condition run on both plates is compared plate for plate
+ *   z      MegaFin ("robust"): each well's (value - median) / (1.4826 MAD) over every well on its
+ *          plate, averaged over the condition's wells — a drug-dose is one well and DMSO is two
+ *          per plate, too few for a DMSO variance; MiniFin ("welch"): Welch t of the drug's
+ *          sample values against the DMSO samples.
  */
 (function (root) {
   "use strict";
@@ -79,28 +81,45 @@
       for (let t = 0; t < nt; t++) {
         baseVal[p][t] = pooled(L, m.baseUnits[p], t, nt);
         if (m.z_method === "robust") {
-          const v = m.unitsOnPlate[p].map((u) => unitVal(L, u, t, nt)).filter(Number.isFinite);
+          const us = m.unitsOnPlate[p];
+          const v = us.map((u) => unitVal(L, u, t, nt)).filter(Number.isFinite);
           const med = median(v);
           let s = 1.4826 * median(v.map((x) => Math.abs(x - med)));
           if (!(s > 0)) s = 1.2533 * mean(v.map((x) => Math.abs(x - med)));
+          // Floor the spread at the binomial sampling noise of a typical well. A rare type's MAD
+          // can sit near zero, and without a floor a 0.06 pp shift read as z = +18.
+          const nbar = median(us.map((u) => L.den[u * nt + t]).filter((d) => d > 0));
+          if (nbar > 0) {
+            const q = Math.min(1 - 1 / nbar, Math.max(med, 1 / nbar));
+            s = Math.max(s || 0, Math.sqrt((q * (1 - q)) / nbar));
+          }
           robust[p][t] = [med, s > 0 ? s : NaN];
         }
       }
     }
-    const baseAll = new Float64Array(nt);
-    for (let t = 0; t < nt; t++) baseAll[t] = pooled(L, allBase, t, nt);
     conds.forEach((c, i) => {
-      const multi = !(c.plate in baseVal);
       for (let t = 0; t < nt; t++) {
         const v = pooled(L, c.units, t, nt);
-        const bv = multi ? baseAll[t] : baseVal[c.plate][t];
+        // Baseline on each unit's OWN plate, weighted the way the pooled value is, so a condition
+        // run on both plates (DMSO, Sorafenib) is compared plate for plate. For DMSO itself this
+        // reduces exactly to its pooled value, so its delta is 0.
+        let bw = 0, bd = 0;
+        for (const u of c.units) {
+          const d = L.den[u * nt + t], b = baseVal[m.units[u].plate][t];
+          if (d > 0 && Number.isFinite(b)) { bw += d * b; bd += d; }
+        }
         pct[i * nt + t] = v;
-        delta[i * nt + t] = v - bv;
+        delta[i * nt + t] = bd > 0 ? v - bw / bd : NaN;
         let zz = NaN;
         if (i === m.base) zz = 0;
-        else if (m.z_method === "robust" && !multi) {
-          const [med, s] = robust[c.plate][t];
-          zz = (v - med) / s;
+        else if (m.z_method === "robust") {
+          // each well against its own plate, then the mean over the condition's wells
+          const zs = [];
+          for (const u of c.units) {
+            const [med, s] = robust[m.units[u].plate][t], x = unitVal(L, u, t, nt);
+            if (Number.isFinite(x) && s > 0) zs.push((x - med) / s);
+          }
+          zz = zs.length ? mean(zs) : NaN;
         } else if (m.z_method === "welch") {
           const a = c.units.map((u) => unitVal(L, u, t, nt)).filter(Number.isFinite);
           const b = allBase.map((u) => unitVal(L, u, t, nt)).filter(Number.isFinite);
