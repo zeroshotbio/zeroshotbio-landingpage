@@ -2,15 +2,16 @@
 """Build the data behind /trailmaker_UI from the Gold MegaFin and MiniFin releases.
 
 Inputs, all local (provenance in /data/scratch/gold_labels/out/README.md):
-  MegaFin  Gold  megafin/zsb/v1/megafin.h5ad          1,268,343 cells, plates CP01 + CP02
-           labels out/megafin_zsb_v1_labels.parquet   DanioType node label on 539,977 CP01 cells
+  MegaFin  Gold  megafin/zsb/v1/megafin.h5ad          1,268,343 cells; only plate CP01 is used
+           labels out/megafin_zsb_v1_patrick_labels.parquet   Patrick's 27 hand-drawn cell sets on CP01
+                  (from the Trailmaker export in s3://zsb-bronze-archive/megafin/patrick-labels/;
+                  extraction + id bridge: /data/experiments/patrick_megafin_labels/README.md)
   MiniFin  Gold  minifin/zsb/v2/minifin.h5ad          89,788 cells
            labels out/minifin_zsb_v2_labels.parquet   Patrick's 27 hand-drawn cell sets
 
-MegaFin cells without a DanioType label (all of CP02, plus the CP01 cells the zsb recipe keeps that
-the labelled vendor object dropped) take one by majority vote of their K nearest labelled
-neighbours in the Gold Harmony PCA. That is a TRANSFER, not a labelling: every cell type records
-how many of its cells were transferred, and a 5% hold-out of labelled cells measures the vote.
+Both datasets use ONLY Patrick's hand-drawn labels. No automatic labeller output and no label
+transfer: a cell he did not put in a set stays unlabelled and counts only in its well's total.
+Patrick has labelled MegaFin part 1 (CP01) only, so CP02's drugs are not on the page.
 
 Writes public/trailmaker_UI/data/:
   <ds>.json           conditions, replicate units, cell types, counts[unit][type], gene panel, notes
@@ -38,7 +39,6 @@ from trailmaker_ui_tissues import ORDER as TISSUE_ORDER, tissue_of  # noqa: E402
 
 WORK = "/data/scratch/gold_labels"
 OUT = os.path.normpath(os.path.join(HERE, "..", "public", "trailmaker_UI", "data"))
-K = 15
 CONTEXT_GENES = ["kdrl", "flt1", "flt4", "pdgfrb", "kita", "mitfa", "hbba1", "myod1", "sox2",
                  "elavl3", "krt4", "gfap", "mki67", "pcna", "tp53", "cdkn1a", "mdm2", "hsp70l",
                  "fosab", "junba", "egr1", "braf", "raf1a", "ret"]
@@ -109,27 +109,7 @@ def count_expressing(path, member, nvars, chunk=20000, procs=32):
     return np.asarray(acc.todense(), dtype=np.float64)
 
 
-# ---------------------------------------------------------------- MegaFin label transfer
-def knn_votes(ref, ref_lab, query, ntypes, k=K):
-    import faiss
-    index = faiss.IndexFlatL2(ref.shape[1])
-    index.add(np.ascontiguousarray(ref, dtype=np.float32))
-    I = np.empty((len(query), k), dtype=np.int64)
-    step = 100000
-    for s in range(0, len(query), step):
-        _, I[s:s + step] = index.search(np.ascontiguousarray(query[s:s + step], dtype=np.float32), k)
-    votes = np.zeros((len(query), ntypes), dtype=np.uint8)
-    np.add.at(votes, (np.repeat(np.arange(len(query)), k), ref_lab[I].ravel()), 1)
-    return votes.argmax(1), votes.max(1) / k
-
-
 # ---------------------------------------------------------------- shared assembly
-def pick_markers(C, ntypes, nunits, genes, per_type, min_cells=30):
-    """C: (units*types) x genes expressing counts. Returns sorted gene indices."""
-    T = C.reshape(nunits, ntypes, -1).sum(0)                       # types x genes
-    return T
-
-
 def write_dataset(ds, meta, member_counts, C, genes, per_type, n_cells_type):
     nunits, ntypes = member_counts.shape
     T = C.reshape(nunits, ntypes, -1).sum(0)
@@ -176,89 +156,92 @@ def pretty_drug(p):
     return {"DMSO": "DMSO", "ctrl_no_DMSO": "No-DMSO control"}.get(p, p.replace("_", " "))
 
 
-# ---------------------------------------------------------------- MegaFin
+# ---------------------------------------------------------------- MegaFin part 1 (Patrick's sets)
+MEGAFIN_TISSUE = {
+    "CNS": "Neural", "Hindbrain": "Neural", "Midbrain": "Neural", "Forebrain": "Neural", "Floor plate": "Neural",
+    "Schwann cells/peripheral glia": "Neural", "Otic vesicle": "Ear", "Lens": "Eye",
+    "Superficial epidermis": "Epidermis & epithelia", "Basal epidermis": "Epidermis & epithelia",
+    "Hatching gland": "Epidermis & epithelia", "Erythrocytes": "Blood & immune", "Macrophages": "Blood & immune",
+    "Neutrophils": "Blood & immune", "Fast twitch muscle": "Muscle & heart", "Slow twitch muscle": "Muscle & heart",
+    "Cardiomyocytes": "Muscle & heart", "Sclerotome (axial mesenchyme)": "Mesenchyme & skeleton",
+    "Pectoral fin bud mesenchyme": "Mesenchyme & skeleton", "Notochord": "Mesenchyme & skeleton",
+    "Vascular endothelial cells": "Vasculature", "Melanocytes/melanophores/melanoblasts": "Pigment",
+    "Pronephros (early kidney)": "Kidney", "Liver/hepatoblasts": "Gut & liver", "Intestine": "Gut & liver",
+    "Exocrine pancreas": "Gut & liver", "Endocrine pancreas (Islet)": "Endocrine",
+}
+MEGAFIN_UMBRELLAS = {"CNS"}
+
+
 def build_megafin():
     path = f"{WORK}/megafin_zsb_v1.h5ad"
-    print("MegaFin:", path)
+    print("MegaFin part 1:", path)
     with h5py.File(path, "r") as f:
         ids = frame_index(f, "obs")
         o = f["obs"]
         obs = pd.DataFrame({c: col(o[c]) for c in ["perturbation", "dose", "plate", "well"]})
         genes = list(frame_index(f, "var"))
-        emb = f["obsm"]["X_pca_harmony"][:]
-    lab = pd.read_parquet(f"{WORK}/out/megafin_zsb_v1_labels.parquet", columns=["cell_id", "daniotype_node_label"])
+    lab = pd.read_parquet(f"{WORK}/out/megafin_zsb_v1_patrick_labels.parquet", columns=["cell_id", "patrick_labels"])
     assert (lab.cell_id.values == ids).all(), "label sidecar is not in Gold order"
-    node = lab.daniotype_node_label.values
-    has = pd.notna(node)
-    names = sorted(set(node[has]))
+    cp1 = (obs.plate == "CP01").values
+    sets = lab.patrick_labels.fillna("").map(lambda s: [x.strip() for x in s.split(";") if x.strip()])
+    assert not sets[~cp1].map(len).any(), "a CP02 cell carries a Patrick label"
+    names = sorted({x for s in sets for x in s})
+    missing = [n for n in names if n not in MEGAFIN_TISSUE]
+    assert not missing, f"no tissue for {missing}"
     code = {n: i for i, n in enumerate(names)}
-    tcode = np.full(len(ids), -1, dtype=np.int64)
-    tcode[has] = [code[n] for n in node[has]]
-
-    # hold-out check of the vote, then the transfer itself
-    rng = np.random.default_rng(0)
-    li = np.flatnonzero(has)
-    hold = rng.random(len(li)) < 0.05
-    pred, _ = knn_votes(emb[li[~hold]], tcode[li[~hold]], emb[li[hold]], len(names))
-    acc = float((pred == tcode[li[hold]]).mean())
-    print(f"  transfer hold-out: {hold.sum()} labelled cells, node-level agreement {acc:.3f}")
-    q = np.flatnonzero(~has)
-    pred, conf = knn_votes(emb[li], tcode[li], emb[q], len(names))
-    tcode[q] = pred
-    transferred = ~has
-    print(f"  transferred {len(q)} cells, median vote share {np.median(conf):.2f}")
-
-    # units = wells, conditions = perturbation x dose
+    nt = len(names)
     obs["unit"] = obs.plate.astype(str) + ":" + obs.well.astype(str)
     obs["dose"] = obs.dose.astype(str)
-    units = obs.groupby("unit", sort=True).agg(plate=("plate", "first"), perturbation=("perturbation", "first"),
+    sub = obs[cp1]
+    units = sub.groupby("unit", sort=True).agg(plate=("plate", "first"), perturbation=("perturbation", "first"),
                                                 dose=("dose", "first"), n=("plate", "size")).reset_index()
-    assert (obs.groupby("unit").perturbation.nunique() == 1).all()
+    assert (sub.groupby("unit").perturbation.nunique() == 1).all()
     controls = {"DMSO", "ctrl_no_DMSO"}
-    units["cond"] = np.where(units.perturbation.isin(controls), units.perturbation,
-                             units.perturbation + "@" + units.dose)
+    units["cond"] = np.where(units.perturbation.isin(controls), units.perturbation, units.perturbation + "@" + units.dose)
     conds = []
     for cid, g in units.groupby("cond", sort=False):
         p = g.perturbation.iloc[0]
         ctrl = p in controls
         conds.append({"id": cid, "drug": pretty_drug(p), "dose": "" if ctrl else g.dose.iloc[0],
-                      "control": ctrl, "plate": "+".join(sorted(g.plate.unique())),
-                      "units": g.index.tolist()})
+                      "control": ctrl, "plate": "+".join(sorted(g.plate.unique())), "units": g.index.tolist()})
     conds.sort(key=lambda c: (not c["control"], c["drug"].lower(), c["dose"]))
     uindex = {u: i for i, u in enumerate(units.unit)}
-    ucode = obs.unit.map(uindex).values
-    nt = len(names)
-    member = sp.csr_matrix((np.ones(len(ids), np.float32), (np.arange(len(ids)), ucode * nt + tcode)),
-                           shape=(len(ids), len(units) * nt))
+    ucode = obs.unit.map(uindex)
+    r, c = [], []
+    for i in np.flatnonzero(cp1):
+        u = int(ucode.iat[i])
+        for x in sets.iat[i]:
+            r.append(i)
+            c.append(u * nt + code[x])
+    member = sp.csr_matrix((np.ones(len(r), np.float32), (r, c)), shape=(len(ids), len(units) * nt))
     member_counts = np.asarray(member.sum(0)).reshape(len(units), nt)
     n_type = member_counts.sum(0)
-    n_tr = np.bincount(tcode[transferred], minlength=nt)
-    tissue = [tissue_of(n) for n in names]
-    types = [{"name": n, "tissue": t, "n": int(a), "n_transfer": int(b)}
-             for n, t, a, b in zip(names, tissue, n_type, n_tr)]
-    order = sorted(range(nt), key=lambda i: (TISSUE_ORDER.index(types[i]["tissue"]), -types[i]["n"]))
+    types = [{"name": n, "tissue": MEGAFIN_TISSUE[n], "n": int(a), "n_transfer": 0, "umbrella": n in MEGAFIN_UMBRELLAS}
+             for n, a in zip(names, n_type)]
+    order = sorted(range(nt), key=lambda i: (TISSUE_ORDER.index(types[i]["tissue"]), not types[i]["umbrella"], -types[i]["n"]))
+    n_cp1 = int(cp1.sum())
+    unl = int((sets[cp1].map(len) == 0).sum())
     meta = {
-        "dataset": "megafin", "title": "MegaFin", "baseline": "DMSO", "anchor": "Sorafenib",
-        "source": "s3://zsb-gold-library/megafin/zsb/v1/megafin.h5ad",
+        "dataset": "megafin", "title": "MegaFin part 1 · Patrick's sets", "baseline": "DMSO", "anchor": "Sorafenib",
+        "source": "s3://zsb-gold-library/megafin/zsb/v1/megafin.h5ad (plate CP01)",
         "z_method": "robust",
-        "tissues": [t for t in TISSUE_ORDER if t in tissue],
+        "tissues": [t for t in TISSUE_ORDER if any(x["tissue"] == t for x in types)],
         "types": types, "type_order": order,
         "units": [{"id": r.unit, "plate": r.plate, "n": int(r.n)} for r in units.itertuples()],
         "conds": conds,
-        "transfer": {"k": K, "holdout_agreement": round(acc, 3), "n_transferred": int(transferred.sum()),
-                     "n_direct": int(has.sum())},
-        "labels": "DanioType auto-labels (consolidated nodes) on CP01; CP02 and the extra CP01 cells by "
-                  f"{K}-nearest-neighbour vote in the Gold Harmony PCA",
+        "labels": "Patrick's 27 hand-drawn Trailmaker cell sets on MegaFin part 1 (plate CP01), joined to Gold by barcode",
         "notes": [
-            "Cell types are DanioType automatic labels, validated on MiniFin and spot-checked on four MegaFin lineages; not expert-reviewed here.",
-            f"{int(transferred.sum()):,} of {len(ids):,} cells carry a transferred label (all of CP02). A 5% hold-out of labelled cells agrees with the vote {acc:.1%} of the time.",
-            "Tissues are a provisional keyword grouping of the cell-type names, for filtering only.",
-            "Each drug and dose is one well on one plate, compared with that plate's two DMSO wells. z is a robust z of the well against every well on its plate.",
+            "Cell types are Patrick's hand-drawn Trailmaker cell sets on MegaFin part 1, joined to the Gold cells by barcode. They overlap by design: CNS is an umbrella over Forebrain, Midbrain and Hindbrain, so a column is the share of all cells in that set and columns do not sum to 100%.",
+            "Only plate CP01 (MegaFin part 1) is shown, because Patrick has not labelled CP02; its drugs are not on this plate.",
+            f"{unl:,} of {n_cp1:,} CP01 Gold cells carry no set (left blank, or absent from his object); they stay in every denominator.",
+            "Each drug and dose is one well, compared with the plate's two DMSO wells. z is a robust z of the well against every well on the plate.",
+            "The Intestine and Liver/hepatoblasts sets cover nearly the same cells (99.5% of Intestine lies inside Liver); read the two columns as one until they are redrawn.",
+            "Expert labels are evaluation data for the labeller; nothing here feeds it.",
         ],
     }
-    print(f"  {len(units)} wells, {len(conds)} conditions, {nt} cell types; X pass for gene counts")
+    print(f"  {len(units)} wells, {len(conds)} conditions, {nt} cell sets, {unl:,} of {n_cp1:,} CP01 cells unlabelled; X pass for gene counts")
     C = count_expressing(path, member, len(genes))
-    write_dataset("megafin", meta, member_counts, C, genes, per_type=2, n_cells_type=n_type)
+    write_dataset("megafin", meta, member_counts, C, genes, per_type=6, n_cells_type=n_type)
 
 
 # ---------------------------------------------------------------- MiniFin (Patrick's sets)

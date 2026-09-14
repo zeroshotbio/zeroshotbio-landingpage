@@ -19,14 +19,14 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const SERIF = '"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif';
   const SANS = 'ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif';
-  const DATASETS = [["megafin", "MegaFin"], ["minifin", "MiniFin · Patrick's sets"]];
+  const DATASETS = [["megafin", "MegaFin part 1"], ["minifin", "MiniFin"]];
   const MIN_TYPE_N = { megafin: 100, minifin: 0 };
   const HEAD_TALL = 158, HEAD_SHORT = 64, BAND_H = 20, PIN_H = 20, FIT_H = 540, NAME_PX = 10;
   const headH = () => (S.geom ? S.geom.headH : HEAD_SHORT);
 
   const S = {
     ds: "megafin", m: null, layer: null, gene: -1, mode: "delta", tissue: "", typeQ: "", dose: "",
-    sort: "response", focus: -1, detail: null, hover: null, expand: true, showTiny: false,
+    sort: "response", focus: -1, detail: null, hover: null, expand: false, showTiny: false,
     rows: [], cols: [], pins: [], geom: null, max: 1, notice: "",
   };
   const geneCache = new Map();
@@ -42,7 +42,7 @@
   const nF = (v) => Math.round(v).toLocaleString("en-US");
   const cut = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
   const unitWord = (n) => (S.m.dataset === "megafin" ? (n === 1 ? "well" : "wells") : n === 1 ? "sample" : "samples");
-  const typeWord = () => (S.m.dataset === "minifin" ? "cell sets" : "cell types");
+  const typeWord = () => "cell sets"; // both datasets carry Patrick's hand-drawn sets, nothing else
   const geneName = () => (S.gene >= 0 ? S.m.genes[S.gene] : null);
 
   // ------------------------------------------------------------------ ink
@@ -259,13 +259,28 @@
         if (j >= 0) { ctx.fillStyle = rgb(t === sel ? C.sel : C.ink); ctx.beginPath(); ctx.arc(lw + j * cw + cw / 2, yb - 5, 2.2, 0, 7); ctx.fill(); }
       }
     }
+    const x0 = scrollX0();
+    labelPanel(ctx, x0, HEAD_H);
     ctx.fillStyle = rgb(C.ink3);
     ctx.font = `9.5px ${SANS}`;
-    ctx.fillText(`${S.cols.length} ${typeWord().toUpperCase()}`, 4, yb + 16);
+    ctx.fillText(`${S.cols.length} ${typeWord().toUpperCase()}`, x0 + 4, yb + 16);
     if (names === "none" && S.cols.length) {
       ctx.font = `italic 13px ${SERIF}`;
-      ctx.fillText("hover a column to read it, or choose the expanded view to see every name", 4, yb - 14);
+      ctx.fillText("hover a column to read it, or choose the expanded view to see every name", x0 + 4, yb - 14);
     }
+  }
+
+  // When the plate is wider than its frame it scrolls sideways; the name column is redrawn at the
+  // scroll offset over a paper panel, so the squares pass under the names instead of taking them away.
+  const scrollX0 = () => $("#hmwrap").scrollLeft;
+  function labelPanel(ctx, x0, h) {
+    if (x0 <= 0) return;
+    const { lw } = S.geom;
+    ctx.fillStyle = rgb(C.paper);
+    ctx.fillRect(x0, 0, lw - 2, h);
+    ctx.strokeStyle = rgb(C.rule);
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x0 + lw - 2.5, 0); ctx.lineTo(x0 + lw - 2.5, h); ctx.stroke();
   }
 
   function paintCells(ctx, vals, i, y, h) {
@@ -279,72 +294,71 @@
   }
 
   function paintPins(vals) {
-    const { lw, cw, W } = S.geom, m = S.m, H = PIN_H * 3 + 12;
+    const { lw, cw, W } = S.geom, m = S.m, H = PIN_H * 3 + 12, x0 = scrollX0();
     const ctx = fitCanvas($("#cvPin"), W, H);
     const sw = [C.ink3, C.anchor, C.sel];
+    const hot = S.hover && S.hover.where === "pins" ? S.hover : null;
+    S.pins.forEach((i, r) => { if (i >= 0) paintCells(ctx, vals, i, r * PIN_H + 4, PIN_H - 2); });
+    ctx.lineWidth = 1;
+    if (hot && hot.j >= 0) { ctx.strokeStyle = rgb(C.ink); ctx.strokeRect(lw + hot.j * cw - 0.5, hot.r * PIN_H + 3.5, cw + 1, PIN_H - 1); }
+    const sel = S.cols.indexOf(selType());
+    if (sel >= 0) { ctx.strokeStyle = rgb(C.sel); ctx.strokeRect(lw + sel * cw - 0.5, 3.5, cw + 1, PIN_H * 3 - 1); }
+    labelPanel(ctx, x0, H - 6);
     ctx.textBaseline = "middle";
     ctx.textAlign = "right";
+    ctx.font = `italic 14px ${SERIF}`;
     S.pins.forEach((i, r) => {
       const y = r * PIN_H + 3;
       ctx.fillStyle = rgb(sw[r]);
-      ctx.beginPath(); ctx.arc(lw - 12, y + PIN_H / 2, 3.6, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(x0 + lw - 12, y + PIN_H / 2, 3.6, 0, 7); ctx.fill();
       const label = i < 0 ? "name a drug above" : r === 0 ? `${m.baseline}, the baseline` : condLabel(m.conds[i]);
-      const hot = S.hover && S.hover.where === "pins" && S.hover.r === r;
-      ctx.font = `italic 14px ${SERIF}`;
-      ctx.fillStyle = rgb(i < 0 ? C.ink3 : r === 2 ? C.sel : hot ? C.ink : C.ink2);
-      ctx.fillText(clip(ctx, label, lw - 28), lw - 22, y + PIN_H / 2 + 1);
-      if (i >= 0) paintCells(ctx, vals, i, y + 1, PIN_H - 2);
-      if (hot && S.hover.j >= 0) {
-        ctx.strokeStyle = rgb(C.ink);
-        ctx.lineWidth = 1;
-        ctx.strokeRect(lw + S.hover.j * cw - 0.5, y + 0.5, cw + 1, PIN_H - 1);
-      }
+      ctx.fillStyle = rgb(i < 0 ? C.ink3 : r === 2 ? C.sel : hot && hot.r === r ? C.ink : C.ink2);
+      ctx.fillText(clip(ctx, label, lw - 28), x0 + lw - 22, y + PIN_H / 2 + 1);
     });
-    const sel = S.cols.indexOf(selType());
-    if (sel >= 0) { ctx.strokeStyle = rgb(C.sel); ctx.lineWidth = 1; ctx.strokeRect(lw + sel * cw - 0.5, 3.5, cw + 1, PIN_H * 3 - 1); }
     penLine(ctx, 0, H - 4, W - 6, H - 4, 3, rgb(C.ink), 0.8);
     ctx.textAlign = "left";
   }
 
   function paintRows(vals) {
-    const { lw, cw, rh, W } = S.geom, m = S.m, nr = S.rows.length;
+    const { lw, cw, rh, W } = S.geom, m = S.m, nr = S.rows.length, x0 = scrollX0();
     const ctx = fitCanvas($("#cvRows"), W, Math.max(rh * nr, 1));
     const hot = S.hover && S.hover.where === "rows" ? S.hover : null;
-    ctx.textBaseline = "middle";
-    ctx.textAlign = "right";
     if (hot && hot.j >= 0) { ctx.fillStyle = rgb(C.ink, 0.05); ctx.fillRect(lw + hot.j * cw, 0, cw, rh * nr); }
-    S.rows.forEach((i, r) => {
-      const y = r * rh, isHot = hot && hot.r === r, ctl = m.conds[i].control;
-      if (i === S.focus) { ctx.fillStyle = rgb(C.sel, 0.07); ctx.fillRect(0, y, lw - 4, rh); }
-      if (rh >= 9) {
-        ctx.font = `${ctl ? "italic " : ""}${Math.min(12.5, rh - 1)}px ${SERIF}`;
-        ctx.fillStyle = rgb(i === S.focus ? C.sel : isHot ? C.ink : ctl ? C.ink3 : C.ink2);
-        ctx.fillText(clip(ctx, condLabel(m.conds[i]), lw - 12), lw - 6, y + rh / 2 + 0.5);
-      } else if (isHot || i === S.focus) {
-        ctx.fillStyle = rgb(i === S.focus ? C.sel : C.ink);
-        ctx.fillRect(lw - 8, y, 4, Math.max(2, rh - 1));
-      }
-      paintCells(ctx, vals, i, y, rh);
-    });
+    S.rows.forEach((i, r) => paintCells(ctx, vals, i, r * rh, rh));
     ctx.lineWidth = 1;
     const fr = S.rows.indexOf(S.focus);
     if (fr >= 0) { ctx.strokeStyle = rgb(C.sel); ctx.strokeRect(lw - 0.5, fr * rh - 0.5, cw * S.cols.length + 1, rh + 1); }
     const sel = S.cols.indexOf(selType());
     if (sel >= 0) { ctx.strokeStyle = rgb(C.sel); ctx.strokeRect(lw + sel * cw - 0.5, -0.5, cw + 1, rh * nr + 1); }
     if (hot && hot.j >= 0) { ctx.strokeStyle = rgb(C.ink); ctx.strokeRect(lw + hot.j * cw - 0.5, hot.r * rh - 0.5, cw + 1, rh + 1); }
+    labelPanel(ctx, x0, rh * nr);
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "right";
+    S.rows.forEach((i, r) => {
+      const y = r * rh, isHot = hot && hot.r === r, ctl = m.conds[i].control;
+      if (i === S.focus) { ctx.fillStyle = rgb(C.sel, 0.07); ctx.fillRect(x0, y, lw - 4, rh); }
+      if (rh >= 9) {
+        ctx.font = `${ctl ? "italic " : ""}${Math.min(12.5, rh - 1)}px ${SERIF}`;
+        ctx.fillStyle = rgb(i === S.focus ? C.sel : isHot ? C.ink : ctl ? C.ink3 : C.ink2);
+        ctx.fillText(clip(ctx, condLabel(m.conds[i]), lw - 12), x0 + lw - 6, y + rh / 2 + 0.5);
+      } else if (isHot || i === S.focus) {
+        ctx.fillStyle = rgb(i === S.focus ? C.sel : C.ink);
+        ctx.fillRect(x0 + lw - 8, y, 4, Math.max(2, rh - 1));
+      }
+    });
     ctx.textAlign = "left";
   }
 
   function legendAndCaption() {
     const m = S.m, g = geneName();
-    const what = g ? `the share of each ${m.dataset === "minifin" ? "cell set" : "cell type"} expressing ${g}` : "the share of cells in each cell type";
+    const what = g ? `the share of each cell set expressing ${g}` : "the share of cells in each cell set";
     const cap = {
       pct: `Each square is ${what}`,
       delta: `Each square is the change in ${what}, against DMSO on the same plate`,
       z: `Each square is ${what} as a z-score: ${m.z_method === "robust" ? "each well against every well on its plate" : "the drug's samples against the DMSO samples"}`,
     }[S.mode];
     $("#caption").innerHTML = `<b>${esc(cap)}.</b> ${S.rows.length} ${m.dataset === "megafin" ? "drug-doses" : "drugs"} against ${S.cols.length} ${typeWord()}. `
-      + `Hover a square to read it; click a drug, or the name of a ${m.dataset === "minifin" ? "cell set" : "cell type"}, for its page below the plate.`;
+      + `Hover a square to read it; click a drug, or the name of a cell set, for its page below the plate.`;
     const lo = S.mode === "pct" ? "0" : S.mode === "z" ? "−4" : ppF(-S.max);
     const hi = S.mode === "pct" ? pctF(S.max) : S.mode === "z" ? "+4" : ppF(S.max);
     const words = g ? ["lower than DMSO", "higher"] : ["fewer cells than DMSO", "more"];
@@ -421,7 +435,7 @@
 
   function measureNote() {
     const g = geneName();
-    return g ? `The share of each ${S.m.dataset === "minifin" ? "set" : "population"} expressing <i>${esc(g)}</i>.` : "The share of all cells in the condition.";
+    return g ? `The share of each set expressing <i>${esc(g)}</i>.` : "The share of all cells in the condition.";
   }
 
   function detailCond(i) {
@@ -531,7 +545,8 @@
   function hit(cv, e, kind) {
     if (!S.geom) return null;
     const b = cv.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top, { lw, cw, rh } = S.geom;
-    const j = x >= lw ? Math.floor((x - lw) / cw) : -1;
+    const inNames = x - $("#hmwrap").scrollLeft < lw; // the pinned name column, wherever the plate has scrolled
+    const j = !inNames && x >= lw ? Math.floor((x - lw) / cw) : -1;
     if (j >= S.cols.length) return null;
     const t = j >= 0 ? S.cols[j] : null;
     if (kind === "head") return j >= 0 ? { where: "head", j, t } : null;
@@ -675,7 +690,7 @@
     $("#geneClear").hidden = true;
     const drugs = m.conds.filter((c) => !c.control).length, cells = m.units.reduce((s, u) => s + u.n, 0);
     $("#byline").textContent = `${nF(drugs)} ${m.dataset === "megafin" ? "drug-doses" : "drugs"} · ${m.types.length} ${typeWord()} · ${nF(cells)} cells`
-      + (m.dataset === "megafin" ? ` · ${m.plates.length} plates` : ` · ${m.units.length} samples`);
+      + (m.dataset === "megafin" ? ` · plate ${m.plates.join(" + ")}` : ` · ${m.units.length} samples`);
     $("#plateWhen").textContent = m.title;
     $("#notesList").innerHTML = [...m.notes,
       `The gene field reads a panel of ${m.genes.length} marker and context genes worked out when the page was built, not the whole transcriptome.`,
@@ -776,6 +791,7 @@
       if (b.dataset.act === "notes") $("#notes").scrollIntoView({ behavior: "smooth", block: "start" });
       if (b.dataset.act === "tiny") { S.showTiny = !S.showTiny; render(); }
     });
+    $("#hmwrap").addEventListener("scroll", requestPaint, { passive: true });
     wireCanvas("#cvHead", "head");
     wireCanvas("#cvPin", "pins");
     wireCanvas("#cvRows", "rows");

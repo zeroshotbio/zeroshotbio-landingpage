@@ -29,13 +29,18 @@ slash, so script `src` is absolute. Rebuild: `/data/.venv/bin/python scripts/bui
 
 ## What it does not claim
 
-- **MegaFin cell types are automatic.** DanioType labels on CP01 (validated on MiniFin, spot-checked
-  on four MegaFin lineages), and on CP02 plus the extra zsb-recipe cells a 15-nearest-neighbour vote
-  in the Gold Harmony PCA. A 5% hold-out measures that vote; the number is in the About dialog.
-  Do not read a CP02 drug's column as an expert call.
-- **Tissues are a keyword grouping** of the cell-type names (`scripts/trailmaker_ui_tissues.py`),
-  for filtering only. Not ZFA, not reviewed.
-- **MiniFin columns overlap.** Patrick's sets are hierarchical (CNS, Muscle and Lens are umbrellas),
+- **Only Patrick's hand-drawn labels are used, on both datasets.** No automatic labeller output and
+  no label transfer (an earlier build used DanioType labels plus a nearest-neighbour vote; removed
+  2026-09-14 at the user's request). MegaFin is part 1 only (plate CP01), because Patrick has not
+  labelled CP02; its drugs are not on the page. Source and id bridge:
+  `/data/experiments/patrick_megafin_labels/README.md`.
+- **Unlabelled cells stay in every denominator.** A column is the share of all of a well's cells that
+  sit in that set, so a region Patrick left blank lowers every column a little, evenly.
+- **The Intestine and Liver/hepatoblasts sets cover nearly the same MegaFin cells** (99.5% of
+  Intestine lies inside Liver). Read them as one column until they are redrawn.
+- **Tissues are a grouping of Patrick's set names** (`MEGAFIN_TISSUE` / `MINIFIN_TISSUE` in the build
+  script, falling back to `scripts/trailmaker_ui_tissues.py`), for filtering only. Not ZFA, not reviewed.
+- **Columns overlap.** Patrick's sets are hierarchical (CNS is an umbrella on both; Muscle and Lens on MiniFin),
   so a column is the share of all cells in that set and columns do not sum to 100%. His labels are
   evaluation data; nothing here feeds the labeller.
 - **n = 1 well per MegaFin drug-dose.** A strong z is a lead, not a finding.
