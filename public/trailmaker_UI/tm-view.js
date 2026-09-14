@@ -21,7 +21,7 @@
   const SANS = 'ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif';
   const DATASETS = [["megafin", "MegaFin part 1"], ["minifin", "MiniFin"]];
   const MIN_TYPE_N = { megafin: 100, minifin: 0 };
-  const HEAD_TALL = 158, HEAD_SHORT = 64, BAND_H = 20, PIN_H = 20, FIT_H = 540, NAME_PX = 10;
+  const HEAD_SHORT = 64, BAND_H = 20, PIN_H = 20, FIT_H = 540, NAME_PX = 10;
   const headH = () => (S.geom ? S.geom.headH : HEAD_SHORT);
 
   const S = {
@@ -172,7 +172,7 @@
   function geometry() {
     const wrapW = $("#hmwrap").clientWidth, nc = Math.max(1, S.cols.length), nr = Math.max(1, S.rows.length);
     const lw = innerWidth < 600 ? 128 : 190;
-    let cw, rh, headH, names;
+    let cw, rh, headH, names, pad = 0, slantMax = 150;
     if (S.expand) {
       cw = Math.max(10, Math.min(24, Math.floor((wrapW - lw - 12) / nc)));
       rh = 14;
@@ -182,13 +182,20 @@
       headH = Math.max(HEAD_SHORT, Math.ceil(longest) + BAND_H + 16);
       names = "upright";
     } else {
-      cw = Math.max(3, Math.min(22, Math.floor((wrapW - lw - 12) / nc)));
+      // overview: the columns widen to fill the plate. Names are slanted, given room for their whole
+      // length up to 260px, and the plate keeps a right margin for the lean of the last few names.
+      measure = measure || document.createElement("canvas").getContext("2d");
+      measure.font = `11.5px ${SERIF}`;
+      slantMax = Math.min(260, Math.ceil(Math.max(0, ...S.cols.map((t) => measure.measureText(S.m.types[t].name).width))));
+      const lean = Math.ceil(slantMax * Math.cos(Math.PI / 3));
+      cw = Math.max(3, Math.min(44, Math.floor((wrapW - lw - 12 - lean) / nc)));
       rh = Math.max(3, Math.min(20, Math.floor(FIT_H / nr)));
       names = cw >= 9 ? "slant" : "none";
-      headH = names === "slant" ? HEAD_TALL : HEAD_SHORT;
+      headH = names === "slant" ? Math.max(HEAD_SHORT, Math.ceil(slantMax * Math.sin(Math.PI / 3)) + BAND_H + 14) : HEAD_SHORT;
+      pad = names === "slant" ? lean : 0;
     }
     $("#rowscroll").style.maxHeight = S.expand ? "74vh" : "none";
-    S.geom = { lw, cw, rh, headH, names, W: lw + cw * S.cols.length + 12 };
+    S.geom = { lw, cw, rh, headH, names, slantMax, W: lw + cw * S.cols.length + 12 + pad };
   }
 
   function fitCanvas(cv, w, h) {
@@ -242,14 +249,14 @@
     const hot = hotType(), sel = selType(), names = S.geom.names;
     if (names !== "none") {
       const upright = names === "upright";
-      ctx.font = upright ? `${NAME_PX}px ${SERIF}` : `${Math.min(11.5, cw + 1)}px ${SERIF}`;
+      ctx.font = upright ? `${NAME_PX}px ${SERIF}` : `11.5px ${SERIF}`;
       ctx.textBaseline = upright ? "middle" : "alphabetic";
       S.cols.forEach((t, j) => {
         ctx.save();
         ctx.translate(lw + j * cw + cw / 2 + (upright ? 0 : 2), yb - 6);
         ctx.rotate(upright ? -Math.PI / 2 : -Math.PI / 3);
         ctx.fillStyle = rgb(t === sel ? C.sel : t === hot ? C.ink : C.ink2);
-        ctx.fillText(upright ? m.types[t].name : clip(ctx, m.types[t].name, 150), 0, 0);
+        ctx.fillText(upright ? m.types[t].name : clip(ctx, m.types[t].name, S.geom.slantMax), 0, 0);
         ctx.restore();
       });
       ctx.textBaseline = "alphabetic";
