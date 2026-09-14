@@ -237,7 +237,7 @@ const nextConfig = {
       // /trailmaker_UI is a MegaFin exploration prototype in public/trailmaker_UI/ (index.html,
       // tm-stats.js, tm-view.js, data/), in the plate style (PLATE_STYLE.md, like /compass). Same absolute
       // <script src> rule, same reason: no trailing slash on the route. data/ holds COUNTS built
-      // by scripts/build_trailmaker_ui.py from the Gold h5ads; every statistic is computed in
+      // by scripts/build_trailmaker_ui.py straight from Patrick's Trailmaker .rds files (no Gold); every statistic is computed in
       // tm-stats.js. Read public/trailmaker_UI/NOTES.md before changing what a number means —
       // MegaFin's z is a robust z against the plate, not against DMSO, because DMSO is two wells.
       { source: '/trailmaker_UI', destination: '/trailmaker_UI/index.html' },
