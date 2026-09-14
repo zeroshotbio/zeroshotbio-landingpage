@@ -21,7 +21,7 @@
   const SANS = 'ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif';
   const DATASETS = [["minifin", "MiniFin"], ["megafin", "MegaFin part 1"], ["megafin2", "MegaFin part 2"]];
   const MIN_TYPE_N = { megafin: 100, megafin2: 100, minifin: 0 };
-  const HEAD_SHORT = 64, BAND_H = 20, PIN_H = 20, FIT_H = 540, NAME_PX = 10;
+  const HEAD_SHORT = 64, BAND_H = 20, PIN_H = 20, FIT_H = 540, NAME_PX = 10, ROW_MIN = 11;
   const headH = () => (S.geom ? S.geom.headH : HEAD_SHORT);
 
   const S = {
@@ -237,7 +237,7 @@
       // Slanted names need ~16px columns or they overprint; narrower columns (half a screen) set the
       // names upright instead, which also frees the lean margin; below 9px there is no room at all.
       const lean = Math.ceil(slantMax * Math.cos(Math.PI / 3));
-      rh = Math.max(3, Math.min(20, Math.floor(FIT_H / nr)));
+      rh = Math.max(ROW_MIN, Math.min(20, Math.floor(FIT_H / nr)));
       const cwSlant = Math.floor((wrapW - lw - 12 - lean) / nc), cwFlat = Math.floor((wrapW - lw - 12) / nc);
       if (cwSlant >= 16) {
         cw = Math.min(44, cwSlant); names = "slant"; pad = lean;
@@ -250,6 +250,9 @@
         cw = Math.max(3, cwFlat); names = "none"; headH = HEAD_SHORT;
       }
     }
+    // with both doses on screen (~180 rows) the rows would fall to 3px and lose their names; instead
+    // they keep ROW_MIN and the rows scroll inside their own frame, under the pinned rows
+    $("#rowscroll").style.maxHeight = rh * nr > FIT_H + rh ? `${Math.max(FIT_H, Math.round(innerHeight * 0.62))}px` : "none";
     S.geom = { lw, cw, rh, headH, names, slantMax, W: lw + cw * S.cols.length + 12 + pad };
   }
 
@@ -1130,6 +1133,8 @@
     const types = (b.types || []).map((nm) => m.types.findIndex((t) => t.name === nm)).filter((i) => i >= 0);
     S.spot = { rows: new Set(rows), types: new Set(types) };
     render();
+    const rs = $("#rowscroll"), first = S.rows.findIndex((i) => spotR(i));
+    rs.scrollTop = first >= 0 ? Math.max(0, (first - 2) * S.geom.rh) : 0;
   }
 
   function applySettings(set) {
