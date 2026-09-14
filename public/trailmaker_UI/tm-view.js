@@ -187,12 +187,21 @@
       measure = measure || document.createElement("canvas").getContext("2d");
       measure.font = `11.5px ${SERIF}`;
       slantMax = Math.min(260, Math.ceil(Math.max(0, ...S.cols.map((t) => measure.measureText(S.m.types[t].name).width))));
+      // Slanted names need ~16px columns or they overprint; narrower columns (half a screen) set the
+      // names upright instead, which also frees the lean margin; below 9px there is no room at all.
       const lean = Math.ceil(slantMax * Math.cos(Math.PI / 3));
-      cw = Math.max(3, Math.min(44, Math.floor((wrapW - lw - 12 - lean) / nc)));
       rh = Math.max(3, Math.min(20, Math.floor(FIT_H / nr)));
-      names = cw >= 9 ? "slant" : "none";
-      headH = names === "slant" ? Math.max(HEAD_SHORT, Math.ceil(slantMax * Math.sin(Math.PI / 3)) + BAND_H + 14) : HEAD_SHORT;
-      pad = names === "slant" ? lean : 0;
+      const cwSlant = Math.floor((wrapW - lw - 12 - lean) / nc), cwFlat = Math.floor((wrapW - lw - 12) / nc);
+      if (cwSlant >= 16) {
+        cw = Math.min(44, cwSlant); names = "slant"; pad = lean;
+        headH = Math.max(HEAD_SHORT, Math.ceil(slantMax * Math.sin(Math.PI / 3)) + BAND_H + 14);
+      } else if (cwFlat >= 9) {
+        cw = Math.min(44, cwFlat); names = "upright";
+        measure.font = `${NAME_PX}px ${SERIF}`;
+        headH = Math.max(HEAD_SHORT, Math.ceil(Math.max(0, ...S.cols.map((t) => measure.measureText(S.m.types[t].name).width))) + BAND_H + 16);
+      } else {
+        cw = Math.max(3, cwFlat); names = "none"; headH = HEAD_SHORT;
+      }
     }
     $("#rowscroll").style.maxHeight = S.expand ? "74vh" : "none";
     S.geom = { lw, cw, rh, headH, names, slantMax, W: lw + cw * S.cols.length + 12 + pad };
