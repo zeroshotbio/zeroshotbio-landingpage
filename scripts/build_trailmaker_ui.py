@@ -201,25 +201,25 @@ def build(ds, reexport=False):
              for s, n in zip(sets, n_type)]
     order = sorted(range(ns), key=lambda i: (TISSUE_ORDER.index(types[i]["tissue"]), not types[i]["umbrella"], -types[i]["n"]))
     n_cells = int(units.n.sum())
-    umb = ", ".join(sorted(cfg["umbrellas"]))
+    # Notes here are the ones specific to this dataset; the page carries the ones common to all three.
+    counts_by = units.groupby("drug", sort=False).size()
     if cfg["kind"] == "megafin":
-        other = 2 if cfg["part"] == 1 else 1
         plate = units.plate.iloc[0]
+        missing_wells = 96 - nu
         notes = [
-            f"Every number on this plate is read from one file, Patrick's Trailmaker Seurat object for MegaFin part {cfg['part']} ({cfg['s3']}): its {n_cells:,} cells, its {nu} wells (the object's samples) and its counts. Nothing is matched to any other dataset.",
-            f"Cell types are his {ns} hand-drawn cell sets. They overlap by design ({umb} is an umbrella over its regions), so a column is the share of all a well's cells that sit in that set and columns do not sum to 100%. Cells he put in no set stay in every denominator.",
-            f"Only plate {plate} is here. MegaFin part {other} was labelled in a separate Trailmaker project whose set names do not line up one to one, so it is its own dataset on this page.",
-            f"Each drug and dose is one well, compared with the plate's {dmso_units} DMSO wells. z is a robust z of the well against every well on the plate.",
+            f"Read from Patrick's Trailmaker Seurat object for MegaFin part {cfg['part']}: {cfg['s3']}. It holds {n_cells:,} cells in {nu} wells of plate {plate}"
+            + (f" ({missing_wells} of the plate's 96 wells are not in the object)." if missing_wells > 0 else "."),
+            f"{ns} hand-drawn cell sets; CNS is an umbrella over Forebrain, Midbrain and Hindbrain.",
+            f"Each drug and dose is a single well, set against the plate's {dmso_units} DMSO wells. z is a robust z of each well against every well on the plate, so it does not move when the baseline changes.",
             *cfg["extra_notes"],
-            "Expert labels are evaluation data for the labeller; nothing here feeds it.",
         ]
         z_method = "robust"
     else:
+        reps = ", ".join(f"{pretty_drug(k)} {v}" for k, v in counts_by.items())
         notes = [
-            f"Every number on this plate is read from one file, Patrick's Trailmaker Seurat object for MiniFin ({cfg['s3']}): its {n_cells:,} cells, its {nu} samples and its counts. Nothing is matched to any other dataset.",
-            f"Cell types are his {ns} hand-drawn cell sets. They overlap by design ({umb} are umbrellas over their sub-sets), so a column is the share of all a sample's cells in that set and columns do not sum to 100%. Cells he put in no set stay in every denominator.",
-            "Replicates are the object's samples. z is a Welch t of the drug's samples against the baseline's samples.",
-            "Expert labels are evaluation data for the labeller; nothing here feeds it.",
+            f"Read from Patrick's Trailmaker Seurat object for MiniFin: {cfg['s3']}. It holds {n_cells:,} cells in {nu} samples ({reps}).",
+            f"{ns} hand-drawn cell sets; CNS, Muscle and Lens are umbrellas over their sub-sets.",
+            "Replicates are the object's samples, so z here is a Welch t of the drug's samples against the baseline's samples and does move with the baseline.",
         ]
         z_method = "welch"
     meta = {
@@ -245,3 +245,15 @@ if __name__ == "__main__":
     for ds in DATASETS:
         if a.only in (None, ds):
             build(ds, a.reexport)
+    # a small index of every dataset, for the page-wide notes (order = the order of the dataset keys)
+    idx = []
+    for ds in ["minifin", "megafin", "megafin2"]:
+        f = os.path.join(OUT, f"{ds}.json")
+        if os.path.exists(f):
+            m = json.load(open(f))
+            idx.append({"dataset": ds, "title": m["title"], "source": m["source"], "cells": sum(u["n"] for u in m["units"]),
+                        "units": len(m["units"]), "unit": "wells" if ds.startswith("megafin") else "samples",
+                        "sets": len(m["types"]), "drugs": len({c["drug"] for c in m["conds"] if not c["control"]})})
+    with open(os.path.join(OUT, "index.json"), "w") as fh:
+        json.dump(idx, fh, separators=(",", ":"))
+    print("wrote index.json:", [(d["dataset"], d["cells"], d["units"]) for d in idx])

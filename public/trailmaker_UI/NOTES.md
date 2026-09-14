@@ -55,3 +55,28 @@ builds had all of those; removed 2026-09-14 at the user's request). Rebuild:
   (Budesonide 5 uM on part 1) make every gap look large; the worked examples skip wells under 1,000 cells.
 - **The gene field is a panel** (top markers per set plus a few context genes), not the transcriptome.
 - Patrick's labels are evaluation data for the labeller; nothing here feeds it.
+
+## The four stories (above the plate)
+
+Presets of the page's own controls plus a few beats of narration; each beat spotlights the rows and
+columns it is about. Every number they quote is computed live by `storyKit()` in `tm-view.js` from
+the loaded counts, so a rebuild moves the text with the data. They are the page author's reading:
+
+1. **MiniFin: Sorafenib thins the blood vessels.** Vascular endothelial share falls from 1.2% to
+   0.7% (z -4.0, 11 samples vs 11 DMSO), the strongest move on MiniFin; the other two drugs leave it
+   alone. Fits a VEGF-receptor kinase inhibitor.
+2. **MiniFin: two different drugs, one fingerprint.** Dapagliflozin and Orlistat correlate at
+   r 0.84: both lower the CNS share (58.8% to 53.0% / 51.7%) and lift liver, heart and blood. Shares,
+   so one shift seen from two sides; mechanism not claimed.
+3. **MegaFin part 2: the well, not the drug.** The tightest cluster (Famotidine, Nifedipine,
+   Loratadine, Verapamil at 1 uM, r up to 0.93) shares no target but shares row H. Plate-wide,
+   wells more than two apart correlate at about 0 and neighbours at 0.1-0.2; a drug's two doses
+   (always vertical neighbours) agree no more than any two neighbouring wells. **Plate position is
+   the dominant structure on both MegaFin plates**; treat single-well effects as leads.
+4. **MegaFin part 2: Sorafenib again, one well at a time.** Same direction as MiniFin (1.15% to
+   0.99%) but z -1.3, 11th of 90 wells; the 1 uM well holds 375 cells. Replicates are what separate
+   a drug from a well.
+
+Class checks that did NOT hold and so are not stories: glucocorticoids vs macrophages/neutrophils,
+Hedgehog inhibitors vs slow muscle, HDAC / statin / CDK class fingerprints (within-class r ~ 0),
+PARP inhibitors vs muscle (Rucaparib's signal is mirrored by its neighbour Fluoxetine, r 0.78).

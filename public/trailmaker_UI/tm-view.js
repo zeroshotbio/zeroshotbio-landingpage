@@ -7,11 +7,11 @@
  * DMSO, indigo grey for fewer — and madder for the drug you chose, nothing else. The tissue
  * brackets and rules carry a small deterministic pen wobble; no cell is ever jittered.
  *
- * Scale is still the constraint: MegaFin has ~180 drug-dose rows and ~120 cell types. The default
- * (expanded) view gives every column its full name, upright, and scrolls sideways before cutting
- * one; the overview squeezes the plate to fit and leaves names to hover. Whatever you click opens
- * its page in a row below the plate. DMSO, Sorafenib and the named drug are pinned above the rest
- * so the comparison never scrolls away.
+ * The plate is fitted to its frame: columns widen to fill it and carry their names on a slant (or
+ * upright when narrow). Whatever you click opens its page in a row below the plate. The baseline,
+ * the reference and the named drug are pinned above the rest so the comparison never scrolls away.
+ * Four stories preset the controls and narrate what the plate shows, spotlighting the rows and
+ * columns each beat is about; every number they quote is computed from the loaded counts.
  */
 (function () {
   "use strict";
@@ -19,15 +19,15 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const SERIF = '"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif';
   const SANS = 'ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif';
-  const DATASETS = [["megafin", "MegaFin part 1"], ["megafin2", "MegaFin part 2"], ["minifin", "MiniFin"]];
+  const DATASETS = [["minifin", "MiniFin"], ["megafin", "MegaFin part 1"], ["megafin2", "MegaFin part 2"]];
   const MIN_TYPE_N = { megafin: 100, megafin2: 100, minifin: 0 };
   const HEAD_SHORT = 64, BAND_H = 20, PIN_H = 20, FIT_H = 540, NAME_PX = 10;
   const headH = () => (S.geom ? S.geom.headH : HEAD_SHORT);
 
   const S = {
     ds: "megafin", m: null, layer: null, gene: -1, mode: "delta", tissue: "", typeQ: "", dose: "",
-    sort: "response", focus: -1, detail: null, hover: null, expand: false, showTiny: false,
-    rows: [], cols: [], pins: [], geom: null, max: 1, notice: "", ref: "",
+    sort: "response", focus: -1, detail: null, hover: null, showTiny: false,
+    rows: [], cols: [], pins: [], geom: null, max: 1, notice: "", ref: "", story: null, spot: null, idx: null,
   };
   const geneCache = new Map();
   let C = null;
@@ -132,11 +132,45 @@
       .sort((a, b) => b[1] - a[1]);
   }
 
+  // Average-linkage clustering of the rows' z-score profiles (distance 1 - r over the sets on
+  // screen), read out as a leaf order: drugs that move the plate the same way end up side by side.
+  function clusterOrder(rows, mats) {
+    const m = S.m, nt = m.nt, cols = S.cols.filter((t) => !m.types[t].umbrella), n = rows.length;
+    if (n < 3) return rows.slice();
+    const D = Array.from({ length: n }, () => new Float64Array(n));
+    for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) {
+      const r = TM.pearson(TM.row(mats.z, rows[a], nt), TM.row(mats.z, rows[b], nt), cols);
+      D[a][b] = D[b][a] = Number.isFinite(r) ? 1 - r : 1;
+    }
+    let groups = rows.map((_, k) => ({ ids: [k], size: 1, alive: true }));
+    for (let step = 0; step < n - 1; step++) {
+      let best = Infinity, ba = -1, bb = -1;
+      for (let a = 0; a < n; a++) if (groups[a].alive) for (let b = a + 1; b < n; b++) if (groups[b].alive && D[a][b] < best) { best = D[a][b]; ba = a; bb = b; }
+      const A = groups[ba], B = groups[bb];
+      for (let k = 0; k < n; k++) if (groups[k].alive && k !== ba && k !== bb) {
+        D[ba][k] = D[k][ba] = (A.size * D[ba][k] + B.size * D[bb][k]) / (A.size + B.size);
+      }
+      groups[ba] = { ids: A.ids.concat(B.ids), size: A.size + B.size, alive: true };
+      groups[bb].alive = false;
+    }
+    return groups.find((g) => g.alive).ids.map((k) => rows[k]);
+  }
+
   function rowList(mats) {
     const m = S.m, nt = m.nt, cols = S.cols;
     const rows = m.conds.map((_, i) => i).filter((i) => i !== m.base && (!S.dose || !m.conds[i].dose || m.conds[i].dose === S.dose));
     const name = (i) => condLabel(m.conds[i]).toLowerCase();
+    if (S.sort === "cluster") {
+      const drugs = clusterOrder(rows.filter((i) => !m.conds[i].control), mats);
+      return drugs.concat(rows.filter((i) => m.conds[i].control));
+    }
     const key = new Map();
+    const setT = selType();
+    if (S.sort === "set") {
+      // from the most raised at the top to the most lowered at the bottom, in the value on screen
+      const vals = mats[S.mode];
+      rows.forEach((i) => key.set(i, setT >= 0 && Number.isFinite(vals[i * nt + setT]) ? -vals[i * nt + setT] : Infinity));
+    }
     if (S.sort === "response") rows.forEach((i) => key.set(i, -(TM.responseScore(TM.row(mats.z, i, nt), cols) || 0)));
     if (S.sort === "similar") {
       rows.forEach((i) => {
@@ -149,6 +183,7 @@
       if (m.conds[a].control !== m.conds[b].control) return m.conds[a].control ? 1 : -1;
       if (S.sort === "az") return name(a).localeCompare(name(b));
       if (S.sort === "plate") return m.conds[a].plate.localeCompare(m.conds[b].plate) || name(a).localeCompare(name(b));
+      if (S.sort === "set" && setT < 0) return name(a).localeCompare(name(b));
       return key.get(a) - key.get(b) || name(a).localeCompare(name(b));
     });
     return rows;
@@ -184,26 +219,17 @@
     renderDetail();
     chips();
     writeUrl();
+    paintStoryCard();
   }
 
-  // Expanded (the default): every column wide enough to carry its FULL name, set upright, and the
-  // header as tall as the longest name; the plate scrolls sideways before any name is cut.
-  // Overview: the columns squeezed to fit, names on hover.
+  // The plate is fitted to its frame: the columns widen to fill it.
   let measure = null;
   function geometry() {
     const wrapW = $("#hmwrap").clientWidth, nc = Math.max(1, S.cols.length), nr = Math.max(1, S.rows.length);
     const lw = innerWidth < 600 ? 128 : 190;
     let cw, rh, headH, names, pad = 0, slantMax = 150;
-    if (S.expand) {
-      cw = Math.max(10, Math.min(24, Math.floor((wrapW - lw - 12) / nc)));
-      rh = 14;
-      measure = measure || document.createElement("canvas").getContext("2d");
-      measure.font = `${NAME_PX}px ${SERIF}`;
-      const longest = Math.max(0, ...S.cols.map((t) => measure.measureText(S.m.types[t].name).width));
-      headH = Math.max(HEAD_SHORT, Math.ceil(longest) + BAND_H + 16);
-      names = "upright";
-    } else {
-      // overview: the columns widen to fill the plate. Names are slanted, given room for their whole
+    {
+      // the columns widen to fill the plate. Names are slanted, given room for their whole
       // length up to 260px, and the plate keeps a right margin for the lean of the last few names.
       measure = measure || document.createElement("canvas").getContext("2d");
       measure.font = `11.5px ${SERIF}`;
@@ -224,7 +250,6 @@
         cw = Math.max(3, cwFlat); names = "none"; headH = HEAD_SHORT;
       }
     }
-    $("#rowscroll").style.maxHeight = S.expand ? "74vh" : "none";
     S.geom = { lw, cw, rh, headH, names, slantMax, W: lw + cw * S.cols.length + 12 + pad };
   }
 
@@ -285,7 +310,7 @@
         ctx.save();
         ctx.translate(lw + j * cw + cw / 2 + (upright ? 0 : 2), yb - 6);
         ctx.rotate(upright ? -Math.PI / 2 : -Math.PI / 3);
-        ctx.fillStyle = rgb(t === sel ? C.sel : t === hot ? C.ink : C.ink2);
+        ctx.fillStyle = rgb(t === sel || spotT(t) ? C.sel : t === hot ? C.ink : C.ink2);
         ctx.fillText(upright ? m.types[t].name : clip(ctx, m.types[t].name, S.geom.slantMax), 0, 0);
         ctx.restore();
       });
@@ -303,7 +328,7 @@
     ctx.fillText(`${S.cols.length} ${typeWord().toUpperCase()}`, x0 + 4, yb + 16);
     if (names === "none" && S.cols.length) {
       ctx.font = `italic 13px ${SERIF}`;
-      ctx.fillText("hover a column to read it, or choose the expanded view to see every name", x0 + 4, yb - 14);
+      ctx.fillText("hover a column to read it, or choose a tissue to widen them", x0 + 4, yb - 14);
     }
   }
 
@@ -340,6 +365,7 @@
     if (hot && hot.j >= 0) { ctx.strokeStyle = rgb(C.ink); ctx.strokeRect(lw + hot.j * cw - 0.5, hot.r * PIN_H + 3.5, cw + 1, PIN_H - 1); }
     const sel = S.cols.indexOf(selType());
     if (sel >= 0) { ctx.strokeStyle = rgb(C.sel); ctx.strokeRect(lw + sel * cw - 0.5, 3.5, cw + 1, PIN_H * 3 - 1); }
+    dimForSpot(ctx, S.pins, (r) => r * PIN_H + 4, PIN_H - 2);
     labelPanel(ctx, x0, H - 6);
     ctx.textBaseline = "middle";
     ctx.textAlign = "right";
@@ -368,6 +394,7 @@
     const sel = S.cols.indexOf(selType());
     if (sel >= 0) { ctx.strokeStyle = rgb(C.sel); ctx.strokeRect(lw + sel * cw - 0.5, -0.5, cw + 1, rh * nr + 1); }
     if (hot && hot.j >= 0) { ctx.strokeStyle = rgb(C.ink); ctx.strokeRect(lw + hot.j * cw - 0.5, hot.r * rh - 0.5, cw + 1, rh + 1); }
+    dimForSpot(ctx, S.rows, (r) => r * rh, rh);
     labelPanel(ctx, x0, rh * nr);
     ctx.textBaseline = "middle";
     ctx.textAlign = "right";
@@ -376,7 +403,7 @@
       if (i === S.focus) { ctx.fillStyle = rgb(C.sel, 0.07); ctx.fillRect(x0, y, lw - 4, rh); }
       if (rh >= 9) {
         ctx.font = `${ctl ? "italic " : ""}${Math.min(12.5, rh - 1)}px ${SERIF}`;
-        ctx.fillStyle = rgb(i === S.focus ? C.sel : isHot ? C.ink : ctl ? C.ink3 : C.ink2);
+        ctx.fillStyle = rgb(i === S.focus || spotR(i) ? C.sel : isHot ? C.ink : ctl ? C.ink3 : C.ink2);
         ctx.fillText(clip(ctx, condLabel(m.conds[i]), lw - 12), x0 + lw - 6, y + rh / 2 + 0.5);
       } else if (isHot || i === S.focus) {
         ctx.fillStyle = rgb(i === S.focus ? C.sel : C.ink);
@@ -472,7 +499,9 @@
     $("#sortSel option[value=similar]").textContent = `most like ${refName()}`;
     document.querySelectorAll("#modeSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === S.mode)));
     document.querySelectorAll("#dsSwitch button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.ds === S.ds)));
-    document.querySelectorAll("#viewSeg button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.view === "expanded") === S.expand)));
+    const st = selType();
+    $("#sortSel option[value=set]").textContent = st >= 0 ? `by ${m.types[st].name}` : "by the chosen cell set (click a set's name)";
+    document.querySelectorAll("#storyKeys button").forEach((b) => b.setAttribute("aria-pressed", String(!!S.story && +b.dataset.story === S.story.k)));
   }
 
   function writeUrl() {
@@ -485,6 +514,8 @@
     if (m.doses.length && S.dose !== m.doses[0]) p.set("dose", S.dose || "both");
     if (S.ref && S.ref !== m.anchor) p.set("ref", S.ref);
     if (m.conds[m.base].id !== m.baseline) p.set("base", m.conds[m.base].id);
+    if (S.sort !== "response") p.set("order", S.sort);
+    if (S.story) p.set("story", S.story.k + 1);
     try { history.replaceState(null, "", `${location.pathname}?${p}`); } catch { /* sandboxed frame */ }
   }
 
@@ -779,6 +810,254 @@
     });
   }
 
+  // ------------------------------------------------------------------ notes
+  const GENERAL_NOTES = [
+    "Cell types are Patrick's hand-drawn cell sets. They overlap by design (umbrella sets such as CNS contain their regions), so a column is the share of all of a unit's cells in that set and columns do not sum to 100%. Cells he put in no set stay in every denominator.",
+    "MegaFin part 1 and part 2 are two plates, labelled in separate Trailmaker projects whose set names do not line up one to one, so they are shown side by side and never merged. MiniFin is a separate, smaller experiment with replicate samples.",
+    "&Delta; is a drug's share minus the baseline's share on the same plate (DMSO unless you choose another). z differs by design: on MegaFin, where each drug-dose is a single well, it is a robust z of the well against every well on its plate; on MiniFin, which has replicate samples, it is a Welch t against the baseline's samples.",
+    "On MegaFin, neighbouring wells resemble each other more than distant ones, and each drug's two doses sit in neighbouring wells, so a single-well effect is a lead to replicate rather than a finding. Story III shows it.",
+    "Similarity to the reference is the correlation of two z-score profiles over the sets on screen, at the same dose. The clustered order uses the same correlation, average-linked.",
+    "Tissues are a grouping of set names for filtering only. The gene field reads a panel of marker and context genes chosen when the page was built, not the whole transcriptome. Colour runs to the 98th percentile of what is on screen, so the scale moves when you filter.",
+    "The four stories are the page author's reading of the data. Their settings are the page's own controls, and every number they quote is computed from the same counts as the plate.",
+    "Patrick's labels are evaluation data for the labeller; nothing here feeds it.",
+  ];
+
+  function fillNotes(m) {
+    const idx = S.idx || [];
+    $("#notesIntro").textContent = "Three datasets share this page. Each is read from one of Patrick's Trailmaker Seurat objects and from nothing else, and they are never joined: switching dataset swaps the whole plate, with its own cells, its own wells or samples, and its own cell sets.";
+    $("#notesSets").innerHTML = idx.map((d) => `<li><b>${esc(d.title.split(" · ")[0])}</b> &nbsp;·&nbsp; ${nF(d.cells)} cells in ${d.units} ${d.unit}, ${d.drugs} drugs, ${d.sets} cell sets &nbsp;·&nbsp; <code>${esc(d.source)}</code></li>`).join("");
+    $("#byline").textContent = idx.length
+      ? `three datasets · ${nF(idx.reduce((s, d) => s + d.cells, 0))} cells · Patrick's hand-drawn cell sets`
+      : `${nF(m.units.reduce((s, u) => s + u.n, 0))} cells · Patrick's hand-drawn cell sets`;
+    $("#notesList").innerHTML = GENERAL_NOTES.map((n) => `<li>${n}</li>`).join("");
+    $("#notesHereHead").textContent = `About ${m.title.split(" · ")[0]}, the dataset now on the plate`;
+    $("#notesHere").innerHTML = m.notes.map((n) => `<li>${esc(n)}</li>`).join("");
+    $("#colophon").innerHTML = `Built ${esc(m.built)} by <code>scripts/export_trailmaker_rds.R</code> and <code>scripts/build_trailmaker_ui.py</code>, which ship cell counts only; `
+      + `every number on the plate, and in the stories, is worked out in the browser by <code>tm-stats.js</code>. What the page claims and does not: <code>public/trailmaker_UI/NOTES.md</code>.`;
+  }
+
+  // ------------------------------------------------------------------ stories
+  // Four readings of the data. Each is a preset of the page's own controls plus a few beats of
+  // narration; each beat spotlights the rows and columns it is about and dims the rest. Numbers in
+  // the narration come from storyKit(), i.e. from the loaded counts, never from typed text.
+  const ROMAN = ["I", "II", "III", "IV"];
+  const spotR = (i) => !!(S.spot && S.spot.rows.has(i));
+  const spotT = (t) => !!(S.spot && S.spot.types.has(t));
+  const ord = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"}`;
+
+  function dimForSpot(ctx, rowIdx, yOf, h) {
+    if (!S.spot || (!S.spot.rows.size && !S.spot.types.size) || !rowIdx.length) return;
+    const { lw, cw } = S.geom;
+    ctx.fillStyle = rgb(C.paper, 0.74);
+    rowIdx.forEach((i, r) => {
+      if (i < 0 || spotR(i)) return;
+      S.cols.forEach((t, j) => { if (!spotT(t)) ctx.fillRect(lw + j * cw, yOf(r), cw, h); });
+    });
+    ctx.save();
+    ctx.strokeStyle = rgb(C.sel);
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([3, 2]);
+    rowIdx.forEach((i, r) => { if (i >= 0 && spotR(i)) ctx.strokeRect(lw - 1.5, yOf(r) - 1, cw * S.cols.length + 2, h + 1); });
+    const top = yOf(0), bottom = yOf(rowIdx.length - 1) + h;
+    S.cols.forEach((t, j) => { if (spotT(t)) ctx.strokeRect(lw + j * cw - 1, top - 1, cw + 1, bottom - top + 1); });
+    ctx.restore();
+  }
+
+  function storyKit() {
+    const m = S.m, nt = m.nt, M = TM.matrices(m, S.layer);
+    const c = (drug, dose) => m.conds.findIndex((x) => x.drug === drug && (dose == null || x.dose === String(dose)));
+    const t = (name) => m.types.findIndex((x) => x.name === name);
+    const val = (A, d, dose, s) => { const i = c(d, dose), j = t(s); return i < 0 || j < 0 ? NaN : A[i * nt + j]; };
+    const cols = S.cols.filter((j) => !m.types[j].umbrella);
+    const cellsOf = (i) => m.conds[i].units.reduce((s, u) => s + m.units[u].n, 0);
+    const wellOf = (i) => { const mt = m.units[m.conds[i].units[0]].id.match(/_([A-H])(\d{1,2})_CP0/); return mt ? { r: "ABCDEFGH".indexOf(mt[1]), c: +mt[2], w: mt[1] + mt[2], row: mt[1] } : null; };
+    const R = (a, b) => TM.pearson(TM.row(M.z, a, nt), TM.row(M.z, b, nt), cols);
+    const drugRows = m.conds.map((_, i) => i).filter((i) => !m.conds[i].control && cellsOf(i) >= 1000);
+    const mean = (xs) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : NaN);
+    return {
+      b: (x) => `<b>${x}</b>`,
+      pct: (d, dose, s) => pctF(val(M.pct, d, dose, s)),
+      basePct: (s) => { const j = t(s); return j < 0 ? "–" : pctF(M.pct[m.base * nt + j]); },
+      z: (d, dose, s) => zF(val(M.z, d, dose, s)),
+      fewer: (d, dose, s) => { const a = val(M.pct, d, dose, s), j = t(s), base = j < 0 ? NaN : M.pct[m.base * nt + j]; return base > 0 ? `${Math.round(100 * (1 - a / base))}%` : "–"; },
+      r: (d1, x1, d2, x2) => rF(R(c(d1, x1), c(d2, x2))),
+      units: (d, dose) => { const i = c(d, dose); return i < 0 ? 0 : m.conds[i].units.length; },
+      cells: (d, dose) => { const i = c(d, dose); return i < 0 ? "–" : nF(cellsOf(i)); },
+      wells: (list) => list.map(([d, dose]) => { const i = c(d, dose), w = i >= 0 && wellOf(i); return w ? w.w : "?"; }).join(", "),
+      rankDown: (d, dose, s) => {
+        const j = t(s), i = c(d, dose);
+        const ok = S.rows.filter((k) => !m.conds[k].control && Number.isFinite(M.z[k * nt + j])).sort((a, b2) => M.z[a * nt + j] - M.z[b2 * nt + j]);
+        return `${ord(ok.indexOf(i) + 1)} of ${ok.length}`;
+      },
+      strongest: (d, dose, s) => {
+        let best = -1, bi = -1, bj = -1;
+        for (const k of drugRows) for (const j of cols) { const zz = Math.abs(M.z[k * nt + j]); if (Number.isFinite(zz) && zz > best) { best = zz; bi = k; bj = j; } }
+        return bi === c(d, dose) && bj === t(s);
+      },
+      geometry: () => {
+        const near = [], far = [], byRow = {};
+        for (let x = 0; x < drugRows.length; x++) for (let y = x + 1; y < drugRows.length; y++) {
+          const a = drugRows[x], b2 = drugRows[y], wa = wellOf(a), wb = wellOf(b2);
+          if (!wa || !wb || m.conds[a].drug === m.conds[b2].drug) continue;
+          const r = R(a, b2); if (!Number.isFinite(r)) continue;
+          const dist = Math.max(Math.abs(wa.r - wb.r), Math.abs(wa.c - wb.c));
+          if (dist === 1) near.push(r); else if (dist > 2) far.push(r);
+          if (wa.r === wb.r) (byRow[wa.row] = byRow[wa.row] || []).push(r);
+        }
+        const rows = Object.entries(byRow).map(([k, v]) => [k, mean(v)]).sort((a, b2) => b2[1] - a[1]);
+        const inner = rows.filter(([k]) => k !== "A" && k !== "H").map(([, v]) => v);
+        const h = rows.find(([k]) => k === "H");
+        return { near: rF(mean(near)), far: rF(mean(far)), rowH: rF(h ? h[1] : NaN), inner: rF(mean(inner)) };
+      },
+    };
+  }
+
+  const STORIES = [
+    {
+      ds: "minifin", title: "Sorafenib thins the blood vessels",
+      set: { mode: "z", ref: "Sorafenib", focus: ["Dapagliflozin"], sort: "set", type: "Vascular Endothelial Cells" },
+      beats: [
+        { types: ["Vascular Endothelial Cells"],
+          text: (k) => `Start with one column: vascular endothelial cells, the lining of the blood vessels. In DMSO they make up ${k.b(k.basePct("Vascular Endothelial Cells"))} of a larva's cells.` },
+        { rows: [["Sorafenib"]], types: ["Vascular Endothelial Cells"],
+          text: (k) => `Sorafenib brings them down to ${k.b(k.pct("Sorafenib", null, "Vascular Endothelial Cells"))}, about ${k.fewer("Sorafenib", null, "Vascular Endothelial Cells")} fewer, at ${k.b("z " + k.z("Sorafenib", null, "Vascular Endothelial Cells"))}: `
+            + `${k.strongest("Sorafenib", null, "Vascular Endothelial Cells") ? "the strongest move any drug makes on any set here" : "one of the strongest moves here"}, and it holds across ${k.units("Sorafenib")} samples against ${k.units("DMSO")} of DMSO.` },
+        { rows: [["Dapagliflozin"], ["Orlistat"]], types: ["Vascular Endothelial Cells"],
+          text: (k) => `The other two drugs leave the vessels alone (z ${k.z("Dapagliflozin", null, "Vascular Endothelial Cells")} and ${k.z("Orlistat", null, "Vascular Endothelial Cells")}). `
+            + `That fits what Sorafenib is: a kinase inhibitor that blocks VEGF receptors, the signal growing blood vessels depend on.` },
+      ],
+    },
+    {
+      ds: "minifin", title: "Two different drugs, one fingerprint",
+      set: { mode: "delta", ref: "Dapagliflozin", focus: ["Orlistat"], sort: "similar" },
+      beats: [
+        { rows: [["Dapagliflozin"], ["Orlistat"]],
+          text: (k) => `Dapagliflozin lowers blood sugar through the kidney; Orlistat blocks fat digestion in the gut. Different drugs with different targets, yet across Patrick's sets `
+            + `their profiles correlate at ${k.b("r " + k.r("Dapagliflozin", null, "Orlistat", null))}, against ${k.r("Dapagliflozin", null, "Sorafenib", null)} and ${k.r("Orlistat", null, "Sorafenib", null)} with Sorafenib.` },
+        { rows: [["Dapagliflozin"], ["Orlistat"]], types: ["CNS", "Midbrain (Optic Tectum)", "MHB"],
+          text: (k) => `Both shrink the nervous system's share of the larva: CNS falls from ${k.b(k.basePct("CNS"))} of cells to ${k.b(k.pct("Dapagliflozin", null, "CNS"))} and ${k.b(k.pct("Orlistat", null, "CNS"))} `
+            + `(z ${k.z("Dapagliflozin", null, "CNS")} and ${k.z("Orlistat", null, "CNS")}), led by the midbrain and the midbrain–hindbrain boundary.` },
+        { rows: [["Dapagliflozin"], ["Orlistat"]], types: ["Liver", "Cardiomyocytes", "Erythrocytes"],
+          text: (k) => `And both lift the liver, from ${k.b(k.basePct("Liver"))} to ${k.b(k.pct("Dapagliflozin", null, "Liver"))} and ${k.b(k.pct("Orlistat", null, "Liver"))}, with heart and blood cells up too. `
+            + `These are shares, so a smaller brain and a larger liver may be one shift seen from two sides; a shared metabolic stress is one guess. Hover a square for the cell counts behind it.` },
+      ],
+    },
+    {
+      ds: "megafin2", title: "The well, not the drug",
+      set: { mode: "z", dose: "1", ref: "Famotidine", focus: ["Nifedipine", "1"], sort: "cluster" },
+      beats: [
+        { rows: [["Famotidine", "1"], ["Nifedipine", "1"], ["Loratadine", "1"], ["Verapamil HCl", "1"]],
+          text: (k) => `Clustered by response, four 1 µM wells fall together: Famotidine, an acid blocker; Nifedipine and Verapamil, calcium-channel blockers; and Loratadine, an antihistamine. `
+            + `Famotidine and Nifedipine correlate at ${k.b("r " + k.r("Famotidine", "1", "Nifedipine", "1"))}, and all four push fast-twitch muscle up.` },
+        { rows: [["Famotidine", "1"], ["Nifedipine", "1"], ["Loratadine", "1"], ["Verapamil HCl", "1"]], types: ["Fast twitch muscle"],
+          text: (k) => `They share no target. What they share is an address: wells ${k.b(k.wells([["Loratadine", "1"], ["Famotidine", "1"], ["Nifedipine", "1"], ["Verapamil HCl", "1"]]))}, along row H at the plate's bottom edge.` },
+        { text: (k) => { const g = k.geometry(); return `Across the plate, wells more than two apart barely resemble each other (mean r ${g.far}); neighbours do (${g.near}), and row H hangs together more than the inner rows (${g.rowH} against ${g.inner}). `
+            + `Each drug's two doses also sit side by side, so on MegaFin a single-well effect is a lead to replicate, not yet a finding.`; } },
+      ],
+    },
+    {
+      ds: "megafin2", title: "Sorafenib again, one well at a time",
+      set: { mode: "z", dose: "5", ref: "Sorafenib", focus: ["Pimecrolimus", "5"], sort: "set", type: "Vascular endothelial cells" },
+      beats: [
+        { rows: [["Sorafenib", "5"]], types: ["Vascular endothelial cells"],
+          text: (k) => `Back to Sorafenib and the blood vessels, now on MegaFin part 2. Its 5 µM well takes vascular endothelial cells from ${k.b(k.basePct("Vascular endothelial cells"))} of cells to ${k.b(k.pct("Sorafenib", "5", "Vascular endothelial cells"))}: the direction MiniFin showed in story I.` },
+        { rows: [["Sorafenib", "5"]], types: ["Vascular endothelial cells"],
+          text: (k) => `But at ${k.b("z " + k.z("Sorafenib", "5", "Vascular endothelial cells"))} it is only the ${k.rankDown("Sorafenib", "5", "Vascular endothelial cells")} wells at thinning this set, inside the ordinary wobble between wells. `
+            + `Its 1 µM well holds just ${k.cells("Sorafenib", "1")} cells, too few to read.` },
+        { text: () => `Same drug, same direction, but one well cannot tell a drug from its well (story III). The replicated MiniFin result is the one to trust; MegaFin would need repeat wells to say more.` },
+      ],
+    },
+  ];
+
+  function settingsLine() {
+    const m = S.m, opt = $("#sortSel").selectedOptions[0];
+    const parts = [m.title.split(" · ")[0], { pct: "% proportion", delta: `Δ ${baseShort()}`, z: "z-score" }[S.mode], `baseline ${baseName()}`, `reference ${refName()}`];
+    if (m.doses.length) parts.push(S.dose ? `${doseLabel(S.dose)} rows` : "both doses");
+    if (S.tissue) parts.push(S.tissue);
+    parts.push(`rows ${opt ? opt.textContent : S.sort}`);
+    return `<span class="lhead">settings chosen</span>${esc(parts.join(" · "))}`;
+  }
+
+  function paintStoryCard() {
+    const card = $("#storyCard");
+    if (!S.story || !S.m || S.m.dataset !== STORIES[S.story.k].ds) { card.hidden = true; return; }
+    const st = STORIES[S.story.k], n = st.beats.length, b = S.story.beat;
+    card.hidden = false;
+    $("#scNum").textContent = `story ${ROMAN[S.story.k]} of ${ROMAN[STORIES.length - 1]} · ${S.m.title.split(" · ")[0]} · ${b + 1} / ${n}`;
+    $("#scTitle").textContent = st.title;
+    const text = $("#scText"), html = st.beats[b].text(storyKit());
+    if (text.dataset.key !== `${S.story.k}:${b}`) { text.style.animation = "none"; void text.offsetHeight; text.style.animation = ""; text.dataset.key = `${S.story.k}:${b}`; }
+    text.innerHTML = html;
+    $("#scSet").innerHTML = settingsLine();
+    $("#scDots").innerHTML = st.beats.map((_, i) => `<i class="${i === b ? "on" : ""}"></i>`).join("");
+    $("#storyPrev").disabled = b === 0;
+    $("#storyNext").innerHTML = b === n - 1 ? "the end &rsaquo;" : "next &rsaquo;";
+  }
+
+  function showBeat() {
+    const st = STORIES[S.story.k], b = st.beats[S.story.beat], m = S.m;
+    const rows = (b.rows || []).map(([d, dose]) => m.conds.findIndex((c) => c.drug === d && (dose == null || c.dose === String(dose)))).filter((i) => i >= 0);
+    const types = (b.types || []).map((nm) => m.types.findIndex((t) => t.name === nm)).filter((i) => i >= 0);
+    S.spot = { rows: new Set(rows), types: new Set(types) };
+    render();
+  }
+
+  async function startStory(k, scroll = true) {
+    const st = STORIES[k];
+    if (!S.m || S.ds !== st.ds) await load(st.ds, false);
+    const m = S.m;
+    if (!m || m.dataset !== st.ds) return;
+    S.mode = st.set.mode;
+    S.gene = -1; S.layer = m.propLayer; $("#geneQ").value = ""; $("#geneClear").hidden = true;
+    S.tissue = st.set.tissue || ""; $("#tissueSel").value = S.tissue;
+    S.typeQ = ""; $("#typeQ").value = "";
+    S.dose = st.set.dose != null ? String(st.set.dose) : m.doses[0] || ""; $("#doseSel").value = S.dose;
+    const b0 = m.conds.findIndex((c) => c.id === m.baseline);
+    if (b0 >= 0 && b0 !== m.base) setBase(b0);
+    setRef(st.set.ref || m.anchor);
+    const f = st.set.focus || [];
+    S.focus = m.conds.findIndex((c) => c.drug === f[0] && !c.control && (f[1] == null || c.dose === String(f[1])));
+    S.sort = st.set.sort; $("#sortSel").value = S.sort;
+    const ty = st.set.type ? m.types.findIndex((t) => t.name === st.set.type) : -1;
+    S.detail = ty >= 0 ? { kind: "type", i: ty } : { kind: "cond", i: anchorIdx() };
+    S.story = { k, beat: 0 };
+    showBeat();
+    if (scroll) $("#plate1").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function stepStory(d) {
+    if (!S.story) return;
+    const n = STORIES[S.story.k].beats.length, b = S.story.beat + d;
+    if (b >= n) { exitStory(); return; }
+    S.story.beat = Math.max(0, b);
+    showBeat();
+  }
+
+  function exitStory(draw = true) {
+    S.story = null;
+    S.spot = null;
+    if (draw && S.m) render(); else paintStoryCard();
+  }
+
+  function wireStories() {
+    $("#storyKeys").innerHTML = STORIES.map((st, k) => `<button class="storykey" data-story="${k}" aria-pressed="false">`
+      + `<span class="sk-n">story ${ROMAN[k]} · ${esc(DATASETS.find(([d]) => d === st.ds)[1])}</span><em>${esc(st.title)}</em></button>`).join("");
+    $("#storyKeys").addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-story]");
+      if (!b) return;
+      if (S.story && S.story.k === +b.dataset.story) exitStory(); else startStory(+b.dataset.story);
+    });
+    $("#storyNext").addEventListener("click", () => stepStory(1));
+    $("#storyPrev").addEventListener("click", () => stepStory(-1));
+    $("#storyExit").addEventListener("click", () => exitStory());
+    document.addEventListener("keydown", (e) => {
+      if (!S.story || /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) return;
+      if (e.key === "ArrowRight") { e.preventDefault(); stepStory(1); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); stepStory(-1); }
+      if (e.key === "Escape") exitStory();
+    });
+  }
+
   // ------------------------------------------------------------------ gene layer
   async function setGene(j) {
     const m = S.m;
@@ -820,16 +1099,8 @@
     $("#typeQ").value = "";
     $("#geneQ").value = "";
     $("#geneClear").hidden = true;
-    const drugs = m.conds.filter((c) => !c.control).length, cells = m.units.reduce((s, u) => s + u.n, 0);
-    $("#byline").textContent = `${nF(drugs)} ${m.dataset.startsWith("megafin") ? "drug-doses" : "drugs"} · ${m.types.length} ${typeWord()} · ${nF(cells)} cells`
-      + (m.dataset.startsWith("megafin") ? ` · plate ${m.plates.join(" + ")}` : ` · ${m.units.length} samples`);
     $("#plateWhen").textContent = m.title;
-    $("#notesList").innerHTML = [...m.notes,
-      `The gene field reads a panel of ${m.genes.length} marker and context genes worked out when the page was built, not the whole transcriptome.`,
-      "Colour runs to the 98th percentile of what is on the plate, so the scale moves when you filter; the legend states it each time."]
-      .map((n) => `<li>${esc(n)}</li>`).join("");
-    $("#colophon").innerHTML = `Source: <code>${esc(m.source)}</code>. Labels: ${esc(m.labels)}. Built ${esc(m.built)} by <code>scripts/build_trailmaker_ui.py</code>, `
-      + `which ships cell counts only; every number on the plate is worked out in the browser by <code>tm-stats.js</code>. What the plate claims and does not: <code>public/trailmaker_UI/NOTES.md</code>.`;
+    fillNotes(m);
   }
 
   async function load(ds, first) {
@@ -864,6 +1135,7 @@
     S.tissue = m.tissues.includes(P.get("tissue")) ? P.get("tissue") : "";
     S.dose = P.get("dose") === "both" ? "" : m.doses.includes(P.get("dose")) ? P.get("dose") : m.doses[0] || "";
     if (["pct", "delta", "z"].includes(P.get("mode"))) S.mode = P.get("mode");
+    if ([...$("#sortSel").options].some((o) => o.value === P.get("order"))) { S.sort = P.get("order"); $("#sortSel").value = S.sort; }
     fillControls(m);
     $("#tissueSel").value = S.tissue;
     $("#doseSel").value = S.dose;
@@ -887,7 +1159,7 @@
     $("#dsSwitch").innerHTML = DATASETS.map(([k, n]) => `<button data-ds="${k}" aria-pressed="false">${esc(n)}</button>`).join("");
     $("#dsSwitch").addEventListener("click", (e) => {
       const b = e.target.closest("button");
-      if (b && b.dataset.ds !== S.ds) load(b.dataset.ds, false);
+      if (b && b.dataset.ds !== S.ds) { exitStory(false); load(b.dataset.ds, false); }
     });
     $("#modeSeg").addEventListener("click", (e) => {
       const b = e.target.closest("button");
@@ -897,10 +1169,6 @@
     $("#doseSel").addEventListener("change", (e) => { S.dose = e.target.value; render(); });
     $("#sortSel").addEventListener("change", (e) => { S.sort = e.target.value; $("#rowscroll").scrollTop = 0; render(); });
     $("#typeQ").addEventListener("input", (e) => { S.typeQ = e.target.value; render(); });
-    $("#viewSeg").addEventListener("click", (e) => {
-      const b = e.target.closest("button");
-      if (b) { S.expand = b.dataset.view === "expanded"; $("#rowscroll").scrollTop = 0; render(); }
-    });
     const gq = $("#geneQ");
     const tryGene = () => {
       if (!S.m) return;
@@ -935,10 +1203,14 @@
     wireCanvas("#cvPin", "pins");
     wireCanvas("#cvRows", "rows");
     wireSearch();
+    wireStories();
+    fetch("/trailmaker_UI/data/index.json").then((r) => (r.ok ? r.json() : null)).then((d) => { S.idx = d; if (S.m) fillNotes(S.m); }).catch(() => {});
     let rz = 0;
     new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(render); }).observe($("#hmwrap"));
     const P = new URLSearchParams(location.search);
-    load(DATASETS.some(([k]) => k === P.get("ds")) ? P.get("ds") : "megafin", true);
+    const st = +P.get("story");
+    load(DATASETS.some(([k]) => k === P.get("ds")) ? P.get("ds") : "megafin", true)
+      .then(() => { if (st >= 1 && st <= STORIES.length) startStory(st - 1, false); });
   }
 
   init();

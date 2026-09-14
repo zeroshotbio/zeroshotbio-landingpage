@@ -185,11 +185,46 @@ svg text{font-family:var(--serif);font-size:10.5px;fill:var(--ink-2)}
 svg .k0{fill:var(--ink-3);opacity:.75} svg .k1{fill:var(--t3)} svg .k2{fill:var(--select)}
 svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3);opacity:.5} svg .me{stroke:var(--select);stroke-width:2}
 
+/* stories: four presets with narration, a cut scene over the plate */
+.stories{margin:16px 0 0;padding:0 0 14px}
+.storykeys{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:8px}
+.storykey{text-align:left;border:1px solid var(--ink-2);border-radius:3px;background-color:var(--paper);box-shadow:var(--key-shadow);padding:8px 12px 9px;font-size:14.5px;line-height:1.35}
+.storykey:hover{background-color:var(--paper-deep)}
+.storykey .sk-n{display:block;font-family:var(--sans);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-bottom:3px}
+.storykey em{font-style:italic}
+.storykey[aria-pressed="true"]{background-color:var(--ink);color:var(--paper);border-color:var(--ink);box-shadow:inset 1px 1px 3px rgba(0,0,0,.4)}
+.storykey[aria-pressed="true"] .sk-n{color:var(--rule-2)}
+@media(max-width:900px){.storykeys{grid-template-columns:1fr 1fr}}
+.storycard{position:relative;margin:0 0 16px;padding:14px 22px 12px 26px;background:var(--paper-deep);border:1px solid var(--ink);box-shadow:4px 4px 0 rgba(43,34,25,.12)}
+.storycard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--select)}
+.sc-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.sc-num{font-family:var(--sans);font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--select)}
+.sc-x{font-family:var(--sans);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--rule)}
+.sc-title{font-weight:400;font-style:italic;font-size:23px;margin:4px 0 6px;line-height:1.25}
+.sc-text{font-size:17px;line-height:1.58;margin:0 0 12px;max-width:920px;min-height:3.2em;animation:scIn .45s ease}
+@keyframes scIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.sc-text b{font-weight:600}
+.sc-foot{display:flex;justify-content:space-between;align-items:center;gap:10px 16px;flex-wrap:wrap;border-top:1px solid var(--rule);padding-top:8px}
+.sc-set{margin:0;font-size:12.5px;font-style:italic;color:var(--ink-2);max-width:760px}
+.sc-set .lhead{font-style:normal;margin-right:6px}
+.sc-nav{display:flex;align-items:center;gap:10px}
+.sc-btn{font-family:var(--serif);font-variant:small-caps;font-size:14.5px;border:1px solid var(--ink-2);border-radius:3px;background-color:var(--paper);box-shadow:var(--key-shadow);padding:3px 13px}
+.sc-btn:hover{background-color:var(--paper-deep)}
+.sc-btn:disabled{opacity:.35;cursor:default}
+.sc-dots{display:inline-flex;gap:5px}
+.sc-dots i{width:7px;height:7px;border-radius:50%;background:var(--rule)}
+.sc-dots i.on{background:var(--select)}
+
 /* notes */
 .notes{max-width:1100px;margin:104px auto 0;border-top:1px solid var(--ink);padding-top:12px}
 .notes h3{font-size:11px;font-family:var(--sans);letter-spacing:.28em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin:0 0 20px}
 .notes ol{margin:0;padding-left:1.3em;max-width:760px}
 .notes li{margin-bottom:.85em;font-size:14px;color:var(--ink-2);line-height:1.58}
+.nintro{font-size:14.5px;color:var(--ink-2);max-width:760px;margin:0 0 10px;line-height:1.6}
+ul.dsets{list-style:none;padding:0;margin:0 0 24px;max-width:1000px}
+ul.dsets li{font-size:14px;color:var(--ink-2);padding:6px 0;border-bottom:1px solid var(--rule-2);line-height:1.5}
+ul.dsets b{font-weight:400;font-style:italic;color:var(--ink);font-size:15px}
+.nhere{font-family:var(--sans);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin:28px 0 14px}
 .colophon{margin-top:40px;font-size:12.5px;color:var(--ink-3);max-width:760px;font-style:italic}
 
 #tip{position:fixed;z-index:30;pointer-events:none;background:var(--paper);border:1px solid var(--ink);box-shadow:3px 3px 0 rgba(43,34,25,.10);
@@ -236,6 +271,11 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
     <div class="plate-head"><span class="plate-num">Plate I</span>
       <h2 class="plate-title">Every drug against every cell type</h2><span class="plate-when" id="plateWhen"></span></div>
 
+    <div class="stories" aria-label="Stories">
+      <span class="lhead">four readings of the plates &nbsp;·&nbsp; pick one and the controls set themselves</span>
+      <div class="storykeys" id="storyKeys"></div>
+    </div>
+
     <div class="compare" aria-label="Comparison">
       <span class="w">Comparing</span>
       <span class="search base">
@@ -266,10 +306,6 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
         <div class="seg" id="modeSeg" role="group" aria-label="Value shown">
           <button data-mode="pct">% proportion</button><button data-mode="delta">&Delta; DMSO</button><button data-mode="z">z-score</button>
         </div></div>
-      <div class="ctrl"><span class="lbl">view</span>
-        <div class="seg" id="viewSeg" role="group" aria-label="View">
-          <button data-view="expanded">expanded</button><button data-view="overview">overview</button>
-        </div></div>
       <div class="ctrl" id="doseWrap"><span class="lbl">dose</span><select id="doseSel" class="field" aria-label="Dose"></select></div>
       <div class="ctrl"><span class="lbl">tissue</span><select id="tissueSel" class="field" aria-label="Tissue"></select></div>
       <div class="ctrl"><span class="lbl">cell type</span>
@@ -280,12 +316,21 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
       <div class="ctrl"><span class="lbl">order rows</span><select id="sortSel" class="field" aria-label="Order rows">
         <option value="response">strongest response</option>
         <option value="similar">most like Sorafenib</option>
+        <option value="cluster">clustered: similar responses together</option>
+        <option value="set">by the chosen cell set</option>
         <option value="az">alphabetical</option>
         <option value="plate">by plate</option>
       </select></div>
     </div>
 
     <div class="figcol">
+      <div class="storycard" id="storyCard" hidden aria-live="polite">
+        <div class="sc-top"><span class="sc-num" id="scNum"></span><button class="sc-x" id="storyExit">leave the story &times;</button></div>
+        <h3 class="sc-title" id="scTitle"></h3>
+        <p class="sc-text" id="scText"></p>
+        <div class="sc-foot"><p class="sc-set" id="scSet"></p>
+          <div class="sc-nav"><button class="sc-btn" id="storyPrev">&lsaquo; back</button><span class="sc-dots" id="scDots"></span><button class="sc-btn" id="storyNext">next &rsaquo;</button></div></div>
+      </div>
       <div class="hmwrap" id="hmwrap">
         <canvas id="cvHead" aria-label="Cell-type columns"></canvas>
         <canvas id="cvPin" aria-label="Pinned rows: DMSO, Sorafenib and the named drug"></canvas>
@@ -302,7 +347,11 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
 
   <section class="notes" id="notes">
     <h3>Notes on the plate</h3>
+    <p class="nintro" id="notesIntro"></p>
+    <ul class="dsets" id="notesSets"></ul>
     <ol id="notesList"></ol>
+    <h4 class="nhere" id="notesHereHead"></h4>
+    <ol id="notesHere"></ol>
     <p class="colophon" id="colophon"></p>
   </section>
 </div>
