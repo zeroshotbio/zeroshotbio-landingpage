@@ -8,8 +8,8 @@
  *   gene        num = expressing counts den = counts                  -> % of that type expressing
  * and the three display modes are the same three functions of a layer:
  *   pct    the condition's pooled value (sum num / sum den over its units)
- *   delta  pct minus the DMSO baseline of each unit's own plate (weighted like pct), so a
- *          condition run on both plates is compared plate for plate
+ *   delta  pct minus the baseline (DMSO unless setBase chose another condition) on each unit's
+ *          own plate (weighted like pct), so a condition run on both plates is compared plate for plate
  *   z      MegaFin ("robust"): each well's (value - median) / (1.4826 MAD) over every well on its
  *          plate, averaged over the condition's wells — a drug-dose is one well and DMSO is two
  *          per plate, too few for a DMSO variance; MiniFin ("welch"): Welch t of the drug's
@@ -169,7 +169,15 @@
     return s[Math.min(s.length - 1, Math.max(0, Math.round(q * (s.length - 1))))];
   }
 
-  const TM = { prepare, geneLayer, matrices, row, pearson, anchorFor, responseScore, quantile, pooled, unitVal, MIN_DEN_GENE };
+  // Any condition can be the baseline; its wells become each plate's reference and every cached
+  // matrix is dropped, since delta (and MiniFin's Welch z) are measured against it.
+  function setBase(m, i) {
+    m.base = i;
+    for (const p of m.plates) m.baseUnits[p] = m.conds[i].units.filter((u) => m.units[u].plate === p);
+    m._cache.clear();
+  }
+
+  const TM = { prepare, setBase, geneLayer, matrices, row, pearson, anchorFor, responseScore, quantile, pooled, unitVal, MIN_DEN_GENE };
   if (typeof module !== "undefined" && module.exports) module.exports = TM;
   else root.TM = TM;
 })(typeof window !== "undefined" ? window : globalThis);

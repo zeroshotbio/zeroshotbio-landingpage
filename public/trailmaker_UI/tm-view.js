@@ -101,6 +101,14 @@
   }
   const anchorIdx = () => TM.anchorFor(S.m, -1, S.dose || S.m.doses[0] || "");
   const refName = () => S.ref || S.m.anchor;
+  const baseName = () => condLabel(S.m.conds[S.m.base]);
+  const baseShort = () => (S.m.conds[S.m.base].id === S.m.baseline ? S.m.baseline : "baseline");
+
+  // The baseline (DMSO to start) can be any condition: a control, or a drug at one dose.
+  function setBase(i) {
+    TM.setBase(S.m, i);
+    if (S.focus === i) S.focus = -1;
+  }
 
   // The reference drug (Sorafenib to start) can be any drug: its conditions become the anchors that
   // the pinned row, the similarity ranking and "most like…" order all read.
@@ -340,7 +348,7 @@
       const y = r * PIN_H + 3;
       ctx.fillStyle = rgb(sw[r]);
       ctx.beginPath(); ctx.arc(x0 + lw - 12, y + PIN_H / 2, 3.6, 0, 7); ctx.fill();
-      const label = i < 0 ? "name a drug above" : r === 0 ? `${m.baseline}, the baseline` : condLabel(m.conds[i]);
+      const label = i < 0 ? "name a drug above" : r === 0 ? `${baseName()}, the baseline` : condLabel(m.conds[i]);
       ctx.fillStyle = rgb(i < 0 ? C.ink3 : r === 2 ? C.sel : hot && hot.r === r ? C.ink : C.ink2);
       ctx.fillText(clip(ctx, label, lw - 28), x0 + lw - 22, y + PIN_H / 2 + 1);
     });
@@ -383,24 +391,25 @@
     const what = g ? `the share of each cell set expressing ${g}` : "the share of cells in each cell set";
     const cap = {
       pct: `Each square is ${what}`,
-      delta: `Each square is the change in ${what}, against DMSO on the same plate`,
-      z: `Each square is ${what} as a z-score: ${m.z_method === "robust" ? "each well against every well on its plate" : "the drug's samples against the DMSO samples"}`,
+      delta: `Each square is the change in ${what}, against ${baseName()} on the same plate`,
+      z: `Each square is ${what} as a z-score: ${m.z_method === "robust" ? "each well against every well on its plate" : `the drug's samples against ${baseName()}'s samples`}`,
     }[S.mode];
     $("#caption").innerHTML = `<b>${esc(cap)}.</b> ${S.rows.length} ${m.dataset === "megafin" ? "drug-doses" : "drugs"} against ${S.cols.length} ${typeWord()}. `
       + `Hover a square to read it; click a drug, or the name of a cell set, for its page below the plate.`;
     const lo = S.mode === "pct" ? "0" : S.mode === "z" ? "−4" : ppF(-S.max);
     const hi = S.mode === "pct" ? pctF(S.max) : S.mode === "z" ? "+4" : ppF(S.max);
-    const words = g ? ["lower than DMSO", "higher"] : ["fewer cells than DMSO", "more"];
+    const words = g ? [`lower than ${baseName()}`, "higher"] : [`fewer cells than ${baseName()}`, "more"];
     $("#legend").innerHTML = `<span class="lhead">scale</span><span class="ramp">${lo}<i class="bar" style="background:${gradient()}"></i>${hi}</span>`
       + (S.mode === "pct" ? "" : `<span><i class="sw" style="background:${rgb(C.down)}"></i>${words[0]}</span><span><i class="sw" style="background:${rgb(C.up)}"></i>${words[1]}</span>`)
       + `<span>bare paper: too few cells to say</span>`;
     const zText = m.z_method === "robust"
       ? "How surprising the gap is. A set's share wobbles from well to well even without a drug; z measures the gap in units of that ordinary wobble, taken across every well on the plate. Near 0 is ordinary, beyond ±2 unusual, beyond ±3 rare. Each drug-dose is a single well, so a large z is a lead to follow, not a verdict."
-      : "How surprising the gap is, given how much the drug's samples and DMSO's samples vary among themselves (a Welch t). Beyond ±2 is unlikely to be chance alone.";
+      : `How surprising the gap is, given how much the drug's samples and ${baseName()}'s samples vary among themselves (a Welch t). Beyond ±2 is unlikely to be chance alone.`;
+    const ex = examples(TM.matrices(m, S.layer));
     $("#reading").innerHTML = `<span class="lhead">reading a square</span><dl>`
-      + `<div><dt>share %</dt><dd>${g ? `Of a set's cells, the percentage that express ${esc(g)}.` : "Of all a drug's cells, the percentage that fall in a cell set."} The % proportion view colours by this.</dd></div>`
-      + `<div><dt>&Delta; pp</dt><dd>The drug's share minus DMSO's share on the same plate, in percentage points: a set that goes from 2% to 3% of the cells is +1 pp. Ochre squares sit above DMSO, indigo below.</dd></div>`
-      + `<div><dt>z</dt><dd>${zText}</dd></div></dl>`;
+      + `<div><dt>share %</dt><dd>${g ? `Of a set's cells, the percentage that express ${esc(g)}.` : "Of all a drug's cells, the percentage that fall in a cell set."} The % proportion view colours by this.${ex.share}</dd></div>`
+      + `<div><dt>&Delta; pp</dt><dd>The drug's share minus ${esc(baseName())}'s share on the same plate, in percentage points: a set that goes from 2% to 3% of the cells is +1 pp. Ochre squares sit above the baseline, indigo below.${ex.delta}</dd></div>`
+      + `<div><dt>z</dt><dd>${zText}${ex.z}</dd></div></dl>`;
     const tiny = hiddenTiny(), minN = MIN_TYPE_N[S.ds] || 0;
     $("#status").innerHTML = (S.notice ? `<b>${esc(S.notice)}</b> ` : "")
       + (tiny ? `${tiny} ${typeWord()} of fewer than ${minN} cells are left off; <button data-act="tiny">show them</button>. `
@@ -408,12 +417,55 @@
       + `How these numbers are made, and what they do not show: <button data-act="notes">the notes</button>.`;
   }
 
+  // Worked examples for the reading key, drawn from the plate as it stands (visible rows and sets,
+  // umbrella sets left out), so they move with every filter, dose and baseline.
+  function examples(mats) {
+    const m = S.m, nt = m.nt, b = m.base, g = geneName();
+    const V = mats.pct, D = mats.delta, Z = mats.z;
+    const rows = S.rows.filter((i) => !m.conds[i].control && i !== b), cols = S.cols.filter((t) => !m.types[t].umbrella);
+    const nm = (t) => `<button class="lnk" data-type="${t}">${esc(m.types[t].name)}</button>`;
+    const dr = (i) => `<button class="lnk" data-cond="${i}">${esc(condLabel(m.conds[i]))}</button>`;
+    const hd = '<span class="exh">for example</span>';
+    const out = { share: "", delta: "", z: "" };
+    const inSet = (t) => (g ? `of ${esc(m.types[t].name)} cells express <i>${esc(g)}</i>` : `of cells are ${nm(t)}`);
+    const byShare = cols.filter((t) => V[b * nt + t] > 0).sort((x, y) => V[b * nt + y] - V[b * nt + x]);
+    if (byShare.length > 1) {
+      const hi = byShare[0], lo = byShare[byShare.length - 1];
+      out.share = `<p class="ex">${hd}in ${esc(baseName())}, <b>${pctF(V[b * nt + hi])}</b> ${inSet(hi)}, the most of any set here, `
+        + `while ${g ? `for ${esc(m.types[lo].name)} it is` : `${nm(lo)} makes up`} only <b>${pctF(V[b * nt + lo])}</b>. `
+        + `A share says how common a cell type is, not yet whether a drug changed it.</p>`;
+    }
+    const cells = [];
+    for (const i of rows) for (const t of cols) {
+      const k = i * nt + t;
+      if (Number.isFinite(V[k]) && Number.isFinite(D[k]) && Number.isFinite(Z[k])) cells.push({ i, t, k, d: Math.abs(D[k]), z: Math.abs(Z[k]) });
+    }
+    if (!cells.length) return out;
+    const big = cells.reduce((a, c) => (c.d > a.d ? c : a));
+    const fromTo = (c) => `from <b>${pctF(V[c.k] - D[c.k])}</b> to <b>${pctF(V[c.k])}</b>`;
+    out.delta = `<p class="ex">${hd}${dr(big.i)} takes ${g ? `the share of ${nm(big.t)} cells expressing <i>${esc(g)}</i>` : nm(big.t)} ${fromTo(big)}, `
+      + `<b>&Delta; ${ppF(D[big.k])}</b>: out of every 100 ${g ? `${esc(m.types[big.t].name)} ` : ""}cells, about ${(big.d * 100).toFixed(1)} `
+      + `${D[big.k] >= 0 ? "more" : "fewer"} ${g ? "express it" : "are of that type"} than in ${esc(baseName())}. `
+      + `The biggest gap on the plate; the same Δ means more for a rare set than a common one, which is what z is for.</p>`;
+    const quiet = cells.filter((c) => c.z >= 3).sort((x, y) => x.d - y.d)[0];
+    const dq = TM.quantile(cells.map((c) => c.d), 0.9);
+    const loud = cells.filter((c) => c.d >= dq && c !== quiet).sort((x, y) => x.z - y.z)[0];
+    const vary = m.z_method === "robust" ? "from well to well" : "from sample to sample";
+    if (quiet) {
+      out.z = `<p class="ex">${hd}${dr(quiet.i)} moves ${nm(quiet.t)} by only <b>${ppF(D[quiet.k])}</b> yet scores <b>z ${zF(Z[quiet.k])}</b>: `
+        + `that set hardly varies ${vary}, so even a small shift stands out.`
+        + (loud ? ` By contrast, ${dr(loud.i)} moves ${nm(loud.t)} by <b>${ppF(D[loud.k])}</b> but scores only <b>z ${zF(Z[loud.k])}</b>: `
+          + `that set swings about that much ${vary} anyway.` : "") + `</p>`;
+    }
+    return out;
+  }
+
   function chips() {
     const a = anchorIdx(), m = S.m;
-    $("#chipBaseT").textContent = m.baseline;
+    if (document.activeElement !== $("#baseQ")) $("#baseQ").value = baseName();
+    document.querySelector("#modeSeg [data-mode=delta]").innerHTML = `&Delta; ${esc(baseShort())}`;
     if (document.activeElement !== $("#refQ")) $("#refQ").value = a >= 0 ? condLabel(m.conds[a]) : refName();
     if (document.activeElement !== $("#drugQ")) $("#drugQ").value = S.focus >= 0 ? condLabel(m.conds[S.focus]) : "";
-    $("#chipBase").setAttribute("aria-pressed", String(!!S.detail && S.detail.kind === "cond" && S.detail.i === m.base));
     $("#sortSel option[value=similar]").textContent = `most like ${refName()}`;
     document.querySelectorAll("#modeSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === S.mode)));
     document.querySelectorAll("#dsSwitch button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.ds === S.ds)));
@@ -429,6 +481,7 @@
     if (S.gene >= 0) p.set("gene", m.genes[S.gene]);
     if (m.doses.length && S.dose !== m.doses[0]) p.set("dose", S.dose || "both");
     if (S.ref && S.ref !== m.anchor) p.set("ref", S.ref);
+    if (m.conds[m.base].id !== m.baseline) p.set("base", m.conds[m.base].id);
     try { history.replaceState(null, "", `${location.pathname}?${p}`); } catch { /* sandboxed frame */ }
   }
 
@@ -497,7 +550,7 @@
     if (!isBase) {
       const rowsHtml = ranked.slice(0, 10).map((t) => `<tr><td>${typeBtn(t)}</td><td class="n ${dr[t] >= 0 ? "up" : "dn"}">${ppF(dr[t])}</td><td class="n">${zF(zr[t])}</td></tr>`).join("");
       h += section("Strongest affected populations",
-        ranked.length ? `<table><thead><tr><th>population</th><th class="n">&Delta; DMSO</th><th class="n">z</th></tr></thead><tbody>${rowsHtml}</tbody></table>`
+        ranked.length ? `<table><thead><tr><th>population</th><th class="n">&Delta; ${esc(baseShort())}</th><th class="n">z</th></tr></thead><tbody>${rowsHtml}</tbody></table>`
           : `<p class="note">No population has enough cells to score.</p>`);
     }
 
@@ -544,8 +597,8 @@
     const tr = (k) => `<tr><td>${condBtn(k)}</td><td class="n ${dOf(k) >= 0 ? "up" : "dn"}">${ppF(dOf(k))}</td><td class="n">${zF(zOf(k))}</td></tr>`;
     h += section("Strongest affected populations",
       `<p class="note" style="margin:0 0 8px">For a population, the drugs that move it most.</p>`
-      + `<table><thead><tr><th>swell it</th><th class="n">&Delta; DMSO</th><th class="n">z</th></tr></thead><tbody>${up.map(tr).join("")}</tbody></table>`
-      + `<table style="margin-top:10px"><thead><tr><th>thin it</th><th class="n">&Delta; DMSO</th><th class="n">z</th></tr></thead><tbody>${down.map(tr).join("")}</tbody></table>`);
+      + `<table><thead><tr><th>swell it</th><th class="n">&Delta; ${esc(baseShort())}</th><th class="n">z</th></tr></thead><tbody>${up.map(tr).join("")}</tbody></table>`
+      + `<table style="margin-top:10px"><thead><tr><th>thin it</th><th class="n">&Delta; ${esc(baseShort())}</th><th class="n">z</th></tr></thead><tbody>${down.map(tr).join("")}</tbody></table>`);
 
     if (a >= 0) {
       const az = zOf(a);
@@ -612,19 +665,19 @@
     if (!Number.isFinite(v)) return `${head}<p class="d">Too few cells here to say anything.</p>`;
     const where = c.units.length === 1 ? (m.dataset === "megafin" ? "this well" : "this sample") : `its ${c.units.length} ${unitWord(c.units.length)}`;
     if (h.i === m.base) {
-      return `${head}<p><b class="v">${pctF(v)}</b> of DMSO's cells ${g ? `in this set express <i>${esc(g)}</i>` : `are ${set}`}. `
-        + `DMSO is the baseline: every other row is measured against it, so its own gap is zero.</p>${count}`;
+      return `${head}<p><b class="v">${pctF(v)}</b> of ${esc(baseName())}'s cells ${g ? `in this set express <i>${esc(g)}</i>` : `are ${set}`}. `
+        + `It is the baseline: every other row is measured against it, so its own gap is zero.</p>${count}`;
     }
-    const share = g ? `<b class="v">${pctF(v)}</b> of the ${set} cells in ${where} express <i>${esc(g)}</i>, against ${pctF(base)} in DMSO.`
-                    : `<b class="v">${pctF(v)}</b> of the cells in ${where} are ${set}, against ${pctF(base)} in DMSO.`;
+    const share = g ? `<b class="v">${pctF(v)}</b> of the ${set} cells in ${where} express <i>${esc(g)}</i>, against ${pctF(base)} in ${esc(baseName())}.`
+                    : `<b class="v">${pctF(v)}</b> of the cells in ${where} are ${set}, against ${pctF(base)} in ${esc(baseName())}.`;
     const ratio = v / base;
-    const fold = base > 0 && v > 0 ? ` That is ${ratio.toFixed(ratio < 10 ? 1 : 0)} times DMSO's share.` : "";
+    const fold = base > 0 && v > 0 ? ` That is ${ratio.toFixed(ratio < 10 ? 1 : 0)} times ${esc(baseName())}'s share.` : "";
     const delta = `<b class="v ${d >= 0 ? "up" : "dn"}">&Delta; ${ppF(d)}</b> is that gap in percentage points: `
-      + `${Math.abs(d * 100).toFixed(2)} points ${d >= 0 ? "above" : "below"} DMSO.${fold}`;
+      + `${Math.abs(d * 100).toFixed(2)} points ${d >= 0 ? "above" : "below"} ${esc(baseName())}.${fold}`;
     const az = Math.abs(z);
     const verdict = !Number.isFinite(z) ? "can't be judged here" : az < 1 ? "is ordinary" : az < 2 ? "is a modest shift" : az < 3 ? "is unusual" : "is rare, among the strongest";
     const how = m.z_method === "robust" ? "next to how much this set normally varies from well to well on the plate"
-                                        : "given how much the drug's samples and DMSO's samples vary among themselves";
+                                        : `given how much the drug's samples and ${esc(baseName())}'s samples vary among themselves`;
     const zl = `<b class="v">z ${zF(z)}</b> says how surprising the gap is, ${how}: it ${verdict}${Number.isFinite(z) ? " (0 is typical, ±2 unusual, ±3 rare)" : ""}.`;
     return `${head}<p>${share}</p><p>${delta}</p><p>${zl}</p>${count}`;
   }
@@ -710,6 +763,14 @@
         .map((d) => ({ key: d, label: d, sub: d === refName() ? "the reference now" : d === S.m.anchor ? "the default" : "" })),
       (d) => { if (setRef(d)) { S.detail = { kind: "cond", i: anchorIdx() }; render(); } },
       () => { const a = anchorIdx(); return a >= 0 ? condLabel(S.m.conds[a]) : refName(); });
+    // the baseline (first pinned row): the controls first, then any drug at one dose
+    wireCombo($("#baseQ"), $("#baseList"),
+      (s) => S.m.conds.map((c, i) => [c, i])
+        .filter(([c]) => condLabel(c).toLowerCase().includes(s))
+        .sort(([a], [b]) => (b.control - a.control) || condLabel(a).localeCompare(condLabel(b)))
+        .map(([c, i]) => ({ key: i, label: condLabel(c), sub: i === S.m.base ? "the baseline now" : c.control ? "a control" : c.plate })),
+      (i) => { setBase(i); S.detail = { kind: "cond", i }; render(); },
+      () => baseName());
     document.addEventListener("keydown", (e) => {
       if (e.key === "/" && !/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) { e.preventDefault(); $("#drugQ").focus(); }
     });
@@ -795,6 +856,8 @@
     S.typeQ = "";
     S.ref = "";
     if (P.get("ref")) setRef(P.get("ref"));
+    const b0 = m.conds.findIndex((c) => c.id === P.get("base"));
+    if (b0 >= 0) setBase(b0);
     S.tissue = m.tissues.includes(P.get("tissue")) ? P.get("tissue") : "";
     S.dose = P.get("dose") === "both" ? "" : m.doses.includes(P.get("dose")) ? P.get("dose") : m.doses[0] || "";
     if (["pct", "delta", "z"].includes(P.get("mode"))) S.mode = P.get("mode");
@@ -835,7 +898,6 @@
       const b = e.target.closest("button");
       if (b) { S.expand = b.dataset.view === "expanded"; $("#rowscroll").scrollTop = 0; render(); }
     });
-    $("#chipBase").addEventListener("click", () => { if (S.m) { S.detail = { kind: "cond", i: S.m.base }; render(); } });
     const gq = $("#geneQ");
     const tryGene = () => {
       if (!S.m) return;
@@ -849,6 +911,11 @@
     gq.addEventListener("input", tryGene);
     gq.addEventListener("change", tryGene);
     $("#geneClear").addEventListener("click", () => { gq.classList.remove("bad"); setGene(-1); });
+    $("#reading").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-cond],[data-type]");
+      if (!b) return;
+      if (b.dataset.cond != null) openCond(+b.dataset.cond); else openType(+b.dataset.type);
+    });
     $("#detail").addEventListener("click", (e) => {
       const b = e.target.closest("[data-cond],[data-type]");
       if (!b) return;
