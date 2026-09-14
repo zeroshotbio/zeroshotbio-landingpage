@@ -12,6 +12,8 @@
    where a direction must be told apart (ochre = more cells than DMSO, indigo grey
    = fewer), madder reserved for the drug you chose. Only the FURNITURE — tissue
    brackets and rules — carries the pen wobble; no cell is ever jittered.
+   Every control that changes the plate sits under the plate rule, as a real key:
+   bordered paper with a small ink shadow, the chosen one inked in.
 --------------------------------------------------------------------------- */
 :root{
   --paper:#f3ede1;
@@ -33,8 +35,10 @@
 
   --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
   --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  --key-shadow:2px 2px 0 rgba(43,34,25,.16);
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
 body{
   margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);
@@ -60,10 +64,6 @@ h1{font-size:clamp(30px,4.4vw,50px);font-weight:400;line-height:1.12;margin:0 0 
 h1 em{font-style:italic}
 .dek{font-style:italic;color:var(--ink-2);font-size:clamp(15px,1.7vw,18.5px);max-width:700px;margin:14px auto 0;line-height:1.55}
 .byline{font-family:var(--sans);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin-top:30px;min-height:1.6em}
-.dsw{display:inline-flex;gap:26px;margin-top:14px;font-family:var(--sans);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase}
-.dsw button{color:var(--ink-3);padding:2px 0;border-bottom:1px solid transparent}
-.dsw button:hover{color:var(--ink)}
-.dsw button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--ink)}
 .rule-orn{display:block;margin:30px auto 0;width:220px;height:14px;opacity:.75}
 
 /* prose */
@@ -71,55 +71,64 @@ section.prose{max-width:660px;margin:52px auto 0}
 section.prose p{margin:0 0 1.05em}
 section.prose p.lead::first-letter{float:left;font-size:3.35em;line-height:.84;padding:.06em .1em 0 0;font-weight:400}
 
-/* the plate */
-figure.plate{max-width:1320px;margin:80px auto 0}
+/* the plate runs the full width of the sheet */
+figure.plate{margin:80px 0 0}
 .plate-head{display:flex;align-items:baseline;gap:16px;margin-bottom:6px;border-bottom:1px solid var(--ink);padding-bottom:7px}
 .plate-num{font-family:var(--sans);font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
 .plate-title{font-size:20px;font-style:italic;font-weight:400;margin:0}
 .plate-when{margin-left:auto;font-family:var(--sans);font-size:11px;letter-spacing:.13em;color:var(--ink-3);white-space:nowrap}
 
-/* the comparison, set as a sentence */
-.compare{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 10px;margin:20px 0 6px;font-size:18px}
+/* keys: every control that changes the plate */
+.lbl{font-family:var(--sans);font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3)}
+.seg{display:inline-flex}
+.seg button,.field,.chip{font-family:var(--serif);font-size:14.5px;color:var(--ink);background-color:var(--paper);
+  border:1px solid var(--ink-2);box-shadow:var(--key-shadow)}
+.seg button{padding:5px 14px;font-variant:small-caps;letter-spacing:.05em;line-height:1.35;white-space:nowrap}
+.seg button+button{margin-left:-1px}
+.seg button:first-child{border-radius:3px 0 0 3px}
+.seg button:last-child{border-radius:0 3px 3px 0}
+.seg button:hover{background-color:var(--paper-deep)}
+.seg button[aria-pressed="true"]{background-color:var(--ink);color:var(--paper);border-color:var(--ink);
+  box-shadow:inset 1px 1px 3px rgba(0,0,0,.4);position:relative;z-index:1}
+.seg button:focus-visible,.field:focus-visible,.chip:focus-visible,#drugQ:focus{outline:2px solid var(--select);outline-offset:2px}
+.field{padding:5px 10px;border-radius:3px;font-style:italic;min-width:0;line-height:1.35}
+.field::placeholder{color:var(--ink-3)}
+.field:hover{background-color:var(--paper-deep)}
+select.field{-webkit-appearance:none;appearance:none;padding-right:28px;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink-2) 50%),linear-gradient(135deg,var(--ink-2) 50%,transparent 50%);
+  background-position:right 13px top 54%,right 9px top 54%;background-size:4px 4px;background-repeat:no-repeat}
+input.field{width:12em}
+#geneQ{width:9em;padding-right:26px}
+#geneQ.bad{border-color:var(--select)}
+.fieldwrap{position:relative;display:inline-flex}
+.x{position:absolute;right:8px;top:50%;transform:translateY(-52%);font:17px var(--serif);color:var(--ink-3)}
+.x:hover{color:var(--ink)}
+
+/* the comparison, set as a sentence of keys */
+.compare{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:18px 0 0;font-size:18px}
 .compare .w{font-style:italic;color:var(--ink-3)}
-.chip{font-style:italic;border-bottom:1px solid var(--rule);display:inline-flex;align-items:baseline;gap:7px;line-height:1.3}
-.chip:hover,.chip[aria-pressed="true"]{border-bottom-color:var(--ink)}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none;transform:translateY(-1px)}
+.chip{font-style:italic;display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:3px;font-size:16px}
+.chip:hover{background-color:var(--paper-deep)}
+.chip[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 1px 1px 3px rgba(43,34,25,.25)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
 .d0{background:var(--ink-3)} .d1{background:var(--t3)} .d2{background:var(--select)}
-.search{position:relative;display:inline-flex;align-items:baseline;gap:7px}
-#drugQ{font:italic 18px var(--serif);color:var(--select);background:transparent;border:0;border-bottom:1px solid var(--select);
-       padding:0 2px 1px;width:15em;border-radius:0;line-height:1.3}
+.search{position:relative;display:inline-flex;align-items:center}
+.search .dot{position:absolute;left:12px;pointer-events:none}
+#drugQ{font:italic 16px var(--serif);color:var(--select);background-color:var(--paper);border:1px solid var(--select);border-radius:3px;
+       box-shadow:var(--key-shadow);padding:4px 12px 4px 28px;width:17em;line-height:1.35}
 #drugQ::placeholder{color:var(--ink-3)}
-#drugQ:focus{outline:none;border-bottom-width:2px;padding-bottom:0}
 #drugList{position:absolute;z-index:20;left:0;top:calc(100% + 8px);margin:0;padding:6px 0;list-style:none;width:max(100%,330px);
           max-height:340px;overflow:auto;background:var(--paper);border:1px solid var(--ink);box-shadow:3px 3px 0 rgba(43,34,25,.10);font-size:14.5px;font-style:normal}
 #drugList li{padding:3px 14px;display:flex;justify-content:space-between;align-items:baseline;gap:14px;cursor:pointer}
 #drugList li span{font-family:var(--sans);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
 #drugList li[aria-selected="true"]{background:var(--paper-deep)}
 
-/* the quiet toolbar: small sans labels, underlined italic fields, no boxes */
-.toolbar{display:flex;align-items:baseline;flex-wrap:wrap;gap:12px 24px;padding:12px 0 14px;border-bottom:1px solid var(--rule-2);
-         font-family:var(--sans);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
-.toolbar label{display:inline-flex;align-items:baseline;gap:8px}
-.field{font:italic 14.5px var(--serif);letter-spacing:0;text-transform:none;color:var(--ink);background:transparent;border:0;
-       border-bottom:1px solid var(--rule);padding:0 2px 1px;border-radius:0;min-width:0}
-.field:focus{outline:none;border-bottom-color:var(--ink)}
-.field::placeholder{color:var(--ink-3)}
-select.field{-webkit-appearance:none;appearance:none;padding-right:15px;cursor:pointer;
-  background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);
-  background-position:right 5px top 58%,right 1px top 58%;background-size:4px 4px;background-repeat:no-repeat}
-#typeQ{width:11em} #geneQ{width:8em}
-#geneQ.bad{border-bottom-color:var(--select)}
-.x{font:15px var(--serif);color:var(--ink-3);letter-spacing:0}
-.seg{display:inline-flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden;align-self:center}
-.seg button{font-family:var(--sans);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);padding:5px 12px}
-.seg button+button{border-left:1px solid var(--rule)}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
-.textbtn{font-family:var(--sans);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2);border-bottom:1px solid var(--rule)}
-.textbtn:hover{border-bottom-color:var(--ink)}
+.controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 24px;margin-top:16px;padding:14px 0 18px;
+          border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2)}
+.ctrl{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 
-/* figure + margin notes */
-.body{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:40px;align-items:start;margin-top:20px}
-.figcol{min-width:0}
+/* the figure */
+.figcol{margin-top:22px;min-width:0}
 .hmwrap{overflow-x:auto}
 .hmwrap canvas{display:block;cursor:crosshair}
 .rowscroll{overflow-y:auto;overflow-x:hidden}
@@ -129,30 +138,33 @@ select.field{-webkit-appearance:none;appearance:none;padding-right:15px;cursor:p
 .legend .ramp{display:inline-flex;align-items:center;gap:8px}
 .legend i.bar{display:inline-block;width:150px;height:7px}
 .legend .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;transform:translateY(1px)}
-figcaption{font-size:14px;color:var(--ink-2);margin-top:12px;max-width:760px;line-height:1.6}
+figcaption{font-size:14px;color:var(--ink-2);margin-top:12px;max-width:820px;line-height:1.6}
 figcaption b{font-weight:600;color:var(--ink)}
-.status{font-size:12.5px;font-style:italic;color:var(--ink-3);margin:8px 0 0;max-width:760px;line-height:1.55}
+.status{font-size:12.5px;font-style:italic;color:var(--ink-3);margin:8px 0 0;max-width:820px;line-height:1.55}
 .status button{font-style:italic;border-bottom:1px solid var(--rule)}
 .status b{font-weight:400;color:var(--select)}
 
-aside{position:sticky;top:22px;border-left:1px solid var(--rule-2);padding:2px 0 16px 26px;max-height:calc(100vh - 44px);overflow-y:auto;font-size:14px}
-aside .dk{font-family:var(--sans);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-3)}
-aside h2{font-weight:400;font-style:italic;font-size:23px;line-height:1.25;margin:4px 0 2px}
-aside .meta{font-size:13px;font-style:italic;color:var(--ink-3);margin:0 0 4px}
-aside section{margin-top:18px;padding-top:10px;border-top:1px solid var(--rule-2)}
-aside h3{font-family:var(--sans);font-weight:500;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);margin:0 0 9px}
-aside p{margin:0 0 6px}
-aside table{width:100%;border-collapse:collapse;font-size:13.5px}
-aside th{font-family:var(--sans);font-weight:500;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:0 4px 5px;border-bottom:1px solid var(--ink)}
-aside td{padding:4px;border-bottom:1px solid var(--rule-2);vertical-align:top;line-height:1.35}
-aside .n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* the page for whatever you clicked, as a row under the plate */
+#detail{margin-top:36px;border-top:1px solid var(--ink);padding-top:12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:0 48px;font-size:14px;align-items:start}
+#detail .dhead{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 18px;margin-bottom:2px}
+#detail .dk{font-family:var(--sans);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-3)}
+#detail h2{font-weight:400;font-style:italic;font-size:24px;line-height:1.25;margin:0}
+#detail .meta{font-size:13px;font-style:italic;color:var(--ink-3);margin:0}
+#detail section{margin-top:12px;padding-top:10px;border-top:1px solid var(--rule-2);min-width:0}
+#detail h3{font-family:var(--sans);font-weight:500;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);margin:0 0 9px}
+#detail p{margin:0 0 6px}
+#detail table{width:100%;border-collapse:collapse;font-size:13.5px}
+#detail th{font-family:var(--sans);font-weight:500;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:0 4px 5px;border-bottom:1px solid var(--ink)}
+#detail td{padding:4px;border-bottom:1px solid var(--rule-2);vertical-align:top;line-height:1.35}
+#detail .n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .lnk{text-align:left;border-bottom:1px solid var(--rule);line-height:1.35}
 .lnk:hover{border-bottom-color:var(--ink)}
 .big{font-style:italic;font-size:28px;margin-right:10px}
 .keys{display:flex;flex-wrap:wrap;gap:3px 14px;font-size:12.5px;font-style:italic;color:var(--ink-2);margin:0 0 6px}
-.keys span{display:inline-flex;align-items:baseline;gap:6px}
+.keys span{display:inline-flex;align-items:center;gap:6px}
 .note{font-size:12.5px;font-style:italic;color:var(--ink-3);margin:6px 0 0;line-height:1.5}
-aside svg{display:block;overflow:visible}
+#detail svg{display:block;overflow:visible;max-width:460px}
 svg text{font-family:var(--serif);font-size:10.5px;fill:var(--ink-2)}
 svg .k0{fill:var(--ink-3);opacity:.75} svg .k1{fill:var(--t3)} svg .k2{fill:var(--select)}
 svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3);opacity:.5} svg .me{stroke:var(--select);stroke-width:2}
@@ -168,15 +180,15 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
      padding:8px 12px;font-size:13px;line-height:1.45;max-width:340px}
 #tip b{font-weight:400;font-style:italic;font-size:14.5px}
 
-@media(max-width:1020px){
-  .body{grid-template-columns:minmax(0,1fr)}
-  aside{position:static;max-height:none;border-left:0;border-top:1px solid var(--ink);padding:14px 0 0}
+@media(max-width:1000px){
+  #detail{grid-template-columns:minmax(0,1fr)}
 }
 @media(max-width:700px){
   .sheet{padding:0 18px 80px}
   .plate-when{display:none}
   .compare{font-size:16px}
-  #drugQ{font-size:16px;width:12em}
+  #drugQ{width:13em}
+  .controls{gap:12px 16px}
 }
 </style>
 </head>
@@ -189,7 +201,6 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
     <p class="dek">Every drug in the screen set against the DMSO beside it on its plate: which populations of cells it thins,
       which it swells, and whether it moves them the way Sorafenib does.</p>
     <div class="byline" id="byline"></div>
-    <div class="dsw" id="dsSwitch" role="group" aria-label="Dataset"></div>
     <svg class="rule-orn" viewBox="0 0 220 14" aria-hidden="true">
       <path d="M2 7h84M134 7h84" stroke="#8b7d69" stroke-width="1" fill="none"/>
       <path d="M96 7c4-5 8-5 14 0 6 5 10 5 14 0" stroke="#8b7d69" stroke-width="1" fill="none"/>
@@ -199,7 +210,7 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
   <section class="prose">
     <p class="lead">Read across a row to see what one drug does to every kind of cell; read down a column to see which drugs
       move one kind of cell. Three rows stay pinned at the top of the plate: DMSO, the vehicle every drug was dissolved in;
-      Sorafenib, the reference; and whichever drug you name. Anything you click opens its own page in the margin.</p>
+      Sorafenib, the reference; and whichever drug you name. Anything you click opens its own page below the plate.</p>
   </section>
 
   <figure class="plate" id="plate1">
@@ -218,39 +229,45 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
                role="combobox" aria-expanded="false" aria-controls="drugList" aria-label="Name a drug to compare">
         <ul id="drugList" role="listbox" hidden></ul>
       </span>
-      <label class="w" id="doseWrap">rows at <select id="doseSel" class="field"></select></label>
     </div>
 
-    <div class="toolbar" aria-label="Filters">
-      <div class="seg" id="modeSeg" role="group" aria-label="Value shown">
-        <button data-mode="pct">% proportion</button><button data-mode="delta">&Delta; DMSO</button><button data-mode="z">z-score</button>
-      </div>
-      <label>tissue <select id="tissueSel" class="field"></select></label>
-      <label>cell type <input id="typeQ" class="field" type="search" list="typeList" placeholder="any" autocomplete="off"><datalist id="typeList"></datalist></label>
-      <label>gene <input id="geneQ" class="field" type="search" list="geneList" placeholder="none" autocomplete="off" spellcheck="false"><datalist id="geneList"></datalist>
-        <button class="x" id="geneClear" aria-label="Clear gene" hidden>&times;</button></label>
-      <label>order <select id="sortSel" class="field">
+    <div class="controls" aria-label="What the plate shows">
+      <div class="ctrl"><span class="lbl">dataset</span><div class="seg" id="dsSwitch" role="group" aria-label="Dataset"></div></div>
+      <div class="ctrl"><span class="lbl">each square shows</span>
+        <div class="seg" id="modeSeg" role="group" aria-label="Value shown">
+          <button data-mode="pct">% proportion</button><button data-mode="delta">&Delta; DMSO</button><button data-mode="z">z-score</button>
+        </div></div>
+      <div class="ctrl"><span class="lbl">view</span>
+        <div class="seg" id="viewSeg" role="group" aria-label="View">
+          <button data-view="expanded">expanded</button><button data-view="overview">overview</button>
+        </div></div>
+      <div class="ctrl" id="doseWrap"><span class="lbl">dose</span><select id="doseSel" class="field" aria-label="Dose"></select></div>
+      <div class="ctrl"><span class="lbl">tissue</span><select id="tissueSel" class="field" aria-label="Tissue"></select></div>
+      <div class="ctrl"><span class="lbl">cell type</span>
+        <input id="typeQ" class="field" type="search" list="typeList" placeholder="any" autocomplete="off" aria-label="Filter cell types"><datalist id="typeList"></datalist></div>
+      <div class="ctrl"><span class="lbl">gene</span>
+        <span class="fieldwrap"><input id="geneQ" class="field" type="search" list="geneList" placeholder="none" autocomplete="off" spellcheck="false" aria-label="Gene"><datalist id="geneList"></datalist>
+        <button class="x" id="geneClear" aria-label="Clear gene" hidden>&times;</button></span></div>
+      <div class="ctrl"><span class="lbl">order rows</span><select id="sortSel" class="field" aria-label="Order rows">
         <option value="response">strongest response</option>
         <option value="similar">most like Sorafenib</option>
         <option value="az">alphabetical</option>
         <option value="plate">by plate</option>
-      </select></label>
-      <button class="textbtn" id="btnRows">expand rows</button>
+      </select></div>
     </div>
 
-    <div class="body">
-      <div class="figcol">
-        <div class="hmwrap" id="hmwrap">
-          <canvas id="cvHead" aria-label="Cell-type columns"></canvas>
-          <canvas id="cvPin" aria-label="Pinned rows: DMSO, Sorafenib and the named drug"></canvas>
-          <div class="rowscroll" id="rowscroll"><canvas id="cvRows" aria-label="Drug by cell-type plate"></canvas></div>
-        </div>
-        <div class="legend" id="legend"></div>
-        <figcaption id="caption"></figcaption>
-        <p class="status" id="status">setting the plate&hellip;</p>
+    <div class="figcol">
+      <div class="hmwrap" id="hmwrap">
+        <canvas id="cvHead" aria-label="Cell-type columns"></canvas>
+        <canvas id="cvPin" aria-label="Pinned rows: DMSO, Sorafenib and the named drug"></canvas>
+        <div class="rowscroll" id="rowscroll"><canvas id="cvRows" aria-label="Drug by cell-type plate"></canvas></div>
       </div>
-      <aside id="detail" aria-live="polite"></aside>
+      <div class="legend" id="legend"></div>
+      <figcaption id="caption"></figcaption>
+      <p class="status" id="status">setting the plate&hellip;</p>
     </div>
+
+    <div id="detail" aria-live="polite"></div>
   </figure>
 
   <section class="notes" id="notes">

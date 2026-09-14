@@ -1,16 +1,17 @@
-/* tm-view.js — the /trailmaker_UI plate: the comparison sentence, the quiet toolbar, the drug x
- * cell-type plate and the margin notes. Every number comes from tm-stats.js; this file only
- * decides what to show and how it is inked.
+/* tm-view.js — the /trailmaker_UI plate: the comparison sentence, the row of keys under the plate
+ * rule, the drug x cell-type plate, and the page for whatever you click in a row below it. Every
+ * number comes from tm-stats.js; this file only decides what to show and how it is inked.
  *
  * The look is the plate style (PLATE_STYLE.md; /compass is the nearest sibling): laid paper, one
  * ink, a hand-tinted wash only where a direction must be told apart — ochre for more cells than
  * DMSO, indigo grey for fewer — and madder for the drug you chose, nothing else. The tissue
  * brackets and rules carry a small deterministic pen wobble; no cell is ever jittered.
  *
- * Scale is still the constraint: MegaFin has ~180 drug-dose rows and ~120 cell types. Rows are
- * sized to fit one plate height by default, a label is drawn only where a row or column can carry
- * one, and the rest is on hover, behind a filter, or in the margin. DMSO, Sorafenib and the named
- * drug are pinned above the rest so the comparison never scrolls away.
+ * Scale is still the constraint: MegaFin has ~180 drug-dose rows and ~120 cell types. The default
+ * (expanded) view gives every column its full name, upright, and scrolls sideways before cutting
+ * one; the overview squeezes the plate to fit and leaves names to hover. Whatever you click opens
+ * its page in a row below the plate. DMSO, Sorafenib and the named drug are pinned above the rest
+ * so the comparison never scrolls away.
  */
 (function () {
   "use strict";
@@ -20,12 +21,12 @@
   const SANS = 'ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif';
   const DATASETS = [["megafin", "MegaFin"], ["minifin", "MiniFin · Patrick's sets"]];
   const MIN_TYPE_N = { megafin: 100, minifin: 0 };
-  const HEAD_TALL = 158, HEAD_SHORT = 64, BAND_H = 20, PIN_H = 20, FIT_H = 540;
-  const headH = () => (S.geom && S.geom.cw >= 9 ? HEAD_TALL : HEAD_SHORT);
+  const HEAD_TALL = 158, HEAD_SHORT = 64, BAND_H = 20, PIN_H = 20, FIT_H = 540, NAME_PX = 10;
+  const headH = () => (S.geom ? S.geom.headH : HEAD_SHORT);
 
   const S = {
     ds: "megafin", m: null, layer: null, gene: -1, mode: "delta", tissue: "", typeQ: "", dose: "",
-    sort: "response", focus: -1, detail: null, hover: null, expand: false, showTiny: false,
+    sort: "response", focus: -1, detail: null, hover: null, expand: true, showTiny: false,
     rows: [], cols: [], pins: [], geom: null, max: 1, notice: "",
   };
   const geneCache = new Map();
@@ -164,12 +165,30 @@
     writeUrl();
   }
 
+  // Expanded (the default): every column wide enough to carry its FULL name, set upright, and the
+  // header as tall as the longest name; the plate scrolls sideways before any name is cut.
+  // Overview: the columns squeezed to fit, names on hover.
+  let measure = null;
   function geometry() {
-    const lw = innerWidth < 600 ? 128 : 208, nc = Math.max(1, S.cols.length), nr = Math.max(1, S.rows.length);
-    const cw = Math.max(3, Math.min(22, Math.floor(($("#hmwrap").clientWidth - lw - 12) / nc)));
-    const rh = S.expand ? 14 : Math.max(3, Math.min(20, Math.floor(FIT_H / nr)));
-    $("#rowscroll").style.maxHeight = S.expand ? "70vh" : "none";
-    S.geom = { lw, cw, rh, W: lw + cw * S.cols.length + 12 };
+    const wrapW = $("#hmwrap").clientWidth, nc = Math.max(1, S.cols.length), nr = Math.max(1, S.rows.length);
+    const lw = innerWidth < 600 ? 128 : 190;
+    let cw, rh, headH, names;
+    if (S.expand) {
+      cw = Math.max(10, Math.min(24, Math.floor((wrapW - lw - 12) / nc)));
+      rh = 14;
+      measure = measure || document.createElement("canvas").getContext("2d");
+      measure.font = `${NAME_PX}px ${SERIF}`;
+      const longest = Math.max(0, ...S.cols.map((t) => measure.measureText(S.m.types[t].name).width));
+      headH = Math.max(HEAD_SHORT, Math.ceil(longest) + BAND_H + 16);
+      names = "upright";
+    } else {
+      cw = Math.max(3, Math.min(22, Math.floor((wrapW - lw - 12) / nc)));
+      rh = Math.max(3, Math.min(20, Math.floor(FIT_H / nr)));
+      names = cw >= 9 ? "slant" : "none";
+      headH = names === "slant" ? HEAD_TALL : HEAD_SHORT;
+    }
+    $("#rowscroll").style.maxHeight = S.expand ? "74vh" : "none";
+    S.geom = { lw, cw, rh, headH, names, W: lw + cw * S.cols.length + 12 };
   }
 
   function fitCanvas(cv, w, h) {
@@ -220,17 +239,20 @@
       if (x1 - x0 > 24) { ctx.fillStyle = rgb(C.ink2); ctx.fillText(clip(ctx, tis, x1 - x0 - 2), x0 + 1, yb + 17); }
       j = e;
     }
-    const hot = hotType(), sel = selType();
-    if (cw >= 9) {
-      ctx.font = `${Math.min(11.5, cw + 1)}px ${SERIF}`;
+    const hot = hotType(), sel = selType(), names = S.geom.names;
+    if (names !== "none") {
+      const upright = names === "upright";
+      ctx.font = upright ? `${NAME_PX}px ${SERIF}` : `${Math.min(11.5, cw + 1)}px ${SERIF}`;
+      ctx.textBaseline = upright ? "middle" : "alphabetic";
       S.cols.forEach((t, j) => {
         ctx.save();
-        ctx.translate(lw + j * cw + cw / 2 + 2, yb - 6);
-        ctx.rotate(-Math.PI / 3);
+        ctx.translate(lw + j * cw + cw / 2 + (upright ? 0 : 2), yb - 6);
+        ctx.rotate(upright ? -Math.PI / 2 : -Math.PI / 3);
         ctx.fillStyle = rgb(t === sel ? C.sel : t === hot ? C.ink : C.ink2);
-        ctx.fillText(clip(ctx, m.types[t].name, 150), 0, 0);
+        ctx.fillText(upright ? m.types[t].name : clip(ctx, m.types[t].name, 150), 0, 0);
         ctx.restore();
       });
+      ctx.textBaseline = "alphabetic";
     } else {
       for (const t of [hot, sel]) {
         const j = S.cols.indexOf(t);
@@ -240,9 +262,9 @@
     ctx.fillStyle = rgb(C.ink3);
     ctx.font = `9.5px ${SANS}`;
     ctx.fillText(`${S.cols.length} ${typeWord().toUpperCase()}`, 4, yb + 16);
-    if (cw < 9 && S.cols.length) {
+    if (names === "none" && S.cols.length) {
       ctx.font = `italic 13px ${SERIF}`;
-      ctx.fillText("hover a column to read it; choose a tissue to widen them", 4, yb - 14);
+      ctx.fillText("hover a column to read it, or choose the expanded view to see every name", 4, yb - 14);
     }
   }
 
@@ -322,7 +344,7 @@
       z: `Each square is ${what} as a z-score: ${m.z_method === "robust" ? "each well against every well on its plate" : "the drug's samples against the DMSO samples"}`,
     }[S.mode];
     $("#caption").innerHTML = `<b>${esc(cap)}.</b> ${S.rows.length} ${m.dataset === "megafin" ? "drug-doses" : "drugs"} against ${S.cols.length} ${typeWord()}. `
-      + `Hover a square to read it; click a drug, or the name of a ${m.dataset === "minifin" ? "cell set" : "cell type"}, for its page in the margin.`;
+      + `Hover a square to read it; click a drug, or the name of a ${m.dataset === "minifin" ? "cell set" : "cell type"}, for its page below the plate.`;
     const lo = S.mode === "pct" ? "0" : S.mode === "z" ? "−4" : ppF(-S.max);
     const hi = S.mode === "pct" ? pctF(S.max) : S.mode === "z" ? "+4" : ppF(S.max);
     const words = g ? ["lower than DMSO", "higher"] : ["fewer cells than DMSO", "more"];
@@ -344,7 +366,7 @@
     $("#chipAnchor").setAttribute("aria-pressed", String(!!S.detail && S.detail.kind === "cond" && S.detail.i === a));
     document.querySelectorAll("#modeSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === S.mode)));
     document.querySelectorAll("#dsSwitch button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.ds === S.ds)));
-    $("#btnRows").textContent = S.expand ? "fit rows" : "expand rows";
+    document.querySelectorAll("#viewSeg button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.view === "expanded") === S.expand)));
   }
 
   function writeUrl() {
@@ -490,6 +512,11 @@
     const d = S.detail, el = $("#detail");
     if (!d) { el.innerHTML = `<p class="note">Click a drug or a cell type.</p>`; return; }
     el.innerHTML = d.kind === "type" ? detailType(d.i) : detailCond(d.i);
+    // the eyebrow, title and meta line run across the top of the row; the sections sit side by side under it
+    const head = document.createElement("div");
+    head.className = "dhead";
+    [...el.children].filter((c) => c.tagName !== "SECTION").forEach((c) => head.appendChild(c));
+    el.prepend(head);
   }
 
   function openCond(i) {
@@ -719,7 +746,10 @@
     $("#doseSel").addEventListener("change", (e) => { S.dose = e.target.value; render(); });
     $("#sortSel").addEventListener("change", (e) => { S.sort = e.target.value; $("#rowscroll").scrollTop = 0; render(); });
     $("#typeQ").addEventListener("input", (e) => { S.typeQ = e.target.value; render(); });
-    $("#btnRows").addEventListener("click", () => { S.expand = !S.expand; render(); });
+    $("#viewSeg").addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (b) { S.expand = b.dataset.view === "expanded"; $("#rowscroll").scrollTop = 0; render(); }
+    });
     $("#chipBase").addEventListener("click", () => { if (S.m) { S.detail = { kind: "cond", i: S.m.base }; render(); } });
     $("#chipAnchor").addEventListener("click", () => { const a = S.m && anchorIdx(); if (a >= 0) { S.detail = { kind: "cond", i: a }; render(); } });
     const gq = $("#geneQ");
