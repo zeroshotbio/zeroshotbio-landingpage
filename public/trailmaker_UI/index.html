@@ -114,14 +114,18 @@ input.field{width:12em}
 .d0{background:var(--ink-3)} .d1{background:var(--t3)} .d2{background:var(--select)}
 .search{position:relative;display:inline-flex;align-items:center}
 .search .dot{position:absolute;left:12px;pointer-events:none}
-#drugQ{font:italic 16px var(--serif);color:var(--select);background-color:var(--paper);border:1px solid var(--select);border-radius:3px;
-       box-shadow:var(--key-shadow);padding:4px 12px 4px 28px;width:17em;line-height:1.35}
-#drugQ::placeholder{color:var(--ink-3)}
-#drugList{position:absolute;z-index:20;left:0;top:calc(100% + 8px);margin:0;padding:6px 0;list-style:none;width:max(100%,330px);
+#drugQ,#refQ{font:italic 16px var(--serif);color:var(--select);background-color:var(--paper);border:1px solid var(--select);border-radius:3px;
+       box-shadow:var(--key-shadow);padding:4px 30px 4px 28px;width:17em;line-height:1.35;cursor:pointer;
+       background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);
+       background-position:right 14px top 54%,right 10px top 54%;background-size:4px 4px;background-repeat:no-repeat}
+#refQ{color:var(--t3);border-color:var(--t3);width:14em}
+#drugQ::placeholder,#refQ::placeholder{color:var(--ink-3)}
+#drugQ:hover,#refQ:hover{background-color:var(--paper-deep)}
+#drugList,#refList{position:absolute;z-index:20;left:0;top:calc(100% + 8px);margin:0;padding:6px 0;list-style:none;width:max(100%,330px);
           max-height:340px;overflow:auto;background:var(--paper);border:1px solid var(--ink);box-shadow:3px 3px 0 rgba(43,34,25,.10);font-size:14.5px;font-style:normal}
-#drugList li{padding:3px 14px;display:flex;justify-content:space-between;align-items:baseline;gap:14px;cursor:pointer}
-#drugList li span{font-family:var(--sans);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
-#drugList li[aria-selected="true"]{background:var(--paper-deep)}
+#drugList li,#refList li{padding:3px 14px;display:flex;justify-content:space-between;align-items:baseline;gap:14px;cursor:pointer}
+#drugList li span,#refList li span{font-family:var(--sans);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+#drugList li[aria-selected="true"],#refList li[aria-selected="true"]{background:var(--paper-deep)}
 
 .controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 24px;margin-top:16px;padding:14px 0 18px;
           border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2)}
@@ -138,6 +142,13 @@ input.field{width:12em}
 .legend .ramp{display:inline-flex;align-items:center;gap:8px}
 .legend i.bar{display:inline-block;width:150px;height:7px}
 .legend .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;transform:translateY(1px)}
+/* reading a square: the three numbers the hover card uses, in words */
+.reading{margin-top:14px;padding-top:12px;border-top:1px solid var(--rule-2)}
+.reading dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 34px;margin:8px 0 0}
+.reading dt{font-family:var(--sans);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:2px}
+.reading dd{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+@media(max-width:800px){.reading dl{grid-template-columns:minmax(0,1fr)}}
+.lhead{font-family:var(--sans);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3)}
 figcaption{font-size:14px;color:var(--ink-2);margin-top:12px;max-width:820px;line-height:1.6}
 figcaption b{font-weight:600;color:var(--ink)}
 .status{font-size:12.5px;font-style:italic;color:var(--ink-3);margin:8px 0 0;max-width:820px;line-height:1.55}
@@ -177,7 +188,9 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
 .colophon{margin-top:40px;font-size:12.5px;color:var(--ink-3);max-width:760px;font-style:italic}
 
 #tip{position:fixed;z-index:30;pointer-events:none;background:var(--paper);border:1px solid var(--ink);box-shadow:3px 3px 0 rgba(43,34,25,.10);
-     padding:8px 12px;font-size:13px;line-height:1.45;max-width:340px}
+     padding:9px 13px;font-size:13px;line-height:1.45;max-width:370px}
+#tip p{margin:6px 0 0}
+#tip .v{font-weight:600;font-style:normal;font-size:13px}
 #tip b{font-weight:400;font-style:italic;font-size:14.5px}
 
 @media(max-width:1000px){
@@ -199,7 +212,7 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
     <div class="eyebrow"><a href="/">zeroshot.bio</a> &nbsp;·&nbsp; a drug screen in zebrafish &nbsp;·&nbsp; a working notebook</div>
     <h1>What each drug<br>does to each <em>cell</em></h1>
     <p class="dek">Every drug in the screen set against the DMSO beside it on its plate: which populations of cells it thins,
-      which it swells, and whether it moves them the way Sorafenib does.</p>
+      which it swells, and whether it moves them the way a reference drug does.</p>
     <div class="byline" id="byline"></div>
     <svg class="rule-orn" viewBox="0 0 220 14" aria-hidden="true">
       <path d="M2 7h84M134 7h84" stroke="#8b7d69" stroke-width="1" fill="none"/>
@@ -210,7 +223,8 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
   <section class="prose">
     <p class="lead">Read across a row to see what one drug does to every kind of cell; read down a column to see which drugs
       move one kind of cell. Three rows stay pinned at the top of the plate: DMSO, the vehicle every drug was dissolved in;
-      Sorafenib, the reference; and whichever drug you name. Anything you click opens its own page below the plate.</p>
+      a reference drug (Sorafenib, until you choose another); and whichever drug you name. Anything you click opens
+      its own page below the plate.</p>
   </section>
 
   <figure class="plate" id="plate1">
@@ -221,7 +235,12 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
       <span class="w">Comparing</span>
       <button class="chip" id="chipBase"><i class="dot d0"></i><span id="chipBaseT">DMSO</span></button>
       <span class="w">with</span>
-      <button class="chip" id="chipAnchor"><i class="dot d1"></i><span id="chipAnchorT">Sorafenib</span></button>
+      <span class="search ref">
+        <i class="dot d1"></i>
+        <input id="refQ" type="search" placeholder="choose a reference drug&hellip;" autocomplete="off" spellcheck="false"
+               role="combobox" aria-expanded="false" aria-controls="refList" aria-label="Reference drug; click to choose another">
+        <ul id="refList" role="listbox" hidden></ul>
+      </span>
       <span class="w">and</span>
       <span class="search">
         <i class="dot d2"></i>
@@ -263,6 +282,7 @@ svg .pt{fill:var(--ink)} svg .ax{stroke:var(--rule)} svg .tk{stroke:var(--ink-3)
         <div class="rowscroll" id="rowscroll"><canvas id="cvRows" aria-label="Drug by cell-type plate"></canvas></div>
       </div>
       <div class="legend" id="legend"></div>
+      <div class="reading" id="reading"></div>
       <figcaption id="caption"></figcaption>
       <p class="status" id="status">setting the plate&hellip;</p>
     </div>

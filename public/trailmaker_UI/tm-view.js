@@ -27,7 +27,7 @@
   const S = {
     ds: "megafin", m: null, layer: null, gene: -1, mode: "delta", tissue: "", typeQ: "", dose: "",
     sort: "response", focus: -1, detail: null, hover: null, expand: false, showTiny: false,
-    rows: [], cols: [], pins: [], geom: null, max: 1, notice: "",
+    rows: [], cols: [], pins: [], geom: null, max: 1, notice: "", ref: "",
   };
   const geneCache = new Map();
   let C = null;
@@ -100,6 +100,19 @@
     return S.showTiny ? 0 : S.m.types.filter((t) => t.n < minN && (!S.tissue || t.tissue === S.tissue)).length;
   }
   const anchorIdx = () => TM.anchorFor(S.m, -1, S.dose || S.m.doses[0] || "");
+  const refName = () => S.ref || S.m.anchor;
+
+  // The reference drug (Sorafenib to start) can be any drug: its conditions become the anchors that
+  // the pinned row, the similarity ranking and "most like…" order all read.
+  function setRef(name) {
+    const m = S.m;
+    const ix = m.conds.map((c, i) => (c.drug === name && !c.control ? i : -1)).filter((i) => i >= 0);
+    if (!ix.length) return false;
+    S.ref = name;
+    m.anchors = ix;
+    if (ix.includes(S.focus)) S.focus = -1;
+    return true;
+  }
 
   // Rank drugs by similarity to Sorafenib among drugs at one dose, so like is compared with like.
   function simList(mats, cols, keep, dose = S.dose) {
@@ -381,6 +394,13 @@
     $("#legend").innerHTML = `<span class="lhead">scale</span><span class="ramp">${lo}<i class="bar" style="background:${gradient()}"></i>${hi}</span>`
       + (S.mode === "pct" ? "" : `<span><i class="sw" style="background:${rgb(C.down)}"></i>${words[0]}</span><span><i class="sw" style="background:${rgb(C.up)}"></i>${words[1]}</span>`)
       + `<span>bare paper: too few cells to say</span>`;
+    const zText = m.z_method === "robust"
+      ? "How surprising the gap is. A set's share wobbles from well to well even without a drug; z measures the gap in units of that ordinary wobble, taken across every well on the plate. Near 0 is ordinary, beyond ±2 unusual, beyond ±3 rare. Each drug-dose is a single well, so a large z is a lead to follow, not a verdict."
+      : "How surprising the gap is, given how much the drug's samples and DMSO's samples vary among themselves (a Welch t). Beyond ±2 is unlikely to be chance alone.";
+    $("#reading").innerHTML = `<span class="lhead">reading a square</span><dl>`
+      + `<div><dt>share %</dt><dd>${g ? `Of a set's cells, the percentage that express ${esc(g)}.` : "Of all a drug's cells, the percentage that fall in a cell set."} The % proportion view colours by this.</dd></div>`
+      + `<div><dt>&Delta; pp</dt><dd>The drug's share minus DMSO's share on the same plate, in percentage points: a set that goes from 2% to 3% of the cells is +1 pp. Ochre squares sit above DMSO, indigo below.</dd></div>`
+      + `<div><dt>z</dt><dd>${zText}</dd></div></dl>`;
     const tiny = hiddenTiny(), minN = MIN_TYPE_N[S.ds] || 0;
     $("#status").innerHTML = (S.notice ? `<b>${esc(S.notice)}</b> ` : "")
       + (tiny ? `${tiny} ${typeWord()} of fewer than ${minN} cells are left off; <button data-act="tiny">show them</button>. `
@@ -391,9 +411,10 @@
   function chips() {
     const a = anchorIdx(), m = S.m;
     $("#chipBaseT").textContent = m.baseline;
-    $("#chipAnchorT").textContent = a >= 0 ? condLabel(m.conds[a]) : m.anchor;
+    if (document.activeElement !== $("#refQ")) $("#refQ").value = a >= 0 ? condLabel(m.conds[a]) : refName();
+    if (document.activeElement !== $("#drugQ")) $("#drugQ").value = S.focus >= 0 ? condLabel(m.conds[S.focus]) : "";
     $("#chipBase").setAttribute("aria-pressed", String(!!S.detail && S.detail.kind === "cond" && S.detail.i === m.base));
-    $("#chipAnchor").setAttribute("aria-pressed", String(!!S.detail && S.detail.kind === "cond" && S.detail.i === a));
+    $("#sortSel option[value=similar]").textContent = `most like ${refName()}`;
     document.querySelectorAll("#modeSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === S.mode)));
     document.querySelectorAll("#dsSwitch button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.ds === S.ds)));
     document.querySelectorAll("#viewSeg button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.view === "expanded") === S.expand)));
@@ -407,6 +428,7 @@
     if (S.tissue) p.set("tissue", S.tissue);
     if (S.gene >= 0) p.set("gene", m.genes[S.gene]);
     if (m.doses.length && S.dose !== m.doses[0]) p.set("dose", S.dose || "both");
+    if (S.ref && S.ref !== m.anchor) p.set("ref", S.ref);
     try { history.replaceState(null, "", `${location.pathname}?${p}`); } catch { /* sandboxed frame */ }
   }
 
@@ -483,7 +505,7 @@
       const sim = simList(mats, cols, i, c.dose || S.dose);
       if (isAnchor) {
         const list = sim.filter((p) => p[0] !== i).slice(0, 8);
-        h += section("Response similarity to Sorafenib",
+        h += section(`Response similarity to ${refName()}`,
           `<p>This is the reference. The drugs whose z-score profile over the ${cols.length} ${typeWord()} on the plate looks most like it:</p>`
           + stripSVG(sim, -1)
           + `<table><tbody>${list.map(([k, r]) => `<tr><td>${condBtn(k)}</td><td class="n">r ${rF(r)}</td></tr>`).join("")}</tbody></table>`);
@@ -491,11 +513,11 @@
         const idx = sim.findIndex((p) => p[0] === i);
         const r = idx >= 0 ? sim[idx][1] : NaN;
         const peers = sim.filter((p) => p[0] !== i).slice(0, 5);
-        h += section("Response similarity to Sorafenib",
+        h += section(`Response similarity to ${refName()}`,
           `<p><span class="big">r ${rF(r)}</span><span class="d">${idx >= 0 ? `${idx + 1} of ${sim.length} drugs` : "not enough overlap"}</span></p>`
           + stripSVG(sim, i)
           + `<p class="note">Pearson r between this drug's z-score profile and ${esc(condLabel(m.conds[a] || { drug: m.anchor }))}'s, over the ${cols.length} ${typeWord()} on the plate. Each tick is a drug; the madder one is this.</p>`
-          + `<table style="margin-top:8px"><thead><tr><th>most like Sorafenib</th><th class="n">r</th></tr></thead><tbody>${peers.map(([k, rr]) => `<tr><td>${condBtn(k)}</td><td class="n">${rF(rr)}</td></tr>`).join("")}</tbody></table>`);
+          + `<table style="margin-top:8px"><thead><tr><th>most like ${esc(refName())}</th><th class="n">r</th></tr></thead><tbody>${peers.map(([k, rr]) => `<tr><td>${condBtn(k)}</td><td class="n">${rF(rr)}</td></tr>`).join("")}</tbody></table>`);
       }
     }
     return h;
@@ -529,9 +551,9 @@
       const az = zOf(a);
       const same = cands.filter((k) => !m.anchors.includes(k) && Math.sign(zOf(k)) === Math.sign(az) && Math.abs(zOf(k)) >= 2)
         .sort((x, y) => Math.abs(zOf(y)) - Math.abs(zOf(x)));
-      h += section("Response similarity to Sorafenib",
+      h += section(`Response similarity to ${refName()}`,
         `<p><span class="big">z ${zF(az)}</span><span class="d">${esc(condLabel(m.conds[a]))} here</span></p>`
-        + (Math.abs(az) < 1 ? `<p class="note">Sorafenib barely moves this population, so agreeing with it here says little.</p>`
+        + (Math.abs(az) < 1 ? `<p class="note">${esc(refName())} barely moves this population, so agreeing with it here says little.</p>`
           : `<p>${same.length} of ${cands.length - 1} drugs move it the same way at |z| of 2 or more${same.length ? ":" : "."}</p>`
             + `<table><tbody>${same.slice(0, 8).map((k) => `<tr><td>${condBtn(k)}</td><td class="n">${zF(zOf(k))}</td></tr>`).join("")}</tbody></table>`));
     }
@@ -582,12 +604,29 @@
     }
     const c = m.conds[h.i];
     if (h.j < 0) return `<b>${esc(condLabel(c))}</b> <span class="d">${esc(c.plate)}</span>`;
-    const mats = TM.matrices(m, S.layer), k = h.i * nt + h.t, g = geneName();
+    const mats = TM.matrices(m, S.layer), k = h.i * nt + h.t, g = geneName(), set = esc(m.types[h.t].name);
     const n = c.units.reduce((s, u) => s + m.counts[u * nt + h.t], 0), N = c.units.reduce((s, u) => s + m.units[u].n, 0);
-    return `<b>${esc(condLabel(c))}</b> <span class="d">${esc(c.plate)}</span><br><i>${esc(m.types[h.t].name)}</i><br>`
-      + `<span class="d">${g ? `${esc(g)}+` : "share"}</span> ${pctF(mats.pct[k])} <span class="d">against DMSO's</span> ${pctF(mats.pct[k] - mats.delta[k])}<br>`
-      + `&Delta; <span class="${mats.delta[k] >= 0 ? "up" : "dn"}">${ppF(mats.delta[k])}</span> &nbsp; z ${zF(mats.z[k])}<br>`
-      + `<span class="d">${nF(n)} of ${nF(N)} cells, ${c.units.length} ${unitWord(c.units.length)}</span>`;
+    const v = mats.pct[k], d = mats.delta[k], base = v - d, z = mats.z[k];
+    const head = `<b>${esc(condLabel(c))}</b> <span class="d">${esc(c.plate)}</span><br><i>${set}</i>`;
+    const count = `<span class="d">${nF(n)} of ${nF(N)} cells, ${c.units.length} ${unitWord(c.units.length)}.</span>`;
+    if (!Number.isFinite(v)) return `${head}<p class="d">Too few cells here to say anything.</p>`;
+    const where = c.units.length === 1 ? (m.dataset === "megafin" ? "this well" : "this sample") : `its ${c.units.length} ${unitWord(c.units.length)}`;
+    if (h.i === m.base) {
+      return `${head}<p><b class="v">${pctF(v)}</b> of DMSO's cells ${g ? `in this set express <i>${esc(g)}</i>` : `are ${set}`}. `
+        + `DMSO is the baseline: every other row is measured against it, so its own gap is zero.</p>${count}`;
+    }
+    const share = g ? `<b class="v">${pctF(v)}</b> of the ${set} cells in ${where} express <i>${esc(g)}</i>, against ${pctF(base)} in DMSO.`
+                    : `<b class="v">${pctF(v)}</b> of the cells in ${where} are ${set}, against ${pctF(base)} in DMSO.`;
+    const ratio = v / base;
+    const fold = base > 0 && v > 0 ? ` That is ${ratio.toFixed(ratio < 10 ? 1 : 0)} times DMSO's share.` : "";
+    const delta = `<b class="v ${d >= 0 ? "up" : "dn"}">&Delta; ${ppF(d)}</b> is that gap in percentage points: `
+      + `${Math.abs(d * 100).toFixed(2)} points ${d >= 0 ? "above" : "below"} DMSO.${fold}`;
+    const az = Math.abs(z);
+    const verdict = !Number.isFinite(z) ? "can't be judged here" : az < 1 ? "is ordinary" : az < 2 ? "is a modest shift" : az < 3 ? "is unusual" : "is rare, among the strongest";
+    const how = m.z_method === "robust" ? "next to how much this set normally varies from well to well on the plate"
+                                        : "given how much the drug's samples and DMSO's samples vary among themselves";
+    const zl = `<b class="v">z ${zF(z)}</b> says how surprising the gap is, ${how}: it ${verdict}${Number.isFinite(z) ? " (0 is typical, ±2 unusual, ±3 rare)" : ""}.`;
+    return `${head}<p>${share}</p><p>${delta}</p><p>${zl}</p>${count}`;
   }
 
   function showTip(html, e) {
@@ -620,46 +659,59 @@
   }
 
   // ------------------------------------------------------------------ naming a drug
-  function wireSearch() {
-    const q = $("#drugQ"), list = $("#drugList");
+  // A text field that opens a list: focus shows everything, typing filters, arrows and Enter pick.
+  function wireCombo(q, list, itemsFor, choose, restore) {
     let items = [], sel = -1;
     const mark = () => {
       [...list.children].forEach((li, k) => li.setAttribute("aria-selected", String(k === sel)));
       const li = list.children[sel];
       if (li) li.scrollIntoView({ block: "nearest" });
     };
-    const show = () => {
-      const m = S.m;
-      if (!m) return;
-      const s = q.value.trim().toLowerCase();
-      items = m.conds.map((_, i) => i).filter((i) => !m.conds[i].control && condLabel(m.conds[i]).toLowerCase().includes(s)).slice(0, 60);
+    const show = (filter) => {
+      if (!S.m) return;
+      items = itemsFor(filter.trim().toLowerCase()).slice(0, 80);
       sel = items.length ? 0 : -1;
-      list.innerHTML = items.map((i) => `<li role="option" data-i="${i}">${esc(condLabel(m.conds[i]))}<span>${esc(m.conds[i].plate)}</span></li>`).join("");
+      list.innerHTML = items.map((it, k) => `<li role="option" data-k="${k}">${esc(it.label)}<span>${esc(it.sub || "")}</span></li>`).join("");
       mark();
       list.hidden = !items.length;
       q.setAttribute("aria-expanded", String(!list.hidden));
     };
     const hide = () => { list.hidden = true; q.setAttribute("aria-expanded", "false"); };
-    const choose = (i) => { hide(); q.blur(); openCond(i); };
-    q.addEventListener("focus", () => { q.select(); show(); });
-    q.addEventListener("input", show);
+    const pick = (k) => { const it = items[k]; hide(); q.blur(); if (it) choose(it.key); };
+    q.addEventListener("focus", () => { q.select(); show(""); });
+    q.addEventListener("input", () => show(q.value));
     q.addEventListener("keydown", (e) => {
       if (e.key === "Escape") { hide(); q.blur(); return; }
       if (list.hidden) return;
       if (e.key === "ArrowDown") { sel = Math.min(items.length - 1, sel + 1); mark(); e.preventDefault(); }
       else if (e.key === "ArrowUp") { sel = Math.max(0, sel - 1); mark(); e.preventDefault(); }
-      else if (e.key === "Enter" && sel >= 0) { choose(items[sel]); e.preventDefault(); }
+      else if (e.key === "Enter" && sel >= 0) { pick(sel); e.preventDefault(); }
     });
     list.addEventListener("mousedown", (e) => {
       const li = e.target.closest("li");
-      if (li) { e.preventDefault(); choose(+li.dataset.i); }
+      if (li) { e.preventDefault(); pick(+li.dataset.k); }
     });
-    q.addEventListener("blur", () => setTimeout(() => {
-      hide();
-      if (S.m) q.value = S.focus >= 0 ? condLabel(S.m.conds[S.focus]) : "";
-    }, 120));
+    q.addEventListener("blur", () => setTimeout(() => { hide(); if (S.m) q.value = restore(); }, 120));
+  }
+
+  function wireSearch() {
+    // the named drug (third pinned row)
+    wireCombo($("#drugQ"), $("#drugList"),
+      (s) => S.m.conds.map((c, i) => [c, i])
+        .filter(([c, i]) => !c.control && !S.m.anchors.includes(i) && condLabel(c).toLowerCase().includes(s))
+        .map(([c, i]) => ({ key: i, label: condLabel(c), sub: c.plate })),
+      (i) => openCond(i),
+      () => (S.focus >= 0 ? condLabel(S.m.conds[S.focus]) : ""));
+    // the reference drug (second pinned row): any drug, both its doses follow
+    wireCombo($("#refQ"), $("#refList"),
+      (s) => [...new Set(S.m.conds.filter((c) => !c.control).map((c) => c.drug))]
+        .sort((x, y) => x.localeCompare(y))
+        .filter((d) => d.toLowerCase().includes(s))
+        .map((d) => ({ key: d, label: d, sub: d === refName() ? "the reference now" : d === S.m.anchor ? "the default" : "" })),
+      (d) => { if (setRef(d)) { S.detail = { kind: "cond", i: anchorIdx() }; render(); } },
+      () => { const a = anchorIdx(); return a >= 0 ? condLabel(S.m.conds[a]) : refName(); });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "/" && !/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) { e.preventDefault(); q.focus(); }
+      if (e.key === "/" && !/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)) { e.preventDefault(); $("#drugQ").focus(); }
     });
   }
 
@@ -741,6 +793,8 @@
     S.layer = m.propLayer;
     S.gene = -1;
     S.typeQ = "";
+    S.ref = "";
+    if (P.get("ref")) setRef(P.get("ref"));
     S.tissue = m.tissues.includes(P.get("tissue")) ? P.get("tissue") : "";
     S.dose = P.get("dose") === "both" ? "" : m.doses.includes(P.get("dose")) ? P.get("dose") : m.doses[0] || "";
     if (["pct", "delta", "z"].includes(P.get("mode"))) S.mode = P.get("mode");
@@ -782,7 +836,6 @@
       if (b) { S.expand = b.dataset.view === "expanded"; $("#rowscroll").scrollTop = 0; render(); }
     });
     $("#chipBase").addEventListener("click", () => { if (S.m) { S.detail = { kind: "cond", i: S.m.base }; render(); } });
-    $("#chipAnchor").addEventListener("click", () => { const a = S.m && anchorIdx(); if (a >= 0) { S.detail = { kind: "cond", i: a }; render(); } });
     const gq = $("#geneQ");
     const tryGene = () => {
       if (!S.m) return;
