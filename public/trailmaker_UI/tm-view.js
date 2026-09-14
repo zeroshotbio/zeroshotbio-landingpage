@@ -1,24 +1,27 @@
-/* tm-view.js — the /trailmaker_UI screen: comparison bar, filters, the drug x cell-type heatmap
- * and the detail panel. Every number comes from tm-stats.js; this file only decides what to show.
+/* tm-view.js — the /trailmaker_UI plate: the comparison sentence, the quiet toolbar, the drug x
+ * cell-type plate and the margin notes. Every number comes from tm-stats.js; this file only
+ * decides what to show and how it is inked.
  *
- * Scale is the design constraint: MegaFin has ~180 drug-dose rows and ~120 cell types. Rows are
- * fitted to the viewport by default (a few pixels each: an overview you can read at a glance),
- * a label is drawn only where a row or column is big enough to carry one, and the rest is on
- * hover, behind a filter, or in the detail panel. Three rows are pinned above the rest — DMSO,
- * Sorafenib and the searched drug — so the comparison never scrolls away.
+ * The look is the plate style (PLATE_STYLE.md; /compass is the nearest sibling): laid paper, one
+ * ink, a hand-tinted wash only where a direction must be told apart — ochre for more cells than
+ * DMSO, indigo grey for fewer — and madder for the drug you chose, nothing else. The tissue
+ * brackets and rules carry a small deterministic pen wobble; no cell is ever jittered.
+ *
+ * Scale is still the constraint: MegaFin has ~180 drug-dose rows and ~120 cell types. Rows are
+ * sized to fit one plate height by default, a label is drawn only where a row or column can carry
+ * one, and the rest is on hover, behind a filter, or in the margin. DMSO, Sorafenib and the named
+ * drug are pinned above the rest so the comparison never scrolls away.
  */
 (function () {
   "use strict";
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const store = {
-    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-    set(k, v) { try { localStorage.setItem(k, v); } catch { /* private window */ } },
-  };
-  const MONO = 'ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,Consolas,monospace';
-  const DATASETS = [["megafin", "MegaFin"], ["minifin", "MiniFin · Patrick's labels"]];
+  const SERIF = '"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif';
+  const SANS = 'ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif';
+  const DATASETS = [["megafin", "MegaFin"], ["minifin", "MiniFin · Patrick's sets"]];
   const MIN_TYPE_N = { megafin: 100, minifin: 0 };
-  const HEAD_H = 140, BAND_H = 15, PIN_H = 18;
+  const HEAD_TALL = 158, HEAD_SHORT = 64, BAND_H = 20, PIN_H = 20, FIT_H = 540;
+  const headH = () => (S.geom && S.geom.cw >= 9 ? HEAD_TALL : HEAD_SHORT);
 
   const S = {
     ds: "megafin", m: null, layer: null, gene: -1, mode: "delta", tissue: "", typeQ: "", dose: "",
@@ -41,33 +44,49 @@
   const typeWord = () => (S.m.dataset === "minifin" ? "cell sets" : "cell types");
   const geneName = () => (S.gene >= 0 ? S.m.genes[S.gene] : null);
 
-  // ------------------------------------------------------------------ colour
+  // ------------------------------------------------------------------ ink
   function hex(h) {
     h = h.replace("#", "");
     if (h.length === 3) h = h.split("").map((c) => c + c).join("");
     const n = parseInt(h, 16);
     return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   }
-  function readColors() {
-    const cs = getComputedStyle(document.body);
-    const g = (n) => hex(cs.getPropertyValue(n).trim() || "#000");
-    return { bg: g("--bg"), panel: g("--panel"), panel2: g("--panel2"), fg: g("--fg"), fg2: g("--fg2"), fg3: g("--fg3"),
-             rule: g("--rule"), up: g("--drop"), down: g("--signal"), ok: g("--ok"), hl: g("--gd") };
-  }
   const rgb = (a, al) => (al == null ? `rgb(${a.join(",")})` : `rgba(${a.join(",")},${al})`);
   const mix = (a, b, t) => a.map((x, i) => Math.round(x + (b[i] - x) * t));
-  const seqCol = (t) => rgb(mix(C.panel, C.fg, 0.9 * Math.sqrt(Math.min(1, Math.max(0, t)))));
-  const divCol = (x) => rgb(mix(C.panel, x >= 0 ? C.up : C.down, Math.pow(Math.min(1, Math.abs(x)), 0.8)));
-  function cellColor(v) {
-    if (!Number.isFinite(v)) return null;
-    return S.mode === "pct" ? seqCol(v / S.max) : divCol(v / S.max);
+  function readColors() {
+    const cs = getComputedStyle(document.documentElement);
+    const g = (n) => hex(cs.getPropertyValue(n).trim() || "#000");
+    const c = { paper: g("--paper"), deep: g("--paper-deep"), ink: g("--ink"), ink2: g("--ink-2"), ink3: g("--ink-3"),
+                rule: g("--rule"), rule2: g("--rule-2"), sel: g("--select"), anchor: g("--t3") };
+    // the two washes, deepened a little toward the ink so the strongest cells still read on paper
+    c.up = mix(g("--t1"), c.ink, 0.22);
+    c.down = mix(g("--t4"), c.ink, 0.12);
+    return c;
   }
+  const seqCol = (t) => rgb(mix(C.deep, C.ink, 0.86 * Math.sqrt(Math.min(1, Math.max(0, t)))));
+  const divCol = (x) => rgb(mix(C.deep, x >= 0 ? C.up : C.down, Math.pow(Math.min(1, Math.abs(x)), 0.8)));
+  const cellColor = (v) => (!Number.isFinite(v) ? null : S.mode === "pct" ? seqCol(v / S.max) : divCol(v / S.max));
   function gradient() {
     const stops = S.mode === "pct" ? [0, 0.25, 0.5, 0.75, 1].map(seqCol) : [-1, -0.5, 0, 0.5, 1].map(divCol);
     return `linear-gradient(90deg,${stops.join(",")})`;
   }
 
-  // ------------------------------------------------------------------ what is on screen
+  // A rule drawn as a pen would draw it. Furniture only; never a data mark.
+  function penLine(ctx, x1, y1, x2, y2, seed, color, width) {
+    const len = Math.hypot(x2 - x1, y2 - y1) || 1, n = Math.max(2, Math.ceil(len / 6));
+    const nx = -(y2 - y1) / len, ny = (x2 - x1) / len;
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const t = i / n, w = 0.42 * Math.sin(t * 9.1 + seed) + 0.28 * Math.sin(t * 23.7 + seed * 1.7);
+      const x = x1 + (x2 - x1) * t + nx * w, y = y1 + (y2 - y1) * t + ny * w;
+      if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.stroke();
+  }
+
+  // ------------------------------------------------------------------ what is on the plate
   function visibleCols() {
     const m = S.m, q = S.typeQ.trim().toLowerCase(), minN = S.showTiny ? 0 : MIN_TYPE_N[S.ds] || 0;
     return m.type_order.filter((t) => {
@@ -81,6 +100,7 @@
   }
   const anchorIdx = () => TM.anchorFor(S.m, -1, S.dose || S.m.doses[0] || "");
 
+  // Rank drugs by similarity to Sorafenib among drugs at one dose, so like is compared with like.
   function simList(mats, cols, keep, dose = S.dose) {
     const m = S.m, nt = m.nt;
     return m.conds.map((_, k) => k)
@@ -145,16 +165,15 @@
   }
 
   function geometry() {
-    const wrap = $("#hmwrap"), rs = $("#rowscroll");
-    const lw = innerWidth < 600 ? 132 : 214, nc = Math.max(1, S.cols.length), nr = Math.max(1, S.rows.length);
-    const cw = Math.max(3, Math.min(26, Math.floor((wrap.clientWidth - lw - 10) / nc)));
-    const avH = innerWidth <= 860 ? Math.round(innerHeight * 0.6) : rs.clientHeight;
-    const rh = S.expand ? 14 : Math.max(3, Math.min(22, Math.floor(avH / nr)));
-    S.geom = { lw, cw, rh, W: lw + cw * S.cols.length + 10 };
+    const lw = innerWidth < 600 ? 128 : 208, nc = Math.max(1, S.cols.length), nr = Math.max(1, S.rows.length);
+    const cw = Math.max(3, Math.min(22, Math.floor(($("#hmwrap").clientWidth - lw - 12) / nc)));
+    const rh = S.expand ? 14 : Math.max(3, Math.min(20, Math.floor(FIT_H / nr)));
+    $("#rowscroll").style.maxHeight = S.expand ? "70vh" : "none";
+    S.geom = { lw, cw, rh, W: lw + cw * S.cols.length + 12 };
   }
 
   function fitCanvas(cv, w, h) {
-    const d = window.devicePixelRatio || 1;
+    const d = Math.min(window.devicePixelRatio || 1, 2);
     cv.width = Math.max(1, Math.round(w * d));
     cv.height = Math.max(1, Math.round(h * d));
     cv.style.width = `${w}px`;
@@ -185,81 +204,83 @@
   const hotType = () => (S.hover && S.hover.t != null ? S.hover.t : -1);
 
   function paintHead() {
-    const { lw, cw, W } = S.geom, m = S.m;
+    const { lw, cw, W } = S.geom, m = S.m, HEAD_H = headH(), yb = HEAD_H - BAND_H;
     const ctx = fitCanvas($("#cvHead"), W, HEAD_H);
-    ctx.font = `9px ${MONO}`;
-    ctx.textBaseline = "middle";
-    // tissue band: one block per run of columns from the same tissue
+    // tissue brackets: a pen rule over each run of columns from one tissue, its name in italic below
+    ctx.textBaseline = "alphabetic";
+    ctx.font = `italic 11.5px ${SERIF}`;
     for (let j = 0, k = 0; j < S.cols.length; k++) {
       const tis = m.types[S.cols[j]].tissue;
       let e = j;
       while (e < S.cols.length && m.types[S.cols[e]].tissue === tis) e++;
-      const x = lw + j * cw, w = (e - j) * cw;
-      ctx.fillStyle = k % 2 ? rgb(C.panel2) : rgb(C.rule, 0.6);
-      ctx.fillRect(x, HEAD_H - BAND_H, w - 1, BAND_H);
-      if (w > 22) { ctx.fillStyle = rgb(C.fg2); ctx.fillText(clip(ctx, tis, w - 6), x + 3, HEAD_H - BAND_H / 2); }
+      const x0 = lw + j * cw + 1.5, x1 = lw + e * cw - 2.5, y = yb + 4;
+      penLine(ctx, x0, y, x1, y, 11 + k * 3.1, rgb(C.ink3), 0.7);
+      penLine(ctx, x0, y, x0 + 0.3, y - 4, 5 + k, rgb(C.ink3), 0.7);
+      penLine(ctx, x1, y, x1 - 0.3, y - 4, 7 + k, rgb(C.ink3), 0.7);
+      if (x1 - x0 > 24) { ctx.fillStyle = rgb(C.ink2); ctx.fillText(clip(ctx, tis, x1 - x0 - 2), x0 + 1, yb + 17); }
       j = e;
     }
     const hot = hotType(), sel = selType();
     if (cw >= 9) {
-      ctx.font = `${Math.min(10, cw)}px ${MONO}`;
+      ctx.font = `${Math.min(11.5, cw + 1)}px ${SERIF}`;
       S.cols.forEach((t, j) => {
         ctx.save();
-        ctx.translate(lw + j * cw + cw / 2, HEAD_H - BAND_H - 5);
+        ctx.translate(lw + j * cw + cw / 2 + 2, yb - 6);
         ctx.rotate(-Math.PI / 3);
-        ctx.fillStyle = rgb(t === hot || t === sel ? C.hl : C.fg2);
-        ctx.fillText(clip(ctx, m.types[t].name, 148), 0, 0);
+        ctx.fillStyle = rgb(t === sel ? C.sel : t === hot ? C.ink : C.ink2);
+        ctx.fillText(clip(ctx, m.types[t].name, 150), 0, 0);
         ctx.restore();
       });
+    } else {
+      for (const t of [hot, sel]) {
+        const j = S.cols.indexOf(t);
+        if (j >= 0) { ctx.fillStyle = rgb(t === sel ? C.sel : C.ink); ctx.beginPath(); ctx.arc(lw + j * cw + cw / 2, yb - 5, 2.2, 0, 7); ctx.fill(); }
+      }
     }
-    for (const t of [hot, sel]) {
-      const j = S.cols.indexOf(t);
-      if (j >= 0) { ctx.fillStyle = rgb(C.hl); ctx.fillRect(lw + j * cw, HEAD_H - 3, cw, 3); }
-    }
-    ctx.fillStyle = rgb(C.fg3);
-    ctx.font = `9px ${MONO}`;
-    ctx.textBaseline = "alphabetic";
-    ctx.fillText(`${S.cols.length} ${typeWord().toUpperCase()} →`, 6, HEAD_H - BAND_H - 6);
+    ctx.fillStyle = rgb(C.ink3);
+    ctx.font = `9.5px ${SANS}`;
+    ctx.fillText(`${S.cols.length} ${typeWord().toUpperCase()}`, 4, yb + 16);
     if (cw < 9 && S.cols.length) {
-      ctx.fillText("hover a column to read it,", 6, HEAD_H - BAND_H - 34);
-      ctx.fillText("pick a tissue to widen them", 6, HEAD_H - BAND_H - 22);
+      ctx.font = `italic 13px ${SERIF}`;
+      ctx.fillText("hover a column to read it; choose a tissue to widen them", 4, yb - 14);
     }
   }
 
   function paintCells(ctx, vals, i, y, h) {
     const { lw, cw } = S.geom, nt = S.m.nt, gx = cw > 4 ? 1 : 0, gy = h > 4 ? 1 : 0;
-    const none = rgb(C.rule, 0.35);
     S.cols.forEach((t, j) => {
-      ctx.fillStyle = cellColor(vals[i * nt + t]) || none;
+      const col = cellColor(vals[i * nt + t]);
+      if (!col) return; // too few cells: left as bare paper
+      ctx.fillStyle = col;
       ctx.fillRect(lw + j * cw, y, cw - gx, h - gy);
     });
   }
 
   function paintPins(vals) {
-    const { lw, cw, W } = S.geom, m = S.m, H = PIN_H * 3 + 8;
+    const { lw, cw, W } = S.geom, m = S.m, H = PIN_H * 3 + 12;
     const ctx = fitCanvas($("#cvPin"), W, H);
-    const sw = [C.fg3, C.ok, C.hl];
+    const sw = [C.ink3, C.anchor, C.sel];
     ctx.textBaseline = "middle";
     ctx.textAlign = "right";
-    ctx.font = `11px ${MONO}`;
     S.pins.forEach((i, r) => {
-      const y = r * PIN_H + 2;
+      const y = r * PIN_H + 3;
       ctx.fillStyle = rgb(sw[r]);
-      ctx.fillRect(lw - 14, y + PIN_H / 2 - 4, 8, 8);
-      const label = i < 0 ? "search a drug ↑" : r === 0 ? `${m.baseline} · baseline` : condLabel(m.conds[i]);
+      ctx.beginPath(); ctx.arc(lw - 12, y + PIN_H / 2, 3.6, 0, 7); ctx.fill();
+      const label = i < 0 ? "name a drug above" : r === 0 ? `${m.baseline}, the baseline` : condLabel(m.conds[i]);
       const hot = S.hover && S.hover.where === "pins" && S.hover.r === r;
-      ctx.fillStyle = rgb(i < 0 ? C.fg3 : hot ? C.hl : C.fg);
-      ctx.fillText(clip(ctx, label, lw - 26), lw - 20, y + PIN_H / 2);
-      if (i >= 0) paintCells(ctx, vals, i, y, PIN_H);
+      ctx.font = `italic 14px ${SERIF}`;
+      ctx.fillStyle = rgb(i < 0 ? C.ink3 : r === 2 ? C.sel : hot ? C.ink : C.ink2);
+      ctx.fillText(clip(ctx, label, lw - 28), lw - 22, y + PIN_H / 2 + 1);
+      if (i >= 0) paintCells(ctx, vals, i, y + 1, PIN_H - 2);
       if (hot && S.hover.j >= 0) {
-        ctx.strokeStyle = rgb(C.fg, 0.9);
-        ctx.strokeRect(lw + S.hover.j * cw - 0.5, y - 0.5, cw + 1, PIN_H);
+        ctx.strokeStyle = rgb(C.ink);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(lw + S.hover.j * cw - 0.5, y + 0.5, cw + 1, PIN_H - 1);
       }
     });
     const sel = S.cols.indexOf(selType());
-    if (sel >= 0) { ctx.strokeStyle = rgb(C.hl); ctx.strokeRect(lw + sel * cw - 0.5, 1.5, cw + 1, PIN_H * 3); }
-    ctx.strokeStyle = rgb(C.fg);
-    ctx.beginPath(); ctx.moveTo(0, H - 2.5); ctx.lineTo(W, H - 2.5); ctx.stroke();
+    if (sel >= 0) { ctx.strokeStyle = rgb(C.sel); ctx.lineWidth = 1; ctx.strokeRect(lw + sel * cw - 0.5, 3.5, cw + 1, PIN_H * 3 - 1); }
+    penLine(ctx, 0, H - 4, W - 6, H - 4, 3, rgb(C.ink), 0.8);
     ctx.textAlign = "left";
   }
 
@@ -269,55 +290,51 @@
     const hot = S.hover && S.hover.where === "rows" ? S.hover : null;
     ctx.textBaseline = "middle";
     ctx.textAlign = "right";
-    ctx.font = `${Math.min(11, rh - 2)}px ${MONO}`;
+    if (hot && hot.j >= 0) { ctx.fillStyle = rgb(C.ink, 0.05); ctx.fillRect(lw + hot.j * cw, 0, cw, rh * nr); }
     S.rows.forEach((i, r) => {
-      const y = r * rh;
-      const isHot = hot && hot.r === r;
-      if (isHot || i === S.focus) { ctx.fillStyle = rgb(i === S.focus ? C.hl : C.fg, 0.14); ctx.fillRect(0, y, lw - 4, rh); }
+      const y = r * rh, isHot = hot && hot.r === r, ctl = m.conds[i].control;
+      if (i === S.focus) { ctx.fillStyle = rgb(C.sel, 0.07); ctx.fillRect(0, y, lw - 4, rh); }
       if (rh >= 9) {
-        ctx.fillStyle = rgb(i === S.focus ? C.hl : m.conds[i].control ? C.fg3 : isHot ? C.fg : C.fg2);
-        ctx.fillText(clip(ctx, condLabel(m.conds[i]), lw - 12), lw - 6, y + rh / 2);
+        ctx.font = `${ctl ? "italic " : ""}${Math.min(12.5, rh - 1)}px ${SERIF}`;
+        ctx.fillStyle = rgb(i === S.focus ? C.sel : isHot ? C.ink : ctl ? C.ink3 : C.ink2);
+        ctx.fillText(clip(ctx, condLabel(m.conds[i]), lw - 12), lw - 6, y + rh / 2 + 0.5);
+      } else if (isHot || i === S.focus) {
+        ctx.fillStyle = rgb(i === S.focus ? C.sel : C.ink);
+        ctx.fillRect(lw - 8, y, 4, Math.max(2, rh - 1));
       }
       paintCells(ctx, vals, i, y, rh);
     });
-    const fr = S.rows.indexOf(S.focus);
     ctx.lineWidth = 1;
-    if (fr >= 0) { ctx.strokeStyle = rgb(C.hl); ctx.strokeRect(lw - 0.5, fr * rh - 0.5, cw * S.cols.length + 1, rh + 1); }
+    const fr = S.rows.indexOf(S.focus);
+    if (fr >= 0) { ctx.strokeStyle = rgb(C.sel); ctx.strokeRect(lw - 0.5, fr * rh - 0.5, cw * S.cols.length + 1, rh + 1); }
     const sel = S.cols.indexOf(selType());
-    if (sel >= 0) { ctx.strokeStyle = rgb(C.hl); ctx.strokeRect(lw + sel * cw - 0.5, -0.5, cw + 1, rh * nr + 1); }
-    if (hot && hot.j >= 0) {
-      ctx.fillStyle = rgb(C.fg, 0.07);
-      ctx.fillRect(lw + hot.j * cw, 0, cw, rh * nr);
-      ctx.strokeStyle = rgb(C.fg, 0.9);
-      ctx.strokeRect(lw + hot.j * cw - 0.5, hot.r * rh - 0.5, cw + 1, rh + 1);
-    }
+    if (sel >= 0) { ctx.strokeStyle = rgb(C.sel); ctx.strokeRect(lw + sel * cw - 0.5, -0.5, cw + 1, rh * nr + 1); }
+    if (hot && hot.j >= 0) { ctx.strokeStyle = rgb(C.ink); ctx.strokeRect(lw + hot.j * cw - 0.5, hot.r * rh - 0.5, cw + 1, rh + 1); }
     ctx.textAlign = "left";
   }
 
   function legendAndCaption() {
     const m = S.m, g = geneName();
-    const what = g ? `% of cells expressing ${g}, within each ${m.dataset === "minifin" ? "cell set" : "cell type"}` : "cell-type proportion";
+    const what = g ? `the share of each ${m.dataset === "minifin" ? "cell set" : "cell type"} expressing ${g}` : "the share of cells in each cell type";
     const cap = {
-      pct: what.charAt(0).toUpperCase() + what.slice(1),
-      delta: `Change in ${what} against DMSO`,
-      z: `${what.charAt(0).toUpperCase() + what.slice(1)}, as a z-score (${m.z_method === "robust" ? "robust, against every well on the same plate" : "Welch, drug samples against DMSO samples"})`,
+      pct: `Each square is ${what}`,
+      delta: `Each square is the change in ${what}, against DMSO on the same plate`,
+      z: `Each square is ${what} as a z-score: ${m.z_method === "robust" ? "each well against every well on its plate" : "the drug's samples against the DMSO samples"}`,
     }[S.mode];
-    $("#caption").innerHTML = `${esc(cap)} <span class="d">· ${S.rows.length} ${m.dataset === "megafin" ? "drug-doses" : "drugs"} × ${S.cols.length} ${typeWord()}</span>`;
+    $("#caption").innerHTML = `<b>${esc(cap)}.</b> ${S.rows.length} ${m.dataset === "megafin" ? "drug-doses" : "drugs"} against ${S.cols.length} ${typeWord()}. `
+      + `Hover a square to read it; click a drug, or the name of a ${m.dataset === "minifin" ? "cell set" : "cell type"}, for its page in the margin.`;
     const lo = S.mode === "pct" ? "0" : S.mode === "z" ? "−4" : ppF(-S.max);
     const hi = S.mode === "pct" ? pctF(S.max) : S.mode === "z" ? "+4" : ppF(S.max);
-    const more = g ? ["lower", "higher"] : ["fewer cells", "more cells"];
-    $("#legend").innerHTML = `<span>${lo}</span><i style="background:${gradient()}"></i><span>${hi}${S.mode === "z" ? "" : " ·98th pct"}</span>`
-      + (S.mode === "pct" ? "" : `<span><b class="dn">■</b> ${more[0]} than DMSO &nbsp;<b class="up">■</b> ${more[1]}</span>`)
-      + `<span><b style="color:${rgb(C.rule)}">■</b> too few cells to say</span>`;
-    const tiny = hiddenTiny();
-    const minN = MIN_TYPE_N[S.ds] || 0;
-    $("#status").innerHTML = (S.notice ? `<b class="up">${esc(S.notice)}</b> ` : "") + `${esc(m.labels)}. `
-      + (tiny ? `${tiny} ${typeWord()} under ${minN} cells hidden · <button data-act="tiny">show</button> · `
-        : S.showTiny && minN ? `<button data-act="tiny">hide ${typeWord()} under ${minN} cells</button> · ` : "")
-      + `<button data-act="about">about the data</button>`;
+    const words = g ? ["lower than DMSO", "higher"] : ["fewer cells than DMSO", "more"];
+    $("#legend").innerHTML = `<span class="lhead">scale</span><span class="ramp">${lo}<i class="bar" style="background:${gradient()}"></i>${hi}</span>`
+      + (S.mode === "pct" ? "" : `<span><i class="sw" style="background:${rgb(C.down)}"></i>${words[0]}</span><span><i class="sw" style="background:${rgb(C.up)}"></i>${words[1]}</span>`)
+      + `<span>bare paper: too few cells to say</span>`;
+    const tiny = hiddenTiny(), minN = MIN_TYPE_N[S.ds] || 0;
+    $("#status").innerHTML = (S.notice ? `<b>${esc(S.notice)}</b> ` : "")
+      + (tiny ? `${tiny} ${typeWord()} of fewer than ${minN} cells are left off; <button data-act="tiny">show them</button>. `
+        : S.showTiny && minN ? `<button data-act="tiny">leave off ${typeWord()} under ${minN} cells</button>. ` : "")
+      + `How these numbers are made, and what they do not show: <button data-act="notes">the notes</button>.`;
   }
-
-  function renderNotice() { if (S.m) legendAndCaption(); }
 
   function chips() {
     const a = anchorIdx(), m = S.m;
@@ -327,7 +344,7 @@
     $("#chipAnchor").setAttribute("aria-pressed", String(!!S.detail && S.detail.kind === "cond" && S.detail.i === a));
     document.querySelectorAll("#modeSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === S.mode)));
     document.querySelectorAll("#dsSwitch button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.ds === S.ds)));
-    $("#btnRows").textContent = S.expand ? "Fit rows" : "Expand rows";
+    $("#btnRows").textContent = S.expand ? "fit rows" : "expand rows";
   }
 
   function writeUrl() {
@@ -341,48 +358,48 @@
     try { history.replaceState(null, "", `${location.pathname}?${p}`); } catch { /* sandboxed frame */ }
   }
 
-  // ------------------------------------------------------------------ detail panel
+  // ------------------------------------------------------------------ the margin
   function section(title, body) { return `<section><h3>${esc(title)}</h3>${body}</section>`; }
   const clsOf = (x) => (x === S.m.base ? "k0" : S.m.anchors.includes(x) ? "k1" : "k2");
-  const swOf = (x) => (x === S.m.base ? "sw0" : S.m.anchors.includes(x) ? "sw1" : "sw2");
-  const keyHtml = (trio) => `<div class="keys">${trio.map((x) => `<span><i class="sw ${swOf(x)}"></i>${esc(condLabel(S.m.conds[x]))}</span>`).join("")}</div>`;
+  const dotOf = (x) => (x === S.m.base ? "d0" : S.m.anchors.includes(x) ? "d1" : "d2");
+  const keyHtml = (trio) => `<div class="keys">${trio.map((x) => `<span><i class="dot ${dotOf(x)}"></i>${esc(condLabel(S.m.conds[x]))}</span>`).join("")}</div>`;
   const condBtn = (k) => `<button class="lnk" data-cond="${k}">${esc(condLabel(S.m.conds[k]))}</button>`;
   const typeBtn = (t) => `<button class="lnk" data-type="${t}">${esc(S.m.types[t].name)}</button>`;
 
   function barsSVG(groups, max) {
-    const W = 350, lab = 128, bw = W - lab - 66, bh = 10;
-    let y = 2, s = "";
+    const W = 314, lab = 118, bw = W - lab - 56, bh = 8;
+    let y = 3, s = "";
     for (const g of groups) {
-      const gh = g.bars.length * (bh + 1);
-      s += `<text x="0" y="${y + gh / 2 + 3}"><title>${esc(g.label)}</title>${esc(cut(g.label, 21))}</text>`;
+      const gh = g.bars.length * (bh + 4) - 4;
+      s += `<text x="0" y="${y + gh / 2 + 3}" font-style="italic"><title>${esc(g.label)}</title>${esc(cut(g.label, 20))}</text>`;
       for (const b of g.bars) {
         const w = Number.isFinite(b.v) ? Math.max(1, bw * Math.min(1, b.v / max)) : 0;
         s += `<rect class="${b.cls}" x="${lab}" y="${y}" width="${w.toFixed(1)}" height="${bh}"/>`;
         // values sit in their own column past the longest bar, so the per-unit dots never overprint them
-        s += `<text x="${lab + bw + 8}" y="${y + bh - 1.5}">${pctF(b.v)}</text>`;
+        s += `<text x="${lab + bw + 8}" y="${y + bh}">${pctF(b.v)}</text>`;
         for (const d of b.dots || []) {
-          if (Number.isFinite(d)) s += `<circle class="dot" cx="${(lab + bw * Math.min(1, d / max)).toFixed(1)}" cy="${y + bh / 2}" r="1.8"/>`;
+          if (Number.isFinite(d)) s += `<circle class="pt" cx="${(lab + bw * Math.min(1, d / max)).toFixed(1)}" cy="${y + bh / 2}" r="1.7"/>`;
         }
-        y += bh + 1;
+        y += bh + 4;
       }
-      y += 7;
+      y += 9;
     }
     return `<svg viewBox="0 0 ${W} ${y}" width="100%" role="img" aria-label="proportions by condition">${s}</svg>`;
   }
 
   function stripSVG(sim, me) {
-    const W = 350, H = 40, x = (r) => 10 + ((W - 20) * (r + 1)) / 2;
-    let s = `<line class="ax" x1="10" x2="${W - 10}" y1="20" y2="20"/>`;
-    for (const v of [-1, 0, 1]) s += `<line class="ax" x1="${x(v)}" x2="${x(v)}" y1="15" y2="25"/><text x="${x(v)}" y="37" text-anchor="middle">${v}</text>`;
-    for (const [k, r] of sim) if (k !== me) s += `<line class="tk" x1="${x(r).toFixed(1)}" x2="${x(r).toFixed(1)}" y1="12" y2="28"/>`;
+    const W = 314, H = 40, x = (r) => 8 + ((W - 16) * (r + 1)) / 2;
+    let s = `<line class="ax" x1="8" x2="${W - 8}" y1="20" y2="20"/>`;
+    for (const v of [-1, 0, 1]) s += `<line class="ax" x1="${x(v)}" x2="${x(v)}" y1="16" y2="24"/><text x="${x(v)}" y="37" text-anchor="middle">${v}</text>`;
+    for (const [k, r] of sim) if (k !== me) s += `<line class="tk" x1="${x(r).toFixed(1)}" x2="${x(r).toFixed(1)}" y1="13" y2="27"/>`;
     const hit = sim.find((p) => p[0] === me);
-    if (hit) s += `<line class="me" x1="${x(hit[1]).toFixed(1)}" x2="${x(hit[1]).toFixed(1)}" y1="3" y2="31"/>`;
+    if (hit) s += `<line class="me" x1="${x(hit[1]).toFixed(1)}" x2="${x(hit[1]).toFixed(1)}" y1="4" y2="31"/>`;
     return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="similarity of every drug to Sorafenib">${s}</svg>`;
   }
 
   function measureNote() {
     const g = geneName();
-    return g ? `% of each ${S.m.dataset === "minifin" ? "set" : "population"} expressing <b>${esc(g)}</b>.` : "Share of all cells in the condition.";
+    return g ? `The share of each ${S.m.dataset === "minifin" ? "set" : "population"} expressing <i>${esc(g)}</i>.` : "The share of all cells in the condition.";
   }
 
   function detailCond(i) {
@@ -392,25 +409,22 @@
     const N = c.units.reduce((s, u) => s + m.units[u].n, 0);
     const zr = TM.row(mats.z, i, nt), dr = TM.row(mats.delta, i, nt), pr = TM.row(mats.pct, i, nt);
     const ranked = cols.filter((t) => Number.isFinite(zr[t])).sort((x, y) => Math.abs(zr[y]) - Math.abs(zr[x]));
-    let h = `<div class="dk">${isBase ? "baseline" : isAnchor ? "reference drug" : c.control ? "control" : "drug"}</div>`
-      + `<h2>${esc(condLabel(c))}</h2><p class="meta">${esc(c.plate)} · ${c.units.length} ${unitWord(c.units.length)} · ${nF(N)} cells</p>`;
+    let h = `<div class="dk">${isBase ? "the baseline" : isAnchor ? "the reference" : c.control ? "a control" : "a drug"}</div>`
+      + `<h2>${esc(condLabel(c))}</h2><p class="meta">${esc(c.plate)}, ${c.units.length} ${unitWord(c.units.length)}, ${nF(N)} cells</p>`;
 
     const trio = [m.base, a, i].filter((x, k, arr) => x >= 0 && arr.indexOf(x) === k);
     const top = (isBase ? cols.filter((t) => Number.isFinite(pr[t])).sort((x, y) => pr[y] - pr[x]) : ranked).slice(0, 8);
-    const groups = top.map((t) => ({
-      label: m.types[t].name,
-      bars: trio.map((x) => ({ v: mats.pct[x * nt + t], cls: clsOf(x) })),
-    }));
+    const groups = top.map((t) => ({ label: m.types[t].name, bars: trio.map((x) => ({ v: mats.pct[x * nt + t], cls: clsOf(x) })) }));
     const max = Math.max(1e-9, ...groups.flatMap((g) => g.bars.map((b) => b.v)).filter(Number.isFinite));
     h += section("Proportions across the three conditions",
       keyHtml(trio) + barsSVG(groups, max)
-      + `<p class="note">${measureNote()} ${isBase ? "Its largest populations." : "The eight populations this condition moves most (by |z|)."}</p>`);
+      + `<p class="note">${measureNote()} ${isBase ? "Its largest populations." : "The eight populations it moves most."}</p>`);
 
     if (!isBase) {
       const rowsHtml = ranked.slice(0, 10).map((t) => `<tr><td>${typeBtn(t)}</td><td class="n ${dr[t] >= 0 ? "up" : "dn"}">${ppF(dr[t])}</td><td class="n">${zF(zr[t])}</td></tr>`).join("");
       h += section("Strongest affected populations",
-        ranked.length ? `<table><thead><tr><th>population</th><th class="n">Δ DMSO</th><th class="n">z</th></tr></thead><tbody>${rowsHtml}</tbody></table>`
-          : `<p class="d">No population has enough cells to score.</p>`);
+        ranked.length ? `<table><thead><tr><th>population</th><th class="n">&Delta; DMSO</th><th class="n">z</th></tr></thead><tbody>${rowsHtml}</tbody></table>`
+          : `<p class="note">No population has enough cells to score.</p>`);
     }
 
     if (!isBase && !c.control) {
@@ -418,7 +432,7 @@
       if (isAnchor) {
         const list = sim.filter((p) => p[0] !== i).slice(0, 8);
         h += section("Response similarity to Sorafenib",
-          `<p>This is the reference. The drugs whose z-score profile across the ${cols.length} visible ${typeWord()} looks most like it:</p>`
+          `<p>This is the reference. The drugs whose z-score profile over the ${cols.length} ${typeWord()} on the plate looks most like it:</p>`
           + stripSVG(sim, -1)
           + `<table><tbody>${list.map(([k, r]) => `<tr><td>${condBtn(k)}</td><td class="n">r ${rF(r)}</td></tr>`).join("")}</tbody></table>`);
       } else {
@@ -428,8 +442,8 @@
         h += section("Response similarity to Sorafenib",
           `<p><span class="big">r ${rF(r)}</span><span class="d">${idx >= 0 ? `${idx + 1} of ${sim.length} drugs` : "not enough overlap"}</span></p>`
           + stripSVG(sim, i)
-          + `<p class="note">Pearson r between this drug's z-score profile and ${esc(condLabel(m.conds[a] || { drug: m.anchor }))}'s, over the ${cols.length} visible ${typeWord()}. Each tick is one drug; gold is this one.</p>`
-          + `<table><thead><tr><th>most Sorafenib-like</th><th class="n">r</th></tr></thead><tbody>${peers.map(([k, rr]) => `<tr><td>${condBtn(k)}</td><td class="n">${rF(rr)}</td></tr>`).join("")}</tbody></table>`);
+          + `<p class="note">Pearson r between this drug's z-score profile and ${esc(condLabel(m.conds[a] || { drug: m.anchor }))}'s, over the ${cols.length} ${typeWord()} on the plate. Each tick is a drug; the madder one is this.</p>`
+          + `<table style="margin-top:8px"><thead><tr><th>most like Sorafenib</th><th class="n">r</th></tr></thead><tbody>${peers.map(([k, rr]) => `<tr><td>${condBtn(k)}</td><td class="n">${rF(rr)}</td></tr>`).join("")}</tbody></table>`);
       }
     }
     return h;
@@ -439,15 +453,15 @@
     const m = S.m, nt = m.nt, mats = TM.matrices(m, S.layer), ty = m.types[t], L = S.layer;
     const a = anchorIdx();
     const trio = [m.base, a, S.focus].filter((x, k, arr) => x >= 0 && arr.indexOf(x) === k);
-    let h = `<div class="dk">${esc(ty.tissue)}${ty.umbrella ? " · umbrella set" : ""}</div><h2>${esc(ty.name)}</h2>`
-      + `<p class="meta">${nF(ty.n)} cells${ty.n_transfer ? ` · ${Math.round((100 * ty.n_transfer) / ty.n)}% by label transfer` : ""}</p>`;
+    let h = `<div class="dk">${esc(ty.tissue)}${ty.umbrella ? " · an umbrella set" : ""}</div><h2>${esc(ty.name)}</h2>`
+      + `<p class="meta">${nF(ty.n)} cells${ty.n_transfer ? `, ${Math.round((100 * ty.n_transfer) / ty.n)}% of them named by label transfer` : ""}</p>`;
     const groups = trio.map((x) => ({
       label: condLabel(m.conds[x]),
       bars: [{ v: mats.pct[x * nt + t], cls: clsOf(x), dots: m.conds[x].units.map((u) => TM.unitVal(L, u, t, nt)) }],
     }));
     const max = Math.max(1e-9, ...groups.flatMap((g) => [g.bars[0].v, ...g.bars[0].dots]).filter(Number.isFinite));
     h += section("Proportions across the three conditions",
-      keyHtml(trio) + barsSVG(groups, max) + `<p class="note">${measureNote()} Dots are single ${unitWord(2)}.</p>`);
+      keyHtml(trio) + barsSVG(groups, max) + `<p class="note">${measureNote()} Each dot is a single ${unitWord(1)}.</p>`);
 
     const cands = m.conds.map((_, k) => k).filter((k) => !m.conds[k].control && Number.isFinite(mats.z[k * nt + t]) && (!S.dose || m.conds[k].dose === S.dose));
     const zOf = (k) => mats.z[k * nt + t], dOf = (k) => mats.delta[k * nt + t];
@@ -455,18 +469,18 @@
     const up = byZ.filter((k) => zOf(k) > 0).slice(0, 5), down = byZ.filter((k) => zOf(k) < 0).reverse().slice(0, 5);
     const tr = (k) => `<tr><td>${condBtn(k)}</td><td class="n ${dOf(k) >= 0 ? "up" : "dn"}">${ppF(dOf(k))}</td><td class="n">${zF(zOf(k))}</td></tr>`;
     h += section("Strongest affected populations",
-      `<p class="d">The drugs that move this population most.</p>`
-      + `<table><thead><tr><th>increase it</th><th class="n">Δ DMSO</th><th class="n">z</th></tr></thead><tbody>${up.map(tr).join("")}</tbody></table>`
-      + `<table style="margin-top:8px"><thead><tr><th>decrease it</th><th class="n">Δ DMSO</th><th class="n">z</th></tr></thead><tbody>${down.map(tr).join("")}</tbody></table>`);
+      `<p class="note" style="margin:0 0 8px">For a population, the drugs that move it most.</p>`
+      + `<table><thead><tr><th>swell it</th><th class="n">&Delta; DMSO</th><th class="n">z</th></tr></thead><tbody>${up.map(tr).join("")}</tbody></table>`
+      + `<table style="margin-top:10px"><thead><tr><th>thin it</th><th class="n">&Delta; DMSO</th><th class="n">z</th></tr></thead><tbody>${down.map(tr).join("")}</tbody></table>`);
 
     if (a >= 0) {
       const az = zOf(a);
       const same = cands.filter((k) => !m.anchors.includes(k) && Math.sign(zOf(k)) === Math.sign(az) && Math.abs(zOf(k)) >= 2)
         .sort((x, y) => Math.abs(zOf(y)) - Math.abs(zOf(x)));
       h += section("Response similarity to Sorafenib",
-        `<p><span class="big">z ${zF(az)}</span><span class="d">${esc(condLabel(m.conds[a]))} on this population</span></p>`
-        + (Math.abs(az) < 1 ? `<p class="d">Sorafenib barely moves this population, so agreeing with it here says little.</p>`
-          : `<p>${same.length} of ${cands.length - 1} drugs move it the same way at |z| ≥ 2${same.length ? ":" : "."}</p>`
+        `<p><span class="big">z ${zF(az)}</span><span class="d">${esc(condLabel(m.conds[a]))} here</span></p>`
+        + (Math.abs(az) < 1 ? `<p class="note">Sorafenib barely moves this population, so agreeing with it here says little.</p>`
+          : `<p>${same.length} of ${cands.length - 1} drugs move it the same way at |z| of 2 or more${same.length ? ":" : "."}</p>`
             + `<table><tbody>${same.slice(0, 8).map((k) => `<tr><td>${condBtn(k)}</td><td class="n">${zF(zOf(k))}</td></tr>`).join("")}</tbody></table>`));
     }
     return h;
@@ -474,7 +488,7 @@
 
   function renderDetail() {
     const d = S.detail, el = $("#detail");
-    if (!d) { el.innerHTML = `<p class="d">Click a drug or a cell type.</p>`; return; }
+    if (!d) { el.innerHTML = `<p class="note">Click a drug or a cell type.</p>`; return; }
     el.innerHTML = d.kind === "type" ? detailType(d.i) : detailCond(d.i);
   }
 
@@ -495,7 +509,7 @@
     const t = j >= 0 ? S.cols[j] : null;
     if (kind === "head") return j >= 0 ? { where: "head", j, t } : null;
     if (kind === "pins") {
-      const r = Math.floor((y - 2) / PIN_H), i = S.pins[r];
+      const r = Math.floor((y - 3) / PIN_H), i = S.pins[r];
       return r >= 0 && r < 3 && i >= 0 ? { where: "pins", r, i, j, t } : null;
     }
     const r = Math.floor(y / rh);
@@ -506,16 +520,16 @@
     const m = S.m, nt = m.nt;
     if (h.where === "head") {
       const ty = m.types[h.t];
-      return `<b>${esc(ty.name)}</b><br><span class="d">${esc(ty.tissue)} · ${nF(ty.n)} cells${ty.n_transfer ? ` · ${Math.round((100 * ty.n_transfer) / ty.n)}% transferred` : ""}</span><br><span class="d">click for detail</span>`;
+      return `<b>${esc(ty.name)}</b><br><span class="d">${esc(ty.tissue)}, ${nF(ty.n)} cells${ty.n_transfer ? `, ${Math.round((100 * ty.n_transfer) / ty.n)}% by transfer` : ""}</span>`;
     }
     const c = m.conds[h.i];
-    if (h.j < 0) return `<b>${esc(condLabel(c))}</b> <span class="d">${esc(c.plate)} · click for detail</span>`;
+    if (h.j < 0) return `<b>${esc(condLabel(c))}</b> <span class="d">${esc(c.plate)}</span>`;
     const mats = TM.matrices(m, S.layer), k = h.i * nt + h.t, g = geneName();
     const n = c.units.reduce((s, u) => s + m.counts[u * nt + h.t], 0), N = c.units.reduce((s, u) => s + m.units[u].n, 0);
-    return `<b>${esc(condLabel(c))}</b> <span class="d">${esc(c.plate)}</span><br>${esc(m.types[h.t].name)}<br>`
-      + `<span class="d">${g ? `${esc(g)}+` : "share"}</span> ${pctF(mats.pct[k])} <span class="d">vs DMSO</span> ${pctF(mats.pct[k] - mats.delta[k])}<br>`
-      + `Δ <span class="${mats.delta[k] >= 0 ? "up" : "dn"}">${ppF(mats.delta[k])}</span> · z ${zF(mats.z[k])}<br>`
-      + `<span class="d">${nF(n)} of ${nF(N)} cells in ${c.units.length} ${unitWord(c.units.length)}</span>`;
+    return `<b>${esc(condLabel(c))}</b> <span class="d">${esc(c.plate)}</span><br><i>${esc(m.types[h.t].name)}</i><br>`
+      + `<span class="d">${g ? `${esc(g)}+` : "share"}</span> ${pctF(mats.pct[k])} <span class="d">against DMSO's</span> ${pctF(mats.pct[k] - mats.delta[k])}<br>`
+      + `&Delta; <span class="${mats.delta[k] >= 0 ? "up" : "dn"}">${ppF(mats.delta[k])}</span> &nbsp; z ${zF(mats.z[k])}<br>`
+      + `<span class="d">${nF(n)} of ${nF(N)} cells, ${c.units.length} ${unitWord(c.units.length)}</span>`;
   }
 
   function showTip(html, e) {
@@ -523,9 +537,9 @@
     tip.innerHTML = html;
     tip.hidden = false;
     const w = tip.offsetWidth, hh = tip.offsetHeight;
-    let x = e.clientX + 14, y = e.clientY + 14;
-    if (x + w > innerWidth - 8) x = e.clientX - w - 14;
-    if (y + hh > innerHeight - 8) y = e.clientY - hh - 14;
+    let x = e.clientX + 16, y = e.clientY + 16;
+    if (x + w > innerWidth - 8) x = e.clientX - w - 16;
+    if (y + hh > innerHeight - 8) y = e.clientY - hh - 16;
     tip.style.left = `${Math.max(4, x)}px`;
     tip.style.top = `${Math.max(4, y)}px`;
   }
@@ -547,7 +561,7 @@
     });
   }
 
-  // ------------------------------------------------------------------ drug search
+  // ------------------------------------------------------------------ naming a drug
   function wireSearch() {
     const q = $("#drugQ"), list = $("#drugList");
     let items = [], sel = -1;
@@ -602,13 +616,13 @@
     const key = `${m.dataset}:${j}`;
     let L = geneCache.get(key);
     if (!L) {
-      $("#status").textContent = `Loading ${m.genes[j]}…`;
+      $("#status").textContent = `fetching ${m.genes[j]}…`;
       try {
         const r = await fetch(`/trailmaker_UI/data/${m.dataset}/g${j}.bin`);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         L = TM.geneLayer(m, j, await r.arrayBuffer());
       } catch (err) {
-        $("#status").textContent = `Could not load ${m.genes[j]}: ${err.message}`;
+        $("#status").textContent = `Could not fetch ${m.genes[j]}: ${err.message}`;
         return;
       }
       geneCache.set(key, L);
@@ -624,19 +638,24 @@
   function fillControls(m) {
     const counts = {};
     m.types.forEach((t) => { counts[t.tissue] = (counts[t.tissue] || 0) + 1; });
-    $("#tissueSel").innerHTML = `<option value="">all tissues</option>` + m.tissues.map((t) => `<option value="${esc(t)}">${esc(t)} (${counts[t]})</option>`).join("");
+    $("#tissueSel").innerHTML = `<option value="">every tissue</option>` + m.tissues.map((t) => `<option value="${esc(t)}">${esc(t)} (${counts[t]})</option>`).join("");
     $("#typeList").innerHTML = m.type_order.map((t) => `<option value="${esc(m.types[t].name)}"></option>`).join("");
     $("#geneList").innerHTML = m.genes.map((g) => `<option value="${esc(g)}"></option>`).join("");
-    $("#geneQ").placeholder = `optional · ${m.genes.length} in panel`;
     $("#doseWrap").hidden = !m.doses.length;
     $("#doseSel").innerHTML = m.doses.map((d) => `<option value="${esc(d)}">${esc(doseLabel(d))}</option>`).join("") + `<option value="">both doses</option>`;
     $("#typeQ").value = "";
     $("#geneQ").value = "";
     $("#geneClear").hidden = true;
-    $("#aboutBody").innerHTML = `<h2>${esc(m.title)}</h2><p class="d">${esc(m.source)} · built ${esc(m.built)}</p>`
-      + `<p>${esc(m.labels)}.</p><ul>${m.notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>`
-      + `<p class="d">A prototype. The gene filter reads a panel of ${m.genes.length} marker and context genes computed at build time, not the whole transcriptome. `
-      + `Build: scripts/build_trailmaker_ui.py. What this page does and does not claim: public/trailmaker_UI/NOTES.md.</p>`;
+    const drugs = m.conds.filter((c) => !c.control).length, cells = m.units.reduce((s, u) => s + u.n, 0);
+    $("#byline").textContent = `${nF(drugs)} ${m.dataset === "megafin" ? "drug-doses" : "drugs"} · ${m.types.length} ${typeWord()} · ${nF(cells)} cells`
+      + (m.dataset === "megafin" ? ` · ${m.plates.length} plates` : ` · ${m.units.length} samples`);
+    $("#plateWhen").textContent = m.title;
+    $("#notesList").innerHTML = [...m.notes,
+      `The gene field reads a panel of ${m.genes.length} marker and context genes worked out when the page was built, not the whole transcriptome.`,
+      "Colour runs to the 98th percentile of what is on the plate, so the scale moves when you filter; the legend states it each time."]
+      .map((n) => `<li>${esc(n)}</li>`).join("");
+    $("#colophon").innerHTML = `Source: <code>${esc(m.source)}</code>. Labels: ${esc(m.labels)}. Built ${esc(m.built)} by <code>scripts/build_trailmaker_ui.py</code>, `
+      + `which ships cell counts only; every number on the plate is worked out in the browser by <code>tm-stats.js</code>. What the plate claims and does not: <code>public/trailmaker_UI/NOTES.md</code>.`;
   }
 
   async function load(ds, first) {
@@ -644,15 +663,15 @@
     S.ds = ds;
     S.m = null;
     S.hover = null;
-    $("#status").textContent = "Loading…";
+    $("#status").textContent = "setting the plate…";
     let m;
     try {
       const r = await fetch(`/trailmaker_UI/data/${ds}.json`);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       m = TM.prepare(await r.json());
     } catch (err) {
-      // MegaFin's data is the heavy build; until it has shipped, open on MiniFin rather than on an error
-      if (first && ds !== "minifin") { await load("minifin", false); S.notice = `MegaFin data is not published yet (${err.message}); showing MiniFin.`; renderNotice(); return; }
+      // MegaFin's data is the heavy build; if it is missing, open on MiniFin rather than on an error
+      if (first && ds !== "minifin") { await load("minifin", false); S.notice = `MegaFin's data is not published yet (${err.message}); this is MiniFin.`; if (S.m) legendAndCaption(); return; }
       S.ds = prev.ds; S.m = prev.m;
       S.notice = `Could not load ${ds}: ${err.message}.`;
       if (S.m) render(); else $("#status").textContent = S.notice;
@@ -687,15 +706,6 @@
   }
 
   function init() {
-    if (store.get("tm.theme") === "light") document.body.classList.add("light");
-    const themeBtn = $("#btnTheme");
-    themeBtn.textContent = document.body.classList.contains("light") ? "Dark" : "Light";
-    themeBtn.addEventListener("click", () => {
-      const light = document.body.classList.toggle("light");
-      themeBtn.textContent = light ? "Dark" : "Light";
-      store.set("tm.theme", light ? "light" : "dark");
-      render();
-    });
     $("#dsSwitch").innerHTML = DATASETS.map(([k, n]) => `<button data-ds="${k}" aria-pressed="false">${esc(n)}</button>`).join("");
     $("#dsSwitch").addEventListener("click", (e) => {
       const b = e.target.closest("button");
@@ -730,12 +740,10 @@
       if (!b) return;
       if (b.dataset.cond != null) openCond(+b.dataset.cond); else openType(+b.dataset.type);
     });
-    const about = () => { const d = $("#about"); if (d.showModal) d.showModal(); };
-    $("#btnAbout").addEventListener("click", about);
     $("#status").addEventListener("click", (e) => {
       const b = e.target.closest("button[data-act]");
       if (!b) return;
-      if (b.dataset.act === "about") about();
+      if (b.dataset.act === "notes") $("#notes").scrollIntoView({ behavior: "smooth", block: "start" });
       if (b.dataset.act === "tiny") { S.showTiny = !S.showTiny; render(); }
     });
     wireCanvas("#cvHead", "head");

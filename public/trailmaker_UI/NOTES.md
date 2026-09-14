@@ -6,8 +6,10 @@ Trailmaker's Data Exploration screen was the conceptual reference; this page is 
 the comparison (DMSO vs Sorafenib vs a searched drug) rather than around one embedding.
 
 Files: `index.html` (shell), `tm-stats.js` (every number, no DOM; testable in node),
-`tm-view.js` (rendering), `data/` (built). Same instrument shell as `/pipeline`; the route has no
-trailing slash, so script `src` is absolute. Rebuild: `/data/.venv/bin/python scripts/build_trailmaker_ui.py`.
+`tm-view.js` (rendering), `data/` (built). Plate style (`PLATE_STYLE.md`, nearest sibling `/compass`),
+asked for as a Darwin-notebook look: paper, one ink, ochre = more cells than DMSO, indigo grey =
+fewer, madder only for the drug you chose, pen wobble on furniture only. The route has no trailing
+slash, so script `src` is absolute. Rebuild: `/data/.venv/bin/python scripts/build_trailmaker_ui.py`.
 
 ## What it claims
 
