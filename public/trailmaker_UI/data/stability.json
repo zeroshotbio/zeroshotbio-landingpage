@@ -1,0 +1,377 @@
+{
+ "method": "Quick triage from each molecule's chemistry and common handling guidance; not measured on these plates.",
+ "sources": [
+  "Kozikowski et al. 2003, J Biomol Screen 8:205 and 8:210",
+  "Cheng et al. 2003, J Biomol Screen 8:292"
+ ],
+ "drugs": {
+  "17-AAG KOS953": {
+   "tier": "high",
+   "why": "Benzoquinone ansamycin: the quinone is redox-labile and light-sensitive."
+  },
+  "ABT-888 Veliparib": {
+   "tier": "low",
+   "why": "Stable benzimidazole carboxamide."
+  },
+  "Abiraterone": {
+   "tier": "low",
+   "why": "Stable steroid scaffold (the free drug, not the acetate prodrug)."
+  },
+  "Amiodarone HCl": {
+   "tier": "some",
+   "why": "Light-sensitive (photo-deiodination); otherwise stable."
+  },
+  "Amlodipine Besylate": {
+   "tier": "some",
+   "why": "Dihydropyridine: light-sensitive, though slower than nifedipine."
+  },
+  "Apixaban": {
+   "tier": "low",
+   "why": "Stable amide; no labile groups."
+  },
+  "Aripiprazole": {
+   "tier": "low",
+   "why": "Stable; at most mild light sensitivity."
+  },
+  "Aspirin Acetylsalicylic acid": {
+   "tier": "high",
+   "why": "The acetyl ester hydrolyses to salicylic acid as DMSO takes up water."
+  },
+  "Atorvastatin Calcium": {
+   "tier": "some",
+   "why": "Hydroxy acid can lactonise and oxidise in solution."
+  },
+  "Axitinib": {
+   "tier": "some",
+   "why": "Styryl double bond isomerises in light; poorly soluble, can fall out on thaw."
+  },
+  "BMS-708163 Avagacestat": {
+   "tier": "low",
+   "why": "Stable sulfonamide."
+  },
+  "Bicalutamide": {
+   "tier": "low",
+   "why": "Stable anilide."
+  },
+  "Budesonide": {
+   "tier": "some",
+   "why": "Corticosteroid side chain oxidises slowly in solution."
+  },
+  "CAL-101 Idelalisib": {
+   "tier": "low",
+   "why": "Stable quinazolinone."
+  },
+  "Carbamazepine": {
+   "tier": "low",
+   "why": "Stable in DMSO."
+  },
+  "Carfilzomib PR-171": {
+   "tier": "high",
+   "why": "Peptide epoxyketone: the epoxide warhead opens with water; made up fresh."
+  },
+  "Celecoxib": {
+   "tier": "low",
+   "why": "Stable sulfonamide."
+  },
+  "Citalopram hydrobromide": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Clopidogrel": {
+   "tier": "some",
+   "why": "Methyl ester hydrolyses and the thiophene oxidises in solution."
+  },
+  "Clozapine": {
+   "tier": "low",
+   "why": "Stable; mild light sensitivity."
+  },
+  "Colchicine": {
+   "tier": "some",
+   "why": "Light turns it into inactive lumicolchicines."
+  },
+  "Curcumin": {
+   "tier": "high",
+   "why": "Degrades quickly in solution by autoxidation; light-sensitive."
+  },
+  "Cyclosporin A": {
+   "tier": "low",
+   "why": "Robust cyclic peptide (can stick to plastic, which is not decay)."
+  },
+  "DAPT GSI-IX": {
+   "tier": "some",
+   "why": "Dipeptide tert-butyl ester: slow hydrolysis in wet DMSO."
+  },
+  "Dapagliflozin": {
+   "tier": "low",
+   "why": "Stable C-glycoside."
+  },
+  "Dexamethasone DHP": {
+   "tier": "low",
+   "why": "Stable fluorinated corticosteroid."
+  },
+  "Diltiazem HCl": {
+   "tier": "some",
+   "why": "Acetyl ester hydrolyses to the weaker desacetyl-diltiazem."
+  },
+  "Dinaciclib SCH727965": {
+   "tier": "low",
+   "why": "Stable pyrazolopyrimidine."
+  },
+  "Diphenhydramine HCl": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Dofetilide": {
+   "tier": "low",
+   "why": "Stable sulfonamide."
+  },
+  "Enalapril": {
+   "tier": "some",
+   "why": "Ethyl-ester prodrug: hydrolyses and cyclises (diketopiperazine) in solution."
+  },
+  "Entinostat MS-275": {
+   "tier": "low",
+   "why": "Stable benzamide."
+  },
+  "Epothilone B": {
+   "tier": "some",
+   "why": "Epoxide macrolactone: sensitive to acid, water and heat."
+  },
+  "Everolimus RAD001": {
+   "tier": "high",
+   "why": "Triene macrolide that oxidises in solution; supplied with antioxidant."
+  },
+  "Famotidine": {
+   "tier": "low",
+   "why": "Stable in DMSO; hydrolyses only slowly in water."
+  },
+  "Finasteride": {
+   "tier": "low",
+   "why": "Stable aza-steroid."
+  },
+  "Fluorouracil Adrucil": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Fluoxetine HCl": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "GDC-0449 Vismodegib": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "GSK2126458 Omipalisib": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Ganetespib STA-9090": {
+   "tier": "low",
+   "why": "Resorcinol triazolone; reasonably stable in DMSO."
+  },
+  "Genistein": {
+   "tier": "low",
+   "why": "Isoflavone; oxidises only slowly."
+  },
+  "Glibenclamide": {
+   "tier": "low",
+   "why": "Stable sulfonylurea."
+  },
+  "Haloperidol HCl": {
+   "tier": "low",
+   "why": "Stable; mild light sensitivity."
+  },
+  "Hydrocortisone": {
+   "tier": "some",
+   "why": "21-hydroxy side chain oxidises in solution."
+  },
+  "Isoprenaline HCl": {
+   "tier": "high",
+   "why": "Catecholamine: oxidises quickly in solution (turns pink, then brown)."
+  },
+  "LDE225 Erismodegib": {
+   "tier": "low",
+   "why": "Stable (sonidegib)."
+  },
+  "LEE011 Ribociclib": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Leflunomide": {
+   "tier": "some",
+   "why": "Isoxazole ring opens to teriflunomide with water and base."
+  },
+  "Lidocaine": {
+   "tier": "low",
+   "why": "Stable amide."
+  },
+  "Loratadine": {
+   "tier": "low",
+   "why": "Stable carbamate."
+  },
+  "Losartan potassium": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Lovastatin": {
+   "tier": "some",
+   "why": "Lactone prodrug hydrolyses to its hydroxy acid."
+  },
+  "MDV3100 Enzalutamide": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "MK-4827 Niraparib": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "MLN2238 Ixazomib": {
+   "tier": "high",
+   "why": "Boronic acid: oxidative deboronation in solution; made up fresh."
+  },
+  "Mercaptopurine 6-MP": {
+   "tier": "some",
+   "why": "Thiol oxidises to disulfides in solution."
+  },
+  "Metformin HCl": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Metoprolol Tartrate": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Nifedipine": {
+   "tier": "high",
+   "why": "Dihydropyridine that degrades within hours in light."
+  },
+  "Olanzapine": {
+   "tier": "some",
+   "why": "Thienobenzodiazepine oxidises in solution."
+  },
+  "Olaparib AZD2281": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Orlistat": {
+   "tier": "high",
+   "why": "The beta-lactone warhead hydrolyses with water."
+  },
+  "Paclitaxel Taxol": {
+   "tier": "some",
+   "why": "Ester-rich taxane: epimerises and hydrolyses; can fall out on thaw."
+  },
+  "Palbociclib PD0332991 Isethionate": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Panobinostat": {
+   "tier": "some",
+   "why": "Hydroxamic acid: slow hydrolysis in wet DMSO."
+  },
+  "Paroxetine HCl": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Pazopanib": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Pimecrolimus": {
+   "tier": "some",
+   "why": "Macrolactam like tacrolimus; slow degradation in solution."
+  },
+  "Pioglitazone HCl": {
+   "tier": "low",
+   "why": "Stable thiazolidinedione."
+  },
+  "Pravastatin sodium": {
+   "tier": "some",
+   "why": "Hydroxy acid lactonises and isomerises, fastest in acid."
+  },
+  "Prednisone": {
+   "tier": "low",
+   "why": "Stable corticosteroid."
+  },
+  "Propranolol HCl": {
+   "tier": "low",
+   "why": "Stable; mild light sensitivity."
+  },
+  "Quercetin": {
+   "tier": "high",
+   "why": "Polyphenol that autoxidises in DMSO and in light."
+  },
+  "R S-Atenolol": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Ramipril": {
+   "tier": "some",
+   "why": "Ester prodrug: hydrolyses and cyclises (diketopiperazine) in solution."
+  },
+  "Rapamycin Sirolimus": {
+   "tier": "high",
+   "why": "Macrolide that degrades in solution (ring opening, oxidation), faster warm."
+  },
+  "Resveratrol": {
+   "tier": "some",
+   "why": "Light turns trans- into weaker cis-resveratrol; oxidises."
+  },
+  "Rivaroxaban": {
+   "tier": "low",
+   "why": "Stable oxazolidinone."
+  },
+  "Romidepsin FK228": {
+   "tier": "some",
+   "why": "Disulfide prodrug: sensitive to reducing conditions."
+  },
+  "Roscovitine Seliciclib": {
+   "tier": "low",
+   "why": "Stable purine."
+  },
+  "Rucaparib AG-014699": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Sertraline HCl": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Simvastatin Zocor": {
+   "tier": "some",
+   "why": "Lactone prodrug hydrolyses to its hydroxy acid."
+  },
+  "Sorafenib": {
+   "tier": "low",
+   "why": "Stable urea; poorly soluble in water but fine in DMSO."
+  },
+  "Sunitinib malate": {
+   "tier": "some",
+   "why": "Light-sensitive: Z/E isomerisation in solution."
+  },
+  "Tacrolimus FK506": {
+   "tier": "some",
+   "why": "Macrolide: epimerises and degrades slowly in solution."
+  },
+  "Ticagrelor": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Valsartan": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Verapamil HCl": {
+   "tier": "low",
+   "why": "Stable."
+  },
+  "Vinblastine sulfate": {
+   "tier": "some",
+   "why": "Vinca alkaloid: sensitive to light and oxidation; kept cold."
+  },
+  "Vorinostat SAHA": {
+   "tier": "some",
+   "why": "Hydroxamic acid: slow hydrolysis in wet DMSO."
+  }
+ }
+}

@@ -27,7 +27,7 @@
   const S = {
     ds: "megafin", m: null, layer: null, gene: -1, mode: "delta", tissue: "", typeQ: "", dose: "",
     sort: "response", focus: -1, detail: null, hover: null, showTiny: false,
-    rows: [], cols: [], pins: [], geom: null, max: 1, notice: "", ref: "", story: null, spot: null, idx: null,
+    rows: [], cols: [], pins: [], geom: null, max: 1, notice: "", ref: "", story: null, spot: null, idx: null, stab: null,
   };
   const geneCache = new Map();
   let C = null;
@@ -58,7 +58,7 @@
     const cs = getComputedStyle(document.documentElement);
     const g = (n) => hex(cs.getPropertyValue(n).trim() || "#000");
     const c = { paper: g("--paper"), deep: g("--paper-deep"), ink: g("--ink"), ink2: g("--ink-2"), ink3: g("--ink-3"),
-                rule: g("--rule"), rule2: g("--rule-2"), sel: g("--select"), anchor: g("--t3") };
+                rule: g("--rule"), rule2: g("--rule-2"), sel: g("--select"), anchor: g("--t3"), plum: g("--t6") };
     // the two washes, deepened a little toward the ink so the strongest cells still read on paper
     c.up = mix(g("--t1"), c.ink, 0.22);
     c.down = mix(g("--t4"), c.ink, 0.12);
@@ -328,7 +328,16 @@
     labelPanel(ctx, x0, HEAD_H);
     ctx.fillStyle = rgb(C.ink3);
     ctx.font = `9.5px ${SANS}`;
-    ctx.fillText(`${S.cols.length} ${typeWord().toUpperCase()}`, x0 + 4, yb + 16);
+    ctx.fillText(`${S.cols.length} ${typeWord().toUpperCase()}`, x0 + 18, yb + 16);
+    if (S.stab) {
+      ctx.save();
+      ctx.translate(x0 + 11, yb + 18);
+      ctx.rotate(-Math.PI / 2);
+      ctx.font = `9px ${SANS}`;
+      ctx.fillStyle = rgb(C.plum);
+      ctx.fillText("STOCK STABILITY", 0, 0);
+      ctx.restore();
+    }
     if (names === "none" && S.cols.length) {
       ctx.font = `italic 13px ${SERIF}`;
       ctx.fillText("hover a column to read it, or choose a tissue to widen them", x0 + 4, yb - 14);
@@ -346,6 +355,33 @@
     ctx.strokeStyle = rgb(C.rule);
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(x0 + lw - 2.5, 0); ctx.lineTo(x0 + lw - 2.5, h); ctx.stroke();
+  }
+
+  // Stock stability: a quick triage of how likely each drug's DMSO stock is to lose potency through
+  // freeze-thaw cycles and storage (data/stability.json, built by scripts/trailmaker_stability.py).
+  // One plum hue, light to dark, so it never competes with the heatmap's ochre / indigo or madder.
+  const STAB = { low: ["robust", 0.2], some: ["some risk", 0.52], high: ["likely to lose potency", 1] };
+  const stabOf = (c) => (S.stab && c && !c.control ? S.stab.drugs[c.drug] : null);
+  const stabCol = (tier) => rgb(mix(C.paper, C.plum, STAB[tier][1]));
+  function stabMark(ctx, c, x, y, h) {
+    const s = stabOf(c);
+    if (!s) return;
+    const side = Math.max(3, Math.min(9, h - 2)), top = y + (h - side) / 2;
+    ctx.fillStyle = stabCol(s.tier);
+    ctx.fillRect(x, top, 9, side);
+    ctx.strokeStyle = rgb(C.plum, 0.55);
+    ctx.lineWidth = 0.7;
+    ctx.strokeRect(x + 0.35, top + 0.35, 8.3, side - 0.7);
+  }
+  function stabTip(c) {
+    const s = stabOf(c);
+    if (!s) return `<b>${esc(condLabel(c))}</b><br><span class="d">${c.control ? "a control, not a drug" : "not rated"}</span>`;
+    return `<b>${esc(c.drug)}</b><br>stock stability: <i>${STAB[s.tier][0]}</i><p>${esc(s.why)}</p>`
+      + `<span class="d">A quick estimate from the molecule's chemistry and common handling guidance, not measured on these plates.</span>`;
+  }
+  function stabLegend() {
+    if (!S.stab) return "";
+    return `<span class="lhead">stock stability</span>` + ["low", "some", "high"].map((t) => `<span><i class="sw" style="background:${stabCol(t)};border-radius:1px;box-shadow:inset 0 0 0 1px ${rgb(C.plum, 0.55)}"></i>${STAB[t][0]}</span>`).join("");
   }
 
   function paintCells(ctx, vals, i, y, h) {
@@ -379,7 +415,8 @@
       ctx.beginPath(); ctx.arc(x0 + lw - 12, y + PIN_H / 2, 3.6, 0, 7); ctx.fill();
       const label = i < 0 ? "name a drug above" : r === 0 ? `${baseName()}, the baseline` : condLabel(m.conds[i]);
       ctx.fillStyle = rgb(i < 0 ? C.ink3 : r === 2 ? C.sel : hot && hot.r === r ? C.ink : C.ink2);
-      ctx.fillText(clip(ctx, label, lw - 28), x0 + lw - 22, y + PIN_H / 2 + 1);
+      ctx.fillText(clip(ctx, label, lw - 42), x0 + lw - 22, y + PIN_H / 2 + 1);
+      if (i >= 0) stabMark(ctx, m.conds[i], x0 + 3, y + 1, PIN_H - 2);
     });
     penLine(ctx, 0, H - 4, W - 6, H - 4, 3, rgb(C.ink), 0.8);
     ctx.textAlign = "left";
@@ -407,11 +444,12 @@
       if (rh >= 9) {
         ctx.font = `${ctl ? "italic " : ""}${Math.min(12.5, rh - 1)}px ${SERIF}`;
         ctx.fillStyle = rgb(i === S.focus || spotR(i) ? C.sel : isHot ? C.ink : ctl ? C.ink3 : C.ink2);
-        ctx.fillText(clip(ctx, condLabel(m.conds[i]), lw - 12), x0 + lw - 6, y + rh / 2 + 0.5);
+        ctx.fillText(clip(ctx, condLabel(m.conds[i]), lw - 26), x0 + lw - 6, y + rh / 2 + 0.5);
       } else if (isHot || i === S.focus) {
         ctx.fillStyle = rgb(i === S.focus ? C.sel : C.ink);
         ctx.fillRect(x0 + lw - 8, y, 4, Math.max(2, rh - 1));
       }
+      stabMark(ctx, m.conds[i], x0 + 3, y, rh);
     });
     ctx.textAlign = "left";
   }
@@ -431,7 +469,7 @@
     const words = g ? [`lower than ${baseName()}`, "higher"] : [`fewer cells than ${baseName()}`, "more"];
     $("#legend").innerHTML = `<span class="lhead">scale</span><span class="ramp">${lo}<i class="bar" style="background:${gradient()}"></i>${hi}</span>`
       + (S.mode === "pct" ? "" : `<span><i class="sw" style="background:${rgb(C.down)}"></i>${words[0]}</span><span><i class="sw" style="background:${rgb(C.up)}"></i>${words[1]}</span>`)
-      + `<span>bare paper: too few cells to say</span>`;
+      + `<span>bare paper: too few cells to say</span>` + stabLegend();
     const zText = m.z_method === "robust"
       ? "How surprising the gap is. A set's share wobbles from well to well even without a drug; z measures the gap in units of that ordinary wobble, taken across every well on the plate. Near 0 is ordinary, beyond ±2 unusual, beyond ±3 rare. Each drug-dose is a single well, so a large z is a lead to follow, not a verdict."
       : `How surprising the gap is, given how much the drug's samples and ${baseName()}'s samples vary among themselves (a Welch t). Beyond ±2 is unlikely to be chance alone.`;
@@ -678,12 +716,13 @@
     if (j >= S.cols.length) return null;
     const t = j >= 0 ? S.cols[j] : null;
     if (kind === "head") return j >= 0 ? { where: "head", j, t } : null;
+    const stab = x - $("#hmwrap").scrollLeft < 15; // the stock-stability swatch at the name column's left edge
     if (kind === "pins") {
       const r = Math.floor((y - 3) / PIN_H), i = S.pins[r];
-      return r >= 0 && r < 3 && i >= 0 ? { where: "pins", r, i, j, t } : null;
+      return r >= 0 && r < 3 && i >= 0 ? { where: "pins", r, i, j, t, stab } : null;
     }
     const r = Math.floor(y / rh);
-    return r >= 0 && r < S.rows.length ? { where: "rows", r, i: S.rows[r], j, t } : null;
+    return r >= 0 && r < S.rows.length ? { where: "rows", r, i: S.rows[r], j, t, stab } : null;
   }
 
   function tipHtml(h) {
@@ -693,6 +732,7 @@
       return `<b>${esc(ty.name)}</b><br><span class="d">${esc(ty.tissue)}, ${nF(ty.n)} cells${ty.n_transfer ? `, ${Math.round((100 * ty.n_transfer) / ty.n)}% by transfer` : ""}</span>`;
     }
     const c = m.conds[h.i];
+    if (h.stab) return stabTip(c);
     if (h.j < 0) return `<b>${esc(condLabel(c))}</b> <span class="d">${esc(c.plate)}</span>`;
     const mats = TM.matrices(m, S.layer), k = h.i * nt + h.t, g = geneName(), set = esc(m.types[h.t].name);
     const n = c.units.reduce((s, u) => s + m.counts[u * nt + h.t], 0), N = c.units.reduce((s, u) => s + m.units[u].n, 0);
@@ -822,6 +862,7 @@
     "Similarity to the reference is the correlation of two z-score profiles over the sets on screen, at the same dose. The clustered order uses the same correlation, average-linked.",
     "Tissues are a grouping of set names for filtering only. The gene field reads a panel of marker and context genes chosen when the page was built, not the whole transcriptome. Colour runs to the 98th percentile of what is on screen, so the scale moves when you filter.",
     "The seven stories are the page author's reading of the data. Their settings are the page's own controls, and every number they quote is computed from the same counts as the plate.",
+    "The plum column left of the drug names is a quick triage of how likely each drug's DMSO stock is to lose potency through freeze-thaw cycles and storage time, read from the molecule's chemistry (esters and lactones that hydrolyse as thawed DMSO takes up water, epoxides, boronates, catechols, quinones, light-sensitive dihydropyridines, macrolides) and common handling guidance, against the background of Kozikowski et al. and Cheng et al. (J Biomol Screen, 2003). It is an estimate, not measured on these plates; hover a swatch for the reason. Built by <code>scripts/trailmaker_stability.py</code>.",
     "Patrick's labels are evaluation data for the labeller; nothing here feeds it.",
   ];
 
@@ -1344,6 +1385,7 @@
     wireCanvas("#cvRows", "rows");
     wireSearch();
     wireStories();
+    fetch("/trailmaker_UI/data/stability.json").then((r) => (r.ok ? r.json() : null)).then((d) => { S.stab = d; if (S.m) render(); }).catch(() => {});
     fetch("/trailmaker_UI/data/index.json").then((r) => (r.ok ? r.json() : null)).then((d) => { S.idx = d; if (S.m) fillNotes(S.m); }).catch(() => {});
     let rz = 0;
     new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(render); }).observe($("#hmwrap"));

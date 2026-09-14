@@ -54,6 +54,14 @@ builds had all of those; removed 2026-09-14 at the user's request). Rebuild:
 - **n = 1 well per MegaFin drug-dose.** A strong z is a lead, not a finding. Near-empty wells
   (Budesonide 5 uM on part 1) make every gap look large; the worked examples skip wells under 1,000 cells.
 - **The gene field is a panel** (top markers per set plus a few context genes), not the transcriptome.
+- **The plum "stock stability" column is an estimate, not a measurement.** It is a quick triage of how
+  likely each drug's DMSO stock is to lose potency through freeze-thaw cycles and storage time, read from
+  the molecule's chemistry (ester and lactone hydrolysis as thawed DMSO takes up water, epoxides,
+  boronates, catechols, quinones, light-sensitive dihydropyridines, macrolides) and common handling
+  guidance. Background: Kozikowski et al. 2003 and Cheng et al. 2003 (J Biomol Screen). Tiers:
+  `data/stability.json`, built by `scripts/trailmaker_stability.py`, which checks that every drug is rated.
+  No stock on these plates was assayed; a weak drug with a "likely" swatch may be a decayed stock, not a
+  weak drug.
 - Patrick's labels are evaluation data for the labeller; nothing here feeds it.
 
 ## The seven stories (above the plate)
