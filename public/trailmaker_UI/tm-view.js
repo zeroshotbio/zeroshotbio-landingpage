@@ -19,8 +19,8 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const SERIF = '"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif';
   const SANS = 'ui-sans-serif,system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif';
-  const DATASETS = [["megafin", "MegaFin part 1"], ["minifin", "MiniFin"]];
-  const MIN_TYPE_N = { megafin: 100, minifin: 0 };
+  const DATASETS = [["megafin", "MegaFin part 1"], ["megafin2", "MegaFin part 2"], ["minifin", "MiniFin"]];
+  const MIN_TYPE_N = { megafin: 100, megafin2: 100, minifin: 0 };
   const HEAD_SHORT = 64, BAND_H = 20, PIN_H = 20, FIT_H = 540, NAME_PX = 10;
   const headH = () => (S.geom ? S.geom.headH : HEAD_SHORT);
 
@@ -41,7 +41,7 @@
   const rF = (v) => (Number.isFinite(v) ? `${v >= 0 ? "" : "−"}${Math.abs(v).toFixed(2)}` : "–");
   const nF = (v) => Math.round(v).toLocaleString("en-US");
   const cut = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
-  const unitWord = (n) => (S.m.dataset === "megafin" ? (n === 1 ? "well" : "wells") : n === 1 ? "sample" : "samples");
+  const unitWord = (n) => (S.m.dataset.startsWith("megafin") ? (n === 1 ? "well" : "wells") : n === 1 ? "sample" : "samples");
   const typeWord = () => "cell sets"; // both datasets carry Patrick's hand-drawn sets, nothing else
   const geneName = () => (S.gene >= 0 ? S.m.genes[S.gene] : null);
 
@@ -394,7 +394,7 @@
       delta: `Each square is the change in ${what}, against ${baseName()} on the same plate`,
       z: `Each square is ${what} as a z-score: ${m.z_method === "robust" ? "each well against every well on its plate" : `the drug's samples against ${baseName()}'s samples`}`,
     }[S.mode];
-    $("#caption").innerHTML = `<b>${esc(cap)}.</b> ${S.rows.length} ${m.dataset === "megafin" ? "drug-doses" : "drugs"} against ${S.cols.length} ${typeWord()}. `
+    $("#caption").innerHTML = `<b>${esc(cap)}.</b> ${S.rows.length} ${m.dataset.startsWith("megafin") ? "drug-doses" : "drugs"} against ${S.cols.length} ${typeWord()}. `
       + `Hover a square to read it; click a drug, or the name of a cell set, for its page below the plate.`;
     const lo = S.mode === "pct" ? "0" : S.mode === "z" ? "−4" : ppF(-S.max);
     const hi = S.mode === "pct" ? pctF(S.max) : S.mode === "z" ? "+4" : ppF(S.max);
@@ -666,7 +666,7 @@
     const head = `<b>${esc(condLabel(c))}</b> <span class="d">${esc(c.plate)}</span><br><i>${set}</i>`;
     const count = `<span class="d">${nF(n)} of ${nF(N)} cells, ${c.units.length} ${unitWord(c.units.length)}.</span>`;
     if (!Number.isFinite(v)) return `${head}<p class="d">Too few cells here to say anything.</p>`;
-    const where = c.units.length === 1 ? (m.dataset === "megafin" ? "this well" : "this sample") : `its ${c.units.length} ${unitWord(c.units.length)}`;
+    const where = c.units.length === 1 ? (m.dataset.startsWith("megafin") ? "this well" : "this sample") : `its ${c.units.length} ${unitWord(c.units.length)}`;
     if (h.i === m.base) {
       return `${head}<p><b class="v">${pctF(v)}</b> of ${esc(baseName())}'s cells ${g ? `in this set express <i>${esc(g)}</i>` : `are ${set}`}. `
         + `It is the baseline: every other row is measured against it, so its own gap is zero.</p>${count}`;
@@ -821,8 +821,8 @@
     $("#geneQ").value = "";
     $("#geneClear").hidden = true;
     const drugs = m.conds.filter((c) => !c.control).length, cells = m.units.reduce((s, u) => s + u.n, 0);
-    $("#byline").textContent = `${nF(drugs)} ${m.dataset === "megafin" ? "drug-doses" : "drugs"} · ${m.types.length} ${typeWord()} · ${nF(cells)} cells`
-      + (m.dataset === "megafin" ? ` · plate ${m.plates.join(" + ")}` : ` · ${m.units.length} samples`);
+    $("#byline").textContent = `${nF(drugs)} ${m.dataset.startsWith("megafin") ? "drug-doses" : "drugs"} · ${m.types.length} ${typeWord()} · ${nF(cells)} cells`
+      + (m.dataset.startsWith("megafin") ? ` · plate ${m.plates.join(" + ")}` : ` · ${m.units.length} samples`);
     $("#plateWhen").textContent = m.title;
     $("#notesList").innerHTML = [...m.notes,
       `The gene field reads a panel of ${m.genes.length} marker and context genes worked out when the page was built, not the whole transcriptome.`,

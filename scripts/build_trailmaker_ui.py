@@ -4,14 +4,15 @@
 Inputs, all local (provenance in /data/scratch/gold_labels/out/README.md):
   MegaFin  Gold  megafin/zsb/v1/megafin.h5ad          1,268,343 cells; only plate CP01 is used
            labels out/megafin_zsb_v1_patrick_labels.parquet   Patrick's 27 hand-drawn cell sets on CP01
-                  (from the Trailmaker export in s3://zsb-bronze-archive/megafin/patrick-labels/;
+                  (from the Trailmaker export in s3://zsb-bronze-archive/megafin/part1/patrick-labels/;
                   extraction + id bridge: /data/experiments/patrick_megafin_labels/README.md)
   MiniFin  Gold  minifin/zsb/v2/minifin.h5ad          89,788 cells
            labels out/minifin_zsb_v2_labels.parquet   Patrick's 27 hand-drawn cell sets
 
 Both datasets use ONLY Patrick's hand-drawn labels. No automatic labeller output and no label
 transfer: a cell he did not put in a set stays unlabelled and counts only in its well's total.
-Patrick has labelled MegaFin part 1 (CP01) only, so CP02's drugs are not on the page.
+MegaFin part 1 (CP01) and part 2 (CP02) were labelled in separate Trailmaker projects and are
+built as two datasets, "megafin" and "megafin2".
 
 Writes public/trailmaker_UI/data/:
   <ds>.json           conditions, replicate units, cell types, counts[unit][type], gene panel, notes
@@ -156,35 +157,58 @@ def pretty_drug(p):
     return {"DMSO": "DMSO", "ctrl_no_DMSO": "No-DMSO control"}.get(p, p.replace("_", " "))
 
 
-# ---------------------------------------------------------------- MegaFin part 1 (Patrick's sets)
+# ---------------------------------------------------------------- MegaFin parts 1 and 2 (Patrick's sets)
+# Each plate was labelled in its own Trailmaker project, so each is its own dataset: the set names do
+# not line up one to one ("Floor plate" / "Floorplate", "Sclerotome (axial mesenchyme)" /
+# "Sclerotome/axial mesenchyme", ...), and merging them would be a naming decision, not a join.
+_NEURAL = ["CNS", "Hindbrain", "Midbrain", "Forebrain"]
 MEGAFIN_TISSUE = {
-    "CNS": "Neural", "Hindbrain": "Neural", "Midbrain": "Neural", "Forebrain": "Neural", "Floor plate": "Neural",
-    "Schwann cells/peripheral glia": "Neural", "Otic vesicle": "Ear", "Lens": "Eye",
+    **{n: "Neural" for n in _NEURAL},
+    "Floor plate": "Neural", "Floorplate": "Neural",
+    "Schwann cells/peripheral glia": "Neural", "Schwann cell precursors/peripheral glia": "Neural",
+    "Otic vesicle": "Ear", "Lens": "Eye",
     "Superficial epidermis": "Epidermis & epithelia", "Basal epidermis": "Epidermis & epithelia",
-    "Hatching gland": "Epidermis & epithelia", "Erythrocytes": "Blood & immune", "Macrophages": "Blood & immune",
-    "Neutrophils": "Blood & immune", "Fast twitch muscle": "Muscle & heart", "Slow twitch muscle": "Muscle & heart",
-    "Cardiomyocytes": "Muscle & heart", "Sclerotome (axial mesenchyme)": "Mesenchyme & skeleton",
+    "Hatching gland": "Epidermis & epithelia",
+    "Erythrocytes": "Blood & immune", "Macrophages": "Blood & immune", "Neutrophils": "Blood & immune",
+    "Fast twitch muscle": "Muscle & heart", "Slow twitch muscle": "Muscle & heart", "Cardiomyocytes": "Muscle & heart",
+    "Sclerotome (axial mesenchyme)": "Mesenchyme & skeleton", "Sclerotome/axial mesenchyme": "Mesenchyme & skeleton",
     "Pectoral fin bud mesenchyme": "Mesenchyme & skeleton", "Notochord": "Mesenchyme & skeleton",
-    "Vascular endothelial cells": "Vasculature", "Melanocytes/melanophores/melanoblasts": "Pigment",
-    "Pronephros (early kidney)": "Kidney", "Liver/hepatoblasts": "Gut & liver", "Intestine": "Gut & liver",
-    "Exocrine pancreas": "Gut & liver", "Endocrine pancreas (Islet)": "Endocrine",
+    "Vascular endothelial cells": "Vasculature",
+    "Melanocytes/melanophores/melanoblasts": "Pigment", "Melanocytes/melanophores": "Pigment",
+    "Pronephros (early kidney)": "Kidney", "Pronephros/early kidney": "Kidney",
+    "Liver/hepatoblasts": "Gut & liver", "Intestine": "Gut & liver", "Exocrine pancreas": "Gut & liver",
+    "Endocrine pancreas (Islet)": "Endocrine", "Endocrine pancreas/islet": "Endocrine",
 }
 MEGAFIN_UMBRELLAS = {"CNS"}
+MEGAFIN_PARTS = {
+    1: {"ds": "megafin", "plate": "CP01", "labels": "megafin_zsb_v1_patrick_labels.parquet",
+        "source": "s3://zsb-bronze-archive/megafin/part1/patrick-labels/60a440dc-46a6-4a40-8250-dd35655317e0_processed_matrix.rds",
+        "extra_notes": [
+            "The Intestine and Liver/hepatoblasts sets cover nearly the same cells (99.5% of Intestine lies inside Liver); read the two columns as one until they are redrawn.",
+        ]},
+    2: {"ds": "megafin2", "plate": "CP02", "labels": "megafin_zsb_v1_patrick2_labels.parquet",
+        "source": "s3://zsb-bronze-archive/megafin/part2/patrick-labels/7c8414f7-06f6-47f0-9ba8-67f0d56c2b5d_processed_matrix.rds",
+        "extra_notes": [
+            "The Intestine set lies wholly inside Liver/hepatoblasts, and every Cardiomyocytes cell also sits in Pectoral fin bud mesenchyme; those pairs are overlapping lassoes, so read each pair together until they are redrawn.",
+        ]},
+}
 
 
-def build_megafin():
+def build_megafin(part=1):
+    cfg = MEGAFIN_PARTS[part]
+    plate = cfg["plate"]
     path = f"{WORK}/megafin_zsb_v1.h5ad"
-    print("MegaFin part 1:", path)
+    print(f"MegaFin part {part} ({plate}):", path)
     with h5py.File(path, "r") as f:
         ids = frame_index(f, "obs")
         o = f["obs"]
         obs = pd.DataFrame({c: col(o[c]) for c in ["perturbation", "dose", "plate", "well"]})
         genes = list(frame_index(f, "var"))
-    lab = pd.read_parquet(f"{WORK}/out/megafin_zsb_v1_patrick_labels.parquet", columns=["cell_id", "patrick_labels"])
+    lab = pd.read_parquet(f"{WORK}/out/{cfg['labels']}", columns=["cell_id", "patrick_labels"])
     assert (lab.cell_id.values == ids).all(), "label sidecar is not in Gold order"
-    cp1 = (obs.plate == "CP01").values
+    on = (obs.plate == plate).values
     sets = lab.patrick_labels.fillna("").map(lambda s: [x.strip() for x in s.split(";") if x.strip()])
-    assert not sets[~cp1].map(len).any(), "a CP02 cell carries a Patrick label"
+    assert not sets[~on].map(len).any(), f"a cell off {plate} carries a part {part} label"
     names = sorted({x for s in sets for x in s})
     missing = [n for n in names if n not in MEGAFIN_TISSUE]
     assert not missing, f"no tissue for {missing}"
@@ -192,7 +216,7 @@ def build_megafin():
     nt = len(names)
     obs["unit"] = obs.plate.astype(str) + ":" + obs.well.astype(str)
     obs["dose"] = obs.dose.astype(str)
-    sub = obs[cp1]
+    sub = obs[on]
     units = sub.groupby("unit", sort=True).agg(plate=("plate", "first"), perturbation=("perturbation", "first"),
                                                 dose=("dose", "first"), n=("plate", "size")).reset_index()
     assert (sub.groupby("unit").perturbation.nunique() == 1).all()
@@ -208,7 +232,7 @@ def build_megafin():
     uindex = {u: i for i, u in enumerate(units.unit)}
     ucode = obs.unit.map(uindex)
     r, c = [], []
-    for i in np.flatnonzero(cp1):
+    for i in np.flatnonzero(on):
         u = int(ucode.iat[i])
         for x in sets.iat[i]:
             r.append(i)
@@ -219,29 +243,30 @@ def build_megafin():
     types = [{"name": n, "tissue": MEGAFIN_TISSUE[n], "n": int(a), "n_transfer": 0, "umbrella": n in MEGAFIN_UMBRELLAS}
              for n, a in zip(names, n_type)]
     order = sorted(range(nt), key=lambda i: (TISSUE_ORDER.index(types[i]["tissue"]), not types[i]["umbrella"], -types[i]["n"]))
-    n_cp1 = int(cp1.sum())
-    unl = int((sets[cp1].map(len) == 0).sum())
+    n_on = int(on.sum())
+    unl = int((sets[on].map(len) == 0).sum())
+    other = "CP02 (MegaFin part 2)" if part == 1 else "CP01 (MegaFin part 1)"
     meta = {
-        "dataset": "megafin", "title": "MegaFin part 1 · Patrick's sets", "baseline": "DMSO", "anchor": "Sorafenib",
-        "source": "s3://zsb-gold-library/megafin/zsb/v1/megafin.h5ad (plate CP01)",
+        "dataset": cfg["ds"], "title": f"MegaFin part {part} · Patrick's sets", "baseline": "DMSO", "anchor": "Sorafenib",
+        "source": f"s3://zsb-gold-library/megafin/zsb/v1/megafin.h5ad (plate {plate})",
         "z_method": "robust",
         "tissues": [t for t in TISSUE_ORDER if any(x["tissue"] == t for x in types)],
         "types": types, "type_order": order,
         "units": [{"id": r.unit, "plate": r.plate, "n": int(r.n)} for r in units.itertuples()],
         "conds": conds,
-        "labels": "Patrick's 27 hand-drawn Trailmaker cell sets on MegaFin part 1 (plate CP01), joined to Gold by barcode",
+        "labels": f"Patrick's {nt} hand-drawn Trailmaker cell sets on MegaFin part {part} (plate {plate}), joined to Gold by barcode",
         "notes": [
-            "Cell types are Patrick's hand-drawn Trailmaker cell sets on MegaFin part 1, joined to the Gold cells by barcode. They overlap by design: CNS is an umbrella over Forebrain, Midbrain and Hindbrain, so a column is the share of all cells in that set and columns do not sum to 100%.",
-            "Only plate CP01 (MegaFin part 1) is shown, because Patrick has not labelled CP02; its drugs are not on this plate.",
-            f"{unl:,} of {n_cp1:,} CP01 Gold cells carry no set (left blank, or absent from his object); they stay in every denominator.",
+            f"Cell types are Patrick's hand-drawn Trailmaker cell sets on MegaFin part {part} ({cfg['source']}), joined to the Gold cells by barcode. They overlap by design: CNS is an umbrella over Forebrain, Midbrain and Hindbrain, so a column is the share of all cells in that set and columns do not sum to 100%.",
+            f"Only plate {plate} is on this plate. {other} was labelled in a separate Trailmaker project whose set names do not line up one to one, so it is its own dataset on this page rather than merged in.",
+            f"{unl:,} of {n_on:,} {plate} Gold cells carry no set (left blank, or absent from his object); they stay in every denominator.",
             "Each drug and dose is one well, compared with the plate's two DMSO wells. z is a robust z of the well against every well on the plate.",
-            "The Intestine and Liver/hepatoblasts sets cover nearly the same cells (99.5% of Intestine lies inside Liver); read the two columns as one until they are redrawn.",
+            *cfg["extra_notes"],
             "Expert labels are evaluation data for the labeller; nothing here feeds it.",
         ],
     }
-    print(f"  {len(units)} wells, {len(conds)} conditions, {nt} cell sets, {unl:,} of {n_cp1:,} CP01 cells unlabelled; X pass for gene counts")
+    print(f"  {len(units)} wells, {len(conds)} conditions, {nt} cell sets, {unl:,} of {n_on:,} {plate} cells unlabelled; X pass for gene counts")
     C = count_expressing(path, member, len(genes))
-    write_dataset("megafin", meta, member_counts, C, genes, per_type=6, n_cells_type=n_type)
+    write_dataset(cfg["ds"], meta, member_counts, C, genes, per_type=6, n_cells_type=n_type)
 
 
 # ---------------------------------------------------------------- MiniFin (Patrick's sets)
@@ -314,10 +339,12 @@ def build_minifin():
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--only", choices=["megafin", "minifin"])
+    ap.add_argument("--only", choices=["megafin", "megafin2", "minifin"])
     a = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
     if a.only in (None, "minifin"):
         build_minifin()
     if a.only in (None, "megafin"):
-        build_megafin()
+        build_megafin(1)
+    if a.only in (None, "megafin2"):
+        build_megafin(2)
