@@ -861,7 +861,7 @@
     "On MegaFin, neighbouring wells resemble each other more than distant ones, and each drug's two doses sit in neighbouring wells, so a single-well effect is a lead to replicate rather than a finding. Story III shows it.",
     "Similarity to the reference is the correlation of two z-score profiles over the sets on screen, at the same dose. The clustered order uses the same correlation, average-linked.",
     "Tissues are a grouping of set names for filtering only. The gene field reads a panel of marker and context genes chosen when the page was built, not the whole transcriptome. Colour runs to the 98th percentile of what is on screen, so the scale moves when you filter.",
-    "The seven stories are the page author's reading of the data. Their settings are the page's own controls, and every number they quote is computed from the same counts as the plate.",
+    "The eight stories are the page author's reading of the data. Their settings are the page's own controls, and every number they quote is computed from the same counts as the plate.",
     "The plum column left of the drug names is a quick triage of how likely each drug's DMSO stock is to lose potency through freeze-thaw cycles and storage time, read from the molecule's chemistry (esters and lactones that hydrolyse as thawed DMSO takes up water, epoxides, boronates, catechols, quinones, light-sensitive dihydropyridines, macrolides) and common handling guidance, against the background of Kozikowski et al. and Cheng et al. (J Biomol Screen, 2003). It is an estimate, not measured on these plates; hover a swatch for the reason. Built by <code>scripts/trailmaker_stability.py</code>.",
     "Patrick's labels are evaluation data for the labeller; nothing here feeds it.",
   ];
@@ -881,10 +881,10 @@
   }
 
   // ------------------------------------------------------------------ stories
-  // Four readings of the data. Each is a preset of the page's own controls plus a few beats of
+  // Eight readings of the data. Each is a preset of the page's own controls plus a few beats of
   // narration; each beat spotlights the rows and columns it is about and dims the rest. Numbers in
   // the narration come from storyKit(), i.e. from the loaded counts, never from typed text.
-  const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
+  const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
   // set names differ slightly between the two MegaFin projects; this lines them up for cross-plate numbers only
   const normSet = (s) => s.toLowerCase().replace(/[()]/g, "").replace(/floor ?plate/, "floorplate").replace(/\/melanoblasts/, "")
     .replace(/schwann cells?( precursors)?/, "schwann").replace(/sclerotome.*/, "sclerotome").replace(/pronephros.*/, "pronephros")
@@ -941,12 +941,24 @@
       const xc = (d, dose) => X.conds.findIndex((u) => u.drug === d && (dose == null || u.dose === String(dose)));
       const xcells = (i) => X.conds[i].units.reduce((s, u) => s + X.units[u].n, 0);
       const usable = X.conds.map((_, i) => i).filter((i) => !X.conds[i].control && xcells(i) >= 1000);
+      const loose = (s) => s.toLowerCase().replace(/[^a-z]/g, "");
+      const xtl = (name) => X.types.findIndex((u) => loose(u.name) === loose(name));
+      const medN = (() => { const ns = X.units.map((u) => u.n).sort((a, b) => a - b); return ns[ns.length >> 1]; })();
+      const wellsAll = X.conds.map((_, i) => i).filter((i) => !X.conds[i].control);
+      const rmsCols = X.types.map((_, j) => j).filter((j) => !X.types[j].umbrella && X.types[j].n >= 100);
+      const rms = (i) => TM.responseScore(TM.row(XM.z, i, xn), rmsCols);
       return {
         X, XM, xn, xt, xc,
         basePct: (s) => { const j = xt(s); return j < 0 ? "–" : pctF(XM.pct[X.base * xn + j]); },
         baseVal: (s) => { const j = xt(s); return j < 0 ? NaN : XM.pct[X.base * xn + j]; },
         zv: (d, dose, s) => { const i = xc(d, dose), j = xt(s); return i < 0 || j < 0 ? NaN : XM.z[i * xn + j]; },
         maxAbsDelta: (s) => { const j = xt(s); let best = NaN; for (const i of usable) { const v = Math.abs(XM.delta[i * xn + j]); if (Number.isFinite(v) && !(v <= best)) best = v; } return best; },
+        chg: (d, dose, s) => { const i = xc(d, dose), j = xtl(s); if (i < 0 || j < 0) return "–"; const v = XM.pct[i * xn + j] / XM.pct[X.base * xn + j] - 1;
+          return Number.isFinite(v) ? `${v >= 0 ? "+" : "−"}${Math.abs(Math.round(100 * v))}%` : "–"; },
+        cells: (d, dose) => { const i = xc(d, dose); return i < 0 ? "–" : nF(xcells(i)); },
+        cellsX: (d, dose) => { const i = xc(d, dose); return i < 0 ? "–" : `×${(xcells(i) / medN).toFixed(1)}`; },
+        flat: (d, dose) => { const i = xc(d, dose); if (i < 0) return "–"; const r = rms(i); return ord(wellsAll.filter((k) => rms(k) < r).length + 1); },
+        nWells: wellsAll.length,
         well: (d, dose) => { const i = xc(d, dose); const mt = i >= 0 && X.units[X.conds[i].units[0]].id.match(/_([A-H]\d{1,2})_CP0/); return mt ? mt[1] : "?"; },
       };
     };
@@ -994,6 +1006,8 @@
       fewer: (d, dose, s) => { const a = val(M.pct, d, dose, s), j = t(s), base = j < 0 ? NaN : M.pct[m.base * nt + j]; return base > 0 ? `${Math.round(100 * (1 - a / base))}%` : "–"; },
       r: (d1, x1, d2, x2) => rF(R(c(d1, x1), c(d2, x2))),
       units: (d, dose) => { const i = c(d, dose); return i < 0 ? 0 : m.conds[i].units.length; },
+      below: (d, dose, s) => { const i = c(d, dose), j = t(s); if (i < 0 || j < 0) return "–"; const b0 = M.pct[m.base * nt + j], us = m.conds[i].units;
+        return `${us.filter((u) => TM.unitVal(S.layer, u, j, nt) < b0).length} of ${us.length}`; },
       cells: (d, dose) => { const i = c(d, dose); return i < 0 ? "–" : nF(cellsOf(i)); },
       wells: (list) => list.map(([d, dose]) => { const i = c(d, dose), w = i >= 0 && wellOf(i); return w ? w.w : "?"; }).join(", "),
       rankDown: (d, dose, s) => {
@@ -1130,6 +1144,31 @@
           text: (k) => { const a = k.other("megafin"), b = k.other("megafin2");
             return `Even the drug placed identically does not line up: Sorafenib at 5 µM sat in well ${a ? a.well("Sorafenib", "5") : "?"} on part 1 and ${b ? b.well("Sorafenib", "5") : "?"} on part 2, `
               + `and its two profiles across the shared sets correlate at ${k.b("r " + k.crossR("Sorafenib", "5"))}. That is why the parts sit side by side here and are never merged.`; } },
+      ],
+    },
+    {
+      ds: "minifin", label: "all three datasets", title: "Fresh stock, aged stock", aux: ["minifin", "megafin", "megafin2"],
+      set: { mode: "delta", ref: "Sorafenib", sort: "set", type: "Vascular Endothelial Cells" },
+      beats: [
+        { rows: [["Sorafenib"]], types: ["Vascular Endothelial Cells"],
+          text: (k) => `MiniFin was dosed from freshly made stock. There Sorafenib cuts vascular endothelial cells from ${k.b(k.basePct("Vascular Endothelial Cells"))} to ${k.b(k.pct("Sorafenib", null, "Vascular Endothelial Cells"))}, `
+            + `${k.b(k.fewer("Sorafenib", null, "Vascular Endothelial Cells"))} fewer, and ${k.b(k.below("Sorafenib", null, "Vascular Endothelial Cells"))} samples sit below the DMSO average.` },
+        { ds: "megafin2", set: { dose: "5", type: "Vascular endothelial cells" }, rows: [["Sorafenib", "5"]], types: ["Vascular endothelial cells"],
+          text: (k) => { const a = k.other("megafin"), b = k.other("megafin2"); if (!a || !b) return "–";
+            return `MegaFin's stocks were older. At 5 µM the same drug moves the vessels ${k.b(a.chg("Sorafenib", "5", "Vascular endothelial cells"))} on part 1 and ${k.b(b.chg("Sorafenib", "5", "Vascular endothelial cells"))} on part 2 `
+              + `(z ${zF(a.zv("Sorafenib", "5", "Vascular endothelial cells"))} and ${zF(b.zv("Sorafenib", "5", "Vascular endothelial cells"))}), inside the ordinary spread between wells. Its thin 1 µM wells (${a.cells("Sorafenib", "1")} and ${b.cells("Sorafenib", "1")} cells) even point up.`; } },
+        { ds: "megafin", set: { dose: "5", type: "Fast twitch muscle" }, rows: [["Dapagliflozin", "5"]], types: ["Fast twitch muscle"],
+          text: (k) => { const f = k.other("minifin"), a = k.other("megafin"); if (!f || !a) return "–";
+            return `Old stock can't be the whole answer. Dapagliflozin is chemically robust, yet its MiniFin signature fails too: fast-twitch muscle ${k.b(f.chg("Dapagliflozin", null, "Fast-Twitch Muscle"))} on MiniFin, `
+              + `${k.b(a.chg("Dapagliflozin", "5", "Fast twitch muscle"))} on part 1. One well on a batch-shifted plate (stories III, VII) blurs even a stable drug.`; } },
+        { ds: "megafin2", set: { dose: "5", sort: "response", type: "" }, rows: [["Paclitaxel Taxol", "5"], ["Vinblastine sulfate", "5"], ["Epothilone B", "5"]],
+          text: (k) => { const b = k.other("megafin2"); if (!b) return "–";
+            return `Where age could still show: drugs that should hit hard and don't. Paclitaxel and Vinblastine block cell division, yet Paclitaxel 5 µM is the ${k.b(b.flat("Paclitaxel Taxol", "5"))} flattest of ${b.nWells} wells, `
+              + `and both keep more cells than a typical well (${b.cellsX("Paclitaxel Taxol", "5")}, ${b.cellsX("Vinblastine sulfate", "5")}). Epothilone B, same target, leaves ${k.b(b.cellsX("Epothilone B", "5"))}.`; } },
+        { ds: "megafin", set: { dose: "5", sort: "response", type: "" }, rows: [["Panobinostat", "5"], ["Vorinostat SAHA", "5"], ["17-AAG KOS953", "5"]],
+          text: (k) => { const a = k.other("megafin"); if (!a) return "–"; const r = a.flat("17-AAG KOS953", "5");
+            return `On part 1, Panobinostat, an HDAC inhibitor far more potent than Vorinostat, is among the flattest wells (${k.b(a.flat("Panobinostat", "1"))} and ${k.b(a.flat("Panobinostat", "5"))} of ${a.nWells}); `
+              + `17-AAG at 5 µM is the ${k.b(r === "1st" ? "flattest of all" : r + " flattest")}. Paclitaxel and 17-AAG barely dissolve in water, so wet, refrozen stock can lose them by settling out. Re-make these from fresh powder first.`; } },
       ],
     },
   ];

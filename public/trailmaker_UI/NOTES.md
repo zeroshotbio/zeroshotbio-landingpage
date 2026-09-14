@@ -64,7 +64,7 @@ builds had all of those; removed 2026-09-14 at the user's request). Rebuild:
   weak drug.
 - Patrick's labels are evaluation data for the labeller; nothing here feeds it.
 
-## The seven stories (above the plate)
+## The eight stories (above the plate)
 
 Presets of the page's own controls plus a few beats of narration; each beat spotlights the rows and
 columns it is about. Every number they quote is computed live by `storyKit()` in `tm-view.js` from
@@ -106,6 +106,20 @@ the other plate come from a second, untouched copy of its data):
 7. **Parts 1 + 2: two plates, two baselines.** DMSO wells are 43% CNS on part 1 and 62% on part 2;
    Sorafenib 5 uM sat in well A2 on both plates and its profiles correlate at r ~ 0. Plates are
    batches: compare within a plate, never merge.
+8. **All three: fresh stock, aged stock.** MiniFin was dosed from fresh stock, MegaFin from older
+   stock. Sorafenib's MiniFin vessel loss (-39%, all 11 samples below the DMSO average) is absent at
+   5 uM on MegaFin (+13% part 1, -14% part 2, z -0.5 / -1.3); the thin 1 uM wells point up. But
+   Dapagliflozin, chemically robust, fails to replicate too (fast-twitch muscle +56% on MiniFin, -2%
+   on part 1), so stock age cannot be separated from one-well-per-dose and plate batch here. The
+   stability-tier column does NOT predict flat wells (median RMS z of "likely" wells is no lower than
+   "robust"). Known-potent drugs that look weirdly flat, the wells to re-make first: Paclitaxel 5 uM
+   (6th flattest of 92, x1.3 cells) and Vinblastine (x1.3-1.6 cells) on part 2, while Epothilone B,
+   same target, leaves x0.4; Panobinostat (4th and 8th flattest of 89) and 17-AAG 5 uM (flattest)
+   on part 1. Cell ratios were checked against each well's column (part 1's column 5, Panobinostat's,
+   runs x1.6, so its high cell count is its column's; its flatness is not). Paclitaxel and 17-AAG
+   barely dissolve in water, so a wet, refrozen stock can lose them by precipitation, which the
+   stability column (chemical breakdown) does not score. MiniFin's dose is not recorded in its
+   object; the matched dose is the team's statement.
 
 Also measured: bottom-edge row H holds the fewest cells per well on both plates (median ~4,400 and
 ~2,600 vs ~6,500-8,000 elsewhere); part 1's column 3 is thin (median ~800 cells) and holds the
