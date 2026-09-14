@@ -56,7 +56,7 @@ builds had all of those; removed 2026-09-14 at the user's request). Rebuild:
 - **The gene field is a panel** (top markers per set plus a few context genes), not the transcriptome.
 - Patrick's labels are evaluation data for the labeller; nothing here feeds it.
 
-## The four stories (above the plate)
+## The seven stories (above the plate)
 
 Presets of the page's own controls plus a few beats of narration; each beat spotlights the rows and
 columns it is about. Every number they quote is computed live by `storyKit()` in `tm-view.js` from
@@ -80,3 +80,25 @@ the loaded counts, so a rebuild moves the text with the data. They are the page 
 Class checks that did NOT hold and so are not stories: glucocorticoids vs macrophages/neutrophils,
 Hedgehog inhibitors vs slow muscle, HDAC / statin / CDK class fingerprints (within-class r ~ 0),
 PARP inhibitors vs muscle (Rucaparib's signal is mirrored by its neighbour Fluoxetine, r 0.78).
+
+Added the same day, for MegaFin part 1 and across the plates (a beat may switch plate; numbers from
+the other plate come from a second, untouched copy of its data):
+
+5. **MegaFin part 1: Rucaparib beats its neighbours.** The "neighbour check" (a well's z minus the
+   median z of the other drugs' wells touching it) plus "repeats at both doses" leaves 5 drug-set
+   pairs on part 1, 3 of them Rucaparib's (basal epidermis z 6.1 / 4.4 vs neighbours ~0.5, fast-twitch
+   muscle, exocrine pancreas). Fluoxetine next door echoes it only faintly. The three PARP inhibitors
+   on part 2 leave basal epidermis flat, so it looks like Rucaparib's own effect, not its class's.
+6. **MegaFin part 1: one pathway, one cell type.** 7 of the 8 wells of the four PI3K-mTOR drugs sit
+   above the plate's typical well for vascular endothelial cells (z > 0), where half would by chance.
+   (Against DMSO the count is 8 of 8, but 69 of the plate's 82 wells beat DMSO there, so that is no
+   evidence; the story uses z.) Omipalisib 5 uM (z 11.1) and Rapamycin 1 uM (z 6.9) are
+   among the plate's loudest vascular squares with neighbours near 0, but neither repeats at its
+   other dose. A lead, not a finding.
+7. **Parts 1 + 2: two plates, two baselines.** DMSO wells are 43% CNS on part 1 and 62% on part 2;
+   Sorafenib 5 uM sat in well A2 on both plates and its profiles correlate at r ~ 0. Plates are
+   batches: compare within a plate, never merge.
+
+Also measured: bottom-edge row H holds the fewest cells per well on both plates (median ~4,400 and
+~2,600 vs ~6,500-8,000 elsewhere); part 1's column 3 is thin (median ~800 cells) and holds the
+no-DMSO controls (1,489 and 474 cells).

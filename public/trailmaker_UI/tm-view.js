@@ -818,7 +818,7 @@
     "On MegaFin, neighbouring wells resemble each other more than distant ones, and each drug's two doses sit in neighbouring wells, so a single-well effect is a lead to replicate rather than a finding. Story III shows it.",
     "Similarity to the reference is the correlation of two z-score profiles over the sets on screen, at the same dose. The clustered order uses the same correlation, average-linked.",
     "Tissues are a grouping of set names for filtering only. The gene field reads a panel of marker and context genes chosen when the page was built, not the whole transcriptome. Colour runs to the 98th percentile of what is on screen, so the scale moves when you filter.",
-    "The four stories are the page author's reading of the data. Their settings are the page's own controls, and every number they quote is computed from the same counts as the plate.",
+    "The seven stories are the page author's reading of the data. Their settings are the page's own controls, and every number they quote is computed from the same counts as the plate.",
     "Patrick's labels are evaluation data for the labeller; nothing here feeds it.",
   ];
 
@@ -840,7 +840,16 @@
   // Four readings of the data. Each is a preset of the page's own controls plus a few beats of
   // narration; each beat spotlights the rows and columns it is about and dims the rest. Numbers in
   // the narration come from storyKit(), i.e. from the loaded counts, never from typed text.
-  const ROMAN = ["I", "II", "III", "IV"];
+  const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
+  // set names differ slightly between the two MegaFin projects; this lines them up for cross-plate numbers only
+  const normSet = (s) => s.toLowerCase().replace(/[()]/g, "").replace(/floor ?plate/, "floorplate").replace(/\/melanoblasts/, "")
+    .replace(/schwann cells?( precursors)?/, "schwann").replace(/sclerotome.*/, "sclerotome").replace(/pronephros.*/, "pronephros")
+    .replace(/endocrine pancreas.*/, "endocrine pancreas").trim();
+  async function ensureAux(ds) {
+    S.aux = S.aux || {};
+    if (S.aux[ds]) return;
+    try { const r = await fetch(`/trailmaker_UI/data/${ds}.json`); if (r.ok) S.aux[ds] = TM.prepare(await r.json()); } catch { /* the beat will print "–" */ }
+  }
   const spotR = (i) => !!(S.spot && S.spot.rows.has(i));
   const spotT = (t) => !!(S.spot && S.spot.types.has(t));
   const ord = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"}`;
@@ -874,7 +883,66 @@
     const R = (a, b) => TM.pearson(TM.row(M.z, a, nt), TM.row(M.z, b, nt), cols);
     const drugRows = m.conds.map((_, i) => i).filter((i) => !m.conds[i].control && cellsOf(i) >= 1000);
     const mean = (xs) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : NaN);
+    // the neighbour check: median z of the other drugs' wells touching this one (needs two of them)
+    const nbrZ = (i, j) => {
+      const w = i >= 0 && wellOf(i); if (!w || j < 0) return NaN;
+      const zs = drugRows.filter((k) => { if (k === i || m.conds[k].drug === m.conds[i].drug) return false; const wk = wellOf(k); return wk && Math.max(Math.abs(wk.r - w.r), Math.abs(wk.c - w.c)) === 1; })
+        .map((k) => M.z[k * nt + j]).filter(Number.isFinite).sort((a, b2) => a - b2);
+      return zs.length >= 2 ? zs[zs.length >> 1] : NaN;
+    };
+    const auxK = (ds) => {
+      const X = S.aux && S.aux[ds]; if (!X) return null;
+      const XM = TM.matrices(X, X.propLayer), xn = X.nt;
+      const xt = (name) => X.types.findIndex((u) => u.name === name);
+      const xc = (d, dose) => X.conds.findIndex((u) => u.drug === d && (dose == null || u.dose === String(dose)));
+      const xcells = (i) => X.conds[i].units.reduce((s, u) => s + X.units[u].n, 0);
+      const usable = X.conds.map((_, i) => i).filter((i) => !X.conds[i].control && xcells(i) >= 1000);
+      return {
+        X, XM, xn, xt, xc,
+        basePct: (s) => { const j = xt(s); return j < 0 ? "–" : pctF(XM.pct[X.base * xn + j]); },
+        baseVal: (s) => { const j = xt(s); return j < 0 ? NaN : XM.pct[X.base * xn + j]; },
+        zv: (d, dose, s) => { const i = xc(d, dose), j = xt(s); return i < 0 || j < 0 ? NaN : XM.z[i * xn + j]; },
+        maxAbsDelta: (s) => { const j = xt(s); let best = NaN; for (const i of usable) { const v = Math.abs(XM.delta[i * xn + j]); if (Number.isFinite(v) && !(v <= best)) best = v; } return best; },
+        well: (d, dose) => { const i = xc(d, dose); const mt = i >= 0 && X.units[X.conds[i].units[0]].id.match(/_([A-H]\d{1,2})_CP0/); return mt ? mt[1] : "?"; },
+      };
+    };
     return {
+      nbr: (d, dose, s) => zF(nbrZ(c(d, dose), t(s))),
+      survivors: () => {
+        const byDrug = {}, out = [];
+        drugRows.forEach((i) => { (byDrug[m.conds[i].drug] = byDrug[m.conds[i].drug] || []).push(i); });
+        for (const [d, is] of Object.entries(byDrug)) {
+          if (is.length !== 2) continue;
+          for (const j of cols) {
+            const r1 = M.z[is[0] * nt + j] - nbrZ(is[0], j), r2 = M.z[is[1] * nt + j] - nbrZ(is[1], j);
+            if (Number.isFinite(r1) && Number.isFinite(r2) && Math.sign(r1) === Math.sign(r2) && Math.abs(r1) >= 2 && Math.abs(r2) >= 2) out.push({ d, set: m.types[j].name });
+          }
+        }
+        return out;
+      },
+      classUp: (drugs, s) => {
+        const j = t(s), ws = drugRows.filter((k) => drugs.includes(m.conds[k].drug));
+        return { n: ws.length, up: ws.filter((k) => M.z[k * nt + j] > 0).length, plate: drugRows.length, plateUp: drugRows.filter((k) => M.z[k * nt + j] > 0).length };
+      },
+      rankUp: (d, dose, s) => {
+        const j = t(s), i = c(d, dose);
+        const ok = drugRows.filter((k) => Number.isFinite(M.z[k * nt + j])).sort((a, b2) => M.z[b2 * nt + j] - M.z[a * nt + j]);
+        return ord(ok.indexOf(i) + 1);
+      },
+      other: auxK,
+      crossR: (d, dose) => {
+        const A = auxK("megafin"), B = auxK("megafin2"); if (!A || !B) return "–";
+        const ia = A.xc(d, dose), ib = B.xc(d, dose); if (ia < 0 || ib < 0) return "–";
+        const xs = [], ys = [];
+        A.X.types.forEach((u, j) => {
+          if (u.umbrella || u.n < 100) return;
+          const jb = B.X.types.findIndex((v) => normSet(v.name) === normSet(u.name) && v.n >= 100);
+          if (jb < 0) return;
+          const za = A.XM.z[ia * A.xn + j], zb = B.XM.z[ib * B.xn + jb];
+          if (Number.isFinite(za) && Number.isFinite(zb)) { xs.push(za); ys.push(zb); }
+        });
+        return rF(TM.pearson(xs, ys, xs.map((_, k) => k)));
+      },
       b: (x) => `<b>${x}</b>`,
       pct: (d, dose, s) => pctF(val(M.pct, d, dose, s)),
       basePct: (s) => { const j = t(s); return j < 0 ? "–" : pctF(M.pct[m.base * nt + j]); },
@@ -967,6 +1035,59 @@
         { text: () => `Same drug, same direction, but one well cannot tell a drug from its well (story III). The replicated MiniFin result is the one to trust; MegaFin would need repeat wells to say more.` },
       ],
     },
+    {
+      ds: "megafin", title: "Rucaparib beats its neighbours", aux: ["megafin2"],
+      set: { mode: "z", dose: "", ref: "Rucaparib AG-014699", focus: ["Fluoxetine HCl", "1"], sort: "set", type: "Basal epidermis" },
+      beats: [
+        { rows: [["Rucaparib AG-014699", "1"], ["Rucaparib AG-014699", "5"]],
+          text: (k) => { const s = k.survivors(); const ru = s.filter((x) => x.d === "Rucaparib AG-014699").length;
+            return `Single wells are easy to over-read (story III), so put every effect on part 1 through two tests: it must appear at both doses, and stand above the wells around it. `
+              + `Only ${k.b(s.length)} drug–set pairs pass both, and ${k.b(ru)} of them are Rucaparib's.`; } },
+        { rows: [["Rucaparib AG-014699", "1"], ["Rucaparib AG-014699", "5"], ["Fluoxetine HCl", "1"]], types: ["Basal epidermis", "Fast twitch muscle"],
+          text: (k) => `Rucaparib, a PARP inhibitor, raises basal epidermis at ${k.b("z " + k.z("Rucaparib AG-014699", "1", "Basal epidermis"))} and ${k.b(k.z("Rucaparib AG-014699", "5", "Basal epidermis"))} (1 and 5 µM) `
+            + `while the wells around it sit near ${k.nbr("Rucaparib AG-014699", "1", "Basal epidermis")}, and it lifts fast-twitch muscle too. Fluoxetine, next door, echoes it only faintly (z ${k.z("Fluoxetine HCl", "1", "Basal epidermis")}).` },
+        { rows: [["Rucaparib AG-014699", "1"], ["Rucaparib AG-014699", "5"]], types: ["Basal epidermis"],
+          text: (k) => { const o = k.other("megafin2"); const zs = o ? [["Olaparib AZD2281"], ["MK-4827 Niraparib"], ["ABT-888 Veliparib"]].flatMap(([d]) => ["1", "5"].map((x) => o.zv(d, x, "Basal epidermis"))).filter(Number.isFinite) : [];
+            const mx = zs.length ? Math.max(...zs.map(Math.abs)) : NaN;
+            return `Is it PARP? On part 2, three other PARP inhibitors (Olaparib, Niraparib, Veliparib) leave basal epidermis flat, every well within z ±${Number.isFinite(mx) ? mx.toFixed(1) : "–"}. `
+              + `So the effect looks like Rucaparib's own rather than its class's: the strongest lead on part 1, and worth a repeat well.`; } },
+      ],
+    },
+    {
+      ds: "megafin", title: "One pathway, one cell type",
+      set: { mode: "z", dose: "", ref: "Rapamycin Sirolimus", focus: ["GSK2126458 Omipalisib", "5"], sort: "set", type: "Vascular endothelial cells" },
+      beats: [
+        { rows: ["Rapamycin Sirolimus", "Everolimus RAD001", "GSK2126458 Omipalisib", "CAL-101 Idelalisib"].flatMap((d) => [[d, "1"], [d, "5"]]), types: ["Vascular endothelial cells"],
+          text: (k) => { const c = k.classUp(["Rapamycin Sirolimus", "Everolimus RAD001", "GSK2126458 Omipalisib", "CAL-101 Idelalisib"], "Vascular endothelial cells");
+            return `Four drugs on part 1 act on one growth pathway, PI3K–mTOR: Rapamycin, Everolimus, Omipalisib and Idelalisib. ${k.b(`${c.up} of their ${c.n}`)} wells hold more vascular endothelial cells than the plate's typical well, `
+              + `where about half would by chance (${c.plateUp} of all ${c.plate}).`; } },
+        { rows: [["GSK2126458 Omipalisib", "5"], ["Rapamycin Sirolimus", "1"]], types: ["Vascular endothelial cells"],
+          text: (k) => `Two of them make the plate's loudest vascular squares: Omipalisib at 5 µM is the ${k.rankUp("GSK2126458 Omipalisib", "5", "Vascular endothelial cells")} (${k.b("z " + k.z("GSK2126458 Omipalisib", "5", "Vascular endothelial cells"))}) `
+            + `and Rapamycin at 1 µM the ${k.rankUp("Rapamycin Sirolimus", "1", "Vascular endothelial cells")} (${k.b("z " + k.z("Rapamycin Sirolimus", "1", "Vascular endothelial cells"))}), while the wells around each sit near `
+            + `${k.nbr("GSK2126458 Omipalisib", "5", "Vascular endothelial cells")} and ${k.nbr("Rapamycin Sirolimus", "1", "Vascular endothelial cells")}. Not the neighbourhood, then.` },
+        { rows: [["GSK2126458 Omipalisib", "1"], ["Rapamycin Sirolimus", "5"]], types: ["Vascular endothelial cells"],
+          text: (k) => `But neither spike repeats at the drug's other dose (Omipalisib 1 µM z ${k.z("GSK2126458 Omipalisib", "1", "Vascular endothelial cells")}, Rapamycin 5 µM z ${k.z("Rapamycin Sirolimus", "5", "Vascular endothelial cells")}). `
+            + `A pathway that leans one way in every well and spikes in two is a lead worth repeat wells, not yet a finding.` },
+      ],
+    },
+    {
+      ds: "megafin", label: "MegaFin parts 1 + 2", title: "Two plates, two baselines", aux: ["megafin", "megafin2"],
+      set: { mode: "pct", dose: "5", ref: "Sorafenib", sort: "response" },
+      beats: [
+        { rows: [["DMSO"]], types: ["CNS", "Midbrain"],
+          text: (k) => { const a = k.other("megafin"); return `Start with the vehicle. On part 1, the DMSO wells are ${k.b(a ? a.basePct("CNS") : "–")} CNS and ${k.b(a ? a.basePct("Midbrain") : "–")} midbrain.`; } },
+        { ds: "megafin2", rows: [["DMSO"]], types: ["CNS", "Midbrain"],
+          text: (k) => { const a = k.other("megafin"), b = k.other("megafin2"); if (!a || !b) return "–";
+            const gap = Math.abs(b.baseVal("CNS") - a.baseVal("CNS")), ma = a.maxAbsDelta("CNS"), mb = b.maxAbsDelta("CNS");
+            return `On part 2, the same vehicle reads ${k.b(b.basePct("CNS"))} CNS and ${k.b(b.basePct("Midbrain"))} midbrain. That gap between the plates, ${(gap * 100).toFixed(0)} points of CNS, `
+              + `${gap > Math.max(ma, mb) ? "is larger than any drug's CNS effect within either plate" : "rivals the largest drug effects within a plate"} (at most ${(ma * 100).toFixed(0)} and ${(mb * 100).toFixed(0)} points). `
+              + `The plates differ as batches, so every Δ here compares a drug with DMSO on its own plate.`; } },
+        { ds: "megafin2", rows: [["Sorafenib", "5"]],
+          text: (k) => { const a = k.other("megafin"), b = k.other("megafin2");
+            return `Even the drug placed identically does not line up: Sorafenib at 5 µM sat in well ${a ? a.well("Sorafenib", "5") : "?"} on part 1 and ${b ? b.well("Sorafenib", "5") : "?"} on part 2, `
+              + `and its two profiles across the shared sets correlate at ${k.b("r " + k.crossR("Sorafenib", "5"))}. That is why the parts sit side by side here and are never merged.`; } },
+      ],
+    },
   ];
 
   function settingsLine() {
@@ -978,9 +1099,10 @@
     return `<span class="lhead">settings chosen</span>${esc(parts.join(" · "))}`;
   }
 
+  const beatDs = () => { const st = STORIES[S.story.k]; return st.beats[S.story.beat].ds || st.ds; };
   function paintStoryCard() {
     const card = $("#storyCard");
-    if (!S.story || !S.m || S.m.dataset !== STORIES[S.story.k].ds) { card.hidden = true; return; }
+    if (!S.story || !S.m || S.m.dataset !== beatDs()) { card.hidden = true; return; }
     const st = STORIES[S.story.k], n = st.beats.length, b = S.story.beat;
     card.hidden = false;
     $("#scNum").textContent = `story ${ROMAN[S.story.k]} of ${ROMAN[STORIES.length - 1]} · ${S.m.title.split(" · ")[0]} · ${b + 1} / ${n}`;
@@ -994,34 +1116,47 @@
     $("#storyNext").innerHTML = b === n - 1 ? "the end &rsaquo;" : "next &rsaquo;";
   }
 
-  function showBeat() {
-    const st = STORIES[S.story.k], b = st.beats[S.story.beat], m = S.m;
+  async function showBeat() {
+    const st = STORIES[S.story.k], b = st.beats[S.story.beat];
+    if (S.ds !== beatDs()) {
+      const keep = S.story;
+      S.spot = null;
+      await load(beatDs(), false);
+      S.story = keep;
+      applySettings({ ...st.set, ...(b.set || {}) });
+    } else if (b.set) applySettings({ ...st.set, ...b.set });
+    const m = S.m;
     const rows = (b.rows || []).map(([d, dose]) => m.conds.findIndex((c) => c.drug === d && (dose == null || c.dose === String(dose)))).filter((i) => i >= 0);
     const types = (b.types || []).map((nm) => m.types.findIndex((t) => t.name === nm)).filter((i) => i >= 0);
     S.spot = { rows: new Set(rows), types: new Set(types) };
     render();
   }
 
-  async function startStory(k, scroll = true) {
-    const st = STORIES[k];
-    if (!S.m || S.ds !== st.ds) await load(st.ds, false);
+  function applySettings(set) {
     const m = S.m;
-    if (!m || m.dataset !== st.ds) return;
-    S.mode = st.set.mode;
+    S.mode = set.mode;
     S.gene = -1; S.layer = m.propLayer; $("#geneQ").value = ""; $("#geneClear").hidden = true;
-    S.tissue = st.set.tissue || ""; $("#tissueSel").value = S.tissue;
+    S.tissue = set.tissue || ""; $("#tissueSel").value = S.tissue;
     S.typeQ = ""; $("#typeQ").value = "";
-    S.dose = st.set.dose != null ? String(st.set.dose) : m.doses[0] || ""; $("#doseSel").value = S.dose;
+    S.dose = set.dose != null ? String(set.dose) : m.doses[0] || ""; $("#doseSel").value = S.dose;
     const b0 = m.conds.findIndex((c) => c.id === m.baseline);
     if (b0 >= 0 && b0 !== m.base) setBase(b0);
-    setRef(st.set.ref || m.anchor);
-    const f = st.set.focus || [];
+    setRef(set.ref || m.anchor);
+    const f = set.focus || [];
     S.focus = m.conds.findIndex((c) => c.drug === f[0] && !c.control && (f[1] == null || c.dose === String(f[1])));
-    S.sort = st.set.sort; $("#sortSel").value = S.sort;
-    const ty = st.set.type ? m.types.findIndex((t) => t.name === st.set.type) : -1;
+    S.sort = set.sort; $("#sortSel").value = S.sort;
+    const ty = set.type ? m.types.findIndex((t) => t.name === set.type) : -1;
     S.detail = ty >= 0 ? { kind: "type", i: ty } : { kind: "cond", i: anchorIdx() };
+  }
+
+  async function startStory(k, scroll = true) {
+    const st = STORIES[k];
+    if (st.aux) await Promise.all(st.aux.map(ensureAux));
+    if (!S.m || S.ds !== st.ds) await load(st.ds, false);
+    if (!S.m || S.m.dataset !== st.ds) return;
+    applySettings(st.set);
     S.story = { k, beat: 0 };
-    showBeat();
+    await showBeat();
     if (scroll) $("#plate1").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -1041,7 +1176,7 @@
 
   function wireStories() {
     $("#storyKeys").innerHTML = STORIES.map((st, k) => `<button class="storykey" data-story="${k}" aria-pressed="false">`
-      + `<span class="sk-n">story ${ROMAN[k]} · ${esc(DATASETS.find(([d]) => d === st.ds)[1])}</span><em>${esc(st.title)}</em></button>`).join("");
+      + `<span class="sk-n">story ${ROMAN[k]} · ${esc(st.label || DATASETS.find(([d]) => d === st.ds)[1])}</span><em>${esc(st.title)}</em></button>`).join("");
     $("#storyKeys").addEventListener("click", (e) => {
       const b = e.target.closest("button[data-story]");
       if (!b) return;
