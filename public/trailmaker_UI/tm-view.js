@@ -422,7 +422,10 @@
   function examples(mats) {
     const m = S.m, nt = m.nt, b = m.base, g = geneName();
     const V = mats.pct, D = mats.delta, Z = mats.z;
-    const rows = S.rows.filter((i) => !m.conds[i].control && i !== b), cols = S.cols.filter((t) => !m.types[t].umbrella);
+    // a near-empty well (Budesonide 5 µM holds 168 cells) makes every gap look huge, so examples skip small wells
+    const MIN_CELLS = 1000, cellsIn = (i) => m.conds[i].units.reduce((s, u) => s + m.units[u].n, 0);
+    const rows = S.rows.filter((i) => !m.conds[i].control && i !== b && cellsIn(i) >= MIN_CELLS);
+    const cols = S.cols.filter((t) => !m.types[t].umbrella);
     const nm = (t) => `<button class="lnk" data-type="${t}">${esc(m.types[t].name)}</button>`;
     const dr = (i) => `<button class="lnk" data-cond="${i}">${esc(condLabel(m.conds[i]))}</button>`;
     const hd = '<span class="exh">for example</span>';
@@ -446,7 +449,7 @@
     out.delta = `<p class="ex">${hd}${dr(big.i)} takes ${g ? `the share of ${nm(big.t)} cells expressing <i>${esc(g)}</i>` : nm(big.t)} ${fromTo(big)}, `
       + `<b>&Delta; ${ppF(D[big.k])}</b>: out of every 100 ${g ? `${esc(m.types[big.t].name)} ` : ""}cells, about ${(big.d * 100).toFixed(1)} `
       + `${D[big.k] >= 0 ? "more" : "fewer"} ${g ? "express it" : "are of that type"} than in ${esc(baseName())}. `
-      + `The biggest gap on the plate; the same Δ means more for a rare set than a common one, which is what z is for.</p>`;
+      + `The biggest gap on the plate, leaving out wells of fewer than ${nF(MIN_CELLS)} cells; the same Δ means more for a rare set than a common one, which is what z is for.</p>`;
     const quiet = cells.filter((c) => c.z >= 3).sort((x, y) => x.d - y.d)[0];
     const dq = TM.quantile(cells.map((c) => c.d), 0.9);
     const loud = cells.filter((c) => c.d >= dq && c !== quiet).sort((x, y) => x.z - y.z)[0];
