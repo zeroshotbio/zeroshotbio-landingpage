@@ -9329,8 +9329,11 @@ function drawReadCycle(g,n){
      a flat disc. Two units was asked for first, then five, then ten; LEN
      is ten at the authored width and a fraction of it at any other, so a
      resize carries the cloud with it, and the label prints what LEN
-     actually is. The sphere is centred on the line, at every size. */
-  const LEN=n.w*10/1.60, dir=[1,0], za=h*0.66, ym=Y(0.17);
+     actually is. The sphere is centred on the line, at every size.
+     n.cloudOut overrides the ten, in the same authored-width units, for a
+     map that needs the row's tail short: /pipeline sets it, /molecular_pipe
+     does not, so that page draws exactly what was asked for there. */
+  const LEN=n.w*(n.cloudOut===undefined?10:n.cloudOut)/1.60, dir=[1,0], za=h*0.66, ym=Y(0.17);
   const RS=n.w*0.28, xc=x1+dir[0]*LEN;
   const A=P(x1,ym,za), C=P(xc,ym,za);
   /* the line stops a little inside the sphere's near side, so the strands

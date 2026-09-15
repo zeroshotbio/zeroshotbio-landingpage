@@ -203,18 +203,20 @@ used from this directory's `pipeline-shapes.js`. Three things make it
 different from any other row, and each is a trap:
 
 - **Its layout is a record, not a solve.** Harsha placed and sized every
-  station by hand in that page's Edit positions. Those nudges are in
-  `OFFSETS`, byte-identical to its shared record (`molecular_map::edits`),
-  **and in this map's shared record too**. The shared copy replaces the file's
+  station by hand in that page's Edit positions; this map then shrank his
+  stations (0.8 by default, 0.5 for B9a and C3), put them on one line, and
+  re-spaced them 0.6 units apart measured on what they DRAW. The result is in
+  `OFFSETS` **and in this map's shared record too**. The generator is
+  `tidy.mjs` in the session that did it; the rule is in the OFFSETS header. The shared copy replaces the file's
   `OFFSETS` wholesale, so a nudge that lives only in the file never reaches a
   browser that has loaded the page before. Lane `r2` is that page's own span
   moved 29.05 along x; the nudges were measured from it, so it has to be that
   span to the unit.
-- **It is ~115 units long,** against row 3's 74, and the fit view zoomed out
-  to match (8.56 → 5.80 px per unit at 1700 px wide). Its drawings overflow
-  their footprints two to nine times over (C1's glass is ~12.8 wide on a 0.72
-  tile; Sa's read cloud runs 20 units past its box), so the gaps are the
-  drawings, not air. Scaling it down was rejected on row 3's evidence.
+- **It is ~79 units long,** against row 3's 74 — it was ~115 at Harsha's own
+  size. Its drawings overflow their footprints (the lens rows, the racks, Sa's
+  read cloud), which is why spacing is measured on the drawing and never on
+  the footprint. Sa carries `cloudOut:4`, this map's own field: the cloud sits
+  four units out of the door here and ten on /molecular_pipe.
 - **Eight stations were deleted on that page and are absent here:** B8′,
   B8′a, B9, S (the Illumina sequencer), C4–C7. Sa, the read cycle, is the
   sequencer on this row. Their edges went with them, which left the chain
