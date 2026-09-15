@@ -72,14 +72,16 @@ const EDIT_API = MAP.api || "/api/pipeline_edits";
    wearing a milder face. */
 const PROMPT_API = MAP.prompts || "/api/pipeline_prompts";
 
-const GONE=new Set();
-(function readDeletions(){
+/* THE SAVED OFFSETS, READ ONCE AND EARLY — the same table EDITS below settles
+   on, needed before layout by two things: deletions, and a clone's size. */
+const EARLY_OFF=(()=>{
   try{
     const raw=localStorage.getItem(MAP_NS+".edits");
-    const o=raw ? (JSON.parse(raw).offsets||{}) : ((typeof OFFSETS!=="undefined")?OFFSETS:{});
-    Object.keys(o).forEach(k=>{ if(o[k] && o[k].del) GONE.add(k); });
-  }catch(err){}
+    return raw ? (JSON.parse(raw).offsets||{}) : ((typeof OFFSETS!=="undefined")?OFFSETS:{});
+  }catch(err){ return (typeof OFFSETS!=="undefined")?OFFSETS:{}; }
 })();
+const GONE=new Set();
+Object.keys(EARLY_OFF).forEach(k=>{ const o=EARLY_OFF[k]; if(o && o.del) GONE.add(k); });
 if(GONE.size){
   for(let i=NODES.length-1;i>=0;i--) if(GONE.has(NODES[i].id)) NODES.splice(i,1);
   const live=new Set(NODES.map(n=>n.id));
@@ -105,6 +107,16 @@ if(typeof CARRIED!=="undefined") CARRIED.forEach(c=>{
   if(!src) return;
   const n=Object.assign({},src,c);
   n.id=c.id; n.follow=undefined; n.gap=undefined;
+  /* A CLONE WEARS ITS SOURCE'S SIZE, and wears it BEFORE layout. A source can
+     be resized in the editor (row 3's FQ and UD are, on /FASTQ_pipe), and a
+     copy made from the record would keep the old size — two sizes for one
+     object. Applied after layout instead, the lane spaced the copy at its old
+     width and drew it at the new one, which put row 4's even lane out of true.
+     The copy's own resize, if it has one, is applied later like anyone's. */
+  const so=EARLY_OFF[c.carried]||{}, own=EARLY_OFF[c.id]||{};
+  if(so.dw && own.dw===undefined) n.w=Math.max(0.05,(n.w||0)+so.dw);
+  if(so.dd && own.dd===undefined) n.d=Math.max(0.05,(n.d||0)+so.dd);
+  if(so.dh && own.dh===undefined) n.h=Math.max(0.01,(n.h||0)+so.dh);
   /* it is a restatement, not a stage, so it is not in the sequence the arrow
      keys walk and not in the index — both of those are the reading order, and
      reading the same object twice is not a step */
@@ -222,7 +234,7 @@ const gGrid=el("g"),gAxis=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),gD
    deal bigger than it was. A map that has outgrown its grid reads as having
    fallen off the edge of the page, and the fit camera hides it by framing the
    CONTENT: check-rows asserts these bounds against the drawing for that reason. */
-const GRID = MAP.grid || {x0:-8,x1:64,y0:-8,y1:94};
+const GRID = MAP.grid || {x0:-10,x1:100,y0:-8,y1:122};
 
 (()=>{const {x0,x1,y0,y1}=GRID;
   for(let x=Math.ceil(x0);x<=x1;x++){const a=P(x,y0,0),b=P(x,y1,0);

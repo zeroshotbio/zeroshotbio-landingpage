@@ -69,13 +69,12 @@
    unreadable: below a certain K the K-derived term falls under the floor, the
    floor wins, and the type comes out twice the size the layout was drawn for.
    ============================================================ */
-/* ROW 3 SETS THESE AGAIN (2026-09-15). It was drawn at 1/2.4 once, then at
-   /FASTQ_pipe's own size, and is now drawn at 0.595 of it on request: E4, E5,
-   DD and UD carry fqs:0.595, tb:1.296, and CB carries tb:1.0 because its cell
-   names sit on rails whose pitch shrank with the drawing. A node that sets
-   nothing still falls through to the identity, which is what keeps this safe.
-   ONE DELIBERATE DIVERGENCE from /FASTQ_pipe's fq-shapes.js, marked where it
-   is: on the assign belt the ticks travel into their gene's name. */
+/* NOTHING SETS ANY OF THESE TODAY, and that is worth a sentence rather than a
+   deletion. Row 3 was drawn at 1/2.4 for a while; it is drawn at /FASTQ_pipe's
+   own size now, so every node falls through to the identity and this block is
+   inert. It stays because it is one field on a node if the row ever has to be
+   squeezed again, and because the identity property is the thing that makes it
+   safe to leave lying around. */
 const FQSof  = n => (n && n.fqs) || 1;      /* geometry, against /FASTQ_pipe */
 const TBof   = n => (n && n.tb)  || 1;      /* type, against the same */
 const TYPEof = (n,floor,size) => {
@@ -2046,7 +2045,7 @@ function drawGeneBelt(g,n,MODE){
          and the same two tokens as the sorting yard, because it is the same
          kind of event: a thing being checked against a list and kept or not. */
       rd.mk=ggrp.appendChild(el("path",{d:rd.bad?ACROSS:ATICK,fill:"none",
-        stroke:rd.bad?"var(--rej)":"var(--ok)","stroke-width":"1.2",
+        stroke:rd.bad?"var(--rej)":"var(--ok)","stroke-width":"2.0",
         "stroke-linecap":"round","stroke-linejoin":"round","stroke-opacity":"0"}));
     }
     genes.push(gn);
@@ -2205,27 +2204,13 @@ function drawGeneBelt(g,n,MODE){
 
       /* the name rides with its gene, at the gene's own x, off the near rail;
          the two end marks ride the gene's own line, just past each end */
-      /* THE TICKS BECOME THE NAME (2026-09-15, /pipeline). Thirty ticks held on
-         thirty reads to the end of the belt piled into each other and said one
-         thing thirty times. Now each tick, once it has fired, travels from its
-         read into its gene's name over a tenth of the belt, shrinking and fading
-         as it arrives — and the name fills in green with the share of its reads
-         that have arrived. The name is what the read carries into E6, written
-         in the same --ok, so the verdict visibly becomes the label. Crosses are
-         untouched: a declined read has no gene to become. */
-      const tickTravel=rd=>{ const f0=ASSIGN0+rd.start*ASSIGNL;
-        return sstep(f0+span*0.015,f0+span*0.10,gxp); };
-      const labA=P(gxp,cy+BW/2+K*0.55,base);
       {
         /* THE NAME IS THE ANSWER, so it becomes the answer's colour. Assignment
            does not produce a mark on a read and nothing else — what it produces
            is a GENE, and the gene's name is already on the belt beside it. It
            grows and turns --ok across the assign stretch, so the step reads as
            the model claiming its reads rather than as thirty separate ticks. */
-        let g2=sstep(ASSIGN0-span*0.03,ASSIGN0+span*0.06,gxp);
-        if(ASSIGN){ let sm=0,nm=0;
-          for(const rd of gn.reads){ if(rd.bad) continue; nm++; sm+=tickTravel(rd); }
-          if(nm) g2=sm/nm; }
+        const g2=sstep(ASSIGN0-span*0.03,ASSIGN0+span*0.06,gxp);
         const put=(t,wy,op,sc)=>{ const a=P(gxp,wy,base);
           t.setAttribute("transform",
             `translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(-30)`
@@ -2326,8 +2311,7 @@ function drawGeneBelt(g,n,MODE){
            model; off the model there is no place for it to be about, and a
            verdict that follows the read into the next station is a verdict
            being restated. It fades out over the turn rather than blinking. */
-        const tv=(ASSIGN&&!rd.bad)?tickTravel(rd):0;
-        const mkOp=op*(1-sstep(0.72,1,tv));
+        const mkOp=op;
         if(!said || mkOp<=0.02){ rd.mk.setAttribute("stroke-opacity","0"); }
         else{
           const age=(gxp-fire)/(span*0.02);
@@ -2337,11 +2321,9 @@ function drawGeneBelt(g,n,MODE){
              and neither is legible. A world offset would have to pick an axis
              and every axis here is diagonal — the one direction that is
              unambiguously "off the read" on this projection is straight left. */
-          const pop=(age<1?0.55+0.72*age:1.30-0.18*Math.min(1,(age-1)*1.2))*0.82*(1-0.5*tv);
-          /* and on its way into the name, eased so it leaves the read gently */
-          const e=tv*tv*(3-2*tv), mx=(a[0]-MKL)+(labA[0]-(a[0]-MKL))*e, my=a[1]+(labA[1]-a[1])*e;
+          const pop=(age<1?0.55+0.72*age:1.30-0.18*Math.min(1,(age-1)*1.2))*1.06;
           rd.mk.setAttribute("transform",
-            `translate(${mx.toFixed(1)},${my.toFixed(1)}) scale(${pop.toFixed(2)})`);
+            `translate(${(a[0]-MKL).toFixed(1)},${a[1].toFixed(1)}) scale(${pop.toFixed(2)})`);
           rd.mk.setAttribute("stroke-opacity",(mkOp*0.92).toFixed(3));
         }
       }
