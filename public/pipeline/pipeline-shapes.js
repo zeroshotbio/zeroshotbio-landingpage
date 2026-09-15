@@ -9422,7 +9422,9 @@ function drawReadCycle(g,n){
   const tally=add(g,el("text",{x:f1(C[0]),y:f1(C[1]),"text-anchor":"middle",
     "font-size":f2(4.6*SC),"font-weight":"700",fill:"var(--fg2)",stroke:"var(--bg)",
     "stroke-width":f2(1.1*SC),"stroke-opacity":".85","paint-order":"stroke","stroke-linejoin":"round"}));
-  if(!CLOUD) [...g.childNodes].slice(c0).forEach(e=>e.remove());
+  /* removeChild, not e.remove(): scripts/pipeline_test/runview.js draws every
+     shape into a stub DOM that has the one and not the other */
+  if(!CLOUD) [...g.childNodes].slice(c0).forEach(e=>g.removeChild(e));
   let gr=1, shown=NB, tallyS="";
   const grow=acc=>{
     gr=GR*Math.cbrt(Math.max(acc,0.004/(GR*GR*GR))); shown=Math.ceil(acc*NB);
