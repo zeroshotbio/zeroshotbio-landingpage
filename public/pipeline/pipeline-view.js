@@ -1033,15 +1033,23 @@ function renderNode(id){
      disagree. */
   if(n.carried){
     const src=byId[n.carried];
+    /* a clone that is fed and feeds nothing ENDS its row (row 2's FQc) */
+    const tail=!EDGES.some(e=>e.a===id) && EDGES.some(e=>e.b===id);
     read.innerHTML=
       `<div class="eyebrow">${esc(n.group)}</div>`+
       `<div class="title big">${esc(n.name)}</div>`+
       `<div class="sub">${esc(n.sub||"")}</div>`+
-      `<p class="note">Drawn again at the start of this row. It is the same object `+
-      `the row above ends with, not a second one — nothing is drawn between rows, `+
-      `so each row opens with what it inherits.</p>`+
+      (tail
+        ? `<p class="note">Drawn again at the end of this row. It is the same object `+
+          `the row below opens with, not a second one — nothing is drawn between rows, `+
+          `so this row ends on what it hands on.</p>`
+        : `<p class="note">Drawn again at the start of this row. It is the same object `+
+          `the row above ends with, not a second one — nothing is drawn between rows, `+
+          `so each row opens with what it inherits.</p>`)+
       (src?`<h4>What it does</h4><p>${src.does}</p>`:"")+
-      `<dl class="kv"><dt>Feeds</dt><dd>${EDGES.filter(e=>e.a===id).map(e=>byId[e.b]&&byId[e.b].name).filter(Boolean).join(", ")||"—"}</dd></dl>`;
+      (tail
+        ? `<dl class="kv"><dt>Fed by</dt><dd>${EDGES.filter(e=>e.b===id).map(e=>byId[e.a]&&byId[e.a].name).filter(Boolean).join(", ")||"—"}</dd></dl>`
+        : `<dl class="kv"><dt>Feeds</dt><dd>${EDGES.filter(e=>e.a===id).map(e=>byId[e.b]&&byId[e.b].name).filter(Boolean).join(", ")||"—"}</dd></dl>`);
     return;
   }
   read.innerHTML=`<div class="eyebrow" ${TF(id,"group")}>${esc(n.group)}${n.tier?" · "+n.tier+" tier":""}</div>`+

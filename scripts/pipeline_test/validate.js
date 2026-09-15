@@ -182,6 +182,10 @@ sandbox.layoutRows(NODES, LANES, MIRROR);
 NODES.forEach(n => { if (!Number.isFinite(n.x)) fail.push(`${n.id}: x is ${n.x} after layout`); });
 LANES.forEach((L, ri) => {
   const on = NODES.filter(n => n.lane === L.id).sort((a,b) => a.x - b.x);
+  /* a lane whose only station is a CARRIED clone is not empty: the page expands
+     clones into NODES before it lays out, this harness does not. Row 2's
+     r2-tail holds FQc alone. check-rows measures that row against its band. */
+  if (!on.length && (G.CARRIED || []).some(c => c.lane === L.id)) return;
   if (!on.length) { fail.push(`lane ${L.id} is empty`); return; }
   const lo = Math.min(...on.map(n => n.x - n.w/2)), hi = Math.max(...on.map(n => n.x + n.w/2));
   let overlap = 0;

@@ -217,9 +217,11 @@ const NODES = [
        left it, and its shared record is the unshrunk one.
      - his wording — name, sub and the story — is the record's own text now, in
        this file and in mol-data.js both. built and cond are untouched.
-   ONE FIELD IS THIS MAP'S OWN: Sa's cloudOut:3. The read cloud sits ten units
-   out of its door on /molecular_pipe, which is most of this row's tail; here it
-   is three. The shape reads it and that page does not set it.
+   ONE FIELD IS THIS MAP'S OWN: Sa's cloud:false. On /molecular_pipe the read
+   cycle streams its reads out of a door into a turning cloud; here the machine
+   stands alone and its reads run down a track into FQc — row 3's FASTQ pool,
+   drawn again as the end of this row (see CARRIED). The shape reads the field
+   and that page does not set it.
    Snapshots of both shared records at the time of the port:
    /data/backups/pipeline_port_2026-09-15/. */
 /* shape is this page's own, not the lifted record's, and it has now been both
@@ -456,7 +458,7 @@ const NODES = [
    station put in between S and C4 emits its name straight up the middle of
    that corridor. lab.dx moves the emission point 1.4 back toward S, which is
    just past the cloud's near edge; C4 itself is not touched. */
-{id:"RCY", key:"Sa", group:"The sequencer", shape:"readcycle", cloudOut:3, name:"THE SEQUENCER", x:21.75, y:R2, lane:"r2", w:1.60, d:1.30, h:0.68, lab:{dx:-1.4},
+{id:"RCY", key:"Sa", group:"The sequencer", shape:"readcycle", cloud:false, name:"THE SEQUENCER", x:21.75, y:R2, lane:"r2", w:1.60, d:1.30, h:0.68, lab:{dx:-1.4},
  sub:"paired-end · R1 cDNA · R2 barcodes + UMI",
  does:"The sequencer reads both the biology and the molecular address that tells us which cell each transcript came from.\nEach library molecule is read from both ends. Read 1 reads the cDNA insert, identifying the transcript that was captured. Read 2 reads Barcodes 1–3 and the UMI, while the i5/i7 index reads capture Barcode 4, identifying the sublibrary. Together, those sequences let billions of pooled reads be traced back to individual cells, while the UMI helps distinguish independently captured molecules from PCR copies. For this experiment, we generated 3.66 billion reads across 16 sublibraries — about 38,600 reads per called cell — providing deep coverage of the cellular transcriptomes.",
  built:"Nothing to cite. The requests that asked for this station described a picture — first a charcoal box with its top cut away and an arm reading a green pool, then a factory with a crane feeding a pool on its roof, then the flow cell alone with the whole field read at once, then that flow cell recessed into a charcoal housing with status lights on its front, then the cell made an elliptical chip with a plainer grid, a top-to-bottom scan and brighter lights, then the clusters made to flash as the scan crosses them, the front wall made taller for its lights and a door cut in the side for the reads to leave by — and named no instrument model, no chemistry, no cycle count and no read length, so this record names none either. What was actually sequenced, and on what, is S's record and stays there.",
@@ -1016,6 +1018,16 @@ const ROWS=[R1,R2,R3,R4,R5], MIRROR=22.7;
 const CARRIED = [
   {id:"UDc", carried:"UD", lane:"r4", x:0.7, anchor:true, groupMark:true},
   {id:"FDc", carried:"FD", lane:"r5", x:0.7, anchor:true, groupMark:true},
+  /* ROW 2 ENDS ON WHAT ROW 3 OPENS WITH — the same rule the other way round.
+     The sequencer's reads ARE the FASTQ pool, so the row that makes them ends
+     on it: FQ drawn again, same shape, same size, same name, no prose, fed by
+     one read track out of Sa. `aims` is cleared because on row 3 it hangs two
+     leaders from the pool to the fragment E2, and from here those would run
+     across the gap between rows, which nothing on this map does. It stands on
+     its own one-station lane, r2-tail, so adding it does not re-space row 2:
+     a fifteenth station on r2 would move the gap scale and every nudge in
+     OFFSETS measured from it. */
+  {id:"FQc", carried:"FQ", lane:"r2-tail", x:0, aims:undefined},
 ];
 
 const LANES = [
@@ -1026,6 +1038,11 @@ const LANES = [
      what Harsha's nudges in OFFSETS were measured from, so it has to be that
      span to the unit; the shift only undoes the Thaw's own -29.05. */
   {id:"r2",       y:R2,       x0:29.75, x1:65.73, dir:+1},
+  /* one station, FQc: the lane only says where it stands — see CARRIED. 46.1
+     is the nearest its hovering swarm can come to Sa without covering the
+     machine, measured on both drawings' silhouettes; nearer, the reads spill
+     over the sequencer. */
+  {id:"r2-tail",  y:R2,       x0:43.55, x1:48.65, dir:+1},
   /* The three bioinformatics rows space EVENLY and fill their own mat. Each
      one is a short row of comparable objects — a matrix and five steps, a
      matrix and five culls, a matrix and three landmarks — so the major/minor
@@ -1089,6 +1106,8 @@ const EDGES = [
   {a:"SB",b:"CAP",kind:"lib"},{a:"CAP",b:"AMP",kind:"lib"},{a:"AMP",b:"SZD",kind:"lib"},
   {a:"SZD",b:"FRG",kind:"lib"},{a:"FRG",b:"R4p",kind:"lib"},{a:"R4p",b:"LIB",kind:"lib"},
   {a:"LIB",b:"RCY",kind:"lib"},
+  /* and the reads leave the sequencer for the pool they are — see CARRIED */
+  {a:"RCY",b:"FQc",kind:"read"},
 
   /* ---- ROW 3, AND IT IS ONE CHAIN -----------------------------------------
      Eight stations in the order a read meets them, and the ordering is the
@@ -1193,7 +1212,7 @@ const BAND_W=[-2,24], BAND_H=[-3.8,3.8];
 /* ROW 3'S MAT IS THE WIDEST ON THE MAP NOW, and that is honest: it holds eight
    machines where every other row holds tiles. It has to reach past where the
    lane leaves the last object, or the matrix stands off the end of the paper. */
-const BAND_X=[[-2,24],[-2,45],[-2,72],[-2,44.7],[-2,26]];
+const BAND_X=[[-2,24],[-2,54],[-2,72],[-2,44.7],[-2,26]];
 /* ROW 3 IS THE ONE BAND THAT IS NOT SYMMETRIC ABOUT ITS OWN LINE, and it has
    to be, because what stands on it is not symmetric either: the whitelists sit
    at -2.9 and the annotation at +4.9, so the drawing runs about -3.5 to +6.3.

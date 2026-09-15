@@ -215,8 +215,9 @@ different from any other row, and each is a trap:
 - **It is ~41 units long,** against row 3's 74 — it was ~115 at Harsha's own
   size. Its drawings overflow their footprints (the lens rows, the racks, Sa's
   read cloud), which is why spacing is measured on the drawing and never on
-  the footprint. Sa carries `cloudOut:3`, this map's own field: the cloud sits
-  three units out of the door here and ten on /molecular_pipe.
+  the footprint. Sa carries `cloud:false`, this map's own field: the machine stands alone and
+  its reads run down a track into `FQc`, row 3's FASTQ pool drawn again as the
+  row's end. /molecular_pipe still draws its own cloud.
 - **Eight stations were deleted on that page and are absent here:** B8′,
   B8′a, B9, S (the Illumina sequencer), C4–C7. Sa, the read cycle, is the
   sequencer on this row. Their edges went with them, which left the chain
@@ -291,6 +292,21 @@ those from contradicting each other:
 `check-carried.mjs` asserts all four. Note the `el()` trap it exposed:
 `el(tag, attrs)` writes **every** key it is handed, so `opacity: null` lands as
 the literal string `"null"`. Set an optional attribute after creation.
+
+### Row 2 ENDS on a clone
+
+The same mechanism the other way round: `FQc` is `FQ`, row 3's FASTQ pool,
+drawn again as the last object of row 2 — the sequencer's reads are that pool,
+so the row that makes them ends on it. Every rule above holds (same shape, size
+and name; full weight; no prose; not a step), with two differences. It is
+**fed**, by one read track out of Sa, rather than feeding; the reader says
+"drawn again at the end of this row" for any clone that is fed and feeds
+nothing. And its `aims` is cleared: on row 3 that hangs two leaders from the
+pool to the fragment E2, and from row 2 they would cross the gap between rows.
+
+**It stands on its own lane, `r2-tail`,** and that is not tidiness. Row 2's
+positions are nudges in `OFFSETS` measured from `r2`'s lane solve, and a
+fifteenth station on `r2` would change the gap scale and move all fourteen.
 
 ## A track runs wall to wall, not centre to centre
 

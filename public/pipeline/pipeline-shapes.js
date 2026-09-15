@@ -9341,6 +9341,13 @@ function drawReadCycle(g,n){
      grows, grow() below pulls the end back to follow its surface */
   const E=P(xc-RS*0.8,ym,za);
   const line=`M${f1(A[0])} ${f1(A[1])}L${f1(E[0])} ${f1(E[1])}`;
+  /* n.cloud===false leaves the machine and drops everything from here to the
+     counter: the stream, the ground dimension, the haze, the bars and the
+     tally. /pipeline sets it, because there the reads leave down a track into
+     the FASTQ pool drawn at the end of the row; /molecular_pipe does not. They
+     are built and then removed as one run of children, so this code stays the
+     single account of the cloud rather than a second copy with holes in it. */
+  const CLOUD=n.cloud!==false, c0=g.childNodes.length;
   const wire=add(g,el("path",{d:line,fill:"none",stroke:"var(--fg2)","stroke-width":f2(0.8*SC),"stroke-opacity":".25"}));
   /* one dashed path whose offset moves, as C4's stream was: a train of
      strands for one attribute a frame, each dash a read's own bar */
@@ -9415,6 +9422,7 @@ function drawReadCycle(g,n){
   const tally=add(g,el("text",{x:f1(C[0]),y:f1(C[1]),"text-anchor":"middle",
     "font-size":f2(4.6*SC),"font-weight":"700",fill:"var(--fg2)",stroke:"var(--bg)",
     "stroke-width":f2(1.1*SC),"stroke-opacity":".85","paint-order":"stroke","stroke-linejoin":"round"}));
+  if(!CLOUD) [...g.childNodes].slice(c0).forEach(e=>e.remove());
   let gr=1, shown=NB, tallyS="";
   const grow=acc=>{
     gr=GR*Math.cbrt(Math.max(acc,0.004/(GR*GR*GR))); shown=Math.ceil(acc*NB);
@@ -9499,7 +9507,7 @@ function drawReadCycle(g,n){
      run through the dark between rounds, and stop when the last round ends,
      so the cover never moves over a stream. The cloud grows only while they
      feed it; it keeps turning in between, since the file is still there. */
-  grow(0); turn(0); flow.setAttribute("stroke-opacity","0");
+  if(CLOUD){ grow(0); turn(0); } flow.setAttribute("stroke-opacity","0");
   const run=dt=>{
     const dq=Math.min(dt,0.1);
     cc=(cc+dq)%CCY;
@@ -9511,9 +9519,9 @@ function drawReadCycle(g,n){
     if(qs!==fqS){ fqS=qs; flow.setAttribute("stroke-opacity",qs); }
     if(rd>=0){
       fo=(fo+VEL*dq)%(BW+SPc); flow.setAttribute("stroke-dashoffset",f2(-fo*SC));
-      grow(Math.min(1,tc/(NR*CYC)));
+      if(CLOUD) grow(Math.min(1,tc/(NR*CYC)));
     }
-    ph=(ph+SPIN*dq)%(Math.PI*2); turn(ph);
+    if(CLOUD){ ph=(ph+SPIN*dq)%(Math.PI*2); turn(ph); }
     /* each round reads another base, so the clusters change colour in the
        dark as one round gives way to the next or to the open cover */
     if(rd!==round){
