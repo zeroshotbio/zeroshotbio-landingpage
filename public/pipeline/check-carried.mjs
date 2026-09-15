@@ -71,7 +71,11 @@ const thaw = await page.evaluate(() => {
     const c = [...g.querySelectorAll('g')].find(e =>
       e.children.length === 1 && e.children[0].tagName === 'g' &&
       e.children[0].querySelectorAll('path').length === 3);
-    return c ? parseFloat(c.getAttribute('opacity') || '1') : null;
+    /* A DRAWING WITH NO PIPETTE AT ALL IS A TIP AT ZERO, NOT A MISSING NODE.
+       The Thaw is /molecular_pipe's `thawplate` now — the -80 opens and a plate
+       slides out — and it has no pipette to hide. Returning null for that
+       reported "there is no Thaw" about a Thaw standing at the head of its row. */
+    return c ? parseFloat(c.getAttribute('opacity') || '1') : 0;
   };
   return { thawTip: tip('Thaw'), fixTip: tip('Fixed material') };
 });

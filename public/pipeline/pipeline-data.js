@@ -88,16 +88,20 @@
 
      row   band, relative to its line     absolute
      1     -3.8 .. +3.8                     -3.8 ..   3.8
-     2     -3.8 .. +3.8                     11.8 ..  19.4
-     3     -9.6 .. +16.8                    27.4 ..  53.8
-     4     -8.4 .. +8.4                     61.8 ..  78.6
-     5     -3.8 .. +3.8                     86.6 ..  94.2
+     2     -10.0 .. +4.0                    11.8 ..  25.8
+     3     -9.6 .. +16.8                    33.8 ..  60.2
+     4     -8.4 .. +8.4                     68.2 ..  85.0
+     5     -3.8 .. +3.8                     93.0 ..  100.6
+
+   Row 2 is /molecular_pipe's row as laid out there, and it does not sit
+   centred on its line: every station was nudged about 4.5 toward row 1, so
+   its band reaches further up than down.
 
    IF A ROW'S DEPTH CHANGES, EVERY ROW BELOW IT MOVES, and so does anything that
    CARRIES one of its objects. That is the price of spacing by content and it is
    the right price: the alternative is a constant pitch that silently stops
    fitting, which is exactly what happened here. */
-const R1=0, R2=15.6, R3=37.0, R4=70.2, R5=90.4;
+const R1=0, R2=21.8, R3=43.4, R4=76.6, R5=96.8;
 
 const NODES = [
 
@@ -196,84 +200,265 @@ const NODES = [
    section 2 cDNA capture and amplification, section 3 sequencing library prep.
    Every built field below cites the section it comes from. The manual is on
    this instance at ~/parse-public-docs/assets/31841872776724-*.pdf. */
-/* The chemistry row opens by undoing the last thing the biology row did.
-   Same object as Fixed material — the same freezer, the same plate, the same
-   cells in its wells — running the other way: `thaw:true` swaps the schedule
-   in drawVials for one where the door opens, the plate comes out and grows,
-   and the cells come back to life well by well. It is deliberately NOT the
-   fixing animation reversed; see the note in that shape.
+/* THE ROW IS /molecular_pipe's, AS HARSHA LEFT IT ON 2026-09-12.
 
-   It is a step rather than a carried-in restatement, so it carries its own
-   name, its own key and the prose that belongs to it. */
+   Every record below is lifted from public/molecular_pipe/mol-data.js as
+   source text, comments and all, so the two files stay diffable. The comments
+   speak from that page: "this page" means /molecular_pipe, and "the note above
+   LANES" is the note above mol-data.js's LANES. Read them there.
+
+   WHAT WAS PORTED IS THE LIVE PAGE, NOT THE FILE. Most of the work lived in
+   that page's shared edit record (molecular_map::edits), not in mol-data.js:
+     - eight stations were deleted there, and are simply absent here — B8′,
+       B8′a, B9, S (the Illumina sequencer), C4, C5, C6 and C7. Sa, the read
+       cycle, is the sequencer on this row now.
+     - every station was moved and several resized. Those nudges are in
+       OFFSETS below, byte-identical to that record; the lane r2 is shifted
+       29.05 along x so the whole row starts where every other row does, which
+       is a translation and leaves every gap exactly where he put it.
+     - his wording — name, sub and the story — is the record's own text now, in
+       this file and in mol-data.js both. built and cond are untouched.
+   Snapshots of both shared records at the time of the port:
+   /data/backups/pipeline_port_2026-09-15/. */
+/* shape is this page's own, not the lifted record's, and it has now been both
+   things. It drew a plate coming out of a freezer under a slab of ice; that
+   went, because what section 1.1 describes doing is a vial in a 37 C water
+   bath; and the freezer was then asked for again from this map's own Edit
+   visual button, in detail. So it is back, and the ice is not: `thawplate`
+   opens the -80, slides one plate out and lets the frost FADE off it — no
+   melt, no drips — because the does line's own first clause is "fixed material
+   comes back out of the freezer" and that is the half of the step this drawing
+   is for. cols/rows are stated for the same reason B3 and B5 state theirs: 96
+   wells is the plate's fact, not the drawing's default. `thaw:true` is gone
+   with the old shape — it was read by the `vials` shape on the big map and
+   never did anything here. */
 {id:"THW", key:"B1", group:"In situ barcoding", groupMark:true, anchor:true,
- shape:"vials", thaw:true, lane:"r2",
+ shape:"thawplate", lane:"r2", cols:12, rows:8,
  name:"Thaw", x:0.7, y:R2, w:2.52, d:1.82, h:0.665,
- sub:"37°C thaw · haemocytometer · loading table", stat:"the biology restarts",
- does:"Fixed material comes back out of the freezer, is thawed until the last ice crystal goes, counted, and diluted to the concentration the loading table demands. The count taken here decides how many cells enter each round-one well, and therefore how crowded the whole run will be.",
+ sub:"37°C thaw · count · loading table", stat:"the biology restarts",
+ does:"This step prepares the preserved cells for barcoding while keeping the molecular snapshot captured during fixation intact.\nFixed cells or nuclei are thawed just until the last ice crystals disappear, then gently mixed, counted and diluted according to the loading table. Because the cells were fixed and permeabilized beforehand, each one can act as its own tiny reaction compartment: reagents can enter while the cell’s RNA remains compartmentalized inside. That simple idea is what allows the next chemistry to happen in ordinary wells — without needing a separate microfluidic droplet for every cell.",
  built:"Section 1.1. Thaw in a 37C water bath, mix, count on a haemocytometer, record the count into the Evercode WT Sample Loading Table v2, dilute with Sample Dilution Buffer, then proceed immediately to round one — the manual gives no stopping point here. The Round 1 Plate thaws alongside, 10 minutes at 25C. The loading table is filled in beforehand and tells you which sample goes in which well; the counts are what get written into it now.",
  cond:"The loading table — not any dispensing sheet — is what the barcodes physically encode, so it is the authority on which drug a cell saw. The run definition carries 44 sample entries against 48 loaded wells and 43 distinct samples reach the matrix; the 48 to 44 to 43 attrition is undocumented at every step. No cell count from this step survives on this instance, so the loading density that sets the collision rate six boxes downstream cannot be recovered."},
 
-{id:"R1p", key:"B2", group:"In situ barcoding", shape:"miniplate", name:"Round 1 — reverse transcription", x:2.6, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:4,
- sub:"48 wells · 96 barcodes · sample identity",
- does:"Each well gets its own barcoded primer and RNA is reverse transcribed inside the intact cell. This round carries sample identity — everything the dataset knows about which drug a cell saw is written here, in the first chemical step.",
+/* cols/rows describe THE PLASTIC, not the loading. The round-one plate is a
+   green semi-skirted 96-well plate and the drawing is of that plate; what the
+   WT protocol fills is 48 of its wells, which is the `sub` line's business and
+   stays there. They were 12 x 4 while the shape drew the loading instead, and
+   a drawing of a 48-well plate is a drawing of a plate that does not exist.
+
+   IT IS THE BIGGEST TILE ON THE ROW AFTER THE THAW AND THE SEQUENCER, and what
+   it is buying room for is the THREE LENSES, not the plate. Every length in
+   this shape is cut from w, the lenses included, so w is what sets how big a
+   cell you get to look at; the plate was pulled back to well under a tile width
+   once it was clear the reader was being shown the plastic when the subject is
+   the chemistry. Leave w where it is and the lenses stay legible. The 0.45 the
+   tile gained was added to the lane's x1 as well, which is how this file has
+   always paid for width: k stays where it is and the fourteen gaps that were
+   already priced stay where they are. */
+{id:"R1p", key:"B2", group:"In situ barcoding", shape:"reversetranscription", name:"Round 1 — reverse transcription", x:2.6, y:R2, lane:"r2", w:1.45, d:1.16, h:0.42, cols:12, rows:8,
+ sub:"reverse transcription · Barcode 1 · sample identity",
+ does:"This is where each cell’s RNA is copied into DNA and given its first molecular address.\nFixed, permeabilized cells are distributed across wells, each containing a different barcoded primer. Inside each cell, RNA is reverse transcribed into cDNA while Barcode 1 is attached. Because each well can correspond to a known sample or experimental condition, that first barcode also records where the cell came from — for example, which drug or treatment it experienced. From this point forward, the biology and its sample identity travel together on the same molecule.",
  built:"Section 1.2. In situ reverse transcription on a 48-well round-one layout (rows A to D, columns 1 to 12), barcode set n141_R1_v3_8. Two barcodes per well, 96 in total: the manual says each well is primed both with oligo dT and with random hexamers, and the run definition records only the counts. 14 microlitres of diluted sample per well, a fresh tip for every well. sample_bc_rounds = 1: round one and only round one carries sample identity.",
  cond:"Clean, and structurally the strongest link on the map — sample identity is written in a chemical step rather than carried in a spreadsheet, so there is no demultiplex cull downstream. The hashed designs in the corpus pay for that convenience with a whole extra QC stage."},
-{id:"B1", key:"B3", group:"In situ barcoding", shape:"tile", name:"Pool and split", x:4.2, y:R2, lane:"r2", w:0.6, d:0.6, h:0.3,
+
+/* the grid is stated here rather than left to the shape's default for the same
+   reason B5 states its own: it is the round's fact, not the drawing's, and the
+   plate a reader is being shown is the 96-well plastic the split is dealt into. */
+{id:"B1", key:"B3", group:"In situ barcoding", shape:"poolsplit", name:"Pool and split", x:4.2, y:R2, lane:"r2", w:0.6, d:0.6, h:0.3, cols:12, rows:8,
  sub:"shuffle the deck",
- does:"Every well is pooled into one tube and redistributed at random across the next plate. The randomisation is the whole trick: after this, well position carries no information.",
+ does:"All of the cells are mixed together, then redistributed so the next barcode is combined independently with the first.\nAfter Round 1, the cells from every well are pooled into a single mixture, erasing their physical positions on the first plate. They are then redistributed across a new plate. The cells no longer need to stay in their original wells because Barcode 1 is already carrying that history with them. This is the core trick of split-pool barcoding: the cells keep changing location, while the growing barcode remembers the path each one has taken.",
  built:"Section 1.2, closing steps — pool, centrifuge, resuspend, load the round two plate.", cond:"Clean."},
-{id:"R2p", key:"B4", group:"In situ barcoding", shape:"miniplate", name:"Round 2 — ligation", x:5.8, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:8,
- sub:"96 wells · barcode set v1",
- does:"A second barcode is ligated onto the cDNA inside the cell.",
+
+{id:"R2p", key:"B4", group:"In situ barcoding", shape:"ligation", name:"Round 2 — ligation", x:5.8, y:R2, lane:"r2", w:1.45, d:1.16, h:0.42, cols:12, rows:8,
+ sub:"96 wells · Barcode 2 · 9,216 combinations",
+ does:"A second barcode is added to each cell, expanding its molecular address from 96 possibilities to 9,216.\nThe shuffled cells are distributed across a new 96-well plate, where a second well-specific barcode is ligated onto the first — still inside the permeabilized cell. Because the cells were mixed between rounds, Barcode 1 and Barcode 2 are independently combined: 96 × 96 creates 9,216 possible barcode pairs. Each cell now carries one of those combinations, giving it a much more specific molecular identity before the cells are pooled and shuffled again.",
  built:"Section 1.3. Ligation in a 96-well plate (rows A to H, columns 1 to 12), barcode set v1, 96 barcodes across 96 wells — one per well, unlike round one.",
  cond:"Clean."},
-{id:"B2", key:"B5", group:"In situ barcoding", shape:"tile", name:"Pool and split", x:7.4, y:R2, lane:"r2", w:0.6, d:0.6, h:0.3,
+
+/* cols/rows are the round's own fact, not the drawing's: this pool and split
+   sits between two 96-well ligations, and both split shapes are told their grid
+   outright rather than falling back on a default nobody can see.
+   w and d are B3's as the shared record draws it — 0.6 x 0.6 plus its own
+   0.9 x 0.7 resize — because the two are one procedure repeated and were asked
+   to read at one size. The 0.9 is paid out of this station's own two gaps,
+   not the lane's end; see the note above LANES. */
+{id:"B2", key:"B5", group:"In situ barcoding", shape:"poolsplit96", name:"Split and pool, round 2", x:7.4, y:R2, lane:"r2", w:1.5, d:1.3, h:0.3, cols:12, rows:8, gap:0.05443,
  sub:"shuffle again",
- does:"Pooled and redistributed a second time.",
+ does:"The cells are mixed and redistributed again, setting up a new independent combination for Barcode 3.\nAfter Round 2, all of the cells are pooled back together, erasing their positions on the second plate while preserving Barcodes 1 and 2 on the cDNA inside each cell. The mixed population is then redistributed across the next plate. The location changes again, but the molecular history stays with the cell — setting up a third independent barcode combination.",
  built:"Section 1.4, opening steps.", cond:"Clean."},
-{id:"R3p", key:"B6", group:"In situ barcoding", shape:"miniplate", name:"Round 3 — ligation", x:9.0, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:8,
- sub:"96 wells · R3_v3 · TruSeq R2 + biotin",
- does:"A third barcode is ligated, and it brings two passengers: the Illumina TruSeq Read 2 sequence, and a biotin. After this round a cell's path through three plates is almost certainly unique — that combination is what will be read as a cell identity, and no droplet was ever involved.",
+
+/* shape is this page's own, not the lifted record's: /pipeline draws all three
+   rounds as one plate glyph, and here each round gets its own drawing on the
+   shared composition — a plate with a lens tethered to one well. B6 is B4 one
+   round later, so it carries two barcodes already on the strand and a third
+   landing, plus the 48 x 96 x 96 the built text below asserts, which is the
+   one thing on this row no single plate can show. The prose stays lifted
+   verbatim.
+   w, d and h are B4's, because the two ligations were asked to read at one
+   scale. The PLATE is not B4's: it was asked to match B5's receiving plate,
+   which it is, so the shape cuts it from w at B5's size rather than B4's.
+   The 0.45 is paid out of the gap behind it, not the lane's end; see the note
+   above LANES. */
+{id:"R3p", key:"B6", group:"In situ barcoding", shape:"ligation3", name:"Round 3 — ligation", x:9.0, y:R2, lane:"r2", w:1.45, d:1.16, h:0.42, cols:12, rows:8, gap:0.05443,
+ sub:"96 wells · Barcode 3 · TruSeq R2 + biotin",
+ does:"A third barcode completes the three-part combinatorial address used to distinguish individual cells.\nThe shuffled cells are distributed across a third 96-well plate, where Barcode 3 is ligated onto the cDNA. This round also adds the Illumina Read 2 sequence and a biotin tag — a molecular handle that will later let us selectively capture the barcoded cDNA after the cells are lysed. Across three rounds, 96 × 96 × 96 creates 884,736 possible barcode paths. Repeatedly shuffling the cells turns three ordinary 96-well plates into an enormous molecular address space — without having to isolate every cell in its own droplet.",
  built:"Section 1.4. Ligation in a third 96-well plate, barcode set R3_v3. The biotin is why the next section works at all: it is the handle streptavidin beads will grab once the cells are gone. The three rounds give 48 x 96 x 96 = 442,368 addressable paths for roughly 95,000 cells. Microwell-seq builds its barcode the same way — three rounds of split-pool synthesis, 3 x 6 nt in an 18 nt barcode.",
  cond:"Two cells can still collide on the same path. That residual collision rate is the real doublet source, it is set by loading density rather than by this step, and it differs per sublibrary — which is exactly why a single global doublet threshold two rows down cannot be right for all eight."},
-{id:"SB", key:"B7", group:"In situ barcoding", shape:"tile", name:"Count again, split, lyse", x:10.8, y:R2, lane:"r2", w:0.85, d:0.85, h:0.55,
- sub:"8 sublibraries · 12,500 cell ceiling",
- does:"The pool is washed, counted a second time, divided into eight sublibraries, and only then are the cells lysed. Every sublibrary contains cells from every sample. This is the last moment at which anything in the tube is still a cell.",
+
+{id:"SB", key:"B7", group:"In situ barcoding", shape:"countsplitlyse", name:"Pool and lyse", x:10.8, y:R2, lane:"r2", w:0.85, d:0.85, h:0.55, gap:0.05443,
+ sub:"16 sublibraries · 12,500 cell ceiling",
+ does:"The fully barcoded cells are divided into sublibraries, then broken open to release their encoded cDNA.\nAfter Round 3, all of the cells are pooled, washed and counted again. The mixed population — now containing cells from every sample and treatment — is divided across 16 sublibraries of up to 12,500 cells each for this experiment. Only then are the cells lysed. Until this point, the barcode chemistry has happened inside fixed, permeabilized cells acting as individual reaction compartments. Once the cells are broken open, those physical compartments disappear — but the three-part barcode written onto the cDNA preserves where every molecule came from.",
  built:"Section 1.5. Wash, resuspend in Pre-Lysis Dilution Buffer, count on a haemocytometer, then split by volume using the Sublibrary Generation Table in Appendix A. Lysis is 15 minutes at 65C; lysates keep at -80C for up to six months. Eight sublibraries here (Sublib1 to Sublib8, library IDs LV6001530579 to LV6001530706, submission SO11332); sublibrary membership becomes a first-class obs field and survives to the matrix.",
  cond:"The manual sets a hard ceiling: do not add more than 12,500 cells to a sublibrary, because more raises the multiplet rate. The worked example recovered 11,152 to 12,656 cells per sublibrary, and recovery is downstream of loading, so at least one sublibrary was loaded at or above the vendor ceiling. The eight are otherwise unusually even. Where they do differ is depth: sequencing saturation runs 0.366 to 0.486 across them, and the per-sample thresholds downstream do not know that."},
-{id:"CAP", key:"B8", group:"cDNA capture and amplification", shape:"tile", name:"Capture, template switch, amplify", x:12.6, y:R2, lane:"r2", w:0.72, d:0.72, h:0.44,
- sub:"streptavidin beads · PCR",
- does:"The biotin from round three is used to pull the barcoded cDNA out of the debris, an adapter is added to its far end, and the whole thing is amplified to a workable quantity.",
+
+{id:"CAP", key:"B8", group:"cDNA capture and amplification", shape:"capture", name:"cDNA CAPTURE", x:12.6, y:R2, lane:"r2", w:0.72, d:0.72, h:0.44,
+ sub:"streptavidin beads",
+ does:"This step selectively pulls the barcoded cDNA out of the lysate using the biotin tag added in Round 3.\nAfter lysis, the barcoded cDNA is mixed with streptavidin-coated magnetic beads. Streptavidin binds very strongly to biotin, so the biotin-tagged cDNA sticks to the beads while cellular debris and unbound material can be washed away. A magnet then holds the cDNA-loaded beads in place during those washes. What remains is a purified pool of barcoded cDNA, with each molecule still carrying the molecular address that links it back to its cell of origin.",
  built:"Sections 2.1 to 2.4. Streptavidin magnetic beads capture the biotinylated cDNA and the cell debris is washed away; a template switch reaction adds an adapter to the 3-prime end; amplification runs off the template-switch primer and a TruSeq Read 2 primer. Cycle count comes from a table keyed on cells per sublibrary and RNA content — at the 6,000 to 12,500 cell band, 6 cycles for high-RNA material, 8 for low, 7 for nuclei. No run-specific record of which was used exists on this instance.",
  cond:"Amplification is where transcript-length and GC bias enter, and it is unmeasured. Nothing was archived from this step. The one structural comfort is that capture is affinity-based rather than size-based, so the bias it introduces is at least the same bias for every sublibrary."},
-{id:"QCD", key:"B9", group:"cDNA capture and amplification", shape:"tile", name:"Quantify the cDNA", x:14.1, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
- sub:"Qubit + TapeStation · sets the cycle count",
- does:"Concentration and fragment-size distribution are measured. This is not bookkeeping: the number recorded here is what sets the number of PCR cycles in the indexing reaction three boxes along.",
- built:"Section 2.5. Qubit dsDNA HS for concentration, Bioanalyzer High Sensitivity DNA or TapeStation HS D5000 for size. cDNA then keeps at 4C for 48 hours or -20C for three months. The recorded concentration is carried forward by hand into section 3.",
- cond:"The only step on this row where a measured number, rather than the protocol, decides what happens next — and the measurement was not archived. Which cycle branch the run took, anywhere from 13 cycles for a weak sublibrary down to 7 for a strong one, cannot be recovered. Over-amplification shows up as duplicate reads, which is why sequencing saturation two boxes downstream is the only surviving witness to this decision."},
-{id:"FRG", key:"C1", group:"Sequencing library prep", shape:"tile", name:"Fragment, end-prep, ligate adapters", x:15.6, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
- sub:"double-sided SPRI · TruSeq R1",
- does:"The amplified cDNA is chopped to sequenceable lengths, its ends are repaired and A-tailed, and the Illumina TruSeq Read 1 adapter is ligated to the 5-prime end.",
+
+/* NOT LIFTED, AND ASKED FOR FROM THE PAGE — the third of its kind here, after
+   the pyramid and the regrouping, and the first that is not at the end of the
+   row. What the "Add a module" request described was a picture: a thermal
+   cycler with its lid down and one lamp lit, a connector in from B8's magnetic
+   rack, and tethered over it a magnification in which one barcoded strand
+   becomes two and then four, each generation behind the last. It also said what
+   the picture must not be taken for — bulk PCR on free DNA in a tube rather
+   than a reaction inside a cell — and that distinction is the one claim below
+   this record can make, because the row either side of it already carries it.
+
+   IT NAMED NO PROTOCOL. No section, no cycle count, no polymerase, no volume
+   and no instrument model, so `built` names none either and points at the
+   request, the way C6's and C7's do. Inventing a manual section for it would be
+   inventing the manual, which is the one thing this file exists to make
+   impossible. In UNVERIFIED for that reason, and the badge says so.
+
+   THE KEY IS A SUFFIX. It lands between B8 and B9 and thirteen of this row's
+   keys are lifted from pipeline-data.js with the prose that cross-references
+   them, so B9 onwards keep their numbers.
+
+   ASKED FOR AGAIN, from "Edit visual", and the second request changed what is
+   in the glass without touching what the record claims: draw the strand the
+   way B8 draws it, start with two or three, show the polymerase binding and
+   copying, and end on a cloud rather than on a count. So the count has come
+   out of `sub` and `cond` — a cloud is the honest figure for a reaction whose
+   product is billions, and a number on the glass was always the part of this
+   drawing that said more than the request did. It still names no protocol.
+
+   ASKED FOR A THIRD AND A FOURTH TIME, and the fourth took the machine away:
+   "the image can just be black circle showing the pcr amplification". The
+   thermal cycler the first request described is no longer drawn, so the two
+   sentences here that leaned on it — the closed block in `does`, the object in
+   `built` — say instead what is drawn and what was asked for. Nothing else
+   moves: the record never claimed a cycle count, a polymerase or an
+   instrument, and it still does not. */
+{id:"AMP", key:"B8a", group:"cDNA capture and amplification", shape:"pcramplify", name:"PCR amplification", x:13.35, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
+ sub:"template-switched cDNA · repeated copying · more material",
+ does:"PCR makes many copies of the barcoded cDNA so there is enough material for sequencing-library preparation.\nPrimers bind to adapter sequences on the captured cDNA, and repeated PCR cycles copy each molecule many times. The transcript sequence and its three-cell barcode are copied together, so amplification increases the amount of DNA without losing the molecular address that links each transcript back to its cell. A relatively small pool of encoded cDNA becomes a much larger pool of the same encoded information, ready for quality control and library preparation.",
+ built:"Nothing to cite. The request that asked for this station described an object and a motion — a thermal cycler with the lid down and one indicator lit, a connector in from the magnetic rack, and a magnified strand doubling twice — and named no manual section, no cycle count, no polymerase, no volume and no instrument, so this record names none either. A second request from the page later replaced what is under the glass with three strands, an enzyme on each and a cloud, and a fourth removed the cycler altogether, leaving the glass as the whole station; neither named a protocol either, and the object that is gone was never evidence of one. The amplification this row does carry is B8's, off sections 2.1 to 2.4, and the cycle table that governs it is on that record.",
+ cond:"Asked for from the page rather than read off an artefact, so what it carries is a figure and not a measurement. Three strands start the picture and a cloud ends it, and neither number is a number: an amplification is billions of molecules, so the three are there to be followed and the cloud is there to say more than can be drawn. The gold drop at each tip is B8's biotin, drawn on every strand because this glass and the one next door draw the same molecule the same way — it marks the molecule, not a claim about which end-tags survive into a copy. What the request does not settle is whether this is a step of its own or a second view of the word amplify already in B8's name — B8's built line is where the amplification is described, this record makes no protocol claim, and nothing downstream depends on which it is."},
+
+/* NOT LIFTED, AND ASKED FOR FROM THE PAGE — a readout, which none of the
+   others asked for this way were. What the "Add a module" request described
+   was a picture: a strip of PCR tubes, a flat cassette with a row of narrow
+   lanes and two electrode pins over one of them; a drop into one well, the
+   fragments running, small ones faster, and then a trace of intensity against
+   size drawing itself over the cassette. It also said what the step is not —
+   the DNA is not changed here, only measured — and that is what `sub` carries.
+
+   IT NAMED NO PROTOCOL. No section, no instrument, no kit, no ladder and no
+   size range, so `built` names none and points at the request, the way B8′'s
+   and B8a's do. `cond` says the obvious thing out loud: B9 one station back
+   already cites a fragment-size measurement of this same cDNA. In UNVERIFIED,
+   and the badge says so.
+
+   THE KEY IS A SUFFIX ON THE STATION IT FOLLOWS. It lands between B9 and C1,
+   so it is B9a, and nothing downstream is renumbered. It takes C3's .95 tile
+   rather than its neighbours' .72, because a strip, a cassette and a graph
+   over it do not share the smaller one; the room was paid for at the end of
+   the lane — see the note above LANES. */
+{id:"SZD", key:"B9a", group:"cDNA capture and amplification", shape:"sizerun", name:"Measure the size distribution", x:14.85, y:R2, lane:"r2", w:0.95, d:0.95, h:0.4,
+ sub:"TapeStation · capillary electrophoresis · quality control",
+ does:"This is a quality-control checkpoint: we measure how much amplified cDNA we made and whether its fragment sizes look as expected before building the sequencing library.\nA small aliquot of each amplified cDNA sample is run on a TapeStation. The DNA fragments are separated by size using electrophoresis — smaller fragments move faster than larger ones — and the instrument converts that separation into a trace showing DNA intensity across fragment sizes. The shape of that trace lets us see whether amplification produced the broad cDNA distribution we expect and whether anything looks abnormal before moving forward. Nothing new is built here; we are checking the molecular material we already made before committing it to library preparation.",
+ built:"Nothing to cite. The request that asked for this station described a picture — a strip of PCR tubes, a flat cassette with a row of narrow lanes, two electrode pins over one lane, and a trace with two or three narrow peaks drawn over it — and named no manual section, no instrument, no kit, no ladder and no size range, so this record names none either.",
+ cond:"Asked for from the page rather than read off an artefact, so what it carries is a figure and not a measurement: the peaks are drawn, not read, and the axes carry no units because the request gave none. What it does not settle is how it stands against B9 one station back, whose built line already cites section 2.5 for a fragment-size measurement of this same cDNA. This may be a second view of that measurement rather than a step of its own; the record makes no protocol claim, and nothing downstream depends on which it is."},
+
+/* THE DRAWING HAS BEEN REDRAWN FROM "EDIT VISUAL" MORE THAN ONCE AND THE
+   RECORD HAS NOT MOVED, which is the rule for a lifted station: /pipeline owns
+   this prose. One request stopped the glass at blunt, A-tailed ends, with
+   no adapter drawn — the ligation is left to the next station's picture —
+   and a later one took the cycler off and set the glass on the tile; the
+   next rounded the glass into B8a's ring; the latest opens on B8a's full glass,
+   focuses on one strand drawn as cDNA and barcode blocks, and follows the
+   barcoded piece through the cut and repair to its A. The record still names it because the
+   protocol does; nothing below ever leaned on the drawing, and none of the
+   three sentences names an instrument. */
+{id:"FRG", key:"C1", group:"Sequencing library prep", shape:"fragmentligate", name:"Fragment, end-prep, ligate adapters", x:15.6, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
+ sub:"fragment · repair · select · TruSeq R1",
+ does:"This step reshapes the amplified cDNA into standardized fragments ready for the final indexing PCR.\nFirst, the amplified cDNA is cut into shorter fragments. The newly created DNA ends are then repaired and A-tailed, preparing them to accept a sequencing adapter. A double-sided SPRI size selection removes fragments that are too large or too small, keeping the desired size range. Finally, an Illumina TruSeq Read 1 adapter is ligated onto the newly prepared end. The barcode-bearing side is preserved throughout, while the transcript becomes a sequencing-sized insert with the architecture needed for the final indexing step.",
  built:"Sections 3.1 to 3.4. Fragmentation, end repair and A-tailing happen in a single reaction; a double-sided SPRI cleanup selects the size window; the TruSeq R1 adapter is ligated and the product purified again.",
  cond:"Protocol, not transcript. Nothing run-specific was archived and nothing here can be checked after the fact — the size window is enforced by bead chemistry, and the only evidence it worked is the library trace two boxes along."},
-{id:"R4p", key:"C2", group:"Sequencing library prep", shape:"tile", name:"Round 4 — indexing PCR", x:17.1, y:R2, lane:"r2", w:0.72, d:0.72, h:0.42,
- sub:"UDI plate · applied by PCR, not in-cell",
- does:"The fourth barcode. It identifies the sublibrary rather than the sample, it is added by PCR long after the cells were lysed, and it arrives as a standard Illumina index — which is why the read appears to carry only three barcodes when the cell identity is really four.",
+
+/* THE DRAWING WAS REPLACED FROM "EDIT VISUAL" AND THE RECORD WAS NOT, which is
+   the rule for a lifted station: /pipeline owns this prose. The request asked
+   for a UDI plate half full of indexes, one transfer into a strip tube, and —
+   over it — the finished construct as a labelled bar assembling in read order,
+   P5 · UDI · R1 · insert · BC1 · linker · BC2 · linker · BC3 · polyN · R2 ·
+   UDI · P7. Nothing in that contradicts anything here; the read structure the
+   bar spells out is S's, off Appendix B, and it is S's record that carries it.
+   What the bar adds to this page is arrangement, not a claim: it is the only
+   place on the map where the whole molecule is drawn at once.
+
+   THE DRAWING THEN LOST ITS MACHINE, from the same button and by the same
+   rule: the request took the cycler off the bench and kept the barcoding in
+   the black inset, which is what B8a and C1 were asked for one after the
+   other. The record does not move for it. It never cited an instrument — the
+   cycle band below is section 3.5's table and not a readout.
+
+   THEN IT LOST THE BENCH, from the same button: the plate, the strip, the
+   tile and the transfer came off and the inset is the station. The record
+   still does not move — one well per sublibrary, wells never reused, is
+   section 3.5's to state, and no longer the drawing's to count. */
+{id:"R4p", key:"C2", group:"Sequencing library prep", shape:"indexpcr", name:"Round 4 — indexing PCR", x:17.1, y:R2, lane:"r2", w:0.72, d:0.72, h:0.42,
+ sub:"UDI plate · Barcode 4 · P5/P7",
+ does:"This step adds the final barcode and completes the DNA library for Illumina sequencing.\nEach sublibrary receives Barcode 4 during an indexing PCR. Unlike Barcodes 1–3, which were added while the cDNA was still inside individual cells, Barcode 4 is shared by every molecule within a sublibrary. It acts as the standard Illumina i5/i7 index, recording which sublibrary each read came from and completing the four-part molecular address used to reconstruct cellular identity. At the same time, PCR amplifies the library and adds the P5 and P7 sequences needed to interact with the Illumina sequencer.",
  built:"Section 3.5, and this is where it belongs in the order: after adapter ligation, not after lysis. One unused well of the UDI Plate - WT per sublibrary, i5 and i7 unique dual indexes, wells never reused. The cycle count comes from the cDNA concentration recorded in section 2.5 — 13 cycles at 10 to 24 ng, down to 7 at a microgram or more. Appendix B lists the index sequences well by well. Visible in the matrix as the __s1 to __s8 suffix on every cell id.",
  cond:"Clean, and the only part of the whole library prep that can be checked after the fact: eight sublibraries went in and eight came back, each with a distinct index, and the valid-barcode fraction of 0.757 is consistent across them."},
-{id:"LIB", key:"C3", group:"Sequencing library prep", shape:"dish", name:"Quantify and size-check", x:18.6, y:R2, lane:"r2", w:0.95, d:0.95, h:0.34,
- sub:"eight indexed libraries · 400-500 bp peak",
- does:"The last point at which the bench can catch a failure. Concentration and size distribution are measured one final time, and what should be seen is a single peak between 400 and 500 base pairs. Nothing about the tube looks like a fish any more.",
+
+/* shape is this page's own, not the lifted record's: /pipeline draws C3 as a
+   dish at row-2 size, and at this bench it is B9a's cassette run on the eight
+   sublibraries, with the 400-500 bp window printed on its graph.
+   The prose below is still lifted verbatim — only the drawing differs. */
+{id:"LIB", key:"C3", group:"Sequencing library prep", shape:"sizecheck", name:"Quantify and size-check", x:18.6, y:R2, lane:"r2", w:0.95, d:0.95, h:0.34,
+ sub:"16 indexed libraries · Qubit + TapeStation · 400–500 bp peak",
+ does:"This is the final quality-control checkpoint before sequencing: we confirm that the finished libraries have the right amount of DNA and the expected fragment size.\nEach indexed library is measured one final time for concentration and size distribution. Compared with the broad cDNA profile measured earlier, the finished sequencing library should now show a much tighter peak around 400–500 base pairs. That narrowing is the result of fragmentation, size selection and library construction — the molecules have been shaped into the physical form the sequencer expects. If the concentration and size profile look right, the libraries are ready to go onto the Illumina sequencer.",
  built:"Sections 3.6 and 3.7. Double-sided size selection, then Qubit dsDNA HS for concentration and Bioanalyzer High Sensitivity DNA or TapeStation HS D1000 for the trace. Libraries keep at -20C for three months. Appendix B sets the handoff: dilute and denature to the instrument's spec, add 5 percent PhiX, and sequence at a minimum of 20,000 reads per cell.",
  cond:"No QC trace was archived — no Qubit concentration, no electropherogram, so the 400 to 500 bp expectation was never checked against on this instance. What can be recovered is downstream and it is reassuring: cDNA Q30 0.970 to 0.972 and barcode Q30 0.955 to 0.973 across all eight sublibraries."},
 
-{id:"SEQ", key:"S", group:"The sequencer", shape:"machine",
- lane:"r2",
- name:"Illumina sequencer", x:21.0, y:R2, w:2.2, d:1.4, h:1.0,
- sub:"paired-end · R1 cDNA · R2 barcodes + UMI", stat:"3,655,719,111 reads",
- does:"Reads the library by synthesis. Three and a half billion reads across eight sublibraries, 38,637 reads per called cell on average — 1.9 times the vendor's recommended minimum of 20,000, and oversampled on purpose, because combinatorial barcoding spends reads on barcodes that were never cells.",
- built:"Paired-end, to the read structure in Appendix B: read 1 is 64 bases of cDNA insert, read 2 is 58 bases carrying barcodes 1 to 3 plus the UMI, and the i7 and i5 indexes are 8 bases each and carry the fourth barcode. Longer read 2 lengths are allowed and simply trimmed by the analysis pipeline. Per-sublibrary read counts run 420.9 M to 491.9 M. Across the corpus: NextSeq 500/2000 and NovaSeq 6000 (ZSCAPE), NovaSeq 6000 (Zebrahub), NextSeq 550 (CellOracle), HiSeq or MGI DNBSEQ-T7 at 150+150 bp (ZCL2).",
- cond:"Run metrics are only partly recoverable. Q30 and valid-barcode fraction survive in the vendor report (0.757 valid barcodes overall), but cluster density, per-lane yield, the lane count and whether the recommended 5 percent PhiX was spiked in are not held anywhere on this instance. That is the norm, not the exception — no dataset in the corpus archives its run metrics alongside its counts."},
+/* NOT LIFTED, AND ASKED FOR FROM THE PAGE. The "Add a module" request asked
+   for the Illumina sequencer again, opened: the interior visible during the
+   read cycle, dots multiplying into clusters on a green surface and then the
+   clusters reading out in colour, with an arm over a flatbed moving on top.
+   It said what to draw and what not to — no strands, no primers, no bridges —
+   and named no instrument model, no chemistry, no cycle count and no read
+   length, so this record names none either. It is S seen from inside rather
+   than a step of its own, and `cond` says so.
+
+   THE KEY IS A SUFFIX ON THE STATION IT FOLLOWS: it lands between S and C4,
+   so it is Sa, and nothing downstream is renumbered. In UNVERIFIED, and the
+   badge says so. The 1.60 was paid for at the end of the lane — see the note
+   above LANES — so no gap already on the row moved.
+
+   ITS NAME IS NUDGED BACK, and that is C4's cloud rather than a taste. C4
+   hangs its reads in the empty corridor between S's name and its own, and a
+   station put in between S and C4 emits its name straight up the middle of
+   that corridor. lab.dx moves the emission point 1.4 back toward S, which is
+   just past the cloud's near edge; C4 itself is not touched. */
+{id:"RCY", key:"Sa", group:"The sequencer", shape:"readcycle", name:"THE SEQUENCER", x:21.75, y:R2, lane:"r2", w:1.60, d:1.30, h:0.68, lab:{dx:-1.4},
+ sub:"paired-end · R1 cDNA · R2 barcodes + UMI",
+ does:"The sequencer reads both the biology and the molecular address that tells us which cell each transcript came from.\nEach library molecule is read from both ends. Read 1 reads the cDNA insert, identifying the transcript that was captured. Read 2 reads Barcodes 1–3 and the UMI, while the i5/i7 index reads capture Barcode 4, identifying the sublibrary. Together, those sequences let billions of pooled reads be traced back to individual cells, while the UMI helps distinguish independently captured molecules from PCR copies. For this experiment, we generated 3.66 billion reads across 16 sublibraries — about 38,600 reads per called cell — providing deep coverage of the cellular transcriptomes.",
+ built:"Nothing to cite. The requests that asked for this station described a picture — first a charcoal box with its top cut away and an arm reading a green pool, then a factory with a crane feeding a pool on its roof, then the flow cell alone with the whole field read at once, then that flow cell recessed into a charcoal housing with status lights on its front, then the cell made an elliptical chip with a plainer grid, a top-to-bottom scan and brighter lights, then the clusters made to flash as the scan crosses them, the front wall made taller for its lights and a door cut in the side for the reads to leave by — and named no instrument model, no chemistry, no cycle count and no read length, so this record names none either. What was actually sequenced, and on what, is S's record and stays there.",
+ cond:"Asked for from the page rather than read off an artefact, so what it carries is a figure and not a measurement. The cluster count, their colours and the beat of the cycle are drawn, not read; a colour is the request's picture of a cluster taking a base and being imaged, not a claim about what any cluster read or how any instrument images one. It is a second view of S rather than a step of its own: nothing is made or consumed here, and nothing downstream depends on it."},
 
 /* ================= ROW 3 — THE MATRIX ================= */
 /* THE WHOLE OF THIS ROW IS /FASTQ_pipe, AT /FASTQ_pipe's OWN SIZE.
@@ -835,7 +1020,10 @@ const LANES = [
   {id:"r1-bio",   y:R1-2.0,   x0:-1.30, x1:9.00, dir:+1},
   {id:"r1-chem",  y:R1+2.0,   x0:-1.00, x1:8.50, dir:+1},
   {id:"r1-tail",  y:R1,       x0: 9.85, x1:23.40, dir:+1},
-  {id:"r2",       y:R2,       x0:0.7,  x1:22.0,  dir:+1},
+  /* /molecular_pipe's own lane, 0.7..36.68, moved 29.05 along x. Its span is
+     what Harsha's nudges in OFFSETS were measured from, so it has to be that
+     span to the unit; the shift only undoes the Thaw's own -29.05. */
+  {id:"r2",       y:R2,       x0:29.75, x1:65.73, dir:+1},
   /* The three bioinformatics rows space EVENLY and fill their own mat. Each
      one is a short row of comparable objects — a matrix and five steps, a
      matrix and five culls, a matrix and three landmarks — so the major/minor
@@ -889,10 +1077,16 @@ const EDGES = [
      inherits, which is the thing the thaw acts on, and one box that says
      "take it out of the freezer" was the least of the twelve steps here.
      Its prose is in the commit that removed it. */
+  /* /molecular_pipe's chain with its deleted stations taken out. A deleted
+     node takes its edges with it and nothing bridges the gap, so on that page
+     the chain is broken in three places — CAP to B8a, B8a to B9a, C3 to Sa.
+     Here each gap is one track: a station with nothing running into it is an
+     orphan, and the row would read as ending four times. */
   {a:"THW",b:"R1p",kind:"susp"},{a:"R1p",b:"B1",kind:"susp"},{a:"B1",b:"R2p",kind:"susp"},
   {a:"R2p",b:"B2",kind:"susp"},{a:"B2",b:"R3p",kind:"susp"},{a:"R3p",b:"SB",kind:"susp"},
-  {a:"SB",b:"CAP",kind:"lib"},{a:"CAP",b:"QCD",kind:"lib"},{a:"QCD",b:"FRG",kind:"lib"},
-  {a:"FRG",b:"R4p",kind:"lib"},{a:"R4p",b:"LIB",kind:"lib"},{a:"LIB",b:"SEQ",kind:"lib"},
+  {a:"SB",b:"CAP",kind:"lib"},{a:"CAP",b:"AMP",kind:"lib"},{a:"AMP",b:"SZD",kind:"lib"},
+  {a:"SZD",b:"FRG",kind:"lib"},{a:"FRG",b:"R4p",kind:"lib"},{a:"R4p",b:"LIB",kind:"lib"},
+  {a:"LIB",b:"RCY",kind:"lib"},
 
   /* ---- ROW 3, AND IT IS ONE CHAIN -----------------------------------------
      Eight stations in the order a read meets them, and the ordering is the
@@ -997,7 +1191,7 @@ const BAND_W=[-2,24], BAND_H=[-3.8,3.8];
 /* ROW 3'S MAT IS THE WIDEST ON THE MAP NOW, and that is honest: it holds eight
    machines where every other row holds tiles. It has to reach past where the
    lane leaves the last object, or the matrix stands off the end of the paper. */
-const BAND_X=[[-2,24],[-2,24],[-2,72],[-2,44.7],[-2,26]];
+const BAND_X=[[-2,24],[-2,117],[-2,72],[-2,44.7],[-2,26]];
 /* ROW 3 IS THE ONE BAND THAT IS NOT SYMMETRIC ABOUT ITS OWN LINE, and it has
    to be, because what stands on it is not symmetric either: the whitelists sit
    at -2.9 and the annotation at +4.9, so the drawing runs about -3.5 to +6.3.
@@ -1013,7 +1207,7 @@ const BAND_X=[[-2,24],[-2,24],[-2,72],[-2,44.7],[-2,26]];
    /FASTQ_pipe's own band to the unit, -9.6 to +16.8 and 74 long. Row 4 has to
    hold the copy of row 3's last object at its head, which is 16 deep. The rest
    are the 7.6 they always were. */
-const BAND_H_ROW = {2:[-9.6,16.8], 3:[-8.4,8.4]};
+const BAND_H_ROW = {1:[-10,4], 2:[-9.6,16.8], 3:[-8.4,8.4]};
 const BANDS = [R1,R2,R3,R4,R5].map((r,i)=>{
   const H = BAND_H_ROW[i] || BAND_H;
   return {
@@ -1285,7 +1479,7 @@ const OVERVIEW = {
    independently by the vendor's own barcode-set description. What remains is
    genuinely undocumented — the breeding steps, the Echo dispense, the
    dissociation, and library prep. */
-const UNVERIFIED = new Set(["A1","A2","A3","P3","A6","B9","C1","C2"]);
+const UNVERIFIED = new Set(["A1","A2","A3","P3","A6","B8a","B9a","C1","C2","Sa"]);
 
 /* ============================================================
    OFFSETS — fine positioning, applied straight after layoutRows().
@@ -1297,6 +1491,22 @@ const UNVERIFIED = new Set(["A1","A2","A3","P3","A6","B9","C1","C2"]);
      ldx, ldy  move its name, on top of whatever lab:{} the node carries
    ============================================================ */
 const OFFSETS = {
+  /* row 2: /molecular_pipe's shared record, byte-identical — see the note at
+     the head of row 2 */
+  THW: {dx:-29.05, dy:-5.5, ldx:-3.45, ldy:2.95},
+  R1p: {dx:-27.52, dy:-5.51, ldx:-1.15, ldy:-3.95, dw:2.25, dd:2.65},
+  B1:  {dx:-23.15, dy:-5.53, ldx:-0.9, ldy:-4.2, dw:0.9, dd:0.7},
+  R2p: {dx:-18.74, dy:-5.15, ldx:-1.6, ldy:-3.2, dw:2, dd:2, dh:0.05},
+  B2:  {dx:-13.32, dy:-5.17, ldx:-0.7, ldy:-3.2, dw:0.15, dd:1.05},
+  R3p: {dx:-7.85, dy:-5.15, ldx:-0.8, ldy:-3.7},
+  SB:  {dx:-3.89, dy:-5.05, ldx:0.7, ldy:-3.15},
+  CAP: {dx:0.37, dy:-5.04, ldx:0.7, ldy:-2.35, dw:0.35, dd:0.5},
+  AMP: {dx:3.55, dy:-4.44, ldx:-0.75, ldy:-2.25, dw:0.3, dd:-0.1},
+  SZD: {dx:6.34, dy:-3.72, ldx:-0.4, ldy:-1.85, dw:3.65, dd:5.55},
+  FRG: {dx:9.75, dy:-3.7, ldx:-0.55, ldy:-2.35, dh:-0.38},
+  R4p: {dx:14.1, dy:-3.65, ldx:-0.4, ldy:-2.25},
+  LIB: {dx:19.35, dy:-3.65, ldx:0.35, ldy:7.2, dw:3.7, dd:5.6},
+  RCY: {dx:29.3, dy:-2.38, dw:0.7, dd:1.15},
 };
 
 /* ============================================================

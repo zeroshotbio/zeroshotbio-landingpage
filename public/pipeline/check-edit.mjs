@@ -101,10 +101,18 @@ const stillOn = async (label) => {
   const s = await sizersOn();
   if (s.on < 5) fail(`${label}: the object and its handles came apart (${s.on} of 5 still on it)`);
 };
+/* THE DRAGS ARE WORLD DISTANCES, not pixels — the check-pads rule. They were
+   70/40 and 45 px, tuned at a fit of 8.56 px per unit; when row 2 became
+   /molecular_pipe's 115-unit row the fit fell to 5.8, the same 70 px grew c1 to
+   18 units instead of 13.6, it covered c3, and the double click below deleted
+   c1. Same journey in world units at any zoom. */
+const PPU=await p.evaluate(()=>{const m=document.querySelector('#svg > g').getScreenCTM();
+  return Math.hypot(m.a,m.b)*S;});
+const W=u=>u*PPU;
 const rs0=await rszSize(RSZ), rfar0=await rszCorner(RSZ,0);
 rp=await rszCorner(RSZ,2);
 await p.mouse.move(rp.x,rp.y); await p.mouse.down();
-await p.mouse.move(rp.x+70,rp.y+40,{steps:14}); await p.mouse.up(); await p.waitForTimeout(350);
+await p.mouse.move(rp.x+W(8.2),rp.y+W(4.7),{steps:14}); await p.mouse.up(); await p.waitForTimeout(350);
 await stillOn('after a corner drag');
 const rs1=await rszSize(RSZ);
 if(rs1[0]<=rs0[0]) fail(`dragging a corner out did not widen it (${rs0[0]} -> ${rs1[0]})`);
@@ -113,7 +121,7 @@ if(Math.hypot(rfar1.x-rfar0.x,rfar1.y-rfar0.y)>3)
   fail('resizing from one corner moved the opposite one — that is a move, not a resize');
 rp=await rszCorner(RSZ,4);
 await p.mouse.move(rp.x,rp.y); await p.mouse.down();
-await p.mouse.move(rp.x,rp.y-45,{steps:12}); await p.mouse.up(); await p.waitForTimeout(350);
+await p.mouse.move(rp.x,rp.y-W(5.3),{steps:12}); await p.mouse.up(); await p.waitForTimeout(350);
 if((await rszSize(RSZ))[2]<=rs1[2]) fail('dragging the height handle up did not raise it');
 if(await p.evaluate(()=>TICKERS.length)!==tick0)
   fail("a resize leaked a ticker — the redraw did not remove the shape's old one");

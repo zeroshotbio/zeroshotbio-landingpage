@@ -30,6 +30,12 @@
        gets its own hue the four culls stop being comparable at a glance. */
     --keep:#a3b0a6; --cull:#e0765c; --accent:#74b0f0;
     --keep:#a3b0a6; --cull:#e0765c; --accent:#74b0f0;
+    /* row 2's well colours, pool and four base colours — /molecular_pipe's own */
+    --ch1:#e07070; --ch2:#e0985c; --ch3:#d6bb5f;  --ch4:#b3cc63;
+    --ch5:#74c078; --ch6:#5cc0a4; --ch7:#5cbcc8;  --ch8:#74b0f0;
+    --ch9:#8a96ec; --ch10:#a888dc; --ch11:#d07fc8; --ch12:#e07aa0;
+    --pool:#e6c2f5;
+    --nt-c:#3d8bff; --nt-a:#2fd05a; --nt-t:#ff4a3d; --nt-g:#ffd21f;
 
     --t-top:#333d37; --t-left:#252d29; --t-right:#1c231f;
     --a-top:#6f7d73; --a-left:#4e5a52; --a-right:#3b453e;
@@ -58,6 +64,11 @@
     --edge:#161e19; --stroke:#161e19; --voxel:#161e19;
     --signal:#1e4c8a; --drop:#8a3324;
     --keep:#4c5a52; --cull:#8a3324; --accent:#1e4c8a;
+    --ch1:#a83a3a; --ch2:#9c5f24; --ch3:#7a6a12;  --ch4:#54761c;
+    --ch5:#2b7a3f; --ch6:#12786c; --ch7:#16708a;  --ch8:#1e4c8a;
+    --ch9:#3a45a8; --ch10:#63389c; --ch11:#93318a; --ch12:#a6335f;
+    --pool:#4a2168;
+    --nt-c:#1a5fd6; --nt-a:#12933a; --nt-t:#d42a1e; --nt-g:#f2c200;
 
     --t-top:#d9e0d7; --t-left:#c4cec3; --t-right:#b5c0b5;
     --a-top:#b3bfb2; --a-left:#8f9d8e; --a-right:#79887a;
@@ -927,15 +938,15 @@ const ECHO_NODE = {
 </script>
 <!-- END copy-ECHO -->
 
-<script src="/pipeline/pipeline-iso.js?v=ec0copy1"></script>
-<script src="/pipeline/pipeline-shapes.js?v=ec0copy1"></script>
+<script src="/pipeline/pipeline-iso.js?v=molport1"></script>
+<script src="/pipeline/pipeline-shapes.js?v=molport1"></script>
 <!-- The four roofed culls between the unfiltered and the filtered matrix.
      SHARED WITH /bioinformatics_pipe, which is where they were written: that
      page is this row drawn deeper, and one implementation means the two
      accounts of one pipeline cannot drift. They read P, el, pts, S, rng,
      paint, TICKERS, DRAW and SKIN out of the two files above. -->
-<script src="/culls/culls-pop.js?v=ec0copy1"></script>
-<script src="/culls/culls-draw.js?v=ec0copy1"></script>
+<script src="/culls/culls-pop.js?v=molport1"></script>
+<script src="/culls/culls-draw.js?v=molport1"></script>
 <!-- Row 3's own vocabulary, ported from /FASTQ_pipe — the fourteen objects
      between the reads and the unfiltered matrix, drawn here at this map's
      scale and drawn there at reading scale. It must load AFTER the two files
@@ -944,8 +955,8 @@ const ECHO_NODE = {
      mulberry32 from culls-pop.js) and BEFORE pipeline-data.js, which is what
      names the shapes. See the header of that file for what the port dropped
      as duplicate and what it had to rename. -->
-<script src="/pipeline/pipeline-fqshapes.js?v=ec0copy1"></script>
-<script src="/pipeline/pipeline-data.js?v=ec0copy1"></script>
-<script src="/pipeline/pipeline-view.js?v=ec0copy1"></script>
+<script src="/pipeline/pipeline-fqshapes.js?v=molport1"></script>
+<script src="/pipeline/pipeline-data.js?v=molport1"></script>
+<script src="/pipeline/pipeline-view.js?v=molport1"></script>
 </body>
 </html>

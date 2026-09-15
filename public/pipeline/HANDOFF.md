@@ -195,11 +195,45 @@ If you re-space row 3, check the turn at both ends: the connector from row 2
 into `FQ` and the one from `FD` into `s1` are the only two places the snake
 can silently come apart.
 
+## Row 2 is /molecular_pipe's row, as Harsha left it
+
+Ported 2026-09-15. Row 2 is no longer this map's tiles: it is the fourteen
+stations `/molecular_pipe` shows live, drawn by the shapes that page already
+used from this directory's `pipeline-shapes.js`. Three things make it
+different from any other row, and each is a trap:
+
+- **Its layout is a record, not a solve.** Harsha placed and sized every
+  station by hand in that page's Edit positions. Those nudges are in
+  `OFFSETS`, byte-identical to its shared record (`molecular_map::edits`),
+  **and in this map's shared record too**. The shared copy replaces the file's
+  `OFFSETS` wholesale, so a nudge that lives only in the file never reaches a
+  browser that has loaded the page before. Lane `r2` is that page's own span
+  moved 29.05 along x; the nudges were measured from it, so it has to be that
+  span to the unit.
+- **It is ~115 units long,** against row 3's 74, and the fit view zoomed out
+  to match (8.56 → 5.80 px per unit at 1700 px wide). Its drawings overflow
+  their footprints two to nine times over (C1's glass is ~12.8 wide on a 0.72
+  tile; Sa's read cloud runs 20 units past its box), so the gaps are the
+  drawings, not air. Scaling it down was rejected on row 3's evidence.
+- **Eight stations were deleted on that page and are absent here:** B8′,
+  B8′a, B9, S (the Illumina sequencer), C4–C7. Sa, the read cycle, is the
+  sequencer on this row. Their edges went with them, which left the chain
+  broken in three places on that page; here each gap is bridged by one track.
+
+The wording (name, sub, story) is Harsha's, baked into both data files;
+`built` and `cond` are untouched. Snapshots of both shared records at the
+moment of the port are in `/data/backups/pipeline_port_2026-09-15/`.
+
+**check-text reports one pair on this row and it is not the port's:** in each
+of B2's three lenses the highlighted strand's "AAA" tail sits on a faint
+neighbour's. `/molecular_pipe` draws it identically and has no check-text.
+
 ## What opens a row
 
 Rows 4 and 5 open with the object itself, drawn again — see below. **Row 2
-opens by undoing the step above it**: `THW`, the Thaw, which is `drawVials`
-running the other way.
+opens by undoing the step above it**: `THW`, the Thaw. It is `/molecular_pipe`'s
+`thawplate` now — the -80 opens and a plate slides out with the frost fading off
+it — and the history below is of the `drawVials` version it replaced.
 
 `drawVials` builds one set of parts — a freezer, a plate, cells in its wells, a
 door and a pipette — and **`thaw:true` chooses a different timeline over them**
