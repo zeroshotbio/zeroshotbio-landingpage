@@ -217,9 +217,9 @@ const NODES = [
        left it, and its shared record is the unshrunk one.
      - his wording — name, sub and the story — is the record's own text now, in
        this file and in mol-data.js both. built and cond are untouched.
-   ONE FIELD IS THIS MAP'S OWN: Sa's cloudOut:4. The read cloud sits ten units
+   ONE FIELD IS THIS MAP'S OWN: Sa's cloudOut:3. The read cloud sits ten units
    out of its door on /molecular_pipe, which is most of this row's tail; here it
-   is four. The shape reads it and that page does not set it.
+   is three. The shape reads it and that page does not set it.
    Snapshots of both shared records at the time of the port:
    /data/backups/pipeline_port_2026-09-15/. */
 /* shape is this page's own, not the lifted record's, and it has now been both
@@ -456,7 +456,7 @@ const NODES = [
    station put in between S and C4 emits its name straight up the middle of
    that corridor. lab.dx moves the emission point 1.4 back toward S, which is
    just past the cloud's near edge; C4 itself is not touched. */
-{id:"RCY", key:"Sa", group:"The sequencer", shape:"readcycle", cloudOut:4, name:"THE SEQUENCER", x:21.75, y:R2, lane:"r2", w:1.60, d:1.30, h:0.68, lab:{dx:-1.4},
+{id:"RCY", key:"Sa", group:"The sequencer", shape:"readcycle", cloudOut:3, name:"THE SEQUENCER", x:21.75, y:R2, lane:"r2", w:1.60, d:1.30, h:0.68, lab:{dx:-1.4},
  sub:"paired-end · R1 cDNA · R2 barcodes + UMI",
  does:"The sequencer reads both the biology and the molecular address that tells us which cell each transcript came from.\nEach library molecule is read from both ends. Read 1 reads the cDNA insert, identifying the transcript that was captured. Read 2 reads Barcodes 1–3 and the UMI, while the i5/i7 index reads capture Barcode 4, identifying the sublibrary. Together, those sequences let billions of pooled reads be traced back to individual cells, while the UMI helps distinguish independently captured molecules from PCR copies. For this experiment, we generated 3.66 billion reads across 16 sublibraries — about 38,600 reads per called cell — providing deep coverage of the cellular transcriptomes.",
  built:"Nothing to cite. The requests that asked for this station described a picture — first a charcoal box with its top cut away and an arm reading a green pool, then a factory with a crane feeding a pool on its roof, then the flow cell alone with the whole field read at once, then that flow cell recessed into a charcoal housing with status lights on its front, then the cell made an elliptical chip with a plainer grid, a top-to-bottom scan and brighter lights, then the clusters made to flash as the scan crosses them, the front wall made taller for its lights and a door cut in the side for the reads to leave by — and named no instrument model, no chemistry, no cycle count and no read length, so this record names none either. What was actually sequenced, and on what, is S's record and stays there.",
@@ -1193,7 +1193,7 @@ const BAND_W=[-2,24], BAND_H=[-3.8,3.8];
 /* ROW 3'S MAT IS THE WIDEST ON THE MAP NOW, and that is honest: it holds eight
    machines where every other row holds tiles. It has to reach past where the
    lane leaves the last object, or the matrix stands off the end of the paper. */
-const BAND_X=[[-2,24],[-2,82],[-2,72],[-2,44.7],[-2,26]];
+const BAND_X=[[-2,24],[-2,45],[-2,72],[-2,44.7],[-2,26]];
 /* ROW 3 IS THE ONE BAND THAT IS NOT SYMMETRIC ABOUT ITS OWN LINE, and it has
    to be, because what stands on it is not symmetric either: the whitelists sit
    at -2.9 and the annotation at +4.9, so the drawing runs about -3.5 to +6.3.
@@ -1493,29 +1493,33 @@ const UNVERIFIED = new Set(["A1","A2","A3","P3","A6","B8a","B9a","C1","C2","Sa"]
      ldx, ldy  move its name, on top of whatever lab:{} the node carries
    ============================================================ */
 const OFFSETS = {
-  /* row 2: /molecular_pipe's layout, SHRUNK AND STRAIGHTENED 2026-09-15.
-     Every station is Harsha's size times a factor (0.8 by default, less for the
-     ones that ran large: B2 and B4 0.7, B5 and B7 0.75, Sa 0.7, B9a and C3 0.5),
-     every station sits on the row line, and the gaps are re-spaced so there is
-     0.6 units of clear ground between what each station actually DRAWS along
-     the row — measured off the page across a full animation cycle, not off the
-     footprints, because these drawings overflow their footprints two to nine
-     times. Label nudges are scaled with their station. The unshrunk layout is
-     /molecular_pipe's own record; snapshots in /data/backups/pipeline_port_2026-09-15/. */
-  THW: {dx:-27.84, dy:0, ldx:-2.76, ldy:2.36, dw:-0.5, dd:-0.36, dh:-0.13},
-  R1p: {dx:-28.52, dy:0, ldx:-0.8, ldy:-2.76, dw:1.14, dd:1.51, dh:-0.13},
-  B1:  {dx:-25.51, dy:0, ldx:-0.72, ldy:-3.36, dw:0.6, dd:0.44, dh:-0.06},
-  R2p: {dx:-22.56, dy:0, ldx:-1.12, ldy:-2.24, dw:0.96, dd:1.05, dh:-0.09},
-  B2:  {dx:-18.39, dy:0, ldx:-0.52, ldy:-2.4, dw:-0.26, dd:0.46, dh:-0.08},
-  R3p: {dx:-15.35, dy:0, ldx:-0.64, ldy:-2.96, dw:-0.29, dd:-0.23, dh:-0.08},
-  SB:  {dx:-11.2, dy:0, ldx:0.52, ldy:-2.36, dw:-0.21, dd:-0.21, dh:-0.14},
-  CAP: {dx:-7.91, dy:0, ldx:0.56, ldy:-1.88, dw:0.14, dd:0.26, dh:-0.09},
-  AMP: {dx:-5.41, dy:0, ldx:-0.6, ldy:-1.8, dw:0.1, dd:-0.22, dh:-0.08},
-  SZD: {dx:-3.93, dy:0, ldx:-0.2, ldy:-0.92, dw:1.35, dd:2.3, dh:-0.2},
-  FRG: {dx:-0.44, dy:0, ldx:-0.44, ldy:-1.88, dw:-0.14, dd:-0.14, dh:-0.38},
-  R4p: {dx:1.62, dy:0, ldx:-0.32, ldy:-1.8, dw:-0.14, dd:-0.14, dh:-0.08},
-  LIB: {dx:2.43, dy:0, ldx:0.18, ldy:3.6, dw:1.38, dd:2.32, dh:-0.17},
-  RCY: {dx:5.3, dy:0, dw:0.01, dd:0.41, dh:-0.2},
+  /* row 2: /molecular_pipe's layout, SHRUNK, STRAIGHTENED AND PACKED 2026-09-15.
+     Every station is Harsha's size times a factor — 0.68 for B1 and B6, 0.54
+     for the lens stations B8, B8a, C1 and C2, 0.45 for B2, B4, B5 and B7 (the
+     lens rows and racks), 0.48 for B3, 0.56 for Sa, and 0.43 for B9a and C3,
+     whose footprints were mostly empty ground — and
+     every station sits on the row line. Then each is packed against the ones
+     before it by its real silhouette: a pixel mask of everything it draws,
+     sampled across a full animation cycle, slid back along the row until it
+     clears its neighbours' by 0.05 units, with at least 0.3 between
+     footprints so every track still shows. Tops may tuck behind a neighbour, as
+     row 1's do; nothing touches. Label nudges scale with their station.
+     Harsha's unshrunk layout is /molecular_pipe's own record; snapshots in
+     /data/backups/pipeline_port_2026-09-15/. */
+  THW: {dx:-29.45, dy:0, ldx:-2.35, ldy:2.01, dw:-0.8, dd:-0.58, dh:-0.21},
+  R1p: {dx:-32.15, dy:0, ldx:-0.51, ldy:-1.77, dw:0.21, dd:0.55, dh:-0.24},
+  B1:  {dx:-31.81, dy:0, ldx:-0.43, ldy:-2.02, dw:0.12, dd:0.02, dh:-0.16},
+  R2p: {dx:-31.79, dy:0, ldx:-0.72, ldy:-1.43, dw:0.09, dd:0.26, dh:-0.21},
+  B2:  {dx:-30.32, dy:0, ldx:-0.31, ldy:-1.44, dw:-0.76, dd:-0.24, dh:-0.16},
+  R3p: {dx:-29.03, dy:0, ldx:-0.54, ldy:-2.52, dw:-0.46, dd:-0.37, dh:-0.13},
+  SB:  {dx:-27.19, dy:0, ldx:0.31, ldy:-1.42, dw:-0.47, dd:-0.47, dh:-0.3},
+  CAP: {dx:-27.48, dy:0, ldx:0.38, ldy:-1.28, dw:-0.14, dd:-0.06, dh:-0.2},
+  AMP: {dx:-26.86, dy:0, ldx:-0.41, ldy:-1.22, dw:-0.16, dd:-0.38, dh:-0.18},
+  SZD: {dx:-27.01, dy:0, ldx:-0.17, ldy:-0.78, dw:1.01, dd:1.81, dh:-0.23},
+  FRG: {dx:-26.1, dy:0, ldx:-0.3, ldy:-1.28, dw:-0.33, dd:-0.33, dh:-0.38},
+  R4p: {dx:-25.86, dy:0, ldx:-0.22, ldy:-1.22, dw:-0.33, dd:-0.33, dh:-0.19},
+  LIB: {dx:-26.49, dy:0, ldx:-1, ldy:3.06, dw:1.03, dd:1.83, dh:-0.2},
+  RCY: {dx:-26.22, dy:0, dw:-0.31, dd:0.07, dh:-0.3},
 };
 
 /* ============================================================

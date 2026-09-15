@@ -212,11 +212,11 @@ different from any other row, and each is a trap:
   browser that has loaded the page before. Lane `r2` is that page's own span
   moved 29.05 along x; the nudges were measured from it, so it has to be that
   span to the unit.
-- **It is ~79 units long,** against row 3's 74 — it was ~115 at Harsha's own
+- **It is ~41 units long,** against row 3's 74 — it was ~115 at Harsha's own
   size. Its drawings overflow their footprints (the lens rows, the racks, Sa's
   read cloud), which is why spacing is measured on the drawing and never on
-  the footprint. Sa carries `cloudOut:4`, this map's own field: the cloud sits
-  four units out of the door here and ten on /molecular_pipe.
+  the footprint. Sa carries `cloudOut:3`, this map's own field: the cloud sits
+  three units out of the door here and ten on /molecular_pipe.
 - **Eight stations were deleted on that page and are absent here:** B8′,
   B8′a, B9, S (the Illumina sequencer), C4–C7. Sa, the read cycle, is the
   sequencer on this row. Their edges went with them, which left the chain
