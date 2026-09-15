@@ -83,6 +83,12 @@ const GONE=new Set();
 if(GONE.size){
   for(let i=NODES.length-1;i>=0;i--) if(GONE.has(NODES[i].id)) NODES.splice(i,1);
   const live=new Set(NODES.map(n=>n.id));
+  /* A CARRIED CLONE IS LIVE WHILE ITS SOURCE IS. Clones are expanded into NODES
+     below, after this, so they are not in NODES yet — and pruning against NODES
+     alone took every clone's track off the map (UDc, FDc and FQc all at once)
+     whenever the shared record held any deletion at all, which it does. Local
+     runs stub the record empty, so nothing on the bench ever saw it. */
+  if(typeof CARRIED!=="undefined") CARRIED.forEach(c=>{ if(live.has(c.carried)) live.add(c.id); });
   for(let i=EDGES.length-1;i>=0;i--) if(!live.has(EDGES[i].a)||!live.has(EDGES[i].b)) EDGES.splice(i,1);
   NODES.forEach(n=>{ if(n.follow){
     if(!live.has(n.follow.a)) delete n.follow;

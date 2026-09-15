@@ -183,6 +183,30 @@ const walked = await page.evaluate(async () => {
 });
 if (walked.length) fail(`the arrow keys stop on ${walked.join(', ')} — a restatement is not a step`);
 
+/* AND THE TRACKS SURVIVE A DELETION. Everything above runs with the shared
+   record stubbed empty, which is exactly why this was missed: the page prunes
+   edges to deleted nodes BEFORE it expands the clones, so the moment the live
+   record held any deletion at all, every clone's track went — UDc's, FDc's and
+   FQc's together — and no check ever saw the record the live page reads. So
+   load once more with one deletion in it (Q, the ledger, which no clone
+   touches) and require every clone to keep a track. */
+{
+  const p2 = await browser.newPage({ viewport: { width: 1400, height: 900 } });
+  p2.on('pageerror', e => errs.push(e.message));
+  await p2.route('**/api/pipeline_edits', r => r.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify({ offsets: { Q: { del: true } }, text: {}, at: 1 }) }));
+  await p2.route('**/api/pipeline_prompts*', r => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  await p2.goto(url, { waitUntil: 'networkidle' });
+  await p2.waitForTimeout(5000);          // it takes the newer shared copy and reloads once
+  const r = await p2.evaluate(() => ({ gone: typeof GONE !== 'undefined' ? [...GONE] : [],
+    bare: NODES.filter(n => n.carried).map(n => n.id)
+      .filter(id => !EDGES.some(e => e.a === id || e.b === id)) }));
+  if (!r.gone.includes('Q')) fail('the seeded deletion never took effect, so the track check proves nothing');
+  else if (r.bare.length) fail(`with one deletion in the shared record, ${r.bare.join(', ')} lost every track — ` +
+    `edges to a clone were pruned before the clones existed`);
+  await p2.close();
+}
+
 console.log(bad
   ? `\n${bad} FAILURE(S)`
   : `carried: ${found.list.join(', ')} — each the same shape, size and name as its source, drawn `
