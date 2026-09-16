@@ -1,7 +1,7 @@
 # zeroshot.bio/pipeline — file split and working contract
 
-> **2026-09-16: viewer/editor split.** `/pipeline` is now the published image
-> viewer. The authoring system described below is at `/pipeline_edit` (and
+> **2026-09-16: viewer/editor split.** `/pipeline` is now the published animated
+> viewer (cached static layers, original animated nodes, right-column reader). The authoring system described below is at `/pipeline_edit` (and
 > `/pipeline/index.html`). All its controls and saved state are preserved.
 > See [NOTES.md](NOTES.md) for the explicit `npm run pipeline:publish` workflow;
 > source or layout edits do not change the public snapshot until published.
