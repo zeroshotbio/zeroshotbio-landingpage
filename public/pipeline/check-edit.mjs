@@ -173,6 +173,12 @@ if(await p.evaluate(()=>!!NODES.find(n=>n.id==='c3').gone)) fail('Cancel deleted
 await p.locator('#delX').click(); await p.waitForTimeout(250);
 await p.locator('#delAskGo').click(); await p.waitForTimeout(400);
 if(!await p.evaluate(()=>!!NODES.find(n=>n.id==='c3').gone)) fail('Delete did not remove it');
+const deletedDots=await p.evaluate(()=>{
+  const dots=DOTS.filter(d=>d.e.a==='c3'||d.e.b==='c3');
+  placeDots(0);
+  return {count:dots.length,allHidden:dots.every(d=>d.hidden&&d.hid)};
+});
+if(!deletedDots.count || !deletedDots.allHidden) fail('Deleted tracks left visible canvas dots behind');
 
 /* --- and it all saves --- */
 await p.locator('#btnSave').click(); await p.waitForTimeout(500);

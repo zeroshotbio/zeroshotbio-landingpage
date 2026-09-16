@@ -96,7 +96,12 @@ Original editor checks accept an editor URL and stub writes:
 ```sh
 node public/pipeline/check-save.mjs http://127.0.0.1:8765/pipeline/index.html
 node public/pipeline/check-edit.mjs http://127.0.0.1:8765/pipeline/index.html
+node public/pipeline/check-dots.mjs http://127.0.0.1:8765/pipeline/index.html
 ```
+
+The dot check compares actual canvas drawing positions against SVG track geometry
+after restoring, toggling and dragging panels, zooming, panning and resizing. The
+edit check also verifies deleted tracks leave no visible canvas dots.
 
 Do not test layout mutation against the real shared record. `HANDOFF.md` describes
 the other authoring checks. Earlier 60 fps pan results applied to the entirely

@@ -767,9 +767,10 @@ function sizeDotCanvas(){
   if(!dotCtx) return;
   const r=svg.getBoundingClientRect();
   dotDPR=Math.min(1.5, (window.devicePixelRatio||1));
-  dotW=Math.max(1,Math.round(r.width)); dotH=Math.max(1,Math.round(r.height));
+  dotW=Math.max(1,r.width); dotH=Math.max(1,r.height);
   dotCanvas.width=Math.round(dotW*dotDPR); dotCanvas.height=Math.round(dotH*dotDPR);
-  dotCtx.setTransform(dotDPR,0,0,dotDPR,0,0);
+  // Match fractional CSS dimensions exactly after rounding the backing pixels.
+  dotCtx.setTransform(dotCanvas.width/dotW,0,0,dotCanvas.height/dotH,0,0);
 }
 /* the fills CSS resolved for the svg dots, read back once a theme */
 function readDotTones(){
@@ -814,7 +815,7 @@ function placeDots(dt){
     const f=s.l?(want-s.at)/s.l:0;
     r.x=s.from[0]+s.dx*f; r.y=s.from[1]+s.dy*f;
     r.op=r.e.carry ? (r.e.carry==="out" ? 1-r.t : r.t) : 1;
-    if(dotCtx){ r.hid=insideSil(r.x,r.y); return; }
+    if(dotCtx){ r.hid=!!r.hidden || insideSil(r.x,r.y); return; }
     r.node.setAttribute("transform",`translate(${r.x},${r.y})`);
     if(r.e.carry) r.node.setAttribute("opacity", r.op.toFixed(2));
   });
@@ -859,15 +860,21 @@ function paintDots(force){
 if(dotCtx){
   svg.addEventListener("click",ev=>{
     if(editing) return;
+    const rect=svg.getBoundingClientRect();
+    const mx=ev.clientX-rect.left, my=ev.clientY-rect.top;
     let best=null,bd=14*14;
     for(const r of DOTS){
       if(r.hid||r.op<=0.02) continue;
-      const dx=(view.x+r.x*view.k)-ev.clientX, dy=(view.y+r.y*view.k)-ev.clientY;
+      const dx=(view.x+r.x*view.k)-mx, dy=(view.y+r.y*view.k)-my;
       const d=dx*dx+dy*dy; if(d<bd){ bd=d; best=r; }
     }
     if(best){ ev.stopPropagation(); inspect(best); }
   },true);
-  window.addEventListener("resize",()=>{ sizeDotCanvas(); paintDots(true); });
+  const resizeDots=()=>{ sizeDotCanvas(); paintDots(true); };
+  // Panel drags, restored widths and mobile sheets resize the map without a
+  // window resize. Otherwise CSS stretches the old bitmap off its SVG tracks.
+  if(typeof ResizeObserver!=="undefined") new ResizeObserver(resizeDots).observe(svg);
+  window.addEventListener("resize",resizeDots);
   if(window.matchMedia){ try{ new MutationObserver(()=>{ readDotTones(); paintDots(true); })
     .observe(document.body,{attributes:true,attributeFilter:["class"]}); }catch(err){} }
 }
@@ -2292,9 +2299,12 @@ feature("edit positions", function(){
     n.gone=true;
     [nodeEls[n.id],plinthEls[n.id],labelEls[n.id]].forEach(e=>{ if(e) e.setAttribute("display","none"); });
     edgeGeom.forEach(rec=>{ if(rec.host && (rec.a===n.id||rec.b===n.id)) rec.host.setAttribute("display","none"); });
-    DOTS.forEach(d=>{ if(d.e && (d.e.a===n.id||d.e.b===n.id)) d.node.setAttribute("display","none"); });
+    DOTS.forEach(d=>{ if(d.e && (d.e.a===n.id||d.e.b===n.id)){
+      d.hidden=true; d.node.setAttribute("display","none");
+    } });
     OURKEYS.add(n.id);
     rebuildClip();
+    placeDots(0); paintDots(true);
   }
   function removeBand(rec){
     rec.hide=true;
