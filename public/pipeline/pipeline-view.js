@@ -593,7 +593,11 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   g.addEventListener("blur",()=>{ if(!editing) unhover(); });
   g.addEventListener("click",ev=>{ev.stopPropagation(); if(!editing) show(n.id,true);});
   gNode.appendChild(g); nodeEls[n.id]=g;
+  tagTicks(n);
 });
+/* one pass once they are all in the document: a box measured before the group
+   is appended is empty, and an empty box means "never skip this one" */
+/* measured from the frame loop, once they are in the document — see measureBox */
 
 /* Committed nudges and deletions for the floating annotations. They are keyed
    "<node>:<which>" and live in the same table as the objects, because they are
@@ -781,9 +785,94 @@ const MOTION_MIN=0.10;
    A ticker that throws is dropped rather than allowed to take the frame with
    it. One shape going wrong should cost that shape, not the whole map. */
 const DROPPED=[];
+
+/* ---- ONLY WHAT IS ON SCREEN, AND ONLY AS MUCH AS THE FRAME AFFORDS --------
+
+   Measured on an emulated iPhone at 6x CPU throttle: 13.8 fps with motion on,
+   60.2 with it off, 35.2 with motion on and only row 2 in the DOM. So the
+   cost is not painting 16,589 elements — the compositor manages those at 60 —
+   it is this loop: 45 animations rewriting thousands of attributes a frame,
+   every one of them running whether its object is on screen or a thumbnail.
+
+   Two rules, and they cover different situations:
+
+   OFF SCREEN, DON'T RUN. At reading zoom most of the map is outside the
+   window, and a shape nobody can see has nothing to say. Each ticker knows
+   its node (tagTicks), each node knows the box it drew into, and the camera
+   is a translate and a scale — so the test is arithmetic, not layout. A
+   skipped ticker has its clock set forward so it does not lurch when it comes
+   back: it resumes, it does not catch up.
+
+   ON SCREEN, TAKE TURNS. At the fitted view — which is what a phone opens on
+   — everything is visible and nothing can be skipped. So the frame spends a
+   budget instead: tickers run from a rotating cursor until BUDGET_MS is gone,
+   and the rest go first next frame. Each is handed the time since IT last
+   ran, clamped, so a shape that gets every third frame moves at the right
+   speed in thirds rather than at a third speed. That is the whole trick: the
+   map keeps 60 fps and each shape animates a little more coarsely, which is
+   invisible next to the whole map stuttering.
+
+   MEASURE BEFORE TOUCHING EITHER NUMBER. pipelineDiag() reports how many
+   tickers were visible and how many actually ran on the last frame. */
+const VIS_PAD=0.35, VIS_PX=80, BUDGET_MS=7, MAX_SKIP=0.25;
+let tickCursor=0, tickSeen=0, tickRan=0;
+const nowMs=()=>(typeof performance!=="undefined"&&performance.now)?performance.now():Date.now();
+function tagTicks(n){ (n._ticks||[]).forEach(fn=>{ fn.__n=n; }); }
+/* the box it actually drew into, in world units — through the client rect
+   rather than getBBox because the group carries its own translate when the
+   node has been nudged, and getBBox does not include it.
+
+   MEASURED LAZILY, AND THAT IS THE WHOLE POINT. Taken once at build time it
+   came back empty for all 54 objects and every one of them read as "unmeasured,
+   never skip" — the svg is not in the document yet when the nodes are built, so
+   every rect is zero. Measured from the frame loop instead, the first frame
+   after paint gets real numbers; until then nothing is skipped, which is the
+   safe way round. */
+function measureBox(n,g){
+  n._box=null;
+  try{
+    if(!g||!g.getBoundingClientRect) return false;
+    const r=g.getBoundingClientRect(); if(!r.width&&!r.height) return false;
+    n._box=[(r.left-view.x)/view.k,(r.top-view.y)/view.k,
+            (r.right-view.x)/view.k,(r.bottom-view.y)/view.k];
+    return true;
+  }catch(err){ return false; }
+}
+/* one attempt a frame until they all have one; a node redrawn at a new size is
+   put back on the queue by redrawNode */
+let boxQueue=null;
+function measureBoxes(){
+  if(boxQueue===null) boxQueue=NODES.slice();
+  if(!boxQueue.length) return;
+  const left=[];
+  for(const n of boxQueue) if(!measureBox(n,nodeEls[n.id])) left.push(n);
+  boxQueue=left;
+}
+function onScreen(n){
+  if(!n||!n._box) return true;                 /* unmeasured: never skipped */
+  const k=view.k, b=n._box;
+  const w=(b[2]-b[0])*k, h=(b[3]-b[1])*k;
+  const px=w*VIS_PAD+VIS_PX, py=h*VIS_PAD+VIS_PX;
+  const W=(typeof window!=="undefined"&&window.innerWidth)||1e5;
+  const H=(typeof window!=="undefined"&&window.innerHeight)||1e5;
+  return view.x+b[2]*k+px>=0 && view.y+b[3]*k+py>=0 &&
+         view.x+b[0]*k-px<=W && view.y+b[1]*k-py<=H;
+}
 function runTickers(dt,now){
+  const live=[];
   for(let i=0;i<TICKERS.length;i++){
-    try{ TICKERS[i](dt,now,1); }
+    const fn=TICKERS[i];
+    if(fn.__n && !onScreen(fn.__n)){ fn.__last=now; continue; }
+    live.push(fn);
+  }
+  tickSeen=live.length; tickRan=0;
+  if(!live.length) return;
+  const t0=nowMs();
+  for(let c=0;c<live.length;c++){
+    const fn=live[(tickCursor+c)%live.length];
+    const d=(fn.__last===undefined)?dt:Math.max(0,Math.min((now-fn.__last)/1000,MAX_SKIP));
+    fn.__last=now;
+    try{ fn(d,now,1); }
     catch(err){
       console.error(`pipeline: a shape's animation threw and was dropped — the map keeps running.`,err);
       /* WHAT IT DIED ON, not just that it died. A ticker's inputs are dt, now
@@ -791,10 +880,13 @@ function runTickers(dt,now){
          is a different bug from one that throws on frame 900 with good inputs.
          Without these three the only evidence was a message and a line number,
          and the first diagnosis off that evidence was wrong. */
-      DROPPED.push({i,err:String((err&&err.message)||err),dt,now,frames});
-      TICKERS.splice(i,1); i--;
+      DROPPED.push({err:String((err&&err.message)||err),dt:d,now,frames});
+      const j=TICKERS.indexOf(fn); if(j>=0) TICKERS.splice(j,1);
     }
+    tickRan++;
+    if(nowMs()-t0>BUDGET_MS && tickRan<live.length) break;
   }
+  tickCursor=(tickCursor+tickRan)%live.length;
 }
 /* started at the end of the file, once the camera exists */
 let frames=0, lastErr=null;
@@ -823,6 +915,7 @@ function frame(now){
      from a frozen map and impossible to get back without a refresh. */
   try{
     stepCamera(now);
+    measureBoxes();
     placeDots(playing?dt:0);
     /* the ✕ rides the camera, so it stays on its object through a pan or a
        zoom rather than sliding off it */
@@ -840,6 +933,8 @@ window.pipelineDiag=()=>({
   playing, choice:motionChoice||"(system)", systemAsksForReduce:!!mqReduce.matches,
   zoom:+(view.k||0).toFixed(3), motionFloor:MOTION_MIN,
   frames, dots:DOTS.length, tickers:TICKERS.length, droppedTickers:DROPPED.length,
+  tickersOnScreen:tickSeen, tickersRanLastFrame:tickRan, frameBudgetMs:BUDGET_MS,
+  boxesMeasured:NODES.filter(n=>n._box).length, boxesPending:boxQueue?boxQueue.length:NODES.length,
   lastError:lastErr?String(lastErr.message||lastErr):null
 });
 
@@ -1774,6 +1869,7 @@ feature("edit positions", function(){
     DRAW[n.shape](g,n);
     groundLoose(g,n);
     n._ticks=TICKERS.slice(before);
+    tagTicks(n);
     if(editing) g.appendChild(el("polygon",{points:pts(nodeSil(n)),class:"ehandle"}));
     const pl=plinthEls[n.id];
     if(pl){
@@ -1785,6 +1881,7 @@ feature("edit positions", function(){
     if(L) L.dataset.base=labelBase(n);
     } finally { n.x=lx; n.y=ly; }
     reposition(n);
+    if(boxQueue) boxQueue.push(n);   /* it is a different size now */
   }
 
   /* a label group already carries its own translate+rotate; keep it so the
