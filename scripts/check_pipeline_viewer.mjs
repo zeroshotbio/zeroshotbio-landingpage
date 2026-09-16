@@ -4,10 +4,13 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 const require=createRequire(import.meta.url), config=require('../next.config.js');
-const routes=await config.rewrites();
+const rewrites=await config.rewrites();
+const routes=rewrites.beforeFiles;
+assert(Array.isArray(routes),'Pipeline rewrites must precede Vercel directory-index matching');
 assert(routes.some(r=>r.source==='/pipeline'&&r.destination==='/pipeline/viewer.html'));
 assert(routes.some(r=>r.source==='/pipeline_edit'&&r.destination==='/pipeline/index.html'));
 const base=process.argv[2]||'http://127.0.0.1:8765';
+const viewerURL=base+(process.argv.includes('--routes')?'/pipeline':'/pipeline/viewer.html');
 const manifest=JSON.parse(await readFile(new URL('../public/pipeline/published/current.json',import.meta.url)));
 const published=new URL(`../public/pipeline/published/${manifest.version}/`,import.meta.url);
 const provenance=JSON.parse(await readFile(new URL('layout.json',published)));
@@ -19,7 +22,7 @@ try{
   const ctx=await browser.newContext(options),p=await ctx.newPage(),errors=[],requests=[];
   p.on('pageerror',e=>errors.push(e.message));p.on('request',r=>requests.push(r.url()));
   await p.addInitScript(()=>localStorage.setItem('pipeline.edits',JSON.stringify({offsets:{AQ:{del:true}},at:9999999999999})));
-  await p.goto(base+'/pipeline/viewer.html');await p.waitForFunction(()=>document.querySelector('#map').style.visibility==='visible');
+  await p.goto(viewerURL);await p.waitForFunction(()=>document.querySelector('#map').style.visibility==='visible');
   assert.equal(await p.locator('svg').count(),0);assert.equal(await p.locator('#btnEdit').count(),0);
   const matrix=()=>p.evaluate(()=>{const m=new DOMMatrix(getComputedStyle(document.getElementById('map')).transform);return {k:m.a,x:m.e,y:m.f};});
   const initial=await matrix();
@@ -54,6 +57,6 @@ try{
   assert.deepEqual(errors,[]);console.log(`${name}: fit, wheel, pan, pinch, themes, stage navigation, published-state isolation OK`);await ctx.close();
  }
  // Failure is visible and controls cannot manipulate an unloaded scene.
- const p=await browser.newPage();await p.route('**/published/current.json',r=>r.fulfill({status:503,body:'Unavailable'}));await p.goto(base+'/pipeline/viewer.html');await p.waitForFunction(()=>document.querySelector('#status').textContent.includes('could not load'));assert(await p.locator('#fit').isDisabled());
+ const p=await browser.newPage();await p.route('**/published/current.json',r=>r.fulfill({status:503,body:'Unavailable'}));await p.goto(viewerURL);await p.waitForFunction(()=>document.querySelector('#status').textContent.includes('could not load'));assert(await p.locator('#fit').isDisabled());
  console.log('Manifest failure is reported; publication source hashes and saved state match.');
 }finally{await browser.close();}

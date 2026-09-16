@@ -71,10 +71,15 @@ const nextConfig = {
   },
 
   async rewrites() {
-    return [
+    return {
+      // Vercel also resolves public/pipeline/index.html as the directory index.
+      // These must run BEFORE filesystem matching or /pipeline opens the editor.
+      beforeFiles: [
+        { source: '/pipeline', destination: '/pipeline/viewer.html' },
+        { source: '/pipeline_edit', destination: '/pipeline/index.html' },
+      ],
+      afterFiles: [
       { source: '/zfa_mapping', destination: '/zfa_mapping.html' },
-      { source: '/pipeline', destination: '/pipeline/viewer.html' },
-      { source: '/pipeline_edit', destination: '/pipeline/index.html' },
       { source: '/data_structures', destination: '/data_structures/index.html' },
       { source: '/bioinformatics_pipe', destination: '/bioinformatics_pipe/index.html' },
       { source: '/FASTQ_pipe', destination: '/FASTQ_pipe/index.html' },
@@ -243,7 +248,8 @@ const nextConfig = {
       // tm-stats.js. Read public/trailmaker_UI/NOTES.md before changing what a number means —
       // MegaFin's z is a robust z against the plate, not against DMSO, because DMSO is two wells.
       { source: '/trailmaker_UI', destination: '/trailmaker_UI/index.html' },
-    ]
+      ],
+    }
   },
 
   // The /pipeline shell and its four scripts are ONE unit: the HTML names the
