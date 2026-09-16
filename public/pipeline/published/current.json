@@ -1,0 +1,442 @@
+{
+  "format": 1,
+  "version": "4102e0bf20045daef2ba",
+  "publishedAt": "2026-09-16T20:14:24.574Z",
+  "savedAt": 1789511284895,
+  "title": "Aquarium to Atlas",
+  "bounds": {
+    "x": -4248,
+    "y": -281,
+    "width": 6159,
+    "height": 5053
+  },
+  "stages": [
+    {
+      "id": "AQ",
+      "key": "1",
+      "name": "The aquarium",
+      "group": "① The aquarium",
+      "description": "Every cell in every dataset downstream was derived from the progeny of zebrafish in these tanks.",
+      "x": 4320.746133917893,
+      "y": 213.464
+    },
+    {
+      "id": "A1",
+      "key": "A1",
+      "name": "Mating Pair",
+      "group": "Breeding",
+      "description": "A male and a female zebrafish go into a breeding tank the night before with a divider between them. Spawning is triggered by pulling the divider in the morning.",
+      "x": 4460.095394889501,
+      "y": 299.66293333333334
+    },
+    {
+      "id": "A2",
+      "key": "A2",
+      "name": "The Clutch",
+      "group": "Breeding",
+      "description": "Fertilized eggs are collected within the first hour. Everything downstream is one narrow developmental cohort. On average, a single zebrafish mating pair yields between 100 and 200 eggs per spawning clutch",
+      "x": 4539.914069604967,
+      "y": 360.26986666666664
+    },
+    {
+      "id": "A3",
+      "key": "A3",
+      "name": "Cull Unfertilised Eggs",
+      "group": "Breeding",
+      "description": "Dead and unfertilised eggs are removed under a microscope. The first cull on the whole map happens here, by hand, with a pipette.",
+      "x": 4620.8239363292005,
+      "y": 406.50440000000003
+    },
+    {
+      "id": "CS",
+      "key": "P1",
+      "name": "Compound selection",
+      "group": "The compounds",
+      "description": "Our scientists decide what the experiment is about. Compounds are chosen out of a drug library. Everything in the finished atlas can possibly say about drug effect is bounded here, before any of it exists.",
+      "x": 4160.7046392985285,
+      "y": 303.848
+    },
+    {
+      "id": "LIBR",
+      "key": "P2",
+      "name": "Drug Library",
+      "group": "The compounds",
+      "description": "A screening library of 1496 FDA approved compounds (ApexBio FDA Approved Drug Library), held at the SPARC BioCentre and shared across everyone who books time there. The compounds of interest are pulled; the rest of the wall is the part of the experiment that was never run. In total, SPARC BioCentre has a total of 147,025 compounds in their collections.",
+      "x": 4278.917106915104,
+      "y": 369.40999999999997
+    },
+    {
+      "id": "ECHO",
+      "key": "P3",
+      "name": "Echo 650 Dispenser",
+      "group": "The compounds",
+      "description": "Compounds are fired into an empty multi well plate without anything touching it. The destination plate is held inverted above the source and droplets are launched upward into it, hundreds a second, held in place by surface tension until the plate is righted. Tipless and non-contact, so there is no carryover between wells and no tip waste. Because every well is addressed individually from a layout file, the cherry-picking sheet is not a pipetting plan — it is the treatment axis of the finished dataset, written down before a single fish exists.",
+      "x": 4449.870521622152,
+      "y": 462.986
+    },
+    {
+      "id": "A4",
+      "key": "A4",
+      "name": "Array into the Drug Plate",
+      "group": "The experiment",
+      "description": "The experiment itself. Embryos are checked for stage and distributed six to a well that already contain a compound. The fish arrive into the dose — there is no separate dosing step afterwards, and 24 hours post fertilization is the moment of arrival rather than the moment of addition.",
+      "x": 4633.554509764832,
+      "y": 498.812
+    },
+    {
+      "id": "A5",
+      "key": "A5",
+      "name": "Incubate to 48 hours post fertilization",
+      "group": "The experiment",
+      "description": "Twenty-four hours in which the drug either does something or does not. This window is the entire causal content of the dataset. Drawn here as one well of a compound: six embryos swimming in dosed medium, compound drifting around them on its own. Compounds enter the embryo by passive diffusion through the skin.",
+      "x": 4727.875117677996,
+      "y": 555.8216283687943
+    },
+    {
+      "id": "A6",
+      "key": "A6",
+      "name": "Enzymatic Dissociation",
+      "group": "Collection",
+      "description": "Embryos are euthanised in the well and the tissue is digested enzymatically into a suspension, then strained. There is no pooling event, each well remains as its individual sample. Intact cells propagates through the entire rest of the map.",
+      "x": 4819.435499942502,
+      "y": 608.6840397163121
+    },
+    {
+      "id": "A7",
+      "key": "A7",
+      "name": "Fix the Suspension",
+      "group": "Collection",
+      "description": "The last instant anything on this map is alive. Fixative goes into the suspension and cell processes stop dead, so whatever each cell happened to be expressing when the drop landed is what the atlas will report it was expressing forever after. In combinatorial chemistries it does a second job at the same time: it turns every cell into its own sealed reaction vessel, which is the whole reason split-pool barcoding can work with no microfluidics at all.",
+      "x": 4918.270495598797,
+      "y": 665.7464510638298
+    },
+    {
+      "id": "FX",
+      "key": "2",
+      "name": "Fixed material",
+      "group": "② Fixed material",
+      "description": "Fixed material, plated and stored away. Nothing in this freezer is alive and nothing in it changes, which is precisely what makes it useful: samples collected weeks apart can wait here and then be barcoded together in a single run, so the day a sample was collected stops being a batch effect. Everything upstream of this point is a living thing changing while you watch it; everything downstream is a measurement of something that has already stopped.",
+      "x": 5035.113168991601,
+      "y": 724.8266
+    },
+    {
+      "id": "THW",
+      "key": "B1",
+      "name": "Thaw",
+      "group": "In situ barcoding",
+      "description": "This step prepares the preserved cells for barcoding while keeping the molecular snapshot captured during fixation intact.\nFixed cells or nuclei are thawed just until the last ice crystals disappear, then gently mixed, counted and diluted according to the loading table. Because the cells were fixed and permeabilized beforehand, each one can act as its own tiny reaction compartment: reagents can enter while the cell’s RNA remains compartmentalized inside. That simple idea is what allows the next chemistry to happen in ordinary wells — without needing a separate microfluidic droplet for every cell.",
+      "x": 3602.74179214829,
+      "y": 711.7982000000001
+    },
+    {
+      "id": "R1p",
+      "key": "B2",
+      "name": "Round 1 — reverse transcription",
+      "group": "In situ barcoding",
+      "description": "This is where each cell’s RNA is copied into DNA and given its first molecular address.\nFixed, permeabilized cells are distributed across wells, each containing a different barcoded primer. Inside each cell, RNA is reverse transcribed into cDNA while Barcode 1 is attached. Because each well can correspond to a known sample or experimental condition, that first barcode also records where the cell came from — for example, which drug or treatment it experienced. From this point forward, the biology and its sample identity travel together on the same molecule.",
+      "x": 3729.52346609709,
+      "y": 789.3846335826507
+    },
+    {
+      "id": "B1",
+      "key": "B3",
+      "name": "Pool and split",
+      "group": "In situ barcoding",
+      "description": "All of the cells are mixed together, then redistributed so the next barcode is combined independently with the first.\nAfter Round 1, the cells from every well are pooled into a single mixture, erasing their physical positions on the first plate. They are then redistributed across a new plate. The cells no longer need to stay in their original wells because Barcode 1 is already carrying that history with them. This is the core trick of split-pool barcoding: the cells keep changing location, while the growing barcode remembers the path each one has taken.",
+      "x": 3840.28806922583,
+      "y": 853.9730070157108
+    },
+    {
+      "id": "R2p",
+      "key": "B4",
+      "name": "Round 2 — ligation",
+      "group": "In situ barcoding",
+      "description": "A second barcode is added to each cell, expanding its molecular address from 96 possibilities to 9,216.\nThe shuffled cells are distributed across a new 96-well plate, where a second well-specific barcode is ligated onto the first — still inside the permeabilized cell. Because the cells were mixed between rounds, Barcode 1 and Barcode 2 are independently combined: 96 × 96 creates 9,216 possible barcode pairs. Each cell now carries one of those combinations, giving it a much more specific molecular identity before the cells are pooled and shuffled again.",
+      "x": 3939.4132909277073,
+      "y": 910.0857804487712
+    },
+    {
+      "id": "B2",
+      "key": "B5",
+      "name": "Split and pool, round 2",
+      "group": "In situ barcoding",
+      "description": "The cells are mixed and redistributed again, setting up a new independent combination for Barcode 3.\nAfter Round 2, all of the cells are pooled back together, erasing their positions on the second plate while preserving Barcodes 1 and 2 on the cDNA inside each cell. The mixed population is then redistributed across the next plate. The location changes again, but the molecular history stays with the cell — setting up a third independent barcode combination.",
+      "x": 4052.076155473641,
+      "y": 976.2489156220402
+    },
+    {
+      "id": "R3p",
+      "key": "B6",
+      "name": "Round 3 — ligation",
+      "group": "In situ barcoding",
+      "description": "A third barcode completes the three-part combinatorial address used to distinguish individual cells.\nThe shuffled cells are distributed across a third 96-well plate, where Barcode 3 is ligated onto the cDNA. This round also adds the Illumina Read 2 sequence and a biotin tag — a molecular handle that will later let us selectively capture the barcoded cDNA after the cells are lysed. Across three rounds, 96 × 96 × 96 creates 884,736 possible barcode paths. Repeatedly shuffling the cells turns three ordinary 96-well plates into an enormous molecular address space — without having to isolate every cell in its own droplet.",
+      "x": 4158.191867966964,
+      "y": 1035.1208507953095
+    },
+    {
+      "id": "SB",
+      "key": "B7",
+      "name": "Pool and lyse",
+      "group": "In situ barcoding",
+      "description": "The fully barcoded cells are divided into sublibraries, then broken open to release their encoded cDNA.\nAfter Round 3, all of the cells are pooled, washed and counted again. The mixed population — now containing cells from every sample and treatment — is divided across 16 sublibraries of up to 12,500 cells each for this experiment. Only then are the cells lysed. Until this point, the barcode chemistry has happened inside fixed, permeabilized cells acting as individual reaction compartments. Once the cells are broken open, those physical compartments disappear — but the three-part barcode written onto the cDNA preserves where every molecule came from.",
+      "x": 4272.49152052605,
+      "y": 1101.7501859685785
+    },
+    {
+      "id": "CAP",
+      "key": "B8",
+      "name": "cDNA CAPTURE",
+      "group": "cDNA capture and amplification",
+      "description": "This step selectively pulls the barcoded cDNA out of the lysate using the biotin tag added in Round 3.\nAfter lysis, the barcoded cDNA is mixed with streptavidin-coated magnetic beads. Streptavidin binds very strongly to biotin, so the biotin-tagged cDNA sticks to the beads while cellular debris and unbound material can be washed away. A magnet then holds the cDNA-loaded beads in place during those washes. What remains is a purified pool of barcoded cDNA, with each molecule still carrying the molecular address that links it back to its cell of origin.",
+      "x": 4351.611555400507,
+      "y": 1147.5897594016387
+    },
+    {
+      "id": "AMP",
+      "key": "B8a",
+      "name": "PCR amplification",
+      "group": "cDNA capture and amplification",
+      "description": "PCR makes many copies of the barcoded cDNA so there is enough material for sequencing-library preparation.\nPrimers bind to adapter sequences on the captured cDNA, and repeated PCR cycles copy each molecule many times. The transcript sequence and its three-cell barcode are copied together, so amplification increases the amount of DNA without losing the molecular address that links each transcript back to its cell. A relatively small pool of encoded cDNA becomes a much larger pool of the same encoded information, ready for quality control and library preparation.",
+      "x": 4461.466831855274,
+      "y": 1211.3339328346988
+    },
+    {
+      "id": "SZD",
+      "key": "B9a",
+      "name": "Measure the size distribution",
+      "group": "cDNA capture and amplification",
+      "description": "This is a quality-control checkpoint: we measure how much amplified cDNA we made and whether its fragment sizes look as expected before building the sequencing library.\nA small aliquot of each amplified cDNA sample is run on a TapeStation. The DNA fragments are separated by size using electrophoresis — smaller fragments move faster than larger ones — and the instrument converts that separation into a trace showing DNA intensity across fragment sizes. The shape of that trace lets us see whether amplification produced the broad cDNA distribution we expect and whether anything looks abnormal before moving forward. Nothing new is built here; we are checking the molecular material we already made before committing it to library preparation.",
+      "x": 4547.497749451931,
+      "y": 1261.801906267759
+    },
+    {
+      "id": "FRG",
+      "key": "C1",
+      "name": "Fragment, end-prep, ligate adapters",
+      "group": "Sequencing library prep",
+      "description": "This step reshapes the amplified cDNA into standardized fragments ready for the final indexing PCR.\nFirst, the amplified cDNA is cut into shorter fragments. The newly created DNA ends are then repaired and A-tailed, preparing them to accept a sequencing adapter. A double-sided SPRI size selection removes fragments that are too large or too small, keeping the desired size range. Finally, an Illumina TruSeq Read 1 adapter is ligated onto the newly prepared end. The barcode-bearing side is preserved throughout, while the transcript becomes a sequencing-sized insert with the architecture needed for the final indexing step.",
+      "x": 4672.08411802507,
+      "y": 1336.1258797008195
+    },
+    {
+      "id": "R4p",
+      "key": "C2",
+      "name": "Round 4 — indexing PCR",
+      "group": "Sequencing library prep",
+      "description": "This step adds the final barcode and completes the DNA library for Illumina sequencing.\nEach sublibrary receives Barcode 4 during an indexing PCR. Unlike Barcodes 1–3, which were added while the cDNA was still inside individual cells, Barcode 4 is shared by every molecule within a sublibrary. It acts as the standard Illumina i5/i7 index, recording which sublibrary each read came from and completing the four-part molecular address used to reconstruct cellular identity. At the same time, PCR amplifies the library and adds the P5 and P7 sequences needed to interact with the Illumina sequencer.",
+      "x": 4768.117629035438,
+      "y": 1388.2192531338796
+    },
+    {
+      "id": "LIB",
+      "key": "C3",
+      "name": "Quantify and size-check",
+      "group": "Sequencing library prep",
+      "description": "This is the final quality-control checkpoint before sequencing: we confirm that the finished libraries have the right amount of DNA and the expected fragment size.\nEach indexed library is measured one final time for concentration and size distribution. Compared with the broad cDNA profile measured earlier, the finished sequencing library should now show a much tighter peak around 400–500 base pairs. That narrowing is the result of fragmentation, size selection and library construction — the molecules have been shaped into the physical form the sequencer expects. If the concentration and size profile look right, the libraries are ready to go onto the Illumina sequencer.",
+      "x": 4836.6894744918,
+      "y": 1429.24562656694
+    },
+    {
+      "id": "RCY",
+      "key": "Sa",
+      "name": "THE SEQUENCER",
+      "group": "The sequencer",
+      "description": "The sequencer reads both the biology and the molecular address that tells us which cell each transcript came from.\nEach library molecule is read from both ends. Read 1 reads the cDNA insert, identifying the transcript that was captured. Read 2 reads Barcodes 1–3 and the UMI, while the i5/i7 index reads capture Barcode 4, identifying the sublibrary. Together, those sequences let billions of pooled reads be traced back to individual cells, while the UMI helps distinguish independently captured molecules from PCR copies. For this experiment, we generated 3.66 billion reads across 16 sublibraries — about 38,600 reads per called cell — providing deep coverage of the cellular transcriptomes.",
+      "x": 4954.00122967315,
+      "y": 1493.1452
+    },
+    {
+      "id": "FQ",
+      "key": "3",
+      "name": "FASTQ",
+      "group": "③ FASTQ",
+      "description": "The first digital object, and the only genuinely shapeless one. Different libraries, different depths, no schema — and nothing in it yet says which barcode is a cell.",
+      "x": 2526.8264715026553,
+      "y": 1254.1399999999999
+    },
+    {
+      "id": "E2",
+      "key": "C4",
+      "name": "One fragment",
+      "group": "Getting to a matrix",
+      "description": "ONE MOLECULE CARRIES EVERYTHING: the cDNA at one end, the three ligation barcodes and the UMI at the other, and a stretch in the middle that neither read reaches. R1 and R2 are two ends of one fragment sharing one read ID — never two objects and never separately routed. The barcode end is read first, and it decides whether the cDNA end is ever looked at.",
+      "x": 2643.765881775668,
+      "y": 1357.0189999999998
+    },
+    {
+      "id": "E3",
+      "key": "C5",
+      "name": "Match R2 barcodes",
+      "group": "Getting to a matrix",
+      "description": "Reads the cell barcode off the reads and reconstructs which physical path each molecule took — through three barcode plates, or into one droplet, or onto one microwell bead.",
+      "x": 2989.6737485552485,
+      "y": 1715.951
+    },
+    {
+      "id": "E4",
+      "key": "C6",
+      "name": "Align R1",
+      "group": "Getting to a matrix",
+      "description": "Aligns the cDNA read to the genome and assigns it to a gene.",
+      "x": 3522.5391795038136,
+      "y": 2074.4798
+    },
+    {
+      "id": "E5",
+      "key": "C7",
+      "name": "Assign to gene",
+      "group": "Getting to a matrix",
+      "description": "Decides whether a read landing inside an intron counts toward its gene. It is one flag, it is almost never stated, and it changes the matrix materially.",
+      "x": 4037.7636729772894,
+      "y": 2376.5648
+    },
+    {
+      "id": "G1",
+      "key": "F1",
+      "name": "GRCz11",
+      "group": "The counting reference",
+      "description": "The assembly. Which bases are where, and nothing else — no genes, no exons, no strand. Chosen, not measured.",
+      "x": 3055.872730420531,
+      "y": 2132.465
+    },
+    {
+      "id": "G2",
+      "key": "F2",
+      "name": "Ensembl 99",
+      "group": "The counting reference",
+      "description": "Where genes start and stop, what survives splicing, what gets translated, which direction it is read. A separate file and a separate decision from the assembly.",
+      "x": 2908.5618092367977,
+      "y": 2229.2749999999996
+    },
+    {
+      "id": "G2b",
+      "key": "F2b",
+      "name": "Ensembl 99",
+      "group": "The counting reference",
+      "description": "Where genes start and stop, what survives splicing, what gets translated, which direction it is read. A separate file and a separate decision from the assembly.",
+      "x": 3461.068696343194,
+      "y": 2621.3449999999993
+    },
+    {
+      "id": "G4",
+      "key": "F4",
+      "name": "STAR Aligner",
+      "group": "The counting reference",
+      "description": "Takes read 1 and the index and answers one question per read: where on the assembly does this sequence sit, and does it sit anywhere uniquely. A read that lands in one place carries a coordinate from here on. A read that lands nowhere, or in several places, is set aside and never counted — the second deletion on this page, and the largest after the barcode parse.",
+      "x": 3213.7318410223584,
+      "y": 2248.385
+    },
+    {
+      "id": "W1",
+      "key": "F5",
+      "name": "Barcode whitelists",
+      "group": "The counting reference",
+      "description": "The list of sequences that could legitimately be at each barcode position, one list per round of ligation. Fixed by the kit, not by the experiment.",
+      "x": 3166.0831233061385,
+      "y": 1274.1949999999997
+    },
+    {
+      "id": "CB",
+      "key": "C8",
+      "name": "Bucket by cell",
+      "group": "Getting to a matrix",
+      "description": "Stitches the per-library matrices into one and stamps each barcode with where it came from.",
+      "x": 4558.262261159813,
+      "y": 2683.3747999999996
+    },
+    {
+      "id": "DD",
+      "key": "C9",
+      "name": "Deduplicate UMIs",
+      "group": "Getting to a matrix",
+      "description": "Collapses duplicate reads sharing a UMI so a count means one molecule, not one read.",
+      "x": 4871.798098345931,
+      "y": 2866.0747999999994
+    },
+    {
+      "id": "UD",
+      "key": "4",
+      "name": "Unfiltered matrix",
+      "group": "④ Unfiltered matrix",
+      "description": "Every barcode that ever appeared, against every gene. Drawn sparse because it is sparse — almost all of this volume is empty, and most of these barcodes were never cells.",
+      "x": 5222.798194499765,
+      "y": 3039.8959999999993
+    },
+    {
+      "id": "c1",
+      "key": "D2",
+      "name": "Knee",
+      "group": "The cull",
+      "description": "Separates barcodes that held a cell from barcodes that held only ambient RNA. Not a judgment call in principle, and by volume much the largest cut.",
+      "x": 1399.2613957753156,
+      "y": 2479.3808
+    },
+    {
+      "id": "c3",
+      "key": "D4",
+      "name": "Mito %",
+      "group": "The cull",
+      "description": "Removes cells dominated by mitochondrial transcripts — usually cells stressed or broken during dissociation.",
+      "x": 1694.9744301515502,
+      "y": 2648.0108000000005
+    },
+    {
+      "id": "c4",
+      "key": "D5",
+      "name": "Complexity",
+      "group": "The cull",
+      "description": "Fits genes detected against total counts and removes points sitting too far off the fit — classically two cells sharing one barcode.",
+      "x": 1988.8688111798374,
+      "y": 2817.6908
+    },
+    {
+      "id": "c5",
+      "key": "D6",
+      "name": "Doublets",
+      "group": "The cull",
+      "description": "Scores each barcode for looking like two cells and removes those above a threshold.",
+      "x": 2310.042992427334,
+      "y": 3005.2208
+    },
+    {
+      "id": "FD",
+      "key": "5",
+      "name": "Filtered matrix",
+      "group": "⑤ Filtered matrix",
+      "description": "The same gene space, a fraction of the barcodes, dense where the first cube was empty. Everything here has been asserted to be a cell.",
+      "x": 2667.0446446293936,
+      "y": 3194.8970000000004
+    },
+    {
+      "id": "H5",
+      "key": "6",
+      "name": "Published object",
+      "group": "⑥ Published object",
+      "description": "Counts, treatment metadata, provenance. Complete as a measurement and completely mute about biology — nothing in it says what any of these cells are.",
+      "x": 403.97304022201206,
+      "y": 2825.626
+    },
+    {
+      "id": "KAS",
+      "key": "K",
+      "name": "DanioType Kasperov",
+      "group": "The labeller",
+      "description": "Three specialists arguing about one cluster at a time. The Researcher searches the literature against the marker set. The Archivist answers raw-statistics probes on the live matrix so a claim can be checked rather than believed. The Reasoner synthesises, may go round again up to four times, then concludes or abstains. On the worked example, 46 of 267 leaves never reached the Researcher — a distinctiveness gate committed them to a coarse call up front — and of the 221 that did, 91 needed a second round, 37 a third, 7 a fourth and 5 a fifth.",
+      "x": 664.6466867611275,
+      "y": 3026.526
+    },
+    {
+      "id": "LB",
+      "key": "7",
+      "name": "Usable .h5ad",
+      "group": "⑦ Usable .h5ad",
+      "description": "The same cells as the published object, sorted into named strata. On the worked example: 209 leaves resolved outright, 24 left region-unresolved, 34 subtype-unresolved, and 19 resolved finer than the expert did. Four rows from a fish tank, this is the first object on the map that makes a biological claim.",
+      "x": 999.8851205660844,
+      "y": 3119.276
+    }
+  ],
+  "themes": {
+    "dark": "/pipeline/published/4102e0bf20045daef2ba/dark.svg",
+    "light": "/pipeline/published/4102e0bf20045daef2ba/light.svg"
+  }
+}

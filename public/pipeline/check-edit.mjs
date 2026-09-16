@@ -60,6 +60,17 @@ await p.locator('#btnEdit').click(); await p.waitForTimeout(600);
    compounds. The corner is also anchored at its opposite: a resize that drifts
    the whole object is a move wearing a resize's clothes. */
 const RSZ='c1';
+/* Resize handles are world-sized. At the full-map fit they are about one
+   screen pixel and browser hit testing can pick the building underneath.
+   Exercise resizing at reading zoom, as a person would, and stop the intro
+   before measuring screen coordinates. Return to fit for the annotations. */
+await p.evaluate(id=>{
+  anim=null; playing=false;
+  const n=byId[id], q=P(n.x,n.y,topOf(n));
+  const r=svg.getBoundingClientRect();
+  view={k:0.7,x:r.width/2-q[0]*0.7,y:r.height/2-q[1]*0.7}; applyView();
+},RSZ);
+await p.waitForTimeout(150);
 const rszSize=id=>p.evaluate(i=>{const n=NODES.find(m=>m.id===i);
   return [n.w,n.d,n.h].map(v=>+v.toFixed(2));},id);
 const rszCorner=(id,k)=>p.evaluate(([i,kk])=>{
@@ -126,6 +137,9 @@ if((await rszSize(RSZ))[2]<=rs1[2]) fail('dragging the height handle up did not 
 if(await p.evaluate(()=>TICKERS.length)!==tick0)
   fail("a resize leaked a ticker — the redraw did not remove the shape's old one");
 console.log(`resize     ${RSZ} ${rs0.join(' ')} -> ${(await rszSize(RSZ)).join(' ')}`);
+
+await p.evaluate(()=>fit());
+await p.waitForTimeout(150);
 
 /* --- drag UNDER-AMPLIFIED and OVER-AMPLIFIED separately --- */
 const st=k=>p.evaluate(key=>{const a=ANNOTATIONS.find(x=>x.key===key);
