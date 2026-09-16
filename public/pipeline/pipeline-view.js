@@ -667,6 +667,7 @@ function rebuildClip(){
   NODES.filter(n=>!n.scenery && !n.noclip)
        .forEach(n=>{ d+=" M "+nodeSil(n).map(p=>p.join(" ")).join(" L ")+" Z"; });
   clipPathEl.setAttribute("d",d);
+  if(typeof rebuildSils==="function") rebuildSils();   /* the canvas dots use the same shapes */
 }
 (function occlude(){
   const cp=el("clipPath",{id:"nodeclip",clipPathUnits:"userSpaceOnUse"});
@@ -720,20 +721,146 @@ edgeGeom.forEach(e=>{
       stroke:"var(--stroke)","stroke-width":".5"}));
     gDot.appendChild(g);
     const rec={e,t:(i/count)+Math.random()*0.1,
-               speed:(faint?DOT_PX_PER_S_FAINT:DOT_PX_PER_S)/e.len,node:g};
+               speed:(faint?DOT_PX_PER_S_FAINT:DOT_PX_PER_S)/e.len,node:g,
+               faint,fill:e.dotTone||e.tone||(faint?"var(--drop)":"var(--signal)"),x:0,y:0,hid:false};
     g.addEventListener("click",ev=>{ev.stopPropagation();inspect(rec);});
     DOTS.push(rec);
   }
 });
+/* ---- THE DOTS ARE DRAWN ON A CANVAS, NOT IN THE MAP ----------------------
+
+   Measured on an emulated iPhone at 6x CPU throttle: the map paints at 60 fps
+   and pans at 60, and fifty-one dots moving inside the svg hold it at 12.9 —
+   because a mutation anywhere in that element re-rasterises all 16,589 of its
+   nodes, and the dots are spread across every row, so the damage is the whole
+   map every frame. Freezing them: 60.3. Drawing them on a canvas over the top
+   instead: 60.2, panning 58.5. Ten dots cost the same as fifty-one, so this is
+   not about how many there are.
+
+   THE SVG DOTS STAY IN THE DOM AND STOP MOVING. They are what the checks read,
+   what a click lands on when the canvas is not available, and the thing whose
+   colours CSS resolves for both themes — so the canvas asks them for their
+   fill once per theme rather than carrying a palette of its own.
+
+   1.5x DEVICE PIXELS, NOT 3. Also measured: dpr 1 and 1.5 hold 60 fps, dpr 2
+   drops to 29 and dpr 3 to 0.2 on that phone. A 1.75px dot at 1.5x is sharp
+   enough; the whole map behind it is still vector at full resolution.
+
+   OCCLUSION IS KEPT BY HAND. gDot is clipped by the same silhouettes that
+   punch the edge layer, so a dot behind a building is hidden. A canvas over
+   the map has no such clip, so each dot is tested against the silhouettes
+   (the same nodeSil polygons, convex, in world coordinates) and skipped when
+   it is inside one. Fifty-one dots against the solid nodes is a few thousand
+   cross-products a frame, which does not show up next to what it saves. */
+const dotCanvas=document.createElement("canvas");
+dotCanvas.id="dotcanvas";
+dotCanvas.style.cssText="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none";
+dotCanvas.setAttribute("aria-hidden","true");
+let dotCtx=null, dotDPR=1, dotW=0, dotH=0, dotPaint=null;
+try{ dotCtx=dotCanvas.getContext&&dotCanvas.getContext("2d"); }catch(err){}
+if(dotCtx && svg.parentNode){
+  svg.parentNode.insertBefore(dotCanvas, svg.nextSibling);
+  gDot.style.display="none";            /* the svg dots stay, they just stop being drawn */
+}else{ dotCtx=null; }                    /* no canvas: the svg dots keep moving, as before */
+function sizeDotCanvas(){
+  if(!dotCtx) return;
+  const r=svg.getBoundingClientRect();
+  dotDPR=Math.min(1.5, (window.devicePixelRatio||1));
+  dotW=Math.max(1,Math.round(r.width)); dotH=Math.max(1,Math.round(r.height));
+  dotCanvas.width=Math.round(dotW*dotDPR); dotCanvas.height=Math.round(dotH*dotDPR);
+  dotCtx.setTransform(dotDPR,0,0,dotDPR,0,0);
+}
+/* the fills CSS resolved for the svg dots, read back once a theme */
+function readDotTones(){
+  if(!dotCtx) return;
+  DOTS.forEach(r=>{
+    const mark=r.node.lastChild;
+    try{ r.rgb=getComputedStyle(mark).fill||"#7fd1a6"; }catch(err){ r.rgb="#7fd1a6"; }
+  });
+  try{ dotStroke=getComputedStyle(document.body).getPropertyValue("--bg").trim()||"#0b0f0d"; }catch(err){}
+}
+let dotStroke="#0b0f0d";
+/* the solid nodes, as the clip sees them: convex silhouettes in world units */
+/* var AND NO INITIALISER, both deliberate. rebuildClip() calls rebuildSils()
+   while it punches the occlusion clip, which happens ABOVE this line: a let
+   would be in its dead zone and throw, and `var SILS=[]` would run its
+   initialiser afterwards and wipe the list it had just built — which it did,
+   leaving every dot un-occluded and floating over the buildings. */
+var SILS;
+function rebuildSils(){
+  SILS=NODES.filter(n=>!n.scenery && !n.noclip && !n.gone).map(n=>nodeSil(n));
+}
+rebuildSils();
+function insideSil(px,py){
+  if(!SILS) return false;
+  for(let i=0;i<SILS.length;i++){
+    const q=SILS[i]; let neg=false, pos=false;
+    for(let j=0;j<q.length;j++){
+      const a=q[j], b=q[(j+1)%q.length];
+      const cr=(b[0]-a[0])*(py-a[1])-(b[1]-a[1])*(px-a[0]);
+      if(cr<-1e-9) neg=true; else if(cr>1e-9) pos=true;
+      if(neg&&pos) break;
+    }
+    if(!(neg&&pos)) return true;        /* convex: all cross products one sign */
+  }
+  return false;
+}
 function placeDots(dt){
   DOTS.forEach(r=>{
     if(dt) r.t=(r.t+r.speed*dt)%1;
     const want=r.t*r.e.len; let s=r.e.segs[r.e.segs.length-1];
     for(const seg of r.e.segs){ if(want<=seg.at+seg.l){s=seg;break;} }
     const f=s.l?(want-s.at)/s.l:0;
-    r.node.setAttribute("transform",`translate(${s.from[0]+s.dx*f},${s.from[1]+s.dy*f})`);
-    if(r.e.carry) r.node.setAttribute("opacity", r.e.carry==="out" ? (1-r.t).toFixed(2) : r.t.toFixed(2));
+    r.x=s.from[0]+s.dx*f; r.y=s.from[1]+s.dy*f;
+    r.op=r.e.carry ? (r.e.carry==="out" ? 1-r.t : r.t) : 1;
+    if(dotCtx){ r.hid=insideSil(r.x,r.y); return; }
+    r.node.setAttribute("transform",`translate(${r.x},${r.y})`);
+    if(r.e.carry) r.node.setAttribute("opacity", r.op.toFixed(2));
   });
+  if(dotCtx) paintDots();
+}
+function paintDots(){
+  if(!dotCtx) return;
+  if(!dotW || !dotH) sizeDotCanvas();
+  if(!DOTS.length || !DOTS[0].rgb) readDotTones();
+  dotCtx.clearRect(0,0,dotW,dotH);
+  /* A DOT IS 1.75 WORLD UNITS, NOT 1.75 PIXELS. In the svg it sat inside the
+     camera's own group, so it scaled with everything else — sub-pixel at the
+     fitted view, a mark you can hit at reading zoom. Drawn at a fixed pixel
+     size on the canvas it came out thirty times too big on a phone: blue
+     blobs all over the map. Radius and stroke both ride view.k, as they did. */
+  dotCtx.strokeStyle=dotStroke;
+  const k=view.k;
+  for(let i=0;i<DOTS.length;i++){
+    const r=DOTS[i];
+    if(r.hid || r.op<=0.02) continue;
+    const x=view.x+r.x*k, y=view.y+r.y*k, rad=(r.faint?1.5:1.75)*k;
+    if(rad<0.08) continue;                       /* below this it is not a mark */
+    if(x<-6||y<-6||x>dotW+6||y>dotH+6) continue;
+    dotCtx.globalAlpha=Math.max(0,Math.min(1,r.op));
+    dotCtx.fillStyle=r.rgb;
+    dotCtx.lineWidth=0.5*k;
+    dotCtx.beginPath(); dotCtx.arc(x,y,rad,0,6.283185); dotCtx.fill();
+    if(0.5*k>0.35) dotCtx.stroke();
+  }
+  dotCtx.globalAlpha=1;
+}
+/* a dot is 1.75px and a finger is not: the svg kept an invisible 10px circle
+   round each one, so the canvas keeps the same target and hit-tests for it */
+if(dotCtx){
+  svg.addEventListener("click",ev=>{
+    if(editing) return;
+    let best=null,bd=14*14;
+    for(const r of DOTS){
+      if(r.hid||r.op<=0.02) continue;
+      const dx=(view.x+r.x*view.k)-ev.clientX, dy=(view.y+r.y*view.k)-ev.clientY;
+      const d=dx*dx+dy*dy; if(d<bd){ bd=d; best=r; }
+    }
+    if(best){ ev.stopPropagation(); inspect(best); }
+  },true);
+  window.addEventListener("resize",sizeDotCanvas);
+  if(window.matchMedia){ try{ new MutationObserver(readDotTones)
+    .observe(document.body,{attributes:true,attributeFilter:["class"]}); }catch(err){} }
 }
 /* ============================================================
    MOTION
