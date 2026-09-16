@@ -8,7 +8,7 @@ const nextConfig = {
   // /zfa_mapping is a self-contained static viz in public/zfa_mapping.html.
   // SOURCE + how to rebuild/redeploy: /data/scratch/zlabel/ZFA_MAPPING_README.md
   // (built by /data/scratch/zlabel/build_zfa_parallel.py; copy its output here + push).
-  // /pipeline is the published image viewer; /pipeline_edit keeps the full
+  // /pipeline is the published guided SVG viewer; /pipeline_edit keeps the full
   // authoring map (public/pipeline/index.html). Publish with npm run pipeline:publish.
   // The editor script src attributes are
   // ABSOLUTE (/pipeline/pipeline-iso.js) because this route has no trailing

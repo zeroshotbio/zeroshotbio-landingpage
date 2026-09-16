@@ -4,34 +4,34 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Aquarium to Atlas</title>
-<meta name="description" content="Explore the animated zebrafish single-cell pipeline, from aquarium to labelled atlas.">
+<meta name="description" content="Follow the zebrafish single-cell pipeline, one section at a time.">
 <link rel="stylesheet" href="/pipeline/viewer.css">
 <script src="/pipeline/viewer.js" defer></script>
 </head>
 <body>
 <header>
-  <div class="brand">Aquarium to Atlas</div>
+  <div class="brand">Aquarium to Atlas <span id="section-title">Choose a section</span></div>
   <nav aria-label="Map controls">
-    <button id="fit">Fit map</button>
-    <button id="out" aria-label="Zoom out">−</button>
-    <button id="in" aria-label="Zoom in">+</button>
-    <button id="motion" aria-pressed="false">Pause motion</button>
-    <button id="theme">Light</button>
+    <button id="overview" hidden>All sections</button>
+    <button id="fit" hidden>Fit section</button>
+    <button id="motion" hidden>Pause motion</button>
+    <button id="theme" disabled>Light</button>
   </nav>
 </header>
 <div class="workspace">
-  <main id="stage" tabindex="0" aria-label="Pipeline map. Click a node to read its explanation. Drag to pan. Pinch or scroll to zoom. Home fits the map.">
-    <div id="background-camera" class="camera"><img id="background" alt="" draggable="false"></div>
+  <main id="stage" tabindex="0" aria-label="Pipeline map. Choose a section to explore it.">
+    <svg id="map" aria-label="Zebrafish single-cell pipeline"></svg>
     <canvas id="dots" aria-hidden="true"></canvas>
-    <div id="node-camera" class="camera"><div id="nodes"></div><img id="labels" alt="" draggable="false"></div>
+    <div id="section-buttons" aria-label="Pipeline sections"></div>
+    <button id="next" hidden></button>
     <div id="status" role="status" aria-live="polite">Loading the map…</div>
-    <div class="hint" aria-hidden="true">Click a node to read · Drag to pan · Scroll or pinch to zoom</div>
+    <div id="hint" class="hint">Choose a section to follow its production line</div>
   </main>
-  <aside id="reader" aria-label="Node explanation">
+  <aside id="reader" hidden aria-label="Node explanation">
     <button id="close-reader" aria-label="Close explanation">×</button>
     <div id="read" class="read" aria-live="polite"></div>
   </aside>
 </div>
-<noscript>This interactive map needs JavaScript. The pipeline follows five rows: biology, library preparation, reads to a matrix, cell filtering, and analysis.</noscript>
+<noscript>This map needs JavaScript to explore its sections.</noscript>
 </body>
 </html>

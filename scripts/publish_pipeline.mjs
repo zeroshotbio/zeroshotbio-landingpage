@@ -46,70 +46,13 @@ try {
   }, state);
   await page.goto(`http://127.0.0.1:${server.address().port}/pipeline/index.html`, {waitUntil:'networkidle'});
   if(errors.length) throw new Error(errors.join('\n'));
-  const result = await page.evaluate(() => {
-    playing=false; anim=null;
-    const boxes={};
-    function measure(){for(const n of NODES){const b=nodeEls[n.id].getBBox();
-      const prev=boxes[n.id];boxes[n.id]=prev?{x:Math.min(prev.x,b.x),y:Math.min(prev.y,b.y),
-        right:Math.max(prev.right,b.x+b.width),bottom:Math.max(prev.bottom,b.y+b.height)}:
-        {x:b.x,y:b.y,right:b.x+b.width,bottom:b.y+b.height};}}
-    measure();
-    // Capture the animation envelope, not just one pose. The viewer can expand
-    // an island later if a drawing legitimately grows outside this envelope.
-    for(let i=0;i<120;i++){for(const tick of TICKERS)tick(.25,i*250,1);measure();}
-    const b=contentBox(), pad=36;
-    const bounds={x:Math.floor(b.x-pad),y:Math.floor(b.y-pad),width:Math.ceil(b.width+pad*2),height:Math.ceil(b.height+pad*2)};
-    const nodes=NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).map(n=>{
-      const box=boxes[n.id],padding=24;
-      return {id:n.id,name:n.name,key:n.key,scenery:!!n.scenery,
-        box:{x:Math.floor(box.x-padding),y:Math.floor(box.y-padding),
-          width:Math.ceil(box.right-box.x+padding*2),height:Math.ceil(box.bottom-box.y+padding*2)}};
-    });
-    const themes={};
-    for(const theme of ['dark','light']) {
-      document.body.classList.toggle('light',theme==='light');
-      const copy=svg.cloneNode(true);
-      // CSS variables are resolved once at publication, including nested aliases.
-      const palette=getComputedStyle(document.body);
-      const resolveVars=s=>s.replace(/var\((--[\w-]+)(?:,\s*([^)]*))?\)/g,(_,key,fallback)=>palette.getPropertyValue(key).trim() || fallback || '');
-      const originals=[svg,...svg.querySelectorAll('*')], clones=[copy,...copy.querySelectorAll('*')];
-      for(let i=0;i<clones.length;i++) {
-        const e=clones[i], original=originals[i];
-        for(const a of [...e.attributes]) {
-          if(a.value.includes('var(')) e.setAttribute(a.name,resolveVars(a.value));
-          if(a.name.startsWith('on')||['tabindex','role','aria-label'].includes(a.name))e.removeAttribute(a.name);
-        }
-        // Text inherits its font from HTML in the editor; carry it into the image.
-        if(e.tagName==='text') {
-          const cs=getComputedStyle(original);
-          for(const k of ['font-family','font-size','font-weight','font-style','letter-spacing','text-transform'])e.style.setProperty(k,cs.getPropertyValue(k));
-        }
-      }
-      copy.querySelectorAll('.ehandle,.ehit,.thandle,script,foreignObject').forEach(e=>e.remove());
-      clones[originals.indexOf(world)].removeAttribute('transform');
-      copy.setAttribute('xmlns','http://www.w3.org/2000/svg');
-      copy.setAttribute('viewBox',`${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`);
-      copy.setAttribute('width',bounds.width);copy.setAttribute('height',bounds.height);
-      copy.removeAttribute('id');copy.removeAttribute('class');
-      copy.style.cssText=`background:${palette.getPropertyValue('--bg').trim()};font-family:${palette.fontFamily};font-size:12px`;
-      const worldCopy=clones[originals.indexOf(world)];
-      // The original z-order is background, moving dots, node islands, labels.
-      for(const layer of [gDot,gNode,gLabel])clones[originals.indexOf(layer)].remove();
-      const background=new XMLSerializer().serializeToString(copy);
-      worldCopy.replaceChildren(clones[originals.indexOf(gLabel)]);
-      copy.style.removeProperty('background');
-      const labels=new XMLSerializer().serializeToString(copy);
-      themes[theme]={background,labels};
-    }
-    return {bounds,nodes,themes,title:OVERVIEW.title};
-  });
+  await page.addScriptTag({path:resolve(root,'public/pipeline/presentation-engine.js')});
+  const result=await page.evaluate(()=>pipelinePresentation.describe());
   const publisherHash=createHash('sha256').update(await readFile(fileURLToPath(import.meta.url))).digest('hex');
-  const provenance={format:2,state,sourceHashes,publisherHash};
+  const provenance={format:3,state,sourceHashes,publisherHash};
   const version=createHash('sha256').update(JSON.stringify(provenance)).update(JSON.stringify(result)).digest('hex').slice(0,20);
   const dir=resolve(root,'public/pipeline/published',version),base=`/pipeline/published/${version}`;
   await mkdir(dir,{recursive:true});
-  for(const theme of ['dark','light'])for(const layer of ['background','labels'])
-    await writeFile(resolve(dir,`${theme}-${layer}.svg`),result.themes[theme][layer]);
   await writeFile(resolve(dir,'layout.json'),JSON.stringify(provenance,null,2)+'\n');
   const original=await readFile(resolve(root,'public/pipeline/index.html'),'utf8');
   const css=original.match(/<style>([\s\S]*?)<\/style>/)[1];
@@ -128,11 +71,10 @@ try {
   for(const file of files.filter(f=>f.endsWith('.js')))
     await writeFile(resolve(dir,file.split('/').pop()),await readFile(resolve(root,'public',file)));
   await writeFile(resolve(dir,'engine.html'),engine);
-  const manifest={format:2,version,publishedAt:new Date().toISOString(),savedAt:state.at,title:result.title,
-    bounds:result.bounds,nodes:result.nodes,engine:`${base}/engine.html`,appearance:`${base}/appearance.css`,
-    themes:Object.fromEntries(['dark','light'].map(t=>[t,{background:`${base}/${t}-background.svg`,labels:`${base}/${t}-labels.svg`}]))};
+  const manifest={format:3,version,publishedAt:new Date().toISOString(),savedAt:state.at,
+    ...result,engine:`${base}/engine.html`,appearance:`${base}/appearance.css`};
   const pointer=resolve(root,'public/pipeline/published/current.json');
   await writeFile(pointer+'.tmp',JSON.stringify(manifest,null,2)+'\n');await rename(pointer+'.tmp',pointer);
-  console.log(`Published snapshot ${version}, saved ${new Date(state.at).toISOString()}, ${result.nodes.length} nodes, ${result.bounds.width} × ${result.bounds.height}.`);
+  console.log(`Published snapshot ${version}, saved ${new Date(state.at).toISOString()}, ${result.sections.length} sections, ${result.bounds.width} × ${result.bounds.height}.`);
   console.log('Review /pipeline locally, then commit the published directory and push to deploy.');
 } finally { await browser?.close(); await new Promise(r=>server.close(r)); }

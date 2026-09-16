@@ -1,639 +1,228 @@
 {
-  "format": 2,
-  "version": "997302bd0d0fc69191ce",
-  "publishedAt": "2026-09-16T21:06:17.956Z",
+  "format": 3,
+  "version": "25258537bc4b7b028ca4",
+  "publishedAt": "2026-09-16T21:35:43.855Z",
   "savedAt": 1789511284895,
-  "title": "Aquarium to Atlas",
   "bounds": {
-    "x": -4210,
-    "y": -277,
-    "width": 6121,
-    "height": 5534
+    "x": -4211.1171875,
+    "y": -240.6165235542719,
+    "width": 6086.149169921875,
+    "height": 4976.263007929272
   },
-  "nodes": [
+  "sections": [
     {
-      "id": "AQ",
-      "name": "The aquarium",
-      "key": "1",
-      "scenery": false,
-      "box": {
-        "x": -35,
-        "y": -158,
-        "width": 216,
-        "height": 188
-      }
+      "id": "section-1",
+      "name": "Biological samples",
+      "bounds": {
+        "x": -210.9637908935547,
+        "y": -240.6165235542719,
+        "width": 1250.313592091735,
+        "height": 826.0447924070273
+      },
+      "nodes": [
+        "AQ",
+        "A1",
+        "A2",
+        "A3",
+        "CS",
+        "LIBR",
+        "ECHO",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "FX"
+      ],
+      "progress": {
+        "AQ": 0,
+        "A1": 0.125,
+        "A2": 0.25,
+        "A3": 0.375,
+        "CS": 0,
+        "LIBR": 0.125,
+        "ECHO": 0.25,
+        "A4": 0.5,
+        "A5": 0.625,
+        "A6": 0.75,
+        "A7": 0.875,
+        "FX": 1
+      },
+      "end": [
+        832.9432333598733,
+        480.90000000000003
+      ],
+      "entry": [
+        -72.74613391789285,
+        -42
+      ]
     },
     {
-      "id": "A1",
-      "name": "Mating Pair",
-      "key": "A1",
-      "scenery": false,
-      "box": {
-        "x": 135,
-        "y": -56,
-        "width": 153,
-        "height": 149
-      }
+      "id": "section-2",
+      "name": "Molecular biology",
+      "bounds": {
+        "x": -1047.5443115234375,
+        "y": 205.8000030517578,
+        "width": 2837.099365234375,
+        "height": 1638
+      },
+      "nodes": [
+        "THW",
+        "R1p",
+        "B1",
+        "R2p",
+        "B2",
+        "R3p",
+        "SB",
+        "CAP",
+        "AMP",
+        "SZD",
+        "FRG",
+        "R4p",
+        "LIB",
+        "RCY",
+        "FQc"
+      ],
+      "progress": {
+        "THW": 0,
+        "R1p": 0.07142857142857142,
+        "B1": 0.14285714285714285,
+        "R2p": 0.21428571428571427,
+        "B2": 0.2857142857142857,
+        "R3p": 0.35714285714285715,
+        "SB": 0.42857142857142855,
+        "CAP": 0.5,
+        "AMP": 0.5714285714285714,
+        "SZD": 0.6428571428571429,
+        "FRG": 0.7142857142857143,
+        "R4p": 0.7857142857142857,
+        "LIB": 0.8571428571428571,
+        "RCY": 0.9285714285714286,
+        "FQc": 1
+      },
+      "end": [
+        1171.5764867476646,
+        1487.01
+      ],
+      "entry": [
+        -774.7463262255588,
+        363.3
+      ]
     },
     {
-      "id": "CS",
-      "name": "Compound selection",
-      "key": "P1",
-      "scenery": false,
-      "box": {
-        "x": -153,
-        "y": -55,
-        "width": 134,
-        "height": 141
-      }
+      "id": "section-3",
+      "name": "Reads to a matrix",
+      "bounds": {
+        "x": -2789.814208984375,
+        "y": -4.199999809265137,
+        "width": 4664.84619140625,
+        "height": 3336.9000120162964
+      },
+      "nodes": [
+        "FQ",
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "G1",
+        "G2",
+        "G2b",
+        "G4",
+        "W1",
+        "CB",
+        "DD",
+        "UD"
+      ],
+      "progress": {
+        "FQ": 0,
+        "E2": 0,
+        "W1": 0,
+        "E3": 0.16666666666666666,
+        "G1": 0,
+        "G2": 0,
+        "G4": 0.16666666666666666,
+        "E4": 0.3333333333333333,
+        "G2b": 0,
+        "E5": 0.5,
+        "CB": 0.6666666666666666,
+        "DD": 0.8333333333333334,
+        "UD": 1
+      },
+      "end": [
+        1093.919988790314,
+        2881.9350000000004
+      ],
+      "entry": [
+        -2106.9099035969716,
+        1033.725
+      ]
     },
     {
-      "id": "A2",
-      "name": "The Clutch",
-      "key": "A2",
-      "scenery": false,
-      "box": {
-        "x": 231,
-        "y": 29,
-        "width": 121,
-        "height": 101
-      }
+      "id": "section-4",
+      "name": "The cull",
+      "bounds": {
+        "x": -4211.1171875,
+        "y": 0,
+        "width": 4211.1171875,
+        "height": 4735.646484375
+      },
+      "nodes": [
+        "c1",
+        "c3",
+        "c4",
+        "c5",
+        "RIVER",
+        "FD",
+        "UDc"
+      ],
+      "progress": {
+        "UDc": 0,
+        "c1": 0.2,
+        "c3": 0.4,
+        "c4": 0.6,
+        "c5": 0.8,
+        "RIVER": 0,
+        "FD": 1
+      },
+      "end": [
+        -1552.766228477423,
+        2954.9100000000003
+      ],
+      "entry": [
+        -3300.8558265243882,
+        1821.75
+      ]
     },
     {
-      "id": "LIBR",
-      "name": "Drug Library",
-      "key": "P2",
-      "scenery": false,
-      "box": {
-        "x": -81,
-        "y": 4,
-        "width": 201,
-        "height": 165
-      }
-    },
-    {
-      "id": "A3",
-      "name": "Cull Unfertilised Eggs",
-      "key": "A3",
-      "scenery": false,
-      "box": {
-        "x": 311,
-        "y": -16,
-        "width": 122,
-        "height": 192
-      }
-    },
-    {
-      "id": "ECHO",
-      "name": "Echo 650 Dispenser",
-      "key": "P3",
-      "scenery": false,
-      "box": {
-        "x": 118,
-        "y": 77,
-        "width": 168,
-        "height": 177
-      }
-    },
-    {
-      "id": "A4",
-      "name": "Array into the Drug Plate",
-      "key": "A4",
-      "scenery": false,
-      "box": {
-        "x": 302,
-        "y": 91,
-        "width": 156,
-        "height": 184
-      }
-    },
-    {
-      "id": "A5",
-      "name": "Incubate to 48 hours post fertilization",
-      "key": "A5",
-      "scenery": false,
-      "box": {
-        "x": 408,
-        "y": 223,
-        "width": 144,
-        "height": 106
-      }
-    },
-    {
-      "id": "A6",
-      "name": "Enzymatic Dissociation",
-      "key": "A6",
-      "scenery": false,
-      "box": {
-        "x": 499,
-        "y": 278,
-        "width": 144,
-        "height": 104
-      }
-    },
-    {
-      "id": "A7",
-      "name": "Fix the Suspension",
-      "key": "A7",
-      "scenery": false,
-      "box": {
-        "x": 598,
-        "y": 204,
-        "width": 144,
-        "height": 235
-      }
-    },
-    {
-      "id": "THW",
-      "name": "Thaw",
-      "key": "B1",
-      "scenery": false,
-      "box": {
-        "x": -728,
-        "y": 337,
-        "width": 158,
-        "height": 144
-      }
-    },
-    {
-      "id": "FX",
-      "name": "Fixed material",
-      "key": "2",
-      "scenery": false,
-      "box": {
-        "x": 657,
-        "y": 337,
-        "width": 247,
-        "height": 180
-      }
-    },
-    {
-      "id": "R1p",
-      "name": "Round 1 — reverse transcription",
-      "key": "B2",
-      "scenery": false,
-      "box": {
-        "x": -616,
-        "y": 429,
-        "width": 199,
-        "height": 126
-      }
-    },
-    {
-      "id": "B1",
-      "name": "Pool and split",
-      "key": "B3",
-      "scenery": false,
-      "box": {
-        "x": -501,
-        "y": 466,
-        "width": 173,
-        "height": 180
-      }
-    },
-    {
-      "id": "R2p",
-      "name": "Round 2 — ligation",
-      "key": "B4",
-      "scenery": false,
-      "box": {
-        "x": -400,
-        "y": 554,
-        "width": 184,
-        "height": 121
-      }
-    },
-    {
-      "id": "B2",
-      "name": "Split and pool, round 2",
-      "key": "B5",
-      "scenery": false,
-      "box": {
-        "x": -306,
-        "y": 586,
-        "width": 200,
-        "height": 192
-      }
-    },
-    {
-      "id": "R3p",
-      "name": "Round 3 — ligation",
-      "key": "B6",
-      "scenery": false,
-      "box": {
-        "x": -168,
-        "y": 673,
-        "width": 155,
-        "height": 155
-      }
-    },
-    {
-      "id": "SB",
-      "name": "Pool and lyse",
-      "key": "B7",
-      "scenery": false,
-      "box": {
-        "x": -104,
-        "y": 734,
-        "width": 230,
-        "height": 191
-      }
-    },
-    {
-      "id": "CAP",
-      "name": "cDNA CAPTURE",
-      "key": "B8",
-      "scenery": false,
-      "box": {
-        "x": -13,
-        "y": 810,
-        "width": 194,
-        "height": 172
-      }
-    },
-    {
-      "id": "AMP",
-      "name": "PCR amplification",
-      "key": "B8a",
-      "scenery": false,
-      "box": {
-        "x": 132,
-        "y": 858,
-        "width": 159,
-        "height": 160
-      }
-    },
-    {
-      "id": "SZD",
-      "name": "Measure the size distribution",
-      "key": "B9a",
-      "scenery": false,
-      "box": {
-        "x": 248,
-        "y": 897,
-        "width": 217,
-        "height": 131
-      }
-    },
-    {
-      "id": "W1",
-      "name": "Barcode whitelists",
-      "key": "F5",
-      "scenery": false,
-      "box": {
-        "x": -1312,
-        "y": 794,
-        "width": 460,
-        "height": 398
-      }
-    },
-    {
-      "id": "FRG",
-      "name": "Fragment, end-prep, ligate adapters",
-      "key": "C1",
-      "scenery": false,
-      "box": {
-        "x": 252,
-        "y": 914,
-        "width": 301,
-        "height": 275
-      }
-    },
-    {
-      "id": "R4p",
-      "name": "Round 4 — indexing PCR",
-      "key": "C2",
-      "scenery": false,
-      "box": {
-        "x": 457,
-        "y": 1054,
-        "width": 129,
-        "height": 106
-      }
-    },
-    {
-      "id": "FQ",
-      "name": "FASTQ",
-      "key": "3",
-      "scenery": false,
-      "box": {
-        "x": -2063,
-        "y": 622,
-        "width": 683,
-        "height": 702
-      }
-    },
-    {
-      "id": "LIB",
-      "name": "Quantify and size-check",
-      "key": "C3",
-      "scenery": false,
-      "box": {
-        "x": 537,
-        "y": 1064,
-        "width": 218,
-        "height": 182
-      }
-    },
-    {
-      "id": "E2",
-      "name": "One fragment",
-      "key": "C4",
-      "scenery": false,
-      "box": {
-        "x": -1817,
-        "y": 876,
-        "width": 455,
-        "height": 443
-      }
-    },
-    {
-      "id": "RCY",
-      "name": "THE SEQUENCER",
-      "key": "Sa",
-      "scenery": false,
-      "box": {
-        "x": 626,
-        "y": 1140,
-        "width": 164,
-        "height": 138
-      }
-    },
-    {
-      "id": "FQc",
-      "name": "FASTQ",
-      "key": "3",
-      "scenery": false,
-      "box": {
-        "x": 749,
-        "y": 945,
-        "width": 683,
-        "height": 702
-      }
-    },
-    {
-      "id": "E3",
-      "name": "Match R2 barcodes",
-      "key": "C5",
-      "scenery": false,
-      "box": {
-        "x": -1672,
-        "y": -29,
-        "width": 1701,
-        "height": 1754
-      }
-    },
-    {
-      "id": "E4",
-      "name": "Align R1",
-      "key": "C6",
-      "scenery": false,
-      "box": {
-        "x": -1305,
-        "y": -28,
-        "width": 1333,
-        "height": 4009
-      }
-    },
-    {
-      "id": "G1",
-      "name": "GRCz11",
-      "key": "F1",
-      "scenery": false,
-      "box": {
-        "x": -1314,
-        "y": 1763,
-        "width": 243,
-        "height": 177
-      }
-    },
-    {
-      "id": "UDc",
-      "name": "Unfiltered matrix",
-      "key": "4",
-      "scenery": false,
-      "box": {
-        "x": -3445,
-        "y": 1738,
-        "width": 691,
-        "height": 439
-      }
-    },
-    {
-      "id": "G2",
-      "name": "Ensembl 99",
-      "key": "F2",
-      "scenery": false,
-      "box": {
-        "x": -1477,
-        "y": 1851,
-        "width": 274,
-        "height": 195
-      }
-    },
-    {
-      "id": "G4",
-      "name": "STAR Aligner",
-      "key": "F4",
-      "scenery": false,
-      "box": {
-        "x": -1165,
-        "y": 1873,
-        "width": 261,
-        "height": 187
-      }
-    },
-    {
-      "id": "E5",
-      "name": "Assign to gene",
-      "key": "C7",
-      "scenery": false,
-      "box": {
-        "x": -749,
-        "y": -28,
-        "width": 1929,
-        "height": 5429
-      }
-    },
-    {
-      "id": "c1",
-      "name": "Knee",
-      "key": "D2",
-      "scenery": false,
-      "box": {
-        "x": -3026,
-        "y": -24,
-        "width": 3050,
-        "height": 2343
-      }
-    },
-    {
-      "id": "FDc",
-      "name": "Filtered matrix",
-      "key": "5",
-      "scenery": false,
-      "box": {
-        "x": -3990,
-        "y": 2212,
-        "width": 161,
-        "height": 163
-      }
-    },
-    {
-      "id": "RIVER",
-      "name": "Attrition",
-      "key": "D0",
-      "scenery": true,
-      "box": {
-        "x": -2762,
-        "y": 1849,
-        "width": 1734,
-        "height": 1022
-      }
-    },
-    {
-      "id": "G2b",
-      "name": "Ensembl 99",
-      "key": "F2b",
-      "scenery": false,
-      "box": {
-        "x": -973,
-        "y": 2214,
-        "width": 372,
-        "height": 251
-      }
-    },
-    {
-      "id": "c3",
-      "name": "Mito %",
-      "key": "D4",
-      "scenery": false,
-      "box": {
-        "x": -2730,
-        "y": -24,
-        "width": 2754,
-        "height": 2512
-      }
-    },
-    {
-      "id": "CB",
-      "name": "Bucket by cell",
-      "key": "C8",
-      "scenery": false,
-      "box": {
-        "x": -93,
-        "y": 2079,
-        "width": 736,
-        "height": 529
-      }
-    },
-    {
-      "id": "c4",
-      "name": "Complexity",
-      "key": "D5",
-      "scenery": false,
-      "box": {
-        "x": -4236,
-        "y": 2400,
-        "width": 4049,
-        "height": 2359
-      }
-    },
-    {
-      "id": "H5",
-      "name": "Published object",
-      "key": "6",
-      "scenery": false,
-      "box": {
-        "x": -3941,
-        "y": 2465,
-        "width": 194,
-        "height": 176
-      }
-    },
-    {
-      "id": "DD",
-      "name": "Deduplicate UMIs",
-      "key": "C9",
-      "scenery": false,
-      "box": {
-        "x": 83,
-        "y": 2232,
-        "width": 1081,
-        "height": 686
-      }
-    },
-    {
-      "id": "c5",
-      "name": "Doublets",
-      "key": "D6",
-      "scenery": false,
-      "box": {
-        "x": -2115,
-        "y": 2603,
-        "width": 354,
-        "height": 504
-      }
-    },
-    {
-      "id": "KAS",
-      "name": "DanioType Kasperov",
-      "key": "K",
-      "scenery": false,
-      "box": {
-        "x": -3681,
-        "y": 2662,
-        "width": 194,
-        "height": 179
-      }
-    },
-    {
-      "id": "UD",
-      "name": "Unfiltered matrix",
-      "key": "4",
-      "scenery": false,
-      "box": {
-        "x": 614,
-        "y": 2604,
-        "width": 691,
-        "height": 439
-      }
-    },
-    {
-      "id": "LB",
-      "name": "Usable .h5ad",
-      "key": "7",
-      "scenery": false,
-      "box": {
-        "x": -3340,
-        "y": 2754,
-        "width": 184,
-        "height": 168
-      }
-    },
-    {
-      "id": "FD",
-      "name": "Filtered matrix",
-      "key": "5",
-      "scenery": false,
-      "box": {
-        "x": -1662,
-        "y": 2832,
-        "width": 161,
-        "height": 163
-      }
+      "id": "section-5",
+      "name": "Opinionated metadata",
+      "bounds": {
+        "x": -4173.8095703125,
+        "y": 2117.9789583182865,
+        "width": 1294.88134765625,
+        "height": 815.7209928535885
+      },
+      "nodes": [
+        "H5",
+        "KAS",
+        "LB",
+        "FDc"
+      ],
+      "progress": {
+        "FDc": 0,
+        "H5": 0.3333333333333333,
+        "KAS": 0.6666666666666666,
+        "LB": 1
+      },
+      "end": [
+        -3211.7418124749693,
+        2889.6
+      ],
+      "entry": [
+        -4035.5917790951066,
+        2245.9500000000003
+      ]
     }
   ],
-  "engine": "/pipeline/published/997302bd0d0fc69191ce/engine.html",
-  "appearance": "/pipeline/published/997302bd0d0fc69191ce/appearance.css",
-  "themes": {
-    "dark": {
-      "background": "/pipeline/published/997302bd0d0fc69191ce/dark-background.svg",
-      "labels": "/pipeline/published/997302bd0d0fc69191ce/dark-labels.svg"
-    },
-    "light": {
-      "background": "/pipeline/published/997302bd0d0fc69191ce/light-background.svg",
-      "labels": "/pipeline/published/997302bd0d0fc69191ce/light-labels.svg"
-    }
-  }
+  "engine": "/pipeline/published/25258537bc4b7b028ca4/engine.html",
+  "appearance": "/pipeline/published/25258537bc4b7b028ca4/appearance.css"
 }
