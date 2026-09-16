@@ -35,6 +35,27 @@ await p.route('**/api/pipeline_edits',r=>{
   return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({offsets:null,text:null,at:null})});});
 await p.route('**/api/pipeline_prompts*',r=>r.fulfill({status:200,contentType:'application/json',body:'{}'}));
 await p.goto(process.argv[2]||'http://127.0.0.1:8732/pipeline',{waitUntil:'networkidle'}); await p.waitForTimeout(3200);
+
+/* THE MAP HAS AN OPENING SHOT NOW: it lands on the aquarium, holds, then pulls
+   back to the fitted view. Anything that measures geometry has to let that
+   finish first, exactly as a reader would — otherwise the camera moves between
+   measuring a thing and touching it. */
+async function cameraSettled(page, ms = 9000) {
+  const t0 = Date.now();
+  let last = null, stable = 0;
+  while (Date.now() - t0 < ms) {
+    const k = await page.evaluate(() => (typeof view !== 'undefined')
+      ? [view.k, view.x, view.y, !!anim] : null);
+    if (k && !k[3] && last && k[0] === last[0] && k[1] === last[1] && k[2] === last[2]) {
+      if (++stable >= 2) return true;
+    } else stable = 0;
+    last = k;
+    await page.waitForTimeout(250);
+  }
+  return false;
+}
+
+await cameraSettled(p);
 let bad=0; const fail=m=>{bad++;console.log('  FAIL '+m);};
 
 console.log('pad handles before the mode:',

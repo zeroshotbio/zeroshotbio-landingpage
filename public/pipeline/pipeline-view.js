@@ -910,10 +910,14 @@ let last=performance.now();
 
    MOTION_MIN was a legibility floor at 0.10 — below that a chart is smaller
    than a postage stamp. It is a PERFORMANCE gate as well now, and set where
-   the map stops being readable as machinery: 0.55. At the fitted view a phone
-   sits at 0.057 and a laptop at about 0.16, so both open on a still map and
-   start it by zooming in, which is also the only zoom at which any of this
-   animation can be seen.
+   the map stops being readable as machinery: 0.60. At the fitted view a phone
+   sits at 0.057, an iPad at 0.13 and a laptop at about 0.16, so every view you
+   can arrive at opens still and starts by zooming in.
+
+   0.60 IS THE CEILING, NOT A PREFERENCE. focusNode lands a clicked station
+   between 0.6 and 1.5 — 0.6 for the wide row-3 machines, 1.5 for a small tile.
+   Set the floor any higher and clicking one of the big stations would leave it
+   sitting there dead, which reads as broken rather than as deliberate.
 
    Why it is the whole answer on a phone: any mutation inside the map's svg
    re-rasterises all 16,589 elements, so one moving dot costs as much as
@@ -924,7 +928,7 @@ let last=performance.now();
    The dots stop with the shapes. They were the last thing moving at the fitted
    view and they are what a still map is missing least: at 0.057 a dot is a
    tenth of a pixel. */
-const MOTION_MIN=0.55;
+const MOTION_MIN=0.60;
 /* Everything shape-authored that moves runs from here. The zoom gate is
    central: each shape ships its own `if(k<0.7) return`, written when the map
    was a third of its present size — at today's extent the whole map fits at
@@ -1105,9 +1109,11 @@ function fitTarget(){
   return {fx:bb.x+bb.width/2, fy:bb.y+bb.height/2,
           k:Math.min((r.width-48)/bb.width,(r.height-64)/bb.height,1.4)};
 }
+let camWrote=null;
 function setFocus(t){
   const [cx,cy]=centre();
   view.k=t.k; view.x=cx-t.fx*t.k; view.y=cy-t.fy*t.k; applyView();
+  camWrote={k:view.k, x:view.x, y:view.y};
 }
 function fit(){ anim=null; setFocus(fitTarget()); }
 
@@ -1121,6 +1127,15 @@ function glideTo(target, ms=1200){
 }
 function stepCamera(now){
   if(!anim) return;
+  /* AN ANIMATION YIELDS TO WHOEVER ELSE MOVED THE CAMERA. A pointer or a wheel
+     already clears `anim`, but anything that sets view directly does not — and
+     a glide in flight then overwrites it every frame, so the camera springs
+     back to wherever the glide was heading. That is what the opening shot did
+     to two checks that zoom in to look at something, and it would do it to any
+     code that moves the camera while the intro is pulling back. */
+  if(camWrote && (view.k!==camWrote.k || view.x!==camWrote.x || view.y!==camWrote.y)){
+    anim=null; return;
+  }
   const p=Math.min(1,(now-anim.t0)/anim.ms);
   /* quadratic in/out rather than cubic: same shape, much less punch at the ends */
   const e=p<0.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
@@ -1496,9 +1511,53 @@ svg.addEventListener("click",()=>{ if(moved<8 && !editing) release(); });
    The second fit is deferred to the frame after the tickers have run once. It
    is skipped if the reader has already been touched, so it can never yank the
    camera out from under somebody who clicked straight into a station. */
-placeDots(0); fit(); last=performance.now(); requestAnimationFrame(frame);
+/* ---- THE OPENING SHOT ------------------------------------------------------
+
+   The map arrives on the first object of the first row — the aquarium, close
+   enough to read — holds there while somebody takes it in, and then pulls back
+   to the whole picture and hands over. Three beats: land, hold, pull back.
+
+   IT IS AN OFFER, NOT A SEQUENCE YOU SIT THROUGH. Any touch, drag, wheel or
+   key cancels it: pointerdown and wheel already set anim=null, and the hold is
+   a timer that checks whether the reader has taken the camera before firing.
+   So the first thing anybody does is the last thing this does.
+
+   Reduced motion skips it and opens fitted, which is where it would have
+   ended anyway — a flyover is exactly the kind of movement that preference is
+   asking not to see.
+
+   The animation gate is above 0.60 and the opening shot sits at 0.85, so the
+   aquarium is running while it is held and the map goes still as it pulls
+   back. That is the right way round: the one station anybody looks at first is
+   the one that demonstrates the map is alive. */
+const INTRO_HOLD=3000, INTRO_OUT=1800, INTRO_K=0.85;
+let introAt=null;
+function introShot(){
+  const n=byId["AQ"]; if(!n) return false;
+  const [wx,wy]=P(n.x, n.y, (n.h||0.5)/2);
+  setFocus({fx:wx, fy:wy, k:INTRO_K});
+  /* where the opening shot parked the camera, to the pixel */
+  introAt={k:view.k, x:view.x, y:view.y};
+  return true;
+}
+/* PLACED AFTER LAYOUT, NOT BEFORE IT. Put the opening shot up during the
+   script's own run and whatever settles the layout afterwards fits the camera
+   straight over it — which is what a 4x-throttled iPad did every time, and a
+   fast one never did, because there the layout had already settled. Waiting
+   two frames costs nothing and makes the shot the last word on startup. */
+const introWanted = !mqReduce.matches && !pinned && !current;
+placeDots(0); fit();
+last=performance.now(); requestAnimationFrame(frame);
 requestAnimationFrame(()=>requestAnimationFrame(()=>{
-  if(!pinned && !current && !anim) fit();
+  if(pinned || current || anim) return;
+  if(!introWanted || !introShot()) return;
+  /* PULL BACK ONLY IF NOBODY HAS TOUCHED THE CAMERA. The camera itself is the
+     flag: still exactly where the shot parked it means nobody has taken it. */
+  setTimeout(()=>{
+    if(pinned || current || anim || !introAt) return;
+    if(view.k!==introAt.k || view.x!==introAt.x || view.y!==introAt.y) return;
+    glideTo(fitTarget(), INTRO_OUT);
+  }, INTRO_HOLD);
 }));
 
 /* Each block below is a feature, not a dependency. One that cannot find what it

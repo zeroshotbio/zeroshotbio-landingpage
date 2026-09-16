@@ -303,7 +303,9 @@ if (tickErr) console.log("FAIL — a ticker threw: " + tickErr.message + "\n  " 
 (function motion(){
   const k=vm.runInContext("view.k",sandbox);
   const min=vm.runInContext("MOTION_MIN",sandbox);
-  console.log(`fit view sits at zoom ${k.toFixed(2)}, motion stops below ${min}`);
+  /* the map opens on a flyover now, so whatever the camera reads here is the
+     opening shot, not a fitted view — the zooms asserted below are explicit */
+  console.log(`camera sits at zoom ${k.toFixed(2)} on load, motion stops below ${min}`);
   // and the per-shape gates must not be able to override it. This is about the
   // ZOOM gate, so take motion out of the question first — under REDUCE the map
   // is legitimately paused and every probe below would read as frozen.

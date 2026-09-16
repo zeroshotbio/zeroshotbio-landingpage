@@ -52,6 +52,28 @@ await page.waitForTimeout(3000);
 let bad = 0;
 const fail = m => { bad++; console.log('  FAIL  ' + m); };
 
+/* THE MAP HAS AN OPENING SHOT NOW: it lands on the aquarium, holds, then pulls
+   back to the fitted view. Anything that measures geometry has to let that
+   finish first, exactly as a reader would — otherwise the camera moves between
+   measuring a thing and touching it. */
+async function cameraSettled(page, ms = 9000) {
+  const t0 = Date.now();
+  let last = null, stable = 0;
+  while (Date.now() - t0 < ms) {
+    const k = await page.evaluate(() => (typeof view !== 'undefined')
+      ? [view.k, view.x, view.y, !!anim] : null);
+    if (k && !k[3] && last && k[0] === last[0] && k[1] === last[1] && k[2] === last[2]) {
+      if (++stable >= 2) return true;
+    } else stable = 0;
+    last = k;
+    await page.waitForTimeout(250);
+  }
+  return false;
+}
+
+await cameraSettled(page);
+
+
 /* ---- 1. the shared files loaded and the shapes are registered ----------- */
 const wired = await page.evaluate(shapes => ({
   model: typeof MODEL !== 'undefined' && !!MODEL.cells,
@@ -114,7 +136,7 @@ for (const id of Object.keys(ROOFS)) {
   if (frames[0][id] === null) { fail(`${id} did not draw at all`); continue; }
   if (frames.every(f => f[id] === frames[0][id]))
     fail(`${id} drew but never moved in 10s at zoom 0.7 — the frame loop is not reaching its ` +
-         `ticker (the map is still below ${'0.55'} by design, so this is measured above it)`);
+         `ticker (the map is still below ${'0.60'} by design, so this is measured above it)`);
 }
 
 /* ---- 4. the annotations are near the roof they belong to ---------------- */
