@@ -817,12 +817,20 @@ function placeDots(dt){
     r.node.setAttribute("transform",`translate(${r.x},${r.y})`);
     if(r.e.carry) r.node.setAttribute("opacity", r.op.toFixed(2));
   });
-  if(dotCtx) paintDots();
+  if(dotCtx) paintDots(!!dt);       /* dt means they moved; otherwise only the camera can have */
 }
-function paintDots(){
+/* A STILL MAP PAINTS NOTHING. The dots are in world coordinates and the canvas
+   is in screen coordinates, so a pan or a zoom has to repaint even when no dot
+   has moved — but a still map under a still camera does not, which is what
+   makes the fitted view free. */
+let dotSeen="";
+function paintDots(force){
   if(!dotCtx) return;
   if(!dotW || !dotH) sizeDotCanvas();
   if(!DOTS.length || !DOTS[0].rgb) readDotTones();
+  const sig=view.x.toFixed(1)+","+view.y.toFixed(1)+","+view.k.toFixed(4);
+  if(!force && sig===dotSeen) return;
+  dotSeen=sig;
   dotCtx.clearRect(0,0,dotW,dotH);
   /* A DOT IS 1.75 WORLD UNITS, NOT 1.75 PIXELS. In the svg it sat inside the
      camera's own group, so it scaled with everything else — sub-pixel at the
@@ -858,8 +866,8 @@ if(dotCtx){
     }
     if(best){ ev.stopPropagation(); inspect(best); }
   },true);
-  window.addEventListener("resize",sizeDotCanvas);
-  if(window.matchMedia){ try{ new MutationObserver(readDotTones)
+  window.addEventListener("resize",()=>{ sizeDotCanvas(); paintDots(true); });
+  if(window.matchMedia){ try{ new MutationObserver(()=>{ readDotTones(); paintDots(true); })
     .observe(document.body,{attributes:true,attributeFilter:["class"]}); }catch(err){} }
 }
 /* ============================================================
@@ -901,7 +909,25 @@ let last=performance.now();
 /* below this the map is a thumbnail and motion is not legible anyway. The
    manual zoom floor is 0.15, so in practice this only bites on a fit view in a
    very small window. */
-const MOTION_MIN=0.10;
+/* ZOOMED OUT, THE MAP IS A STILL PICTURE (2026-09-16, on request).
+
+   MOTION_MIN was a legibility floor at 0.10 — below that a chart is smaller
+   than a postage stamp. It is a PERFORMANCE gate as well now, and set where
+   the map stops being readable as machinery: 0.30. At the fitted view a phone
+   sits at 0.057 and a laptop at about 0.16, so both open on a still map and
+   start it by zooming in, which is also the only zoom at which any of this
+   animation can be seen.
+
+   Why it is the whole answer on a phone: any mutation inside the map's svg
+   re-rasterises all 16,589 elements, so one moving dot costs as much as
+   forty-five moving shapes — 12.9 fps with the dots running, 60.3 with them
+   still. Gating BOTH on the same number means the fitted view mutates nothing
+   at all, and the canvas is told not to repaint either.
+
+   The dots stop with the shapes. They were the last thing moving at the fitted
+   view and they are what a still map is missing least: at 0.057 a dot is a
+   tenth of a pixel. */
+const MOTION_MIN=0.30;
 /* Everything shape-authored that moves runs from here. The zoom gate is
    central: each shape ships its own `if(k<0.7) return`, written when the map
    was a third of its present size — at today's extent the whole map fits at
@@ -1016,7 +1042,7 @@ function runTickers(dt,now){
   tickCursor=(tickCursor+tickRan)%live.length;
 }
 /* started at the end of the file, once the camera exists */
-let frames=0, lastErr=null;
+let frames=0, lastErr=null, wasMoving=null;
 function frame(now){
   /* dt IS CLAMPED AT ZERO, AND THAT IS NOT BELT AND BRACES.
 
@@ -1043,11 +1069,14 @@ function frame(now){
   try{
     stepCamera(now);
     measureBoxes();
-    placeDots(playing?dt:0);
+    /* one gate for everything that moves — see MOTION_MIN */
+    const moving = playing && view.k >= MOTION_MIN;
+    if(moving!==wasMoving){ wasMoving=moving; if(onMotion) onMotion(); }
+    placeDots(moving?dt:0);
     /* the ✕ rides the camera, so it stays on its object through a pan or a
        zoom rather than sliding off it */
     if(editing && window.placeDeleteX) window.placeDeleteX();
-    if(playing && view.k >= MOTION_MIN) runTickers(dt,now);
+    if(moving) runTickers(dt,now);
   }catch(err){
     if(!lastErr) console.error("pipeline: a frame threw — the loop keeps running.",err);
     lastErr=err;
@@ -1057,6 +1086,7 @@ function frame(now){
 /* one line to paste back when the map looks stuck */
 window.pipelineDiag=()=>({
   moving: playing && view.k>=MOTION_MIN,
+  stillBecause: !playing ? "motion is off" : (view.k<MOTION_MIN ? "zoomed out past "+MOTION_MIN : null),
   playing, choice:motionChoice||"(system)", systemAsksForReduce:!!mqReduce.matches,
   zoom:+(view.k||0).toFixed(3), motionFloor:MOTION_MIN,
   frames, dots:DOTS.length, tickers:TICKERS.length, droppedTickers:DROPPED.length,
@@ -1873,14 +1903,23 @@ feature("motion", function(){
      absent is handled everywhere below rather than assumed away. */
   const btn=document.getElementById("btnMotion");
   const hint=document.querySelector(".hint"), hint0=hint?hint.textContent:"";
+  /* THREE REASONS A MAP CAN BE STILL, AND THEY NEED DIFFERENT SENTENCES. Two
+     were here already — the reader turned motion off, or the browser asked for
+     reduced motion — and both send you to the M key. The third is the zoom
+     gate: at the fitted view nothing moves, and telling that reader to press M
+     sends them to a control that will not help, because M is already on. Say
+     what will: zoom in. */
   onMotion=()=>{
     if(btn) btn.textContent = playing ? "Pause motion" : "Play motion";
     if(btn) btn.setAttribute("aria-pressed", playing?"false":"true");
     if(hint && !texting && !editing)
-      hint.textContent = playing ? hint0
-        : (mqReduce.matches && motionChoice!=="off"
+      hint.textContent = !playing
+        ? (mqReduce.matches && motionChoice!=="off"
             ? "Motion is paused because this browser asks for reduced motion — press M to run it anyway"
-            : "Motion is paused — press M to start it");
+            : "Motion is paused — press M to start it")
+        : (view.k < MOTION_MIN
+            ? "The map is still while it is zoomed out — zoom in and it starts moving"
+            : hint0);
   };
   if(btn) btn.onclick=()=>setMotion(!playing,true);
   onMotion();

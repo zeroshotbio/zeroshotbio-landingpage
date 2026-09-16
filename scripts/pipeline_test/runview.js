@@ -290,13 +290,20 @@ console.log(`tickers: ${TICKERS.length} registered, ${ticked} frames driven (${(
 if (tickErr) console.log("FAIL — a ticker threw: " + tickErr.message + "\n  " + tickErr.stack.split("\n")[1]);
 
 
-// The map must not arrive frozen. Every shape carries its own zoom gate; the
-// frame loop is what decides, and it has to still be moving at the fit view.
+// THE RULE CHANGED, AND THIS IS WHAT IT IS NOW (2026-09-16). It used to be
+// "the map must not arrive frozen": MOTION_MIN was a legibility floor at 0.10
+// and anything above it had to move, including the view a phone opens at.
+// Stillness when zoomed out is now DELIBERATE and is what makes a phone run at
+// 60fps — any mutation inside the svg re-rasterises all of it, so the fitted
+// view mutates nothing at all. MOTION_MIN is 0.30.
+//
+// The bug this was written for is still a bug, so it is still tested: a map
+// that can NEVER move is broken. What is asserted is the pair — still below
+// the floor, moving above it — rather than "moving at every zoom".
 (function motion(){
   const k=vm.runInContext("view.k",sandbox);
   const min=vm.runInContext("MOTION_MIN",sandbox);
   console.log(`fit view sits at zoom ${k.toFixed(2)}, motion stops below ${min}`);
-  if(k<min) console.log("FAIL — the map is frozen at the view it opens at");
   // and the per-shape gates must not be able to override it. This is about the
   // ZOOM gate, so take motion out of the question first — under REDUCE the map
   // is legitimately paused and every probe below would read as frozen.
@@ -310,12 +317,13 @@ if (tickErr) console.log("FAIL — a ticker threw: " + tickErr.message + "\n  " 
      desktop and a phone actually open at, and a genuine thumbnail */
   const at=k=>{ ran=0; vm.runInContext(`view.k=${k}`,sandbox);
                 vm.runInContext("frame(1000)",sandbox); return ran===1; };
-  const desktop=at(0.44), phone=at(0.12), tiny=at(0.05);
+  const reading=at(0.6), desktopFit=at(0.44), phoneFit=at(0.12), tiny=at(0.05);
   T.pop();
   vm.runInContext(`setMotion(${wasPlaying},false)`,sandbox);
-  console.log(`moving at desktop fit (0.44): ${desktop} · phone fit (0.12): ${phone} · thumbnail (0.05): ${tiny}`);
-  if(!desktop) console.log("FAIL — frozen at the zoom a desktop opens at");
-  if(!phone)   console.log("FAIL — frozen at the zoom a phone opens at");
+  console.log(`moving at reading zoom (0.60): ${reading} · desktop fit (0.44): ${desktopFit} · `+
+              `phone fit (0.12): ${phoneFit} · thumbnail (0.05): ${tiny}`);
+  if(!reading) console.log("FAIL — the map never moves, even zoomed in: nothing can start it");
+  if(phoneFit) console.log("FAIL — moving at a zoom the gate says is still");
   if(tiny)     console.log("FAIL — still animating when the map is a thumbnail");
 })();
 

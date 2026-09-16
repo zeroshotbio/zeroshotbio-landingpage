@@ -87,12 +87,34 @@ const shot = () => page.evaluate(ids => {
    then it sits while the band opens — so a 1.5s window lands inside one of
    those often enough to fail a roof that is working perfectly. Take a series
    and ask whether anything ever changed. */
+/* WATCH THEM FROM WHERE A READER WATCHES THEM. The map is a still picture
+   below MOTION_MIN (0.30) on purpose now — a phone opens at 0.057 and a laptop
+   at about 0.16, and nothing mutates there, which is what makes a phone run at
+   60fps. So this check has to zoom in before it can ask whether a roof moves,
+   or it is asserting against a deliberately frozen map.
+
+   AND FAR ENOUGH OUT THAT ALL FOUR ARE ON SCREEN AT ONCE: a shape off screen
+   is skipped by design, so focusing one roof would freeze the other three and
+   fail them. Row 4 is about forty units long, which fits at 0.4. */
+await page.evaluate(() => {
+  const roofs = ['c1','c3','c4','c5'].map(id => NODES.find(n => n.id === id)).filter(Boolean);
+  const mx = roofs.reduce((a,n) => a + n.x, 0) / roofs.length;
+  const my = roofs.reduce((a,n) => a + n.y, 0) / roofs.length;
+  view.k = 0.4;
+  const q = P(mx, my, 0);
+  view.x = innerWidth / 2 - q[0] * view.k;
+  view.y = innerHeight / 2 - q[1] * view.k;
+  document.querySelector('#svg > g').setAttribute('transform',
+    `translate(${view.x},${view.y}) scale(${view.k})`);
+});
+await page.waitForTimeout(1500);
 const frames = [await shot()];
 for (let i = 0; i < 10; i++) { await page.waitForTimeout(1000); frames.push(await shot()); }
 for (const id of Object.keys(ROOFS)) {
   if (frames[0][id] === null) { fail(`${id} did not draw at all`); continue; }
   if (frames.every(f => f[id] === frames[0][id]))
-    fail(`${id} drew but never moved in 10s — the frame loop is not reaching its ticker`);
+    fail(`${id} drew but never moved in 10s at zoom 0.4 — the frame loop is not reaching its ` +
+         `ticker (the map is still below ${'0.30'} by design, so this is measured above it)`);
 }
 
 /* ---- 4. the annotations are near the roof they belong to ---------------- */

@@ -2163,7 +2163,20 @@ function drawGeneBelt(g,n,MODE){
       /* THE GROUP AND THE MODEL END TOGETHER NOW. `live` outlasted `vis` while
          the kept reads ran on into tracks drawn by this same shape; the tracks
          are their own station, so there is nothing left to outlast. */
-      const live=vis;
+      /* AND IT ENDS WHERE THE BELT ENDS. `vis` fades the MODEL out at x1, but
+         the gene's NAME is put at gxp every frame for as long as the group is
+         drawn, and gxp runs the whole loop — so a name kept travelling after
+         its model had gone, out past the end of the belt and off the paper
+         entirely. On /FASTQ_pipe that overshoot happens in empty space; on
+         this map it lands below and right of the cull row, where it reads as
+         stray text floating off the map. Reported, and this is it.
+
+         The group stops at the belt's end, which is where everything it draws
+         has stopped meaning anything. /FASTQ_pipe draws the same overshoot and
+         is not changed here — that page is the calibrated one and this is a
+         fix to make, not a difference to hide. */
+      const past = gxp > x1 + K*0.1;
+      const live = past ? 0 : vis;
       const exTop=base+exonH;
       /* A GENE OFF THE BELT COSTS NOTHING. Ten models are on the loop and four
          are on the belt; with thirty reads apiece, walking the other six every
