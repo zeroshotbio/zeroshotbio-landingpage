@@ -100,7 +100,7 @@ await page.evaluate(() => {
   const roofs = ['c1','c3','c4','c5'].map(id => NODES.find(n => n.id === id)).filter(Boolean);
   const mx = roofs.reduce((a,n) => a + n.x, 0) / roofs.length;
   const my = roofs.reduce((a,n) => a + n.y, 0) / roofs.length;
-  view.k = 0.4;
+  view.k = 0.7;                       /* above MOTION_MIN, which is 0.55 now */
   const q = P(mx, my, 0);
   view.x = innerWidth / 2 - q[0] * view.k;
   view.y = innerHeight / 2 - q[1] * view.k;
@@ -113,8 +113,8 @@ for (let i = 0; i < 10; i++) { await page.waitForTimeout(1000); frames.push(awai
 for (const id of Object.keys(ROOFS)) {
   if (frames[0][id] === null) { fail(`${id} did not draw at all`); continue; }
   if (frames.every(f => f[id] === frames[0][id]))
-    fail(`${id} drew but never moved in 10s at zoom 0.4 — the frame loop is not reaching its ` +
-         `ticker (the map is still below ${'0.30'} by design, so this is measured above it)`);
+    fail(`${id} drew but never moved in 10s at zoom 0.7 — the frame loop is not reaching its ` +
+         `ticker (the map is still below ${'0.55'} by design, so this is measured above it)`);
 }
 
 /* ---- 4. the annotations are near the roof they belong to ---------------- */

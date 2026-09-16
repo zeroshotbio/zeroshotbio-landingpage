@@ -595,9 +595,6 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   gNode.appendChild(g); nodeEls[n.id]=g;
   tagTicks(n);
 });
-/* one pass once they are all in the document: a box measured before the group
-   is appended is empty, and an empty box means "never skip this one" */
-/* measured from the frame loop, once they are in the document — see measureBox */
 
 /* Committed nudges and deletions for the floating annotations. They are keyed
    "<node>:<which>" and live in the same table as the objects, because they are
@@ -913,7 +910,7 @@ let last=performance.now();
 
    MOTION_MIN was a legibility floor at 0.10 — below that a chart is smaller
    than a postage stamp. It is a PERFORMANCE gate as well now, and set where
-   the map stops being readable as machinery: 0.30. At the fitted view a phone
+   the map stops being readable as machinery: 0.55. At the fitted view a phone
    sits at 0.057 and a laptop at about 0.16, so both open on a still map and
    start it by zooming in, which is also the only zoom at which any of this
    animation can be seen.
@@ -927,7 +924,7 @@ let last=performance.now();
    The dots stop with the shapes. They were the last thing moving at the fitted
    view and they are what a still map is missing least: at 0.057 a dot is a
    tenth of a pixel. */
-const MOTION_MIN=0.30;
+const MOTION_MIN=0.55;
 /* Everything shape-authored that moves runs from here. The zoom gate is
    central: each shape ships its own `if(k<0.7) return`, written when the map
    was a third of its present size — at today's extent the whole map fits at
@@ -967,49 +964,37 @@ const DROPPED=[];
 
    MEASURE BEFORE TOUCHING EITHER NUMBER. pipelineDiag() reports how many
    tickers were visible and how many actually ran on the last frame. */
-const VIS_PAD=0.35, VIS_PX=80, BUDGET_MS=7, MAX_SKIP=0.25;
+const BUDGET_MS=7, MAX_SKIP=0.25;
 let tickCursor=0, tickSeen=0, tickRan=0;
 const nowMs=()=>(typeof performance!=="undefined"&&performance.now)?performance.now():Date.now();
 function tagTicks(n){ (n._ticks||[]).forEach(fn=>{ fn.__n=n; }); }
-/* the box it actually drew into, in world units — through the client rect
-   rather than getBBox because the group carries its own translate when the
-   node has been nudged, and getBBox does not include it.
+/* IS IT ON SCREEN? STRAIGHT OFF THE NODE'S OWN GEOMETRY.
 
-   MEASURED LAZILY, AND THAT IS THE WHOLE POINT. Taken once at build time it
-   came back empty for all 54 objects and every one of them read as "unmeasured,
-   never skip" — the svg is not in the document yet when the nodes are built, so
-   every rect is zero. Measured from the frame loop instead, the first frame
-   after paint gets real numbers; until then nothing is skipped, which is the
-   safe way round. */
-function measureBox(n,g){
-  n._box=null;
-  try{
-    if(!g||!g.getBoundingClientRect) return false;
-    const r=g.getBoundingClientRect(); if(!r.width&&!r.height) return false;
-    n._box=[(r.left-view.x)/view.k,(r.top-view.y)/view.k,
-            (r.right-view.x)/view.k,(r.bottom-view.y)/view.k];
-    return true;
-  }catch(err){ return false; }
-}
-/* one attempt a frame until they all have one; a node redrawn at a new size is
-   put back on the queue by redrawNode */
-let boxQueue=null;
-function measureBoxes(){
-  if(boxQueue===null) boxQueue=NODES.slice();
-  if(!boxQueue.length) return;
-  const left=[];
-  for(const n of boxQueue) if(!measureBox(n,nodeEls[n.id])) left.push(n);
-  boxQueue=left;
-}
+   This used to measure each group's client rect once and cache it converted
+   through the camera. That cache is what froze c5: the conversion is only
+   right if `view` and the DOM transform agree at the instant of measuring, and
+   any mismatch bakes in an error that grows with distance from the centre — so
+   the furthest object on a row read as off screen and its ticker never ran.
+   check-culls caught it, which is what it is for.
+
+   A node already knows where it is, so ask it. The box is its footprint padded
+   hard, because these drawings overflow their footprints two to nine times
+   (C1's glass is 12.8 wide on a 0.72 tile), plus screen slack. Eight corners
+   projected per node per frame is nothing next to what skipping a ticker
+   saves, and there is nothing to go stale. */
+const VIS_FOOT=3, VIS_PX=140;
 function onScreen(n){
-  if(!n||!n._box) return true;                 /* unmeasured: never skipped */
-  const k=view.k, b=n._box;
-  const w=(b[2]-b[0])*k, h=(b[3]-b[1])*k;
-  const px=w*VIS_PAD+VIS_PX, py=h*VIS_PAD+VIS_PX;
+  if(!n || typeof n.x!=="number") return true;   /* anything odd: never skipped */
+  const k=view.k, hw=(n.w||1)*VIS_FOOT, hd=(n.d||1)*VIS_FOOT, hz=((n.h||0)+1)*VIS_FOOT;
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(let i=0;i<8;i++){
+    const q=P(n.x+((i&1)?hw:-hw), n.y+((i&2)?hd:-hd), (i&4)?hz:0);
+    const sx=view.x+q[0]*k, sy=view.y+q[1]*k;
+    if(sx<x0)x0=sx; if(sx>x1)x1=sx; if(sy<y0)y0=sy; if(sy>y1)y1=sy;
+  }
   const W=(typeof window!=="undefined"&&window.innerWidth)||1e5;
   const H=(typeof window!=="undefined"&&window.innerHeight)||1e5;
-  return view.x+b[2]*k+px>=0 && view.y+b[3]*k+py>=0 &&
-         view.x+b[0]*k-px<=W && view.y+b[1]*k-py<=H;
+  return x1>=-VIS_PX && y1>=-VIS_PX && x0<=W+VIS_PX && y0<=H+VIS_PX;
 }
 function runTickers(dt,now){
   const live=[];
@@ -1068,7 +1053,6 @@ function frame(now){
      from a frozen map and impossible to get back without a refresh. */
   try{
     stepCamera(now);
-    measureBoxes();
     /* one gate for everything that moves — see MOTION_MIN */
     const moving = playing && view.k >= MOTION_MIN;
     if(moving!==wasMoving){ wasMoving=moving; if(onMotion) onMotion(); }
@@ -1091,7 +1075,6 @@ window.pipelineDiag=()=>({
   zoom:+(view.k||0).toFixed(3), motionFloor:MOTION_MIN,
   frames, dots:DOTS.length, tickers:TICKERS.length, droppedTickers:DROPPED.length,
   tickersOnScreen:tickSeen, tickersRanLastFrame:tickRan, frameBudgetMs:BUDGET_MS,
-  boxesMeasured:NODES.filter(n=>n._box).length, boxesPending:boxQueue?boxQueue.length:NODES.length,
   lastError:lastErr?String(lastErr.message||lastErr):null
 });
 
@@ -2047,7 +2030,6 @@ feature("edit positions", function(){
     if(L) L.dataset.base=labelBase(n);
     } finally { n.x=lx; n.y=ly; }
     reposition(n);
-    if(boxQueue) boxQueue.push(n);   /* it is a different size now */
   }
 
   /* a label group already carries its own translate+rotate; keep it so the
