@@ -12,7 +12,7 @@ import React from "react";
 import { MONO, RULE, MUTED, FAINT, INK, CAT, nfmt } from "../theme";
 import MENU from "../data/zfa_menu_preview.json";
 
-const prose: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.72, color: "#3f3a34", maxWidth: 700 };
+const prose: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.72, color: "var(--cm-prose)", maxWidth: 700 };
 
 export default function AnswerSpaceSection() {
   const branches = (MENU as any).branches;
@@ -55,12 +55,12 @@ export default function AnswerSpaceSection() {
         {placed.map((s) => (
           <g key={s.key}>
             {/* 2px surface gap between segments */}
-            <rect x={s.x + 1} y={0} width={Math.max(0, s.w - 2)} height={H} rx={3} ry={3} fill={s.color}>
+            <rect x={s.x + 1} y={0} width={Math.max(0, s.w - 2)} height={H} rx={3} ry={3} style={{ fill: s.color }}>
               <title>{`${s.label} — ${nfmt(s.n)} terms (${((s.n / total) * 100).toFixed(1)}%)`}</title>
             </rect>
             {s.w > 92 && (
               <text x={s.x + 12} y={H / 2 + 4.5}
-                    style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, fill: "#fff",
+                    style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, fill: "var(--cm-on-cat)",
                              fontVariantNumeric: "tabular-nums" }}>
                 {nfmt(s.n)}
               </text>
@@ -73,7 +73,7 @@ export default function AnswerSpaceSection() {
         {placed.map((s, i) => (
           <div key={s.key} style={{ display: "flex", gap: 18, alignItems: "baseline", flexWrap: "wrap",
                                     padding: "11px 0",
-                                    borderTop: i === 0 ? `1px solid ${RULE}` : "1px solid #f2efeb" }}>
+                                    borderTop: i === 0 ? `1px solid ${RULE}` : "1px solid var(--cm-rule-soft)" }}>
             <dt style={{ display: "flex", gap: 9, alignItems: "baseline", flex: "0 0 210px", minWidth: 0 }}>
               <span style={{ width: 10, height: 10, borderRadius: 3, background: s.color, flexShrink: 0 }} />
               <span style={{ fontSize: 13.5, fontWeight: 650, color: INK }}>{s.label}</span>

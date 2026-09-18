@@ -53,7 +53,7 @@ export default function DocsRail({ sections, stats }: {
             style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none",
                      fontFamily: MONO, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.7,
                      textTransform: "uppercase", color: ACCENT, border: `1px solid ${RULE}`,
-                     background: "#fffefd", borderRadius: 8, padding: "9px 13px", marginBottom: 22 }}>
+                     background: "var(--cm-card)", borderRadius: 8, padding: "9px 13px", marginBottom: 22 }}>
         ← Back to the overview
       </Link>
 
@@ -71,7 +71,7 @@ export default function DocsRail({ sections, stats }: {
             className="doc-link"
             aria-current={on ? "true" : undefined}
             style={{
-              background: on ? "#fffefd" : "transparent",
+              background: on ? "var(--cm-card)" : "transparent",
               borderLeftColor: on ? ACCENT : "transparent",
             }}
           >

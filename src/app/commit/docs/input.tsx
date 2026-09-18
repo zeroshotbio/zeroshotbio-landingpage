@@ -15,7 +15,7 @@ const FILES: Record<string, any> = Object.fromEntries(
   (MANIFEST as any).files.map((f: any) => [f.file, f])
 );
 
-const prose: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.72, color: "#3f3a34", maxWidth: 700 };
+const prose: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.72, color: "var(--cm-prose)", maxWidth: 700 };
 
 function FileHead({ name, keyName }: { name: string; keyName: string }) {
   const f = FILES[keyName];
@@ -38,7 +38,7 @@ function Fields({ items }: { items: { col: string; blurb: string }[] }) {
     <dl style={{ margin: "18px 0 0", maxWidth: 760 }}>
       {items.map((f, i) => (
         <div key={f.col} style={{ display: "flex", gap: 18, alignItems: "baseline", flexWrap: "wrap",
-                                  padding: "9px 0", borderTop: i === 0 ? `1px solid ${RULE}` : "1px solid #f2efeb" }}>
+                                  padding: "9px 0", borderTop: i === 0 ? `1px solid ${RULE}` : "1px solid var(--cm-rule-soft)" }}>
           <dt style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700, color: INK,
                        flex: "0 0 190px", minWidth: 0 }}>
             {f.col}

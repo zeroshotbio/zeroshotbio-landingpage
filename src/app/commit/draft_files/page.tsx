@@ -72,7 +72,7 @@ const size = (b: number | null) =>
 
 const wrap: React.CSSProperties = { maxWidth: 980, margin: "0 auto", padding: "0 16px" };
 const h2: React.CSSProperties = { fontSize: 22, fontWeight: 650, letterSpacing: -0.4, margin: "0 0 6px", color: INK };
-const lede: React.CSSProperties = { fontSize: 14.5, lineHeight: 1.65, color: "#5a544c", margin: "0 0 20px", maxWidth: 720 };
+const lede: React.CSSProperties = { fontSize: 14.5, lineHeight: 1.65, color: "var(--cm-lede)", margin: "0 0 20px", maxWidth: 720 };
 const micro: React.CSSProperties = { fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase", color: MUTED };
 
 function Pill({ s }: { s: string }) {
@@ -150,10 +150,10 @@ export default function DraftFilesPage() {
               <span style={{ fontSize: 15.5, fontWeight: 620 }}>{t.title}</span>
               <span style={{ ...micro, color: FAINT }}>{t.group} · {GROUPS[t.group]}</span>
             </div>
-            <div style={{ fontFamily: MONO, fontSize: 12, color: "#4a453f", margin: "8px 0 0", lineHeight: 1.6,
+            <div style={{ fontFamily: MONO, fontSize: 12, color: "var(--cm-detail)", margin: "8px 0 0", lineHeight: 1.6,
                           overflowWrap: "anywhere" }}>{t.detail}</div>
             {NEXT[t.id] && (
-              <p style={{ fontSize: 14, lineHeight: 1.65, color: "#3f3a34", margin: "8px 0 0", maxWidth: 760 }}>
+              <p style={{ fontSize: 14, lineHeight: 1.65, color: "var(--cm-prose)", margin: "8px 0 0", maxWidth: 760 }}>
                 {NEXT[t.id]}
               </p>
             )}
@@ -188,7 +188,7 @@ export default function DraftFilesPage() {
                           {size(f.bytes)}{f.sha256 ? ` · ${f.sha256.slice(0, 10)}…` : ""}
                         </div>
                       </td>
-                      <td style={{ color: "#3f3a34", lineHeight: 1.55, borderTop: i === 0 ? "none" : undefined }}>
+                      <td style={{ color: "var(--cm-prose)", lineHeight: 1.55, borderTop: i === 0 ? "none" : undefined }}>
                         {f.what}
                         {f.location && (
                           <div style={{ fontFamily: MONO, fontSize: 10.5, color: MUTED, marginTop: 4,
@@ -256,7 +256,7 @@ export default function DraftFilesPage() {
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.45 }}>{t.title}</div>
                   {t.why && <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.55, marginTop: 2 }}>{t.why}</div>}
-                  <div style={{ fontFamily: MONO, fontSize: 11.5, color: "#4a453f", marginTop: 4, lineHeight: 1.55,
+                  <div style={{ fontFamily: MONO, fontSize: 11.5, color: "var(--cm-detail)", marginTop: 4, lineHeight: 1.55,
                                 overflowWrap: "anywhere" }}>{t.detail}</div>
                 </div>
               </div>

@@ -58,7 +58,7 @@ function Section({ id, n, title, children }: {
   );
 }
 
-const prose: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.72, color: "#3f3a34", maxWidth: 700 };
+const prose: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.72, color: "var(--cm-prose)", maxWidth: 700 };
 
 export default function CommitDocsPage() {
   return (
@@ -72,7 +72,7 @@ export default function CommitDocsPage() {
 .doc-rail{position:sticky;top:24px;align-self:start}
 .doc-link{display:block;padding:7px 10px;border-radius:7px;text-decoration:none;
   border-left:2px solid transparent}
-.doc-link:hover{background:#fffefd;border-left-color:${ACCENT}}
+.doc-link:hover{background:var(--cm-card);border-left-color:${ACCENT}}
 @media (max-width: 900px){
   .doc-grid{grid-template-columns:1fr;gap:26px}
   .doc-rail{position:static}
@@ -176,7 +176,7 @@ export default function CommitDocsPage() {
                   style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none",
                            fontFamily: MONO, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.7,
                            textTransform: "uppercase", color: ACCENT, border: `1px solid ${RULE}`,
-                           background: "#fffefd", borderRadius: 8, padding: "10px 14px" }}>
+                           background: "var(--cm-card)", borderRadius: 8, padding: "10px 14px" }}>
               ← Back to the overview
             </Link>
           </div>

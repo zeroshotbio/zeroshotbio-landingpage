@@ -16,7 +16,7 @@
 import React from "react";
 import { MONO, RULE, MUTED, FAINT, INK, SC_FULL, SC_HALF, SC_ZERO } from "./theme";
 
-const prose: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.72, color: "#3f3a34", maxWidth: 700 };
+const prose: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.72, color: "var(--cm-prose)", maxWidth: 700 };
 
 const OUTCOMES = [
   {
@@ -52,12 +52,12 @@ export default function ScoringSection() {
         {OUTCOMES.map((o, i) => (
           <div key={o.key} style={{ display: "flex", gap: 18, alignItems: "baseline", flexWrap: "wrap",
                                     padding: "13px 0",
-                                    borderTop: i === 0 ? `1px solid ${RULE}` : "1px solid #f2efeb" }}>
+                                    borderTop: i === 0 ? `1px solid ${RULE}` : "1px solid var(--cm-rule-soft)" }}>
             <dt style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700, letterSpacing: 0.8,
                          textTransform: "uppercase", color: o.color, flex: "0 0 70px" }}>
               {o.key}
             </dt>
-            <dd style={{ margin: 0, fontSize: 14, color: "#3f3a34", lineHeight: 1.65,
+            <dd style={{ margin: 0, fontSize: 14, color: "var(--cm-prose)", lineHeight: 1.65,
                          flex: "1 1 340px", minWidth: 0 }}>
               {o.body}
             </dd>
@@ -70,7 +70,7 @@ export default function ScoringSection() {
         case. Set side by side, that is the whole of it:
       </p>
 
-      <div style={{ marginTop: 14, border: `1px solid ${RULE}`, borderRadius: 8, background: "#fdfcfb",
+      <div style={{ marginTop: 14, border: `1px solid ${RULE}`, borderRadius: 8, background: "var(--cm-surf-1)",
                     padding: "16px 18px", fontFamily: MONO, fontSize: 12, lineHeight: 1.9,
                     color: INK, maxWidth: 700, overflowX: "auto" }}>
         <div>

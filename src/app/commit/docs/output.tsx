@@ -8,7 +8,7 @@ import { MONO, RULE, MUTED, FAINT, INK, ACCENT, nfmt } from "../theme";
 import MENU from "../data/zfa_menu_preview.json";
 
 const ANSWER = (MENU as any).example_answer ?? null;
-const prose: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.72, color: "#3f3a34", maxWidth: 700 };
+const prose: React.CSSProperties = { fontSize: 15.5, lineHeight: 1.72, color: "var(--cm-prose)", maxWidth: 700 };
 
 function Part({ n, title, children, example }: {
   n: string; title: string; children: React.ReactNode; example?: React.ReactNode;
@@ -25,7 +25,7 @@ function Part({ n, title, children, example }: {
       {example && (
         <div style={{ marginTop: 14 }}>
           <div style={{ fontFamily: MONO, fontSize: 8.5, fontWeight: 700, letterSpacing: 0.9,
-                        textTransform: "uppercase", color: "#7fa8b5", marginBottom: 5 }}>
+                        textTransform: "uppercase", color: "var(--cm-chip-label)", marginBottom: 5 }}>
             For Example
           </div>
           {example}
@@ -38,7 +38,7 @@ function Part({ n, title, children, example }: {
 function Chip({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: "inline-flex", gap: 9, alignItems: "baseline", flexWrap: "wrap",
-                  background: "#eef6f8", border: "1px solid #cfe4ea", borderRadius: 7,
+                  background: "var(--cm-chip-bg)", border: "1px solid var(--cm-chip-bd)", borderRadius: 7,
                   padding: "8px 12px", fontSize: 13, color: INK }}>
       {children}
     </div>
@@ -114,7 +114,7 @@ export default function OutputSection() {
               {ANSWER.ancestor_chain.map((node: any, i: number) => (
                 <div key={node.id} style={{ display: "flex", gap: 9, alignItems: "baseline", padding: "2px 0" }}>
                   <span style={{ fontFamily: MONO, fontSize: 9, color: FAINT, minWidth: 18 }}>d{node.depth}</span>
-                  <span style={{ color: "#c9d9de" }}>{i === 0 ? "•" : "↑"}</span>
+                  <span style={{ color: "var(--cm-chip-dot)" }}>{i === 0 ? "•" : "↑"}</span>
                   <span style={{ color: i === 0 ? INK : MUTED, fontWeight: i === 0 ? 600 : 400 }}>
                     {node.name}
                   </span>
@@ -135,7 +135,7 @@ export default function OutputSection() {
         n="04"
         title="Confidence score and tier"
         example={
-          <div style={{ background: "#eef6f8", border: "1px solid #cfe4ea", borderRadius: 7,
+          <div style={{ background: "var(--cm-chip-bg)", border: "1px solid var(--cm-chip-bd)", borderRadius: 7,
                         padding: "12px 14px", fontFamily: MONO, fontSize: 11.5, lineHeight: 1.75,
                         color: INK, display: "inline-block", overflowX: "auto" }}>
             <div><span style={{ color: MUTED }}>score</span> : <span style={{ color: FAINT }}>&lt;your scale&gt;</span></div>

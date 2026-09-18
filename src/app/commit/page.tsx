@@ -59,14 +59,14 @@ export default function CommitChallengePage() {
             The Commit Challenge
           </h1>
           <div style={{ maxWidth: 660, marginTop: 17 }}>
-            <p style={{ fontSize: 17.5, color: "#5a544c", margin: 0, lineHeight: 1.58 }}>
+            <p style={{ fontSize: 17.5, color: "var(--cm-lede)", margin: 0, lineHeight: 1.58 }}>
               {nfmt(B.clusters)} clusters of 48-hour zebrafish from ZSCAPE.
             </p>
-            <p style={{ fontSize: 15.5, color: "#5a544c", margin: "15px 0 0", lineHeight: 1.62 }}>
+            <p style={{ fontSize: 15.5, color: "var(--cm-lede)", margin: "15px 0 0", lineHeight: 1.62 }}>
               Each input cluster arrives as three DEG marker lists, per-cluster QC, and the full
               expression matrix — no names, no annotations.
             </p>
-            <p style={{ fontSize: 15.5, color: "#5a544c", margin: "15px 0 0", lineHeight: 1.62 }}>
+            <p style={{ fontSize: 15.5, color: "var(--cm-lede)", margin: "15px 0 0", lineHeight: 1.62 }}>
               Each output cluster label should leave as a single ontology identifier picked from a{" "}
               {nfmt((MENU as any).n_terms)}-term menu of ZFA-derived terms. Each label should carry both
               axis terms — what the cells are and where they sit anatomically, plus the ancestor
@@ -89,7 +89,7 @@ export default function CommitChallengePage() {
           <Link
             href="/commit/docs"
             style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none",
-                     background: "#fffefd", border: `1px solid ${RULE}`, borderRadius: 11,
+                     background: "var(--cm-card)", border: `1px solid ${RULE}`, borderRadius: 11,
                      padding: "18px 22px", marginTop: 26 }}
           >
             <span style={{ display: "inline-flex", color: ACCENT, flexShrink: 0 }}>

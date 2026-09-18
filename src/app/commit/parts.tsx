@@ -39,7 +39,7 @@ export function ColName({ children }: { children: React.ReactNode }) {
   return (
     <code style={{
       fontFamily: MONO, fontSize: 11.5, fontWeight: 700, color: INK,
-      background: "#f4f2ef", border: `1px solid ${RULE}`, borderRadius: 4,
+      background: "var(--cm-surf-3)", border: `1px solid ${RULE}`, borderRadius: 4,
       padding: "2px 7px", whiteSpace: "nowrap",
     }}>
       {children}
@@ -55,7 +55,7 @@ export function FieldRow({ items, min = 190 }: { items: { col: string; blurb: st
     <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`,
                   gap: 9, marginBottom: 12 }}>
       {items.map((f) => (
-        <div key={f.col} style={{ background: "#faf8f5", border: `1px solid ${RULE}`, borderRadius: 8,
+        <div key={f.col} style={{ background: "var(--cm-surf-2)", border: `1px solid ${RULE}`, borderRadius: 8,
                                   padding: "11px 12px" }}>
           <ColName>{f.col}</ColName>
           <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.5, marginTop: 7 }}>{f.blurb}</div>
@@ -74,7 +74,7 @@ export function FileWindow({ cols, rows, elided, footer, elideLabel = "..." }: {
 }) {
   return (
     <div style={{ marginTop: 11 }}>
-      <div style={{ border: `1px solid ${RULE}`, borderRadius: 8, overflow: "hidden", background: "#fdfcfb" }}>
+      <div style={{ border: `1px solid ${RULE}`, borderRadius: 8, overflow: "hidden", background: "var(--cm-surf-1)" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
             <thead>
@@ -97,7 +97,7 @@ export function FileWindow({ cols, rows, elided, footer, elideLabel = "..." }: {
                     {cols.map((c, j) => (
                       <td key={c}
                           style={{ fontFamily: MONO, fontSize: 11, color: FAINT, padding: "5px 9px",
-                                   borderTop: "1px solid #f2efeb", letterSpacing: 1 }}>
+                                   borderTop: "1px solid var(--cm-rule-soft)", letterSpacing: 1 }}>
                         {j === 0 ? elideLabel : ""}
                       </td>
                     ))}
@@ -107,7 +107,7 @@ export function FileWindow({ cols, rows, elided, footer, elideLabel = "..." }: {
                     {r.map((cell, j) => (
                       <td key={cols[j]}
                           style={{ fontFamily: MONO, fontSize: 10, color: INK, padding: "5px 9px",
-                                   borderTop: i === 0 ? "none" : "1px solid #f2efeb",
+                                   borderTop: i === 0 ? "none" : "1px solid var(--cm-rule-soft)",
                                    whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
                         {cell}
                       </td>
@@ -176,7 +176,7 @@ export function MatrixWindow() {
   const cellW = 42;
 
   return (
-    <div style={{ marginTop: 10, display: "inline-block", border: `1px solid ${RULE}`, borderRadius: 8, overflow: "hidden", background: "#fdfcfb" }}>
+    <div style={{ marginTop: 10, display: "inline-block", border: `1px solid ${RULE}`, borderRadius: 8, overflow: "hidden", background: "var(--cm-surf-1)" }}>
       <table style={{ borderCollapse: "collapse" }}>
         <thead>
           <tr>
@@ -203,8 +203,8 @@ export function MatrixWindow() {
                 <td key={genes[j]}
                     style={{ fontFamily: MONO, fontSize: 11, textAlign: "center", padding: "4px 0",
                              fontVariantNumeric: "tabular-nums",
-                             color: v === 0 ? "#d9d3cc" : INK, fontWeight: v === 0 ? 400 : 700,
-                             background: v === 0 ? "transparent" : "#eef6f8" }}>
+                             color: v === 0 ? "var(--cm-zero-num)" : INK, fontWeight: v === 0 ? 400 : 700,
+                             background: v === 0 ? "transparent" : "var(--cm-chip-bg)" }}>
                   {v}
                 </td>
               ))}

@@ -34,7 +34,7 @@ function Box({ side, color, icon, lines }: {
       {lines.map((l, i) => (
         <div key={l} style={{ fontSize: 13, color: INK, lineHeight: 1.5,
                               padding: "6px 0",
-                              borderTop: i === 0 ? "none" : "1px solid #f2efeb" }}>
+                              borderTop: i === 0 ? "none" : "1px solid var(--cm-rule-soft)" }}>
           {l}
         </div>
       ))}
@@ -120,7 +120,7 @@ One cluster in, one label out — 112 times. What happens between the two boxes 
             more: "Depth on its own earns nothing. A sibling term, however close, scores the same as an unrelated one.",
           },
         ].map((o, i) => (
-          <div key={o.k} style={{ padding: "11px 0", borderTop: i === 0 ? `1px solid ${RULE}` : "1px solid #f2efeb" }}>
+          <div key={o.k} style={{ padding: "11px 0", borderTop: i === 0 ? `1px solid ${RULE}` : "1px solid var(--cm-rule-soft)" }}>
             <div style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
               <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.8,
                              textTransform: "uppercase", color: o.c, minWidth: 40, flexShrink: 0 }}>
