@@ -7,8 +7,9 @@ section transitions. All drawing detail remains native SVG.
 
 Drag to pan; scroll or pinch to zoom. Home or 0 fits the whole map, arrow keys pan,
 plus/minus zoom, and M toggles motion. The public surface has no upper zoom cap.
-Animations use the editor's original scheduler: they run at reading zoom (0.60
-and above), skip off-screen objects, and share a seven-millisecond frame budget.
+Animations use the editor's original scheduler: they run at zoom 0.42 and above
+(30% below the editor's 0.60 threshold), skip off-screen objects, and share a
+seven-millisecond frame budget.
 The OS reduced-motion preference is respected. There is no guided startup wave
 or automatic opening camera shot.
 

@@ -53,10 +53,21 @@ try{
   await map.focus();await p.keyboard.press('Home');await p.waitForTimeout(50);
   const point=await frame.evaluate(()=>{const n=byId.AQ,q=P(n.x,n.y,topOf(n)/2);const m=world.getScreenCTM();return new DOMPoint(...q).matrixTransform(m).toJSON();});
   await p.mouse.move(point.x,point.y);
-  await wheelTo(.9);
+  await wheelTo(.45);
+  assert.equal((await diag()).motionFloor,.42,'Public animation starts at a 30% lower zoom scale');
   await p.waitForFunction(()=>pipelineViewerDiag().moving&&pipelineViewerDiag().tickersRanLastFrame>0);
   const before=await frame.evaluate(()=>nodeEls.AQ.innerHTML);await p.waitForTimeout(200);
   assert.notEqual(await frame.evaluate(()=>nodeEls.AQ.innerHTML),before,'Original aquarium animation did not run');
+  for(const [k,moving] of [[.419,false],[.42,true]]){
+   await frame.evaluate(k=>{
+    const n=byId.AQ,q=P(n.x,n.y,topOf(n)/2),r=svg.getBoundingClientRect();
+    view.k=k;view.x=r.width/2-q[0]*k;view.y=r.height/2-q[1]*k;applyView();
+   },k);
+   await p.waitForTimeout(100);
+   assert.equal((await diag()).moving,moving,`Animation gate at zoom ${k}`);
+   const artwork=await frame.evaluate(()=>nodeEls.AQ.innerHTML);await p.waitForTimeout(200);
+   assert.equal((await frame.evaluate(()=>nodeEls.AQ.innerHTML))!==artwork,moving,`Actual artwork motion at zoom ${k}`);
+  }
   assert.equal(await frame.locator('button:visible,.reader:visible').count(),0);
   await map.focus();await p.keyboard.press('m');assert.equal((await diag()).playing,false);
   const paused=await frame.evaluate(()=>nodeEls.AQ.innerHTML);await p.waitForTimeout(100);assert.equal(await frame.evaluate(()=>nodeEls.AQ.innerHTML),paused);
