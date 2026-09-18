@@ -440,6 +440,68 @@ a reason to open. The pins are now a `pins` command in two repos — ask the
 machine — but the prose has no such check, and `check-fit.mjs` cannot read.
 
 
+## The state of the data — 2026-09-18. Open source feeds silver, and a fifth conduit pair.
+
+```
+buckets    aws s3 ls --recursive on all five
+             bronze   135,504 obj · 5.94 TiB     unchanged to the object since 09-13
+             silver        24 obj · 77.39 GiB   (was 18 · 60.64)  + chemfish/v1, zscape/v1
+             gold          13 obj · 100.57 GiB  (was 14 · 93.85)  + chemfish/zsb/v1, - minifin/zsb/v1, - zebrahub/
+             open         902 obj · 566.22 GiB   unchanged (903 with the _access_check probe)
+             archive       47 obj · 2.33 TiB    (was 43 · 2.31)  + 4 expert-label .rds
+repos      /data/zsb-repos, fast-forwarded to origin/main
+             zsb-bronze c6b3a52   zsb-silver 52680e8   zsb-gold c3879fb   zsb-medallion dc790a4 (v0.15.0+5)
+```
+
+**The repos had not been re-read since 09-09**, and they had moved furthest: silver 30 commits,
+medallion 24, gold 9, bronze 14. The local clones were also that far behind, and bronze was on a
+feature branch. Pull before you read.
+
+**zsb-silver reads the open-source lane now, which is a shape change.** Its new intake converts an
+authors' release out of `zsb-open-source` verbatim and publishes it to silver: `chemfish/v1` and
+`zscape/v1` on 2026-09-17. `chemfish/zsb/v1` then went to gold, the first Gold built from somebody
+else's data. The map gained:
+
+- **SINTAKE**, a fourth cell at the top of the zsb-silver floor. The floor grew from 14.6 to 18.5
+  and centres at 51.4, the other three cells moved down one row, and the medallion tap moved with it.
+  In the index it has its own group, `④ Open Source → Silver`, after the silver→gold cells.
+- **Two live conduits.** OPEN → SREPO drops down the zone gap at x = 7.5 and runs under silver, in
+  the 55.5–59 gap between silver and gold. SREPO → SILVER is a straight run at y = 44.4. To keep both
+  free of crossings, BREPO → SILVER now lands higher (dy -2.5), SILVER → SREPO lower (dy 7.5), and
+  SREPO → GOLD leaves from the bottom of the floor (dy 8.1). There is no crossing-free path for the
+  intake conduit above silver: BREPO's publish walls off that route. Don't try to move it there.
+- **A second silver group, `Converted`**, holding zscape/ and chemfish/ in their OPEN accents. The
+  longer label rendered at an unreadable size in a column that narrow. `gen_silver_panel.py` gained
+  an `INTAKE` set and an "Open Source, converted here" section.
+- OPEN's `doors` is `["r"]`, and the COL_OPEN comment no longer says nothing reads it.
+
+**Every silver and gold station was stale, not just the numbers.** SFETCH, SPROC, SPUB and SREPO
+still read "docstring only" or "not yet run", and the notes said "key settled · waiting on an
+artifact". They are `state:"live"` now, and the briefs have been rewritten. The finding worth
+knowing sits in SPROC: under xgboost 3.4, scDblFinder's classifier failed silently and returned its
+density score. So all four fin Golds were rewritten in place on 2026-09-13/14, with xgboost capped
+below 3.3. minifin/zsb/v1 was deleted rather than rebuilt. The old bytes survive only as bucket
+versions.
+
+**One claim was wrong: "zsb-gold is the one reader that does not pin."** Every gold release is now
+declared with size and ETag, and `pins` checks them through the rail's `check_pins`. All five gold
+and all seven silver ETags matched their pins on this read (`head-object` against `release.py`).
+GFETCH stays dashed only because a fetch lands on a machine.
+
+**Repo layout moved** under `datasets/` + `shared/` in all three transforms. `gen_repo_panels.py`
+now uses the new paths, and the SREPO, GREPO and MED panels were regenerated and spliced. The
+BREPO panel it builds is still not embedded.
+
+**Not re-checked: open PRs.** There is no `gh` on this instance this time. The 09-09 note says there
+was one; it is not on PATH now, and `find /` does not find it. The kv rows say so rather than
+repeating a count.
+
+**Checks.** `check-overlaps` 0 pairs (139 text nodes). `check-clicks` **18** stations. `check-fit`
+**0 failures, the first clean run on this page**: rewriting the SPUB and GFETCH notes cleared the
+two known crowding failures. `check-pinch` 0 hidden, 0 page errors. Briefs: BREPO, SREPO, GOLD and
+MED are back under 100 words. BFETCH is still 127, but it is panelOnly, so that brief is not
+rendered.
+
 ## The state of the data — 2026-09-13. Bronze and silver shed everything outside the convention.
 
 ```

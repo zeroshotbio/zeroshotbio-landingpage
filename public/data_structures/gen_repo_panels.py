@@ -191,11 +191,12 @@ def bronze_panel() -> str:
         str: The panel markup, escaped for the JS literal.
     """
     src = REPOS / "zsb-bronze/src/zsb_bronze"
-    on_main = set(git("zsb-bronze", "ls-tree", "-d", "--name-only", "origin/main", "src/zsb_bronze/").split())
-    live = lambda mod: "live" if f"src/zsb_bronze/{mod}" in on_main else "proposed"
+    # modules nest under datasets/ and the shared stages under shared/ since zsb-bronze #122
+    on_main = set(git("zsb-bronze", "ls-tree", "-d", "--name-only", "origin/main", "src/zsb_bronze/datasets/").split())
+    live = lambda mod: "live" if f"src/zsb_bronze/datasets/{mod}" in on_main else "proposed"
 
     # ---- what it runs
-    b = [row("parse/", f"{loc(src / 'parse'):,}", "shared",
+    b = [row("shared/parse/", f"{loc(src / 'shared/parse'):,}", "shared",
              "stages every Parse delivery shares")]
     for f, note in (
         ("convert.py", "MatrixMarket → h5ad, ~150 MB peak"),
@@ -205,11 +206,11 @@ def bronze_panel() -> str:
         ("provenance.py", "stamps what built the artifact"),
         ("validate.py", "the silver gate a release must pass"),
     ):
-        n = loc(src / "parse" / f) if (src / "parse" / f).exists() else 0
+        n = loc(src / "shared/parse" / f) if (src / "shared/parse" / f).exists() else 0
         if n:
             b.append(row(f, f"{n:,}", "shared", note, 2))
     runs = block("what it runs", DARK["--k-shared"],
-                 f"{loc(src / 'parse'):,} LOC shared", "".join(b))
+                 f"{loc(src / 'shared/parse'):,} LOC shared", "".join(b))
 
     # ---- what it handles, and where those bytes come from
     # chemfish/ left this block on 2026-09-11: its custody branch, with the other eighteen, was
@@ -221,7 +222,7 @@ def bronze_panel() -> str:
     ):
         k = live(mod)
         tag = "" if k == "live" else "  [PR]"
-        d.append(row(f"{mod}/{tag}", f"{loc(src / mod):,}", k, origin))
+        d.append(row(f"{mod}/{tag}", f"{loc(src / 'datasets' / mod):,}", k, origin))
         d.append(row(stages, "", k, "no accession — chain stops here"
                      if mod == "chemfish" else "Parse delivery, placed by a human", 2))
     handles = block("what it handles", DARK["--k-live"], "2 datasets · 1 origin", "".join(d))
@@ -365,14 +366,18 @@ if __name__ == "__main__":
         "BREPO": bronze_panel(),
         "SREPO": simple_panel(
             "zsb-silver", "zsb_silver",
-            [("transform", "the shared silver→gold steps"),
-             ("minifin", "binds the transform for MiniFin"),
-             ("megafin", "binds the transform for MegaFin")],
-            DARK["--k-live"], "reads silver · writes gold"),
+            [("shared/transform", "the shared silver→gold steps"),
+             ("shared/silver", "the intake's shared publish, provenance and gate"),
+             ("datasets/minifin", "binds the transform for MiniFin"),
+             ("datasets/megafin", "binds the transform for MegaFin"),
+             ("datasets/chemfish", "intake from open source, and its Gold"),
+             ("datasets/zscape", "intake from open source; no Gold yet")],
+            DARK["--k-live"], "reads silver + open source · writes silver + gold"),
         "GREPO": simple_panel(
             "zsb-gold", "zsb_gold",
-            [("minifin", "release keys and the reader"),
-             ("megafin", "release keys and the reader")],
+            [("datasets/minifin", "release keys and the reader"),
+             ("datasets/megafin", "release keys and the reader"),
+             ("datasets/chemfish", "release keys and the reader")],
             DARK["--k-live"], "reads gold · writes nothing"),
         "MED": simple_panel(
             "zsb-medallion", "zsb_medallion",
