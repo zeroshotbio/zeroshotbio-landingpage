@@ -17,11 +17,11 @@ export const metadata = {
 
 // What the agent had, grouped so the box reads at a glance: name in mono, one short spec, and a tag
 // saying where it came from. The delivery files were checked byte-identical to /commit/draft_files.
-type Item = { name: string; spec: string; tag?: "draft" | "pinned" | "extra" };
+type Item = { name: string; spec: string; tag?: "draft" | "pinned" | "extra" | "replaced" };
 const GROUPS: { title: string; items: Item[] }[] = [
   { title: "Data · the draft delivery", items: [
     { name: "zscape_gold_48hpf.v0.h5ad", spec: "209,639 cells × 32,031 genes, 48 hpf; 112 unnamed clusters", tag: "draft" },
-    { name: "gold_features.v1.csv", spec: "top, bottom and family 50 markers per cluster", tag: "draft" },
+    { name: "gold_features.v1.csv", spec: "top, bottom and family 50 markers per cluster; its family lists were later found defective", tag: "replaced" },
     { name: "zfa_menu.v1", spec: "3,107 allowed ZFA answers", tag: "draft" },
   ] },
   { title: "References", items: [
@@ -38,6 +38,7 @@ const TAG = {
   draft: { label: "same file as /draft_files", color: SC_FULL },
   pinned: { label: "pinned in sources.v0.json", color: SC_FULL },
   extra: { label: "not in the delivery", color: SC_HALF },
+  replaced: { label: "since replaced by v2", color: SC_HALF },
 };
 const OFF = ["the answer key", "ZSCAPE's labels, paper or GEO data", "anything else on our server",
              "other model calls (no API credit)", "its score or a second try"];
@@ -69,9 +70,10 @@ export default function ClaudesAttemptPage() {
           Claude&apos;s attempt
         </h1>
         <p style={{ fontSize: 15.5, lineHeight: 1.6, color: "var(--cm-lede)", margin: "12px 0 0" }}>
-          A fresh Claude agent with no knowledge of how the key was built. It worked from byte-identical copies of the{" "}
-          <Link href="/commit/draft_files" style={{ color: ACCENT }}>/draft_files</Link> delivery and the pinned
-          references, plus one public atlas it fetched itself, which Commit has not been given.
+          A fresh Claude agent with no knowledge of how the key was built. It worked from the{" "}
+          <Link href="/commit/draft_files" style={{ color: ACCENT }}>/draft_files</Link> delivery as it stood on
+          18 September and the pinned references, plus one public atlas it fetched itself, which Commit has not been
+          given.
         </p>
 
         {/* ── what it had ─────────────────────────────────────────── */}
@@ -104,6 +106,16 @@ export default function ClaudesAttemptPage() {
           ))}
         </div>
         <p style={{ fontSize: 12, color: FAINT, margin: "8px 0 0" }}>Every file it read was audited afterwards.</p>
+
+        {/* ── amendment ───────────────────────────────────────────── */}
+        <div style={{ marginTop: 22, padding: "12px 16px", borderRadius: 10, border: `1px solid ${RULE}`,
+                      borderLeft: `3px solid ${ACCENT}`, background: CARD }}>
+          <div style={{ ...micro, color: ACCENT, marginBottom: 6 }}>Amended after the audit · answers unchanged</div>
+          <div style={{ display: "flex", gap: 22, flexWrap: "wrap", fontSize: 13, color: "var(--cm-prose)", lineHeight: 1.5 }}>
+            <span><strong>{S.amendment.ancestor_chains_full}/112</strong> ancestor chains now list every ancestor, as the docs require</span>
+            <span><strong>{S.amendment.traceable_before} → {S.amendment.traceable_after}/112</strong> answers traceable to cited evidence ({S.amendment.untraceable} still not)</span>
+          </div>
+        </div>
 
         {/* ── score ───────────────────────────────────────────────── */}
         <div style={{ display: "flex", gap: 36, flexWrap: "wrap", marginTop: 36 }}>

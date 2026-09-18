@@ -26,7 +26,7 @@ and `zfa_menu.v1.enriched.json`. A submission that fails validation is not score
   "zfa_id": "ZFA:0000516",
   "identity_zfa_id": null,
   "anatomy_zfa_id": "ZFA:0000516",
-  "ancestor_chain": ["ZFA:0000516", "ZFA:…", "…", "ZFA:0100000"],
+  "ancestor_chain": ["ZFA:0000516", "<every ancestor, nearest first>", "…", "ZFA:0100000"],
   "confidence": {"score": 0.62, "tier": "medium",
                  "signals": {"marker_coherence": 0.7, "reference_corroboration": 0.5, "ontology_convergence": 0.66}},
   "references": [{"key": "r1", "source": "ZFIN wild-type expression", "id": "ZDB-PUB-…", "detail": "gene X in term Y at Long-pec"}],
@@ -39,9 +39,9 @@ and `zfa_menu.v1.enriched.json`. A submission that fails validation is not score
 1. Every cluster `C001`–`C112` appears exactly once.
 2. `zfa_id` is on the menu. It is required: the committed pick cannot be null.
 3. `identity_zfa_id` is a menu cell type or `null`. `anatomy_zfa_id` is a menu structure or `null`.
-4. `ancestor_chain` starts at `zfa_id`, and each next id is a direct `is_a` or `part_of` parent of
-   the one before it. It ends at a root, meaning a term with no parents. Where there are several
-   paths, any one is valid.
+4. `ancestor_chain` starts at `zfa_id`, then lists **every** `is_a` and `part_of` ancestor of it exactly once:
+   the full path back to the root, including every parent of a term that has more than one. Order the
+   ancestors nearest first. The menu's `is_a` and `part_of` fields give the parents.
 5. `confidence.score` is a number from 0 to 1. `confidence.tier` is one of the rubric's tiers.
    `confidence.signals` uses only the rubric's signal names, and every value is a number.
 6. `references` is a non-empty list, and every item has `key`, `source` and `id`.

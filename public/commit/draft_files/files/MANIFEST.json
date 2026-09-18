@@ -3,8 +3,8 @@
  "files": [
   {
    "file": "README.md",
-   "bytes": 2357,
-   "sha256": "93866936bf836ac76f15a7acd89bd566d54bc027cc5ad6912bef3963a4baa6cd"
+   "bytes": 3013,
+   "sha256": "b490073822959c1ffaf32c29132525434776dc18ea963c7dfab260f6c4407435"
   },
   {
    "file": "excluded_clusters.csv",
@@ -17,9 +17,9 @@
    "sha256": "2f01b4b4a9992cdf8d158100e86450ce0f8b0caa53fccdb0edb092241aaf1842"
   },
   {
-   "file": "gold_features.v1.csv",
-   "bytes": 405058,
-   "sha256": "57112c0a7a4658343cb0b50bceee1b1cbd43c1894a0fa463890410543041cc35"
+   "file": "gold_features.v2.csv",
+   "bytes": 412294,
+   "sha256": "fccda98a73597a30ce8b1f0180d31d1d026dfec84a81db517c8eeaac086290e3"
   },
   {
    "file": "scoring_rules.v0.md",
@@ -33,13 +33,13 @@
   },
   {
    "file": "submission_format.v0.md",
-   "bytes": 2157,
-   "sha256": "92d4cf1583bc46e70c583fb4c56203123e695c4e9e52e3abc36885037128ea87"
+   "bytes": 2255,
+   "sha256": "d51042f849b6080050cd2e2413a0ee5ba452b2fff7075978497f83b101ea8e08"
   },
   {
    "file": "validate_submission.py",
-   "bytes": 4095,
-   "sha256": "36ef25ea4063cc0a5e691179406fc31a2070fb4ccb73e3af5c045bd3cc25d0ef"
+   "bytes": 4268,
+   "sha256": "367117a02727ff84c9a4e261a15fd717f00c991e5919ddd520cf298d670fd0d1"
   },
   {
    "file": "zfa_menu.v1.enriched.json",

@@ -4,8 +4,8 @@
    "name": "README.md",
    "audience": "before",
    "what": "What each file is, how the gene ids work, how to check the menu hash.",
-   "bytes": 2357,
-   "sha256": "93866936bf836ac76f15a7acd89bd566d54bc027cc5ad6912bef3963a4baa6cd",
+   "bytes": 3013,
+   "sha256": "b490073822959c1ffaf32c29132525434776dc18ea963c7dfab260f6c4407435",
    "href": "/commit/draft_files/files/README.md",
    "location": null
   },
@@ -19,12 +19,12 @@
    "location": "s3://zsb-deliverables/commit/challenge-v0/zscape_gold_48hpf.v0.h5ad"
   },
   {
-   "name": "gold_features.v1.csv",
+   "name": "gold_features.v2.csv",
    "audience": "before",
-   "what": "Three ranked marker lists per cluster, now each with an aligned Ensembl column, plus QC.",
-   "bytes": 405058,
-   "sha256": "57112c0a7a4658343cb0b50bceee1b1cbd43c1894a0fa463890410543041cc35",
-   "href": "/commit/draft_files/files/gold_features.v1.csv",
+   "what": "Three ranked marker lists per cluster with aligned Ensembl columns, plus QC; family lists rebuilt in v2.",
+   "bytes": 412294,
+   "sha256": "fccda98a73597a30ce8b1f0180d31d1d026dfec84a81db517c8eeaac086290e3",
+   "href": "/commit/draft_files/files/gold_features.v2.csv",
    "location": null
   },
   {
@@ -85,8 +85,8 @@
    "name": "submission_format.v0.md",
    "audience": "before",
    "what": "What a submission looks like: rubric.json plus one JSON line per cluster.",
-   "bytes": 2157,
-   "sha256": "92d4cf1583bc46e70c583fb4c56203123e695c4e9e52e3abc36885037128ea87",
+   "bytes": 2255,
+   "sha256": "d51042f849b6080050cd2e2413a0ee5ba452b2fff7075978497f83b101ea8e08",
    "href": "/commit/draft_files/files/submission_format.v0.md",
    "location": null
   },
@@ -94,8 +94,8 @@
    "name": "validate_submission.py",
    "audience": "before",
    "what": "Standard-library validator for a submission.",
-   "bytes": 4095,
-   "sha256": "36ef25ea4063cc0a5e691179406fc31a2070fb4ccb73e3af5c045bd3cc25d0ef",
+   "bytes": 4268,
+   "sha256": "367117a02727ff84c9a4e261a15fd717f00c991e5919ddd520cf298d670fd0d1",
    "href": "/commit/draft_files/files/validate_submission.py",
    "location": null
   },
@@ -104,7 +104,7 @@
    "audience": "before",
    "what": "sha256 of every delivered file.",
    "bytes": 1749,
-   "sha256": "36bd7cd08960a60c440448e95b3b24d8d1f4d243e20547cd296279b6be676929",
+   "sha256": "994d254afedb43eb11b7ce1f33f6d6e8ecb661f63982b3babf1ab59edde584b3",
    "href": "/commit/draft_files/files/MANIFEST.json",
    "location": null
   },
@@ -119,9 +119,9 @@
   }
  ],
  "results": {
-  "ran_at": "2026-09-18T06:27:58+00:00",
+  "ran_at": "2026-09-18T14:39:41+00:00",
   "counts": {
-   "pass": 28,
+   "pass": 29,
    "warn": 6,
    "fail": 4
   },
@@ -156,7 +156,7 @@
     "title": "Every marker in every list names exactly one gene in the matrix, and its Ensembl twin agrees.",
     "why": "",
     "status": "pass",
-    "detail": "15,642 marker entries; 0 unresolved or mismatched; 0 misaligned lists"
+    "detail": "15,696 marker entries; 0 unresolved or mismatched; 0 misaligned lists"
    },
    {
     "id": "test_clusters_agree_across_files",
@@ -173,6 +173,14 @@
     "why": "",
     "status": "pass",
     "detail": "longest list 50; empty lists {'top_50_markers': 0, 'bottom_50_markers': 1, 'family_50_markers': 0}; capped clusters 11; cap rule holds: True"
+   },
+   {
+    "id": "test_family_lists_belong_to_their_cluster",
+    "group": "A",
+    "title": "Each family_50 gene is detected in >= 10% of its own cluster and is higher there than in the",
+    "why": "cluster's contrast group \u2014 what /commit/docs says the list is. (The source lists failed this.)",
+    "status": "pass",
+    "detail": "5,563 family entries: 0 under 10% detection, 0 not higher than the contrast group; 99/112 lists are highest in their own cluster"
    },
    {
     "id": "test_menu_hash_and_structure",

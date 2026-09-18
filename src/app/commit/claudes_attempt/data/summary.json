@@ -75,5 +75,15 @@
   "broader than key": 5,
   "narrower than key": 4,
   "sibling": 2
+ },
+ "amendment": {
+  "ancestor_chains_full": 112,
+  "traceable_before": 104,
+  "traceable_after": 108,
+  "traced_in_window": 1,
+  "traced_other_stage": 3,
+  "untraceable": 4,
+  "answers_changed": 0,
+  "validation_problems_amended": 0
  }
 }

@@ -26,8 +26,8 @@ const WHY: [string, string, string][] = [
   ["README.md", "Start here.", "Explains every file, how the gene ids join, and how to check the menu hash."],
   ["zscape_gold_48hpf.v0.h5ad", "The expression matrix: 209,639 cells × 32,031 genes, the 112 clusters given.",
     "Opens on anndata 0.10 and 0.12. X was checked on real cells to equal log1p of counts-per-10k. The excluded clusters' names are gone."],
-  ["gold_features.v1.csv", "The per-cluster evidence: three ranked marker lists and QC.",
-    "All 15,642 marker entries map to exactly one gene, with an Ensembl id next to each. Clusters and cell counts match the matrix."],
+  ["gold_features.v2.csv", "The per-cluster evidence: three ranked marker lists and QC.",
+    "Every marker maps to exactly one gene, with an Ensembl id next to each. v2 rebuilds the family lists from the matrix: every family gene is now detected in its own cluster and higher there than in its 5 nearest relatives (the v1 lists were mostly other clusters' markers)."],
   ["genes.tsv", "Gene order for the raw counts.", "Identical to the matrix order; one unique Ensembl id per gene."],
   ["zfa_menu.v1.enriched.json", "The 3,107-term answer space, with parents and synonyms.",
     "The hash recomputes to dec9f728, every parent resolves, and every answer in our key is on it."],
@@ -37,7 +37,7 @@ const WHY: [string, string, string][] = [
   ["scoring_rules.v0.md", "How each cluster is scored: full, half, zero.",
     "A reference scorer runs it: our key scores 112/112 against itself, and no blanket vague answer earns more than 4%."],
   ["submission_format.v0.md", "What Commit hands back.", ""],
-  ["validate_submission.py", "Checks a submission before scoring.", "Accepts a valid submission and caught all 6 kinds of broken one."],
+  ["validate_submission.py", "Checks a submission before scoring.", "Accepts a valid submission and caught all 6 kinds of broken one; now also requires the full ancestor chain."],
   ["MANIFEST.json", "Checksums of every file above.", ""],
 ];
 

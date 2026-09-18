@@ -24,7 +24,7 @@ MAX_PUBLISH_BYTES = 5 << 20  # bigger files (the 461 MB h5ad) are linked from S3
 FILES = [
     ("delivery_v0/README.md", "before", "What each file is, how the gene ids work, how to check the menu hash."),
     ("delivery_v0/zscape_gold_48hpf.v0.h5ad", "before", "The matrix. Fixed copy: excluded-cluster names removed, var['marker_name'] added, opens on anndata 0.10+."),
-    ("delivery_v0/gold_features.v1.csv", "before", "Three ranked marker lists per cluster, now each with an aligned Ensembl column, plus QC."),
+    ("delivery_v0/gold_features.v2.csv", "before", "Three ranked marker lists per cluster with aligned Ensembl columns, plus QC; family lists rebuilt in v2."),
     ("delivery_v0/genes.tsv", "before", "Gene order of the matrix with symbol, marker name and Ensembl id."),
     ("delivery_v0/zfa_menu.v1.enriched.json", "before", "The 3,107-term answer space (hash unchanged) with synonyms, parents, stage window and kind."),
     ("delivery_v0/zfa_menu.v1.tsv", "before", "The same menu as a table."),

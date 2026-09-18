@@ -15,6 +15,17 @@ def load_menu(path):
     return terms
 
 
+def ancestors(t, terms, memo={}):
+    """Every is_a / part_of ancestor of t (the full DAG, all parents at every level)."""
+    if t not in memo:
+        out = set()
+        for p in terms[t]["is_a"] + terms[t]["part_of"]:
+            if p in terms:
+                out |= {p} | ancestors(p, terms)
+        memo[t] = out
+    return memo[t]
+
+
 def validate(rubric, answers, terms):
     """rubric: dict; answers: list of dicts; terms: menu id -> term. Returns a list of problems."""
     errs = []
@@ -41,16 +52,11 @@ def validate(rubric, answers, terms):
         chain = a.get("ancestor_chain") or []
         if not chain or chain[0] != z:
             errs.append(f"{where}: ancestor_chain must start at zfa_id")
-        else:
-            for child, parent in zip(chain, chain[1:]):
-                t = terms.get(child)
-                if t is None or parent not in t["is_a"] + t["part_of"]:
-                    errs.append(f"{where}: ancestor_chain step {child} -> {parent} is not a direct parent")
-                    break
-            else:
-                last = terms.get(chain[-1])
-                if last is None or last["is_a"] or last["part_of"]:
-                    errs.append(f"{where}: ancestor_chain must end at a root")
+        elif z in terms:
+            want = ancestors(z, terms)
+            if len(chain) - 1 != len(set(chain[1:])) or set(chain[1:]) != want:
+                errs.append(f"{where}: ancestor_chain must list every is_a/part_of ancestor of zfa_id exactly once "
+                            f"({len(want)} expected, {len(set(chain[1:]) & want)} present)")
         c = a.get("confidence") or {}
         if not isinstance(c.get("score"), (int, float)) or not 0 <= c["score"] <= 1:
             errs.append(f"{where}: confidence.score must be a number in [0, 1]")
