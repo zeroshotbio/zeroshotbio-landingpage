@@ -140,16 +140,15 @@ export default function ClaudesAttemptPage() {
         </section>
 
         <section style={{ marginTop: 40 }}>
-          <div style={{ ...micro, marginBottom: 10 }}>To fix before the run</div>
-          <p style={{ ...small, color: MUTED, marginBottom: 10 }}>
-            <span style={{ color: INK, fontWeight: 600 }}>The rule rewards hedging.</span> A structure earns half when the
-            key wants a cell type, but a cell type earns nothing when the key wants a structure. One repeated hedge cost
-            it {S.hedge_halves} half-credit answers; naming the cell type would have scored{" "}
-            {S.graded_if_hedge_named_cell.toFixed(3)}.
-          </p>
-          <p style={{ ...small, color: MUTED }}>
-            <span style={{ color: INK, fontWeight: 600 }}>The public labels leak.</span> Careful work only just beat
-            copying ZSCAPE&apos;s published names. Score the real run on unpublished clusters.
+          <div style={{ ...micro, marginBottom: 10 }}>How it worked</div>
+          <p style={{ ...small, color: MUTED, maxWidth: 680 }}>
+            It first summarised every cluster: the average expression of each gene and the share of cells expressing
+            it. It then gathered evidence three ways: the anatomy terms ZFIN&apos;s curated records give each
+            cluster&apos;s top markers between 24 and 72 hpf; how closely each cluster correlates with Daniocell&apos;s
+            labelled 36–60 hpf clusters, its strongest single signal; and a by-hand review of every cluster against
+            lineage and regional marker panels. To choose the term, it named the cell type where ZFA places that cell
+            type inside the likely structure, and the structure otherwise, since a structure still earns half credit.
+            Every answer cites the ZFIN records, Daniocell match and marker list behind it.
           </p>
         </section>
 
