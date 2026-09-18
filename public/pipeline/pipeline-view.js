@@ -2254,6 +2254,10 @@ feature("edit positions", function(){
   const CHOSEN=new Set();
   let multi=false;
   const btnMulti=document.getElementById("btnMulti");
+  const btnGroup=document.getElementById("btnGroup");
+  let boxing=false, marquee=null;
+  const box=el("polygon",{class:"group-marquee",display:"none","pointer-events":"none"});
+  if(btnGroup) world.appendChild(box);
   function markChosen(){
     NODES.forEach(n=>{ const g=nodeEls[n.id];
       if(g) g.classList.toggle("chosen", CHOSEN.has(n.id)); });
@@ -2265,11 +2269,16 @@ feature("edit positions", function(){
   }
   function sayChosen(){
     if(!hint || !multi) return;
+    if(boxing){
+      hint.textContent="Drag a box along the grid to select node centres · Shift adds to the selection · Esc cancels";
+      return;
+    }
     hint.textContent = CHOSEN.size
       ? `${CHOSEN.size} selected — drag any one of them to move them all · click to add or remove · Esc to clear`
       : "Select many: click objects to gather them, then drag any one to move them all as a unit";
   }
   function setMulti(on){
+    if(!on) cancelBox();
     multi=on;
     if(!on) clearChosen();
     document.body.classList.toggle("multi",on);
@@ -2283,7 +2292,96 @@ feature("edit positions", function(){
     if(!editing) setMode(true);
     setMulti(!multi);
   };
-  window.pipelineClearChosen=()=>{ if(multi) clearChosen(); };
+  window.pipelineClearChosen=()=>{
+    if(boxing) cancelBox();
+    else if(multi) clearChosen();
+  };
+
+  /* The marquee is a rectangle in the SAME ground plane as the grid. Invert
+     the camera first, then P; a screen-aligned rectangle selects across rows
+     and cannot follow the silhouettes' diagonal edges. Node footprint centres
+     decide membership, so tall roofs and floating labels do not grab neighbours.
+     Selection itself never changes positions or marks the shared record dirty. */
+  function armBox(on){
+    boxing=on;
+    svg.classList.toggle("group-select",on);
+    if(btnGroup) btnGroup.setAttribute("aria-pressed",String(on));
+    sayChosen();
+  }
+  function finishBox(restore){
+    const was=marquee;
+    marquee=null;
+    if(was && restore){
+      CHOSEN.clear(); was.before.forEach(id=>CHOSEN.add(id)); markChosen();
+    }
+    box.setAttribute("display","none");
+    armBox(false);
+    if(was && svg.hasPointerCapture(was.id)) svg.releasePointerCapture(was.id);
+  }
+  function cancelBox(){ finishBox(true); }
+  function groundPoint(ev){
+    const p=new DOMPoint(ev.clientX,ev.clientY).matrixTransform(world.getScreenCTM().inverse());
+    return toWorld(p.x,p.y);
+  }
+  function drawBox(ev){
+    const m=marquee, [x,y]=groundPoint(ev);
+    m.travel=Math.max(m.travel,Math.hypot(ev.clientX-m.px,ev.clientY-m.py));
+    if(m.travel<=4) return;
+    const x0=Math.min(m.x,x), x1=Math.max(m.x,x),
+          y0=Math.min(m.y,y), y1=Math.max(m.y,y);
+    box.setAttribute("points",pts([P(x0,y0,0),P(x1,y0,0),P(x1,y1,0),P(x0,y1,0)]));
+    box.removeAttribute("display");
+    CHOSEN.clear();
+    if(m.add) m.before.forEach(id=>CHOSEN.add(id));
+    NODES.forEach(n=>{
+      if(!n.gone && n.x>=x0 && n.x<=x1 && n.y>=y0 && n.y<=y1) CHOSEN.add(n.id);
+    });
+    markChosen();
+    if(hint) hint.textContent=`${CHOSEN.size} selected — release, then drag a selected node to move the group`;
+  }
+  if(btnGroup){
+    btnGroup.onclick=()=>{
+      if(boxing){ cancelBox(); return; }
+      if(!editing) setMode(true);
+      setMulti(true); armBox(true);
+    };
+    /* Capture phase makes an armed box work even when its first corner lands
+       on a node, a label or a band handle. Pointer capture covers touch/pen and
+       a release outside the canvas without leaking the gesture into panning. */
+    svg.addEventListener("pointerdown",ev=>{
+      if(!boxing || !editing) return;
+      ev.preventDefault(); ev.stopImmediatePropagation();
+      if(marquee || ev.isPrimary===false || ev.button!==0) return;
+      anim=null;
+      const [x,y]=groundPoint(ev);
+      marquee={id:ev.pointerId,x,y,px:ev.clientX,py:ev.clientY,travel:0,
+        before:[...CHOSEN],add:ev.shiftKey};
+      world.appendChild(box);
+      svg.setPointerCapture(ev.pointerId);
+    },true);
+    svg.addEventListener("pointermove",ev=>{
+      if(!marquee || ev.pointerId!==marquee.id) return;
+      ev.preventDefault(); ev.stopImmediatePropagation(); drawBox(ev);
+    },true);
+    svg.addEventListener("pointerup",ev=>{
+      if(!marquee || ev.pointerId!==marquee.id) return;
+      ev.preventDefault(); ev.stopImmediatePropagation();
+      drawBox(ev); finishBox(marquee.travel<=4);
+    },true);
+    ["pointercancel","lostpointercapture"].forEach(type=>svg.addEventListener(type,ev=>{
+      if(!marquee || ev.pointerId!==marquee.id) return;
+      ev.stopImmediatePropagation(); cancelBox();
+    },true));
+    svg.addEventListener("wheel",ev=>{
+      if(marquee){ ev.preventDefault(); ev.stopImmediatePropagation(); }
+    },{capture:true,passive:false});
+    window.addEventListener("keydown",ev=>{
+      if(marquee && ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Home","0"].includes(ev.key)){
+        ev.preventDefault(); ev.stopImmediatePropagation();
+      }
+    },true);
+    window.addEventListener("blur",()=>{ if(boxing) cancelBox(); });
+  }
 
   const DBL_MS=420;
   let lastTap={key:null,t:0};

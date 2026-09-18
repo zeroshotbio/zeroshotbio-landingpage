@@ -413,6 +413,10 @@
   svg.editing .chosen>.ehandle{fill-opacity:.3;stroke-opacity:1;stroke-width:2;
                                stroke-dasharray:none;stroke:var(--signal)}
   body.multi #btnMulti{border-color:var(--signal);color:var(--signal)}
+  #btnGroup[aria-pressed="true"]{border-color:var(--signal);color:var(--signal)}
+  svg.group-select,svg.group-select *{cursor:crosshair!important}
+  .group-marquee{fill:var(--signal);fill-opacity:.1;stroke:var(--signal);
+    stroke-width:1.5;stroke-dasharray:6 4;vector-effect:non-scaling-stroke;pointer-events:none}
 
   .reader{width:var(--reader-w,352px);flex:none;border-left:1px solid var(--fg);display:flex;
           flex-direction:column;background:var(--panel);min-height:0}
@@ -533,6 +537,7 @@
       <button class="ctl" id="btnTheme">Light</button>
       <button class="ctl" id="btnEdit">Edit positions</button>
       <button class="ctl edonly" id="btnMulti" aria-pressed="false">Select many</button>
+      <button class="ctl edonly" id="btnGroup" aria-pressed="false" title="Drag a box along the grid to select nodes. Hold Shift to add to your selection.">Group select</button>
       <button class="ctl" id="btnText">Edit text</button>
       <button class="ctl" id="btnVisual">Edit visual</button>
       <button class="ctl edonly" id="btnSave">Save all changes</button>

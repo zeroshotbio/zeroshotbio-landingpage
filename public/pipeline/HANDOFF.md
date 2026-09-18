@@ -439,6 +439,31 @@ only ever one thing could be gathered.
 The set is a way of moving, not a thing that is saved: every member writes its
 own `dx`/`dy` like any other drag.
 
+### Group select
+
+In `/pipeline_edit`, **Edit positions → Group select** arms a one-shot drag
+box. Its four sides follow the isometric ground grid. Nodes whose footprint
+centres fall inside it join the selection; deleted nodes, row pads and floating
+annotations do not. The selected nodes' normal labels and plinths follow them
+when moved, through the existing Select many path.
+
+Release the box, then drag any selected node to move the whole group. Click
+nodes to adjust membership, or use Group select again for another box. Hold
+Shift when starting another box to add to the current selection. Escape while
+drawing, pointer cancellation or losing window focus restores the previous
+selection; Escape after drawing clears it. Leaving Edit positions clears both
+the selection and the armed tool. A press without a drag preserves the selection.
+
+The box inverts the camera and ground-plane projection, so it works in either
+drag direction after panning or zooming. Capture-phase handlers prevent node,
+label and pad dragging from swallowing its first corner. It supports mouse,
+pen and touch; the camera stays still during the gesture. Selection alone is
+local UI state and does not mark the layout dirty or save anything.
+
+`check-group-select.mjs <editor URL>` checks actual mouse/touch gestures, grid
+alignment, transformed/reverse selection, cancellation, membership, exact group
+spacing and saved offsets with all shared-state requests stubbed.
+
 ## The grid is the paper, and the ruler is gone
 
 `GRID` has to be bigger than everything drawn on it. The map has outgrown it

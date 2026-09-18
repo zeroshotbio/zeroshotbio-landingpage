@@ -67,6 +67,7 @@ Editor checks stub API writes:
 ```sh
 node public/pipeline/check-save.mjs http://127.0.0.1:8765/pipeline/index.html
 node public/pipeline/check-edit.mjs http://127.0.0.1:8765/pipeline/index.html
+node public/pipeline/check-group-select.mjs http://127.0.0.1:8765/pipeline/index.html
 node public/pipeline/check-dots.mjs http://127.0.0.1:8765/pipeline/index.html
 ```
 
