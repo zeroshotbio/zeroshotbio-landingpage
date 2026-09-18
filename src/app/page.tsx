@@ -14,7 +14,7 @@ const DesktopContent = () => (
       />
       {/* Text between images */}
       <p className="roboto-slab-medium text-lg text-gray-medium text-center mt-2 mb-4">
-        Biology foundation models for therapeutic confidence.
+        Computational models of biology for therapeutic confidence.
       </p>
       <Image
         className="relative"
@@ -31,26 +31,20 @@ const DesktopContent = () => (
         AI-driven understanding of gene expression is beginning to deliver powerful new capabilities for therapeutics developers.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        A zebrafish embryo is, in a very real sense, a library written in cells &mdash; tens of thousands of tiny
-        transcriptional sentences, each one describing where it is, what it has become, and how it is responding
-        to the world around it. Drop a compound into that library and the prose rearranges itself.
-        Our job is to read every page at once.
-      </p>
-      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
         At <strong>zeroshot bio</strong>,
-        we create AI learning pipelines that translate zebrafish drug exposure data
-        into human pre-clincal insights.
+        we create computational pipelines that explore how zebrafish can contribute to pre-clinical insights for humans.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
         <strong>Why zebrafish?</strong>
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
-        It&#39;s an increasingly popular animal model that provides whole-organism vertebrate physiology, ideal unit-economics
-        for AI-scale training, and rapid turnaround time.
+        Humans and zebrafish are both vertebrates, and zebrafish embryos can produce whole-vertebrate drug-response
+        readouts at scale. One experiment records a compound&#39;s effect across every tissue, cell by cell.
+        It&#39;s an increasingly popular animal model, with ideal unit-economics for AI-scale training and rapid turnaround time.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-12 sm:whitespace-normal">
-        Combined with high-throughput scRNA sequencing, our team is able to create optimized compound rankings that accelerate
-        hit-to-lead decisions for therapeutics customers.
+        By pairing high-throughput scRNA sequencing of drug-perturbed zebrafish with phenotypic screening,
+        we aim to combine molecular and whole-animal evidence into features a model can learn from and a drug developer will actually care about.
       </p>
 
       <p className="roboto-slab-regular text-xxsm sm:text-sm md:text-sm text-gray-light leading-snug sm:whitespace-normal">
@@ -84,10 +78,10 @@ const MobileContent = () => (
       />
       {/* Text between images */}
       <p className="leading-tight roboto-slab-semibold text-base text-gray-medium text-center mt-4+">
-        Biology foundation models for
+        Computational models of biology
       </p>
       <p className="leading-tight roboto-slab-semibold text-base text-gray-medium text-center mb-8">
-        therapeutic confidence.
+        for therapeutic confidence.
       </p>
       <Image
         className="block relative mx-auto"
@@ -104,26 +98,20 @@ const MobileContent = () => (
         AI-driven understanding of gene expression is beginning to deliver powerful new capabilities for therapeutics developers.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        A zebrafish embryo is, in a very real sense, a library written in cells &mdash; tens of thousands of tiny
-        transcriptional sentences, each one describing where it is, what it has become, and how it is responding
-        to the world around it. Drop a compound into that library and the prose rearranges itself.
-        Our job is to read every page at once.
-      </p>
-      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
         At <strong>zeroshot bio</strong>,
-        we create AI learning pipelines that translate zebrafish drug exposure data
-        into human pre-clincal insights.
+        we create computational pipelines that explore how zebrafish can contribute to pre-clinical insights for humans.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
         <strong>Why zebrafish?</strong>
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
-        It&#39;s an increasingly popular animal model that provides whole-organism vertebrate physiology, ideal unit-economics 
-        for AI-scale training, and rapid turnaround time.
+        Humans and zebrafish are both vertebrates, and zebrafish embryos can produce whole-vertebrate drug-response
+        readouts at scale. One experiment records a compound&#39;s effect across every tissue, cell by cell.
+        It&#39;s an increasingly popular animal model, with ideal unit-economics for AI-scale training and rapid turnaround time.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-12 sm:whitespace-normal">
-        Combined with high-throughput scRNA sequencing, our team is able to create optimized compound rankings that accelerate 
-        hit-to-lead decisions for therapeutics customers.
+        By pairing high-throughput scRNA sequencing of drug-perturbed zebrafish with phenotypic screening,
+        we aim to combine molecular and whole-animal evidence into features a model can learn from and a drug developer will actually care about.
       </p>
       
       <p className="roboto-slab-regular text-xxsm sm:text-sm md:text-sm text-gray-light leading-snug sm:whitespace-normal">
