@@ -7,7 +7,7 @@
 // come from the agent's audited SOURCES_LOG.md and its tool-call record.
 import React from "react";
 import Link from "next/link";
-import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, CARD, FILE, SERIES, SC_FULL, SC_HALF, SC_ZERO } from "../theme";
+import { PAPER, INK, MONO, RULE, MUTED, FAINT, CARD, SC_FULL, SC_HALF, SC_ZERO } from "../theme";
 import S from "./data/summary.json";
 
 export const metadata = {
@@ -57,7 +57,6 @@ const OUT = [
 const wrap: React.CSSProperties = { maxWidth: 760, margin: "0 auto", padding: "0 16px" };
 const micro: React.CSSProperties = { fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8,
                                      textTransform: "uppercase", color: MUTED };
-const h2: React.CSSProperties = { fontSize: 19, fontWeight: 650, letterSpacing: -0.3, margin: "0 0 12px" };
 const small: React.CSSProperties = { fontSize: 14, lineHeight: 1.6, color: "var(--cm-prose)", margin: 0 };
 
 export default function ClaudesAttemptPage() {
@@ -65,87 +64,65 @@ export default function ClaudesAttemptPage() {
     <main style={{ background: PAPER, color: INK, minHeight: "100vh", padding: "56px 0 90px",
                    fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" }}>
       <div style={wrap}>
-        <div style={{ ...micro, color: ACCENT, letterSpacing: 1.3 }}>Commit Challenge · overnight run · 18 Sep 2026</div>
+        <div style={micro}>Commit Challenge · overnight run · 18 Sep 2026</div>
         <h1 style={{ fontSize: 34, fontWeight: 680, margin: "12px 0 0", letterSpacing: -0.9, lineHeight: 1.1 }}>
           Claude&apos;s attempt
         </h1>
-        <p style={{ fontSize: 15.5, lineHeight: 1.6, color: "var(--cm-lede)", margin: "12px 0 0" }}>
-          A fresh Claude agent with no knowledge of how the key was built. It worked from the{" "}
-          <Link href="/commit/draft_files" style={{ color: ACCENT }}>/draft_files</Link> delivery as it stood on
-          18 September and the pinned references, plus one public atlas it fetched itself, which Commit has not been
-          given.
+        <p style={{ fontSize: 15, lineHeight: 1.6, color: MUTED, margin: "10px 0 0" }}>
+          A fresh Claude agent with no knowledge of how the key was built, working from the{" "}
+          <Link href="/commit/draft_files" style={{ color: MUTED }}>draft delivery</Link> as it stood on 18 September.
         </p>
 
-        {/* ── what it had ─────────────────────────────────────────── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12, marginTop: 24 }}>
+        {/* ── what it had: quiet, one card ───────────────────────── */}
+        <div style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 12, padding: "16px 18px", marginTop: 22,
+                      display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px 24px" }}>
           {GROUPS.map((g) => (
-            <div key={g.title} style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 12, padding: "14px 16px",
-                                        borderTop: `3px solid ${SC_FULL}` }}>
-              <div style={{ ...micro, color: SC_FULL, marginBottom: 10 }}>{g.title}</div>
+            <div key={g.title}>
+              <div style={{ ...micro, color: FAINT, marginBottom: 8 }}>{g.title}</div>
               {g.items.map((it) => (
-                <div key={it.name} style={{ marginBottom: 11 }}>
-                  <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: FILE, overflowWrap: "anywhere" }}>{it.name}</div>
-                  <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.45, marginTop: 2 }}>{it.spec}</div>
-                  {it.tag && (
-                    <span style={{ display: "inline-block", marginTop: 4, fontFamily: MONO, fontSize: 9.5, fontWeight: 700,
-                                   letterSpacing: 0.4, textTransform: "uppercase", color: TAG[it.tag].color,
-                                   border: `1px solid ${TAG[it.tag].color}`, borderRadius: 4, padding: "1px 5px" }}>
-                      {TAG[it.tag].label}
-                    </span>
-                  )}
+                <div key={it.name} style={{ marginBottom: 8 }}>
+                  <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 600, color: INK, overflowWrap: "anywhere" }}>{it.name}</div>
+                  <div style={{ fontSize: 12, color: FAINT, lineHeight: 1.45, marginTop: 1 }}>
+                    {it.spec}
+                    {it.tag && (
+                      <span style={{ color: it.tag === "extra" || it.tag === "replaced" ? SC_HALF : FAINT }}>
+                        {" "}· {TAG[it.tag].label}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           ))}
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 14 }}>
-          <span style={{ ...micro, color: SC_ZERO, marginRight: 4 }}>Off limits</span>
-          {OFF.map((o) => (
-            <span key={o} style={{ fontSize: 12.5, color: SC_ZERO, border: `1px solid ${SC_ZERO}`, borderRadius: 999,
-                                   padding: "3px 10px", whiteSpace: "nowrap" }}>✕ {o}</span>
-          ))}
-        </div>
-        <p style={{ fontSize: 12, color: FAINT, margin: "8px 0 0" }}>Every file it read was audited afterwards.</p>
+        <p style={{ fontSize: 12, color: FAINT, margin: "10px 2px 0", lineHeight: 1.6 }}>
+          Off limits: {OFF.join(" · ")}. Every file it read was audited.
+        </p>
 
-        {/* ── amendment ───────────────────────────────────────────── */}
-        <div style={{ marginTop: 22, padding: "12px 16px", borderRadius: 10, border: `1px solid ${RULE}`,
-                      borderLeft: `3px solid ${ACCENT}`, background: CARD }}>
-          <div style={{ ...micro, color: ACCENT, marginBottom: 6 }}>Amended after the audit · answers unchanged</div>
-          <div style={{ display: "flex", gap: 22, flexWrap: "wrap", fontSize: 13, color: "var(--cm-prose)", lineHeight: 1.5 }}>
-            <span><strong>{S.amendment.ancestor_chains_full}/112</strong> ancestor chains now list every ancestor, as the docs require</span>
-            <span><strong>{S.amendment.traceable_before} → {S.amendment.traceable_after}/112</strong> answers traceable to cited evidence ({S.amendment.untraceable} still not)</span>
-          </div>
+        {/* ── the two things that matter: the score, and how it compares ── */}
+        <div style={{ marginTop: 44, display: "flex", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
+          <span style={{ fontFamily: MONO, fontSize: 48, fontWeight: 700, letterSpacing: -1.5,
+                         fontVariantNumeric: "tabular-nums" }}>{S.all.graded.toFixed(3)}</span>
+          <span style={{ fontSize: 15, color: MUTED }}>graded · {S.all.exact} of 112 exactly right</span>
         </div>
 
-        {/* ── score ───────────────────────────────────────────────── */}
-        <div style={{ display: "flex", gap: 36, flexWrap: "wrap", marginTop: 36 }}>
-          {[["graded score", S.all.graded.toFixed(3)], ["exactly right", `${S.all.exact}/112`],
-            ["confident & right", `${S.by_confidence_tier.high.full}/${S.by_confidence_tier.high.n}`]].map(([k, v]) => (
-            <div key={k}>
-              <div style={micro}>{k}</div>
-              <div style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{v}</div>
-            </div>
-          ))}
-        </div>
-
-        <section style={{ marginTop: 40 }}>
-          <h2 style={h2}>Against the baselines</h2>
-          <div style={{ display: "flex", gap: 16, marginBottom: 10 }}>
+        <section style={{ marginTop: 28 }}>
+          <div style={{ display: "flex", gap: 14, marginBottom: 8 }}>
             {OUT.map((o) => (
-              <span key={o.k} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, color: MUTED }}>
-                <span style={{ width: 10, height: 10, borderRadius: 3, background: o.color }} />{o.k}
+              <span key={o.k} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: FAINT }}>
+                <span style={{ width: 9, height: 9, borderRadius: 3, background: o.color }} />{o.k}
               </span>
             ))}
           </div>
           {ROWS.map((r) => (
-            <div key={r.name} style={{ padding: "10px 0", borderTop: `1px solid ${RULE}` }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 6 }}>
-                <span style={{ fontSize: 14, fontWeight: r.bold ? 700 : 500 }}>{r.name}</span>
+            <div key={r.name} style={{ padding: "9px 0", borderTop: `1px solid ${RULE}`, opacity: r.bold ? 1 : 0.5 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 5 }}>
+                <span style={{ fontSize: 13.5, fontWeight: r.bold ? 650 : 400 }}>{r.name}</span>
                 <span style={{ fontFamily: MONO, fontSize: 12.5, fontVariantNumeric: "tabular-nums" }}>
-                  <strong>{r.s.graded.toFixed(3)}</strong><span style={{ color: MUTED }}> · {r.s.exact} exact</span>
+                  {r.s.graded.toFixed(3)}<span style={{ color: MUTED }}> · {r.s.exact} exact</span>
                 </span>
               </div>
-              <div style={{ display: "flex", gap: 2, height: 20 }}>
+              <div style={{ display: "flex", gap: 2, height: r.bold ? 20 : 12 }}>
                 {OUT.map((o) => {
                   const n = r.s[o.k];
                   return n > 0 ? (
@@ -153,7 +130,7 @@ export default function ClaudesAttemptPage() {
                          style={{ flex: n, background: o.color, borderRadius: 4, display: "flex", alignItems: "center",
                                   paddingLeft: 7, minWidth: 0, color: "var(--cm-paper)", fontFamily: MONO, fontSize: 11,
                                   fontWeight: 700, overflow: "hidden", whiteSpace: "nowrap" }}>
-                      {n >= 8 ? n : ""}
+                      {r.bold && n >= 8 ? n : ""}
                     </div>
                   ) : null;
                 })}
@@ -163,22 +140,21 @@ export default function ClaudesAttemptPage() {
         </section>
 
         <section style={{ marginTop: 40 }}>
-          <h2 style={h2}>Two things to fix before the run</h2>
-          <p style={{ ...small, marginBottom: 12 }}>
-            <strong>The rule rewards hedging.</strong> A structure earns half when the key wants a cell type, but a cell
-            type earns nothing when the key wants a structure, so the agent named structures when unsure. One repeated
-            hedge cost it {S.hedge_halves} half-credit answers; naming the cell type would have scored{" "}
-            <span style={{ color: SERIES, fontWeight: 700 }}>{S.graded_if_hedge_named_cell.toFixed(3)}</span>.
+          <div style={{ ...micro, marginBottom: 10 }}>To fix before the run</div>
+          <p style={{ ...small, color: MUTED, marginBottom: 10 }}>
+            <span style={{ color: INK, fontWeight: 600 }}>The rule rewards hedging.</span> A structure earns half when the
+            key wants a cell type, but a cell type earns nothing when the key wants a structure. One repeated hedge cost
+            it {S.hedge_halves} half-credit answers; naming the cell type would have scored{" "}
+            {S.graded_if_hedge_named_cell.toFixed(3)}.
           </p>
-          <p style={small}>
-            <strong>The public labels leak.</strong> Careful work only just beat copying ZSCAPE&apos;s published names,
-            and a solver that translated them properly would win. Score the real run on unpublished clusters.
+          <p style={{ ...small, color: MUTED }}>
+            <span style={{ color: INK, fontWeight: 600 }}>The public labels leak.</span> Careful work only just beat
+            copying ZSCAPE&apos;s published names. Score the real run on unpublished clusters.
           </p>
         </section>
 
-        <p style={{ fontSize: 12.5, color: FAINT, marginTop: 36, lineHeight: 1.6 }}>
-          Not blind to us: we wrote the key. The agent was not shown its score. See{" "}
-          <Link href="/commit/draft_files" style={{ color: ACCENT }}>the draft files</Link>.
+        <p style={{ fontSize: 12, color: FAINT, marginTop: 36, lineHeight: 1.6 }}>
+          Not blind to us: we wrote the key. The agent was not shown its score.
         </p>
       </div>
     </main>
