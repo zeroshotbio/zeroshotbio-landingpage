@@ -1,0 +1,113 @@
+cluster_id,zfa_id,zfa_name,markers_with_zfin_48hpf_expression,runner_up
+C001,ZFA:0001114,head,31,brain;optic furrow
+C002,ZFA:0000040,median fin fold,33,epidermis;pharyngeal arch
+C003,ZFA:0000029,hindbrain,13,primitive heart tube;heart tube
+C004,ZFA:0000035,lens,21,lens fiber cell;solid lens vesicle
+C005,ZFA:0000007,blood,12,nucleate erythrocyte;erythroid lineage cell
+C006,ZFA:0000105,epidermis,36,pharynx;integument
+C007,ZFA:0000152,retina,25,retinal photoreceptor layer;retinal outer nuclear layer
+C008,ZFA:0000105,epidermis,43,dermis;pharynx
+C009,ZFA:0000539,locus coeruleus,14,norepinephrine secreting cell;adrenergic neuron
+C010,ZFA:0000029,hindbrain,35,brain;central nervous system
+C011,ZFA:0000114,heart,32,endocardium;ventricular endocardium
+C012,ZFA:0000075,spinal cord,27,astrocyte;diencephalon
+C013,ZFA:0001094,whole organism,27,monocyte;intermediate cell mass of mesoderm
+C014,ZFA:0000056,pharynx,26,peripheral olfactory organ;epithelial cell
+C015,ZFA:0000940,posterior lateral line neuromast,16,anterior lateral line neuromast;inner ear
+C016,ZFA:0001056,myotome,38,musculature system;somite
+C017,ZFA:0000029,hindbrain,33,optic tectum;brain
+C018,ZFA:0009000,cell,20,spinal cord;Kolmer-Agduhr neuron
+C019,ZFA:0000079,telencephalon,30,thalamus;sensory neuron
+C020,ZFA:0000008,brain,19,hindbrain;tegmentum
+C021,ZFA:0001410,orbital region,38,pronephric podocyte;pectoral fin
+C022,ZFA:0000013,cranial ganglion,32,posterior lateral line ganglion;anterior lateral line ganglion
+C023,ZFA:0000013,cranial ganglion,24,trigeminal ganglion;thalamus
+C024,ZFA:0000022,floor plate,34,floor plate rhombomere region;midbrain
+C025,ZFA:0009090,pigment cell,28,retinal pigmented epithelium;retina
+C026,ZFA:0000105,epidermis,30,pharynx;epidermal superficial stratum
+C027,ZFA:0000105,epidermis,37,pharynx;integument
+C028,ZFA:0000105,epidermis,43,pharynx;integument
+C029,ZFA:0001306,pharyngeal arch,37,median fin fold;otic vesicle
+C030,ZFA:0001460,pharyngeal arch cartilage,29,pharyngeal arch;pectoral fin cartilage
+C031,ZFA:0000168,anterior macula,33,posterior macula;otic vesicle
+C032,ZFA:0001306,pharyngeal arch,38,medial rectus;otic vesicle
+C033,ZFA:0000105,epidermis,39,pharynx;pectoral fin musculature
+C034,ZFA:0000105,epidermis,30,pharynx;pectoral fin musculature
+C035,ZFA:0009159,mucus secreting cell,28,pronephric duct;NaK ionocyte
+C036,ZFA:0001215,thalamus,29,telencephalon;pharyngeal arch 3-7
+C037,ZFA:0000056,pharynx,21,cloaca;otic vesicle
+C038,ZFA:0000144,retinal pigmented epithelium,30,retina;pigment cell
+C039,ZFA:0000029,hindbrain,35,retinal ganglion cell layer;brain
+C040,ZFA:0000029,hindbrain,30,pancreas;liver
+C041,ZFA:0005313,pronephric glomerular basement membrane,3,podocyte;pronephric podocyte
+C042,ZFA:0001338,intestine,26,liver;gut
+C043,ZFA:0005781,cloaca,27,pronephric duct;pharynx
+C044,ZFA:0000150,pronephric duct,27,pronephros;pronephric proximal convoluted tubule
+C045,ZFA:0000135,notochord,33,hypochord;splanchnocranium
+C046,ZFA:0009150,Rohon-Beard neuron,27,trigeminal ganglion;dorsal telencephalon
+C047,ZFA:0000075,spinal cord,27,pronephros;pharyngeal arch
+C048,ZFA:0001161,pectoral fin,33,pharyngeal arch;neurocranium
+C049,ZFA:0000105,epidermis,27,pharynx;integument
+C050,ZFA:0000031,hypochord,33,floor plate;epidermis
+C051,ZFA:0001056,myotome,37,musculature system;somite
+C052,ZFA:0000548,musculature system,42,myotome;somite
+C053,ZFA:0000548,musculature system,42,myotome;hypaxial myotome region
+C054,ZFA:0000029,hindbrain,37,cerebellum;retina
+C055,ZFA:0000024,retinal ganglion cell layer,35,retina;retinal inner nuclear layer
+C056,ZFA:0000056,pharynx,12,epidermis;pectoral fin musculature
+C057,ZFA:0000105,epidermis,37,dermis;eye
+C058,ZFA:0000105,epidermis,38,pharynx;integument
+C059,ZFA:0000548,musculature system,42,myotome;hypaxial myotome region
+C060,ZFA:0000040,median fin fold,41,fin fold pectoral fin bud;pectoral fin
+C061,ZFA:0000051,otic vesicle,29,integument;epidermis
+C062,ZFA:0000105,epidermis,33,pharynx;epidermal superficial stratum
+C063,ZFA:0001458,cranial cartilage,39,splanchnocranium;notochord
+C064,ZFA:0000105,epidermis,35,integument;otic vesicle
+C065,ZFA:0000029,hindbrain,36,optic tectum;telencephalon
+C066,ZFA:0000079,telencephalon,28,medulla oblongata;tegmentum
+C067,ZFA:0000056,pharynx,27,epidermis;integument
+C068,ZFA:0000029,hindbrain,35,optic tectum;forebrain
+C069,ZFA:0009327,neutrophil,27,hematopoietic system;intermediate cell mass of mesoderm
+C070,ZFA:0000440,superior raphe nucleus,34,inferior raphe nucleus;interneuron
+C071,ZFA:0000098,proliferative region,38,optic tectum;retina
+C072,ZFA:0000144,retinal pigmented epithelium,33,epiphysis;retina
+C073,ZFA:0000051,otic vesicle,37,proliferative region;lateral line system
+C074,ZFA:0005326,NaK ionocyte,28,hindbrain;cell
+C075,ZFA:0000105,epidermis,37,pharynx;epidermal superficial stratum
+C076,ZFA:0009159,mucus secreting cell,32,NCC ionocyte;ball
+C077,ZFA:0000029,hindbrain,34,statoacoustic (VIII) ganglion;diencephalon
+C078,ZFA:0000671,horizontal myoseptum,29,spinal cord;dorsal aorta
+C079,ZFA:0000051,otic vesicle,22,pharyngeal arch;apical ectodermal ridge pectoral fin bud
+C080,ZFA:0000013,cranial ganglion,33,vagal ganglion 1;vagal ganglion 2
+C081,ZFA:0000029,hindbrain,35,spinal cord;optic tectum
+C082,ZFA:0000548,musculature system,43,myotome;somite
+C083,ZFA:0000548,musculature system,33,hypaxial myotome region;heart
+C084,ZFA:0000047,peripheral olfactory organ,24,olfactory bulb;olfactory pit
+C085,ZFA:0009091,melanocyte,19,retinal pigmented epithelium;pigment cell
+C086,ZFA:0001079,blood vasculature,29,cranial vasculature;endothelial cell
+C087,ZFA:0000184,cleithrum,31,osteoblast;dermatocranium
+C088,ZFA:0000123,liver,40,yolk syncytial layer;whole organism
+C089,ZFA:0001391,anterior lateral line ganglion,25,posterior lateral line ganglion;statoacoustic (VIII) ganglion
+C090,ZFA:0000152,retina,35,ciliary marginal zone;optic tectum
+C091,ZFA:0000026,hatching gland,26,peripheral olfactory organ;retinal ganglion cell layer
+C092,ZFA:0001390,pancreatic bud,28,pancreas;pancreatic A cell
+C093,ZFA:0009198,xanthophore,27,pigment cell;retinal pigmented epithelium
+C094,ZFA:0000051,otic vesicle,33,fin fold pectoral fin bud;gut
+C095,ZFA:0000105,epidermis,34,dermis;eye
+C096,ZFA:0005316,fin fold pectoral fin bud,35,median fin fold;apical ectodermal ridge pectoral fin bud
+C097,ZFA:0000009,cardiac ventricle,42,heart;atrium
+C098,ZFA:0001557,pronephric glomerulus,22,pronephric podocyte;pronephros
+C099,ZFA:0000051,otic vesicle,24,posterior lateral line neuromast;anterior lateral line neuromast
+C100,ZFA:0001622,pronephric distal early tubule,26,pronephric duct;pronephric distal late tubule
+C101,ZFA:0000035,lens,37,lens epithelium;lens fiber cell
+C102,ZFA:0001198,adenohypophyseal placode,25,adenohypophysis;hypophysis
+C103,ZFA:0000114,heart,38,musculature system;myotome
+C104,ZFA:0000029,hindbrain,33,midbrain;telencephalon
+C105,ZFA:0000477,posterior cardinal vein,34,common cardinal vein;caudal vein plexus
+C106,ZFA:0000105,epidermis,34,dermis;pectoral fin
+C107,ZFA:0000040,median fin fold,38,epidermis;otic vesicle
+C108,ZFA:0000098,proliferative region,40,optic tectum;retina
+C109,ZFA:0000029,hindbrain,32,trigeminal motor nucleus;midbrain
+C110,ZFA:0009116,slow muscle cell,31,myotome;somite
+C111,ZFA:0000135,notochord,21,cranial ganglion;ventricular zone
+C112,ZFA:0000105,epidermis,30,pharynx;epidermal superficial stratum

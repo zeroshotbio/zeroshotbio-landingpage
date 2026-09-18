@@ -1,0 +1,37 @@
+{
+ "note": "Both sides use exactly these files. Verify by sha256 before the run.",
+ "sources": {
+  "ZFA": {
+   "file": "zfa.obo",
+   "version": "releases/2026-06-02",
+   "url": "http://purl.obolibrary.org/obo/zfa/releases/2026-06-02/zfa.obo",
+   "role": "the answer space (the menu is cut from this release) and ZFS stage windows",
+   "sha256": "58c5f1a00c435bef895b9ad7f931cde6a88a01d068f48123558b6907c9f4fa7b",
+   "bytes": 1652649
+  },
+  "ZFIN wild-type expression": {
+   "file": "zfin_wildtype_expression.txt",
+   "version": "downloaded 2026-06-21 (ZFIN has no release tag; pinned by sha256)",
+   "url": "https://zfin.org/downloads/wildtype-expression_fish.txt",
+   "role": "curated gene -> ZFA anatomy + stage records",
+   "sha256": "fdff99938fe4f58a33c2f28ff0f941c5497f41bf3f4cba1e46e64d7c94b4ed8f",
+   "bytes": 43524392
+  },
+  "GO annotations (ZFIN GAF)": {
+   "file": "zfin.gaf",
+   "version": "date-generated 2026-05-21T09:18",
+   "url": "https://current.geneontology.org/annotations/zfin.gaf.gz",
+   "role": "gene function annotations and gene-symbol synonyms",
+   "sha256": "5127d8bf6025cecb70b6f3299ace06804cc665c9987fded05199b8c2ec0a832a",
+   "bytes": 51441497
+  },
+  "GO ontology": {
+   "file": "go-basic.obo",
+   "version": "releases/2026-05-19",
+   "url": "https://release.geneontology.org/2026-05-19/ontology/go-basic.obo",
+   "role": "the GO release the GAF above was generated against",
+   "sha256": "923645000afcb1df0e72e252b64950b1c2bcc98c9393fec8c1dd1a0f7c9d4d77",
+   "bytes": 32212518
+  }
+ }
+}

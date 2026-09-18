@@ -98,8 +98,8 @@ export default function OutputSection() {
       >
         Beneath the committed pick, a cluster is answered on two separate axes: what the cells in it
         are, and where in the animal they sit. These are genuinely distinct — in the key they differ
-        on 111 of the 112 clusters — and the committed pick above is drawn from one axis or the
-        other rather than being a third opinion. Either axis may be null where the evidence does not
+        on 111 of the 112 clusters. The committed pick above is usually one of the two axis terms;
+        on 7 clusters the key&apos;s pick is a third, related term instead. Either axis may be null where the evidence does not
         support a call; the key itself leaves the cell-type axis empty on 7 clusters and the
         anatomical axis on 2. Returning null is an answer, and a labeller that guesses to fill the
         slot is doing worse than one that declines.

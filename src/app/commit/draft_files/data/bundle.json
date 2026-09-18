@@ -1,0 +1,493 @@
+{
+ "files": [
+  {
+   "name": "README.md",
+   "audience": "before",
+   "what": "What each file is, how the gene ids work, how to check the menu hash.",
+   "bytes": 2357,
+   "sha256": "93866936bf836ac76f15a7acd89bd566d54bc027cc5ad6912bef3963a4baa6cd",
+   "href": "/commit/draft_files/files/README.md",
+   "location": null
+  },
+  {
+   "name": "zscape_gold_48hpf.v0.h5ad",
+   "audience": "before",
+   "what": "The matrix. Fixed copy: excluded-cluster names removed, var['marker_name'] added, opens on anndata 0.10+.",
+   "bytes": 483738172,
+   "sha256": "5e6739508d4bdec7684435f34a4b645899941d3d3f8bbc195d62d9eb607fd58e",
+   "href": null,
+   "location": "/data/scratch/zlabel/datasets/zscape_commit_gold/delivery_v0/zscape_gold_48hpf.v0.h5ad"
+  },
+  {
+   "name": "gold_features.v1.csv",
+   "audience": "before",
+   "what": "Three ranked marker lists per cluster, now each with an aligned Ensembl column, plus QC.",
+   "bytes": 405058,
+   "sha256": "57112c0a7a4658343cb0b50bceee1b1cbd43c1894a0fa463890410543041cc35",
+   "href": "/commit/draft_files/files/gold_features.v1.csv",
+   "location": null
+  },
+  {
+   "name": "genes.tsv",
+   "audience": "before",
+   "what": "Gene order of the matrix with symbol, marker name and Ensembl id.",
+   "bytes": 1763297,
+   "sha256": "2f01b4b4a9992cdf8d158100e86450ce0f8b0caa53fccdb0edb092241aaf1842",
+   "href": "/commit/draft_files/files/genes.tsv",
+   "location": null
+  },
+  {
+   "name": "zfa_menu.v1.enriched.json",
+   "audience": "before",
+   "what": "The 3,107-term answer space (hash unchanged) with synonyms, parents, stage window and kind.",
+   "bytes": 1024341,
+   "sha256": "e98a482cce0e1500024b2fa7e3a1427c85aa92a3c850f2e5b00833a52e4daac8",
+   "href": "/commit/draft_files/files/zfa_menu.v1.enriched.json",
+   "location": null
+  },
+  {
+   "name": "zfa_menu.v1.tsv",
+   "audience": "before",
+   "what": "The same menu as a table.",
+   "bytes": 368943,
+   "sha256": "8e1eca3b3a7669a72064cb64164ef075ff90baea487dea08138027eacc88767f",
+   "href": "/commit/draft_files/files/zfa_menu.v1.tsv",
+   "location": null
+  },
+  {
+   "name": "excluded_clusters.csv",
+   "audience": "before",
+   "what": "The 26 clusters dropped upstream, marked excluded (names held back).",
+   "bytes": 3251,
+   "sha256": "94cff1308be990044b8a8436f31e60bfc6e310a1c57886a9087a596bdbba5430",
+   "href": "/commit/draft_files/files/excluded_clusters.csv",
+   "location": null
+  },
+  {
+   "name": "sources.v0.json",
+   "audience": "before",
+   "what": "Pinned ZFA, ZFIN expression, ZFIN GO annotations and GO, by version and sha256.",
+   "bytes": 1515,
+   "sha256": "f54be46f2946c5f8b20ef95b406250f96c106188599fbbc9294df818966b8411",
+   "href": "/commit/draft_files/files/sources.v0.json",
+   "location": null
+  },
+  {
+   "name": "scoring_rules.v0.md",
+   "audience": "before",
+   "what": "The scoring rule made computable: full, half and zero, and what gets reported.",
+   "bytes": 3709,
+   "sha256": "e53c041c58601150c1e639cc1e2b8861573cb0a7b385be9c44e588cae7c9a975",
+   "href": "/commit/draft_files/files/scoring_rules.v0.md",
+   "location": null
+  },
+  {
+   "name": "submission_format.v0.md",
+   "audience": "before",
+   "what": "What a submission looks like: rubric.json plus one JSON line per cluster.",
+   "bytes": 2157,
+   "sha256": "92d4cf1583bc46e70c583fb4c56203123e695c4e9e52e3abc36885037128ea87",
+   "href": "/commit/draft_files/files/submission_format.v0.md",
+   "location": null
+  },
+  {
+   "name": "validate_submission.py",
+   "audience": "before",
+   "what": "Standard-library validator for a submission.",
+   "bytes": 4095,
+   "sha256": "36ef25ea4063cc0a5e691179406fc31a2070fb4ccb73e3af5c045bd3cc25d0ef",
+   "href": "/commit/draft_files/files/validate_submission.py",
+   "location": null
+  },
+  {
+   "name": "MANIFEST.json",
+   "audience": "before",
+   "what": "sha256 of every delivered file.",
+   "bytes": 1749,
+   "sha256": "36bd7cd08960a60c440448e95b3b24d8d1f4d243e20547cd296279b6be676929",
+   "href": "/commit/draft_files/files/MANIFEST.json",
+   "location": null
+  },
+  {
+   "name": "zfin_expression_baseline.predictions.csv",
+   "audience": "internal",
+   "what": "Our no-model lookup baseline's answers (top markers to ZFIN 48 hpf expression).",
+   "bytes": 7340,
+   "sha256": "1a240e8ea0ff848be744b6fd2277bfdc9e3375a56c22581ba2f182b191051502",
+   "href": "/commit/draft_files/files/zfin_expression_baseline.predictions.csv",
+   "location": null
+  },
+  {
+   "name": "gold_zfa.v0.csv",
+   "audience": "after",
+   "what": "The answer key: 112 rows, primary ZFA id, accepted alternatives, both axes, status. Not on this page.",
+   "bytes": null,
+   "sha256": null,
+   "href": null,
+   "location": "/data/scratch/zlabel/datasets/zscape_commit_gold/_HELDOUT/commit_delivery_v0/gold_zfa.v0.csv"
+  }
+ ],
+ "results": {
+  "ran_at": "2026-09-18T06:27:58+00:00",
+  "counts": {
+   "pass": 28,
+   "warn": 6,
+   "fail": 4
+  },
+  "tests": [
+   {
+    "id": "test_h5ad_opens_on_old_and_new_anndata",
+    "group": "A",
+    "title": "The delivered h5ad opens on anndata 0.10 as well as 0.12.",
+    "why": "The frozen source file used nullable-string encoding that anndata 0.10 cannot read.",
+    "status": "pass",
+    "detail": "0.10.8 (209639, 32031); 0.12.16 (209639, 32031)"
+   },
+   {
+    "id": "test_matrix_is_what_the_page_says",
+    "group": "A",
+    "title": "Shape, raw integer counts, and X = log1p of counts-per-10k, checked on real cells.",
+    "why": "",
+    "status": "pass",
+    "detail": "209,639 x 32,031; counts dtype uint16; max |X - log1p(CP10k)| = 4.0e-07 on 300 cells"
+   },
+   {
+    "id": "test_gene_order_file_matches_matrix",
+    "group": "A",
+    "title": "genes.tsv lists the matrix's genes in the matrix's order, with unique ids.",
+    "why": "",
+    "status": "pass",
+    "detail": "32,031 rows; order matches: True; Ensembl ids match: True; unique Ensembl True, unique marker names True"
+   },
+   {
+    "id": "test_every_marker_resolves_to_one_gene",
+    "group": "A",
+    "title": "Every marker in every list names exactly one gene in the matrix, and its Ensembl twin agrees.",
+    "why": "",
+    "status": "pass",
+    "detail": "15,642 marker entries; 0 unresolved or mismatched; 0 misaligned lists"
+   },
+   {
+    "id": "test_clusters_agree_across_files",
+    "group": "A",
+    "title": "C001-C112 in both files, same cell counts, every cluster at or above the 50-cell floor.",
+    "why": "",
+    "status": "pass",
+    "detail": "ids C001-C112 in both: True; n_cells agree: True; smallest cluster 55 cells"
+   },
+   {
+    "id": "test_marker_lists_and_caps",
+    "group": "A",
+    "title": "Lists hold at most 50 genes; n_cells_used is n_cells capped at 5,000 (the page says eleven are capped).",
+    "why": "",
+    "status": "pass",
+    "detail": "longest list 50; empty lists {'top_50_markers': 0, 'bottom_50_markers': 1, 'family_50_markers': 0}; capped clusters 11; cap rule holds: True"
+   },
+   {
+    "id": "test_menu_hash_and_structure",
+    "group": "A",
+    "title": "The menu hash recomputes to dec9f728, ids are unique, and every parent resolves.",
+    "why": "",
+    "status": "pass",
+    "detail": "hash dec9f7289d7c\u2026; 3,107 terms, 3,107 unique; 0 dangling parents; kinds {'structure': 2457, 'cell': 650}"
+   },
+   {
+    "id": "test_withheld_material_is_absent",
+    "group": "A",
+    "title": "Nothing held back reaches Commit: no label columns, no published markers, no excluded-cluster names.",
+    "why": "",
+    "status": "pass",
+    "detail": "obs label-like columns: 0; zscape_published_markers shipped: False; uns dropped_clusters: False; excluded names found in delivered text: 0"
+   },
+   {
+    "id": "test_page_example_term_is_not_an_answer",
+    "group": "A",
+    "title": "The worked example on /commit (ZFA:0000516) is on the menu and is not a key answer or near one.",
+    "why": "The page promises the example cannot hint at any scored cluster.",
+    "status": "pass",
+    "detail": "on menu: True; clusters whose answer is the example or one of its ancestors: 0"
+   },
+   {
+    "id": "test_key_source_unchanged",
+    "group": "B",
+    "title": "The source key still has the checksum recorded at ingest.",
+    "why": "",
+    "status": "pass",
+    "detail": "sha256 391a81425cd7\u2026"
+   },
+   {
+    "id": "test_key_covers_every_cluster",
+    "group": "B",
+    "title": "112 rows, one per delivered cluster, with matching cell counts.",
+    "why": "",
+    "status": "pass",
+    "detail": "112 rows; ids and n_cells match the matrix: True"
+   },
+   {
+    "id": "test_every_key_term_is_on_the_menu",
+    "group": "B",
+    "title": "Every primary, alternative and axis term validates against the menu; blanks are explicit.",
+    "why": "",
+    "status": "pass",
+    "detail": "118 distinct key terms, 0 off-menu; 0 blank cells; NO_ZFA_TERM consistent: True"
+   },
+   {
+    "id": "test_axes_sit_in_the_right_branch",
+    "group": "B",
+    "title": "Identity terms are cell types and anatomy terms are structures.",
+    "why": "The page says the two axes draw from different branches; scoring relies on it.",
+    "status": "fail",
+    "detail": "identity terms that are not cell types: 0; anatomy terms that are cell types: 1"
+   },
+   {
+    "id": "test_alternatives_never_reward_retreat",
+    "group": "B",
+    "title": "No accepted alternative equals the primary or is an ancestor of it.",
+    "why": "",
+    "status": "pass",
+    "detail": "6 multi-answer clusters, 6 alternatives, 0 that reward retreat"
+   },
+   {
+    "id": "test_key_terms_exist_at_48hpf",
+    "group": "B",
+    "title": "Every primary answer is a structure or cell ZFA says exists at 48 hpf (where ZFA records a stage window).",
+    "why": "",
+    "status": "fail",
+    "detail": "inside window 54, no stage data 56, outside the 48 hpf window 2 \u2014 curator review needed (ids in the local pytest log)"
+   },
+   {
+    "id": "test_claim_31_ambiguous",
+    "group": "C",
+    "title": "Page: evidence_ambiguous is true on 31 of the 112 clusters.",
+    "why": "",
+    "status": "pass",
+    "detail": "31/112"
+   },
+   {
+    "id": "test_claim_granularity_and_agreement",
+    "group": "C",
+    "title": "Page: granularity exact 71 / broader 24 / narrower 16; agreement unanimous on roughly 80 clusters.",
+    "why": "",
+    "status": "pass",
+    "detail": "granularity {'exact': 71, 'broader': 24, 'narrower': 16, 'none': 1}; unanimous identity 80, anatomy 82"
+   },
+   {
+    "id": "test_claim_null_axes",
+    "group": "C",
+    "title": "Page: the key leaves the cell-type axis empty on 7 clusters and the anatomical axis on 2.",
+    "why": "",
+    "status": "pass",
+    "detail": "identity empty 7, anatomy empty 2"
+   },
+   {
+    "id": "test_claim_axes_differ_111",
+    "group": "C",
+    "title": "Page: the two axes differ on 111 of the 112 clusters.",
+    "why": "",
+    "status": "pass",
+    "detail": "111/112 differ"
+   },
+   {
+    "id": "test_claim_pick_comes_from_an_axis",
+    "group": "C",
+    "title": "Page: the committed pick is usually one of the two axis terms, and a third term on 7 clusters.",
+    "why": "(Corrected 2026-09-18: the page used to say the pick is never a third opinion.)",
+    "status": "pass",
+    "detail": "7 clusters whose committed pick is neither axis term"
+   },
+   {
+    "id": "test_claim_one_in_five_cell_types",
+    "group": "C",
+    "title": "Page: roughly one menu term in five names a cell type.",
+    "why": "",
+    "status": "pass",
+    "detail": "650/3,107 = 20.9%"
+   },
+   {
+    "id": "test_page_numbers_match_files",
+    "group": "C",
+    "title": "The headline numbers the pages render (clusters, cells, genes, terms, hash) match the delivered files.",
+    "why": "",
+    "status": "pass",
+    "detail": "page (112, 209639, 32031, 3107) vs files (112, 209639, 32031, 3107); hashes equal: True"
+   },
+   {
+    "id": "test_key_scores_perfectly_against_itself",
+    "group": "D",
+    "title": "Submitting the key's own primaries scores 112 full and 112 strict exact.",
+    "why": "",
+    "status": "pass",
+    "detail": "full 112/112, half 0, zero 0; strict exact 112/112"
+   },
+   {
+    "id": "test_scorer_is_total",
+    "group": "D",
+    "title": "Every menu term gets exactly one outcome on every cluster \u2014 no crashes, no undefined cases.",
+    "why": "",
+    "status": "pass",
+    "detail": "347,984 (term, cluster) pairs: {'zero': 347582, 'full': 188, 'half': 214}"
+   },
+   {
+    "id": "test_vague_answers_earn_nothing",
+    "group": "D",
+    "title": "Answering the same very broad term everywhere earns no full credit and almost no half credit.",
+    "why": "Reading 'the region containing it' as any ontology ancestor pays half on all 81 cell-type clusters for 'whole organism'; the reference scorer only accepts the key's anatomy term or one level above it.",
+    "status": "pass",
+    "detail": "84 broad terms (depth <= 2) tried; best of them: full 0/112, half 8, zero 104; strict exact 0/112 = 3.6% of the credit"
+   },
+   {
+    "id": "test_precise_answer_clause_is_reachable",
+    "group": "D",
+    "title": "Where the key names a region, some menu cell type sits inside it (the page's 'more precise' full credit).",
+    "why": "",
+    "status": "warn",
+    "detail": "11/31 region-answered clusters have any menu cell type inside them (ZFA rarely links cell types to regions) \u2014 the clause is live for those only"
+   },
+   {
+    "id": "test_retreat_within_cells_vs_to_region",
+    "group": "D",
+    "title": "Retreating to a broader cell type should not score below retreating to the region.",
+    "why": "As written, a parent cell type scores zero while the region scores half.",
+    "status": "warn",
+    "detail": "81 cell-type clusters where the parent cell type scores zero; on 78 of them the region scores half \u2014 decide whether that ordering is intended"
+   },
+   {
+    "id": "test_constant_answer_is_weak",
+    "group": "E",
+    "title": "No single term answered for every cluster gets more than 20% full credit.",
+    "why": "",
+    "status": "warn",
+    "detail": "best constant answer: full 19/112, half 0, zero 93; strict exact 19/112 \u2014 the key leans heavily on one cell type"
+   },
+   {
+    "id": "test_zfin_lookup_baseline_is_beatable",
+    "group": "E",
+    "title": "A lookup script (top markers -> ZFIN 48 hpf expression -> most specific term, no model) stays under 50% full.",
+    "why": "This is also the draft 'number to beat': baselines/zfin_expression_baseline.py.",
+    "status": "pass",
+    "detail": "ZFIN lookup: full 17/112, half 13, zero 82; strict exact 16/112"
+   },
+   {
+    "id": "test_public_labels_cannot_be_joined",
+    "group": "E",
+    "title": "Delivered cells cannot be joined to ZSCAPE's public per-cell annotations.",
+    "why": "If they can, a solver reads the source label off GEO instead of the markers.",
+    "status": "fail",
+    "detail": "cell_id join: 100% of cells, 112/112 clusters map to one public label; with cell ids removed, (UMIs, genes) from the raw counts alone still recover 112/112"
+   },
+   {
+    "id": "test_shortcut_does_not_beat_biology",
+    "group": "E",
+    "title": "Recovered public labels + plain name matching do not outscore the marker-based baseline.",
+    "why": "",
+    "status": "fail",
+    "detail": "shortcut (no biology, string match only): full 38/112, half 31, zero 43; strict exact 38/112 vs ZFIN lookup: full 17, half 13"
+   },
+   {
+    "id": "test_set_is_too_big_to_hand_label",
+    "group": "E",
+    "title": "The scored set is large enough that hand-labelling is not the cheaper route (>= 500 clusters).",
+    "why": "",
+    "status": "warn",
+    "detail": "112 clusters \u2014 a trained annotator can label these in days; only a held-out set seen at run time (with a time box) makes an agent the cheaper route"
+   },
+   {
+    "id": "test_evidence_requirement_is_checkable",
+    "group": "E",
+    "title": "The required citations and evidence statement have a format a validator enforces.",
+    "why": "A well-formed submission passes; broken ones (off-menu id, bad chain, uncited or unknown reference) fail.",
+    "status": "pass",
+    "detail": "well-formed submission: 0 problems; broken submissions caught 6/6 (all)"
+   },
+   {
+    "id": "test_ask1_gold_shape",
+    "group": "F",
+    "title": "Ask 1: ZFA ids, multi-answer clusters flagged with alternatives, exclusions marked, gene ids + order confirmed.",
+    "why": "",
+    "status": "pass",
+    "detail": "ZFA ids: True; multi-answer flagged: 6; excluded rows: 26; gene order file: True"
+   },
+   {
+    "id": "test_ask2_menu_delivered",
+    "group": "F",
+    "title": "Ask 2: the 3,107-term menu with hash dec9f728, deliverable before the key.",
+    "why": "",
+    "status": "pass",
+    "detail": "3,107 terms, hash dec9f728, ZFA releases/2026-06-02"
+   },
+   {
+    "id": "test_ask3_sources_pinned",
+    "group": "F",
+    "title": "Ask 3: ZFA release, ZFIN expression dump and GO pinned by version and sha256, and the files match.",
+    "why": "",
+    "status": "pass",
+    "detail": "ZFA releases/2026-06-02: sha ok; ZFIN wild-type expression downloaded 2026-06-21 (ZFIN has no release tag; pinned by sha256): sha ok; GO annotations (ZFIN GAF) date-generated 2026-05-21T09:18: sha ok; GO ontology releases/2026-05-19: sha ok"
+   },
+   {
+    "id": "test_ask4_scoring_rules_written",
+    "group": "F",
+    "title": "Ask 4: scoring rules in writing, including what counts as acceptably close.",
+    "why": "",
+    "status": "warn",
+    "detail": "scoring_rules.v0.md drafts all five open points (weights, 'not overly broad', containment, accepted sets, exclusions) and matches the reference scorer; not yet agreed with Darien, and /commit still says 'Not yet finalised'"
+   },
+   {
+    "id": "test_ask5_baseline_named",
+    "group": "F",
+    "title": "Ask 5: a current baseline score with the method named.",
+    "why": "",
+    "status": "warn",
+    "detail": "only the ZFIN lookup exists: full 17/112, half 13, zero 82; strict exact 16/112. Our own labeller has not run on this set, and every number carries the not-blind caveat"
+   }
+  ]
+ },
+ "key_summary": {
+  "rows": 112,
+  "status": {
+   "scored": 81,
+   "scored_ambiguous": 31
+  },
+  "primary_kind": {
+   "cell": 81,
+   "structure": 31
+  },
+  "multi_answer": 6,
+  "identity_no_term": 7,
+  "anatomy_no_term": 2,
+  "pick_is_neither_axis": 7,
+  "distinct_primaries": 65,
+  "largest_primary_share": 19,
+  "alternatives_proposed": 31,
+  "alternatives_by_verdict": {
+   "rejected: single model family, no human": 16,
+   "rejected: ancestor of primary": 9,
+   "accepted": 6
+  },
+  "excluded_upstream": 26,
+  "columns": [
+   "cluster_id",
+   "n_cells",
+   "status",
+   "primary_zfa_id",
+   "primary_zfa_name",
+   "primary_kind",
+   "multi_answer",
+   "accepted_alternative_ids",
+   "accepted_alternative_names",
+   "identity_zfa_id",
+   "identity_zfa_name",
+   "identity_status",
+   "anatomy_zfa_id",
+   "anatomy_zfa_name",
+   "anatomy_status",
+   "identity_agreement",
+   "anatomy_agreement",
+   "granularity_vs_source_label",
+   "evidence_ambiguous",
+   "n_reviewers",
+   "zfa_gap_note"
+  ]
+ },
+ "row": "/data/scratch/zlabel/datasets/zscape_commit_gold",
+ "menu_version_hash": "dec9f7289d7c378815ef8db29a1ab2013c13cb04ed4c5d01735be6b07afcf0a6"
+}

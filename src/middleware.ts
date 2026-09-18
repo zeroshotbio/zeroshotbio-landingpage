@@ -23,6 +23,9 @@ export const config = {
     "/patrick/:path*",
     "/zebrafish_ontology",
     "/zebrafish_ontology/:path*",
+    // the Commit draft delivery and its downloads (public/commit/draft_files/files/); /commit itself stays public
+    "/commit/draft_files",
+    "/commit/draft_files/:path*",
   ],
 };
 

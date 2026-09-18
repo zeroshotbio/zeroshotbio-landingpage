@@ -1,0 +1,65 @@
+{
+ "bundle": "commit_delivery_v0",
+ "files": [
+  {
+   "file": "README.md",
+   "bytes": 2357,
+   "sha256": "93866936bf836ac76f15a7acd89bd566d54bc027cc5ad6912bef3963a4baa6cd"
+  },
+  {
+   "file": "excluded_clusters.csv",
+   "bytes": 3251,
+   "sha256": "94cff1308be990044b8a8436f31e60bfc6e310a1c57886a9087a596bdbba5430"
+  },
+  {
+   "file": "genes.tsv",
+   "bytes": 1763297,
+   "sha256": "2f01b4b4a9992cdf8d158100e86450ce0f8b0caa53fccdb0edb092241aaf1842"
+  },
+  {
+   "file": "gold_features.v1.csv",
+   "bytes": 405058,
+   "sha256": "57112c0a7a4658343cb0b50bceee1b1cbd43c1894a0fa463890410543041cc35"
+  },
+  {
+   "file": "scoring_rules.v0.md",
+   "bytes": 3709,
+   "sha256": "e53c041c58601150c1e639cc1e2b8861573cb0a7b385be9c44e588cae7c9a975"
+  },
+  {
+   "file": "sources.v0.json",
+   "bytes": 1515,
+   "sha256": "f54be46f2946c5f8b20ef95b406250f96c106188599fbbc9294df818966b8411"
+  },
+  {
+   "file": "submission_format.v0.md",
+   "bytes": 2157,
+   "sha256": "92d4cf1583bc46e70c583fb4c56203123e695c4e9e52e3abc36885037128ea87"
+  },
+  {
+   "file": "validate_submission.py",
+   "bytes": 4095,
+   "sha256": "36ef25ea4063cc0a5e691179406fc31a2070fb4ccb73e3af5c045bd3cc25d0ef"
+  },
+  {
+   "file": "zfa_menu.v1.enriched.json",
+   "bytes": 1024341,
+   "sha256": "e98a482cce0e1500024b2fa7e3a1427c85aa92a3c850f2e5b00833a52e4daac8"
+  },
+  {
+   "file": "zfa_menu.v1.tsv",
+   "bytes": 368943,
+   "sha256": "8e1eca3b3a7669a72064cb64164ef075ff90baea487dea08138027eacc88767f"
+  },
+  {
+   "file": "zscape_gold_48hpf.v0.h5ad",
+   "bytes": 483738172,
+   "sha256": "5e6739508d4bdec7684435f34a4b645899941d3d3f8bbc195d62d9eb607fd58e"
+  }
+ ],
+ "menu_version_hash": "dec9f7289d7c378815ef8db29a1ab2013c13cb04ed4c5d01735be6b07afcf0a6",
+ "anndata_tested": [
+  "0.10.8",
+  "0.12.16"
+ ]
+}
