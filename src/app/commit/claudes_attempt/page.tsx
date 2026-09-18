@@ -25,7 +25,7 @@ const HAD: [string, string][] = [
 const LACKED = [
   "the answer key, or anything on our server beyond its workspace (audited)",
   "ZSCAPE's own labels, paper or GEO metadata",
-  "model second opinions: its API calls failed, as the key has no credit",
+  "model second opinions: its API calls failed because our API account had no credit",
   "a GPU (32 CPU cores only), and any feedback or second try",
 ];
 
