@@ -139,16 +139,36 @@ export default function ClaudesAttemptPage() {
           ))}
         </section>
 
-        <section style={{ marginTop: 40 }}>
-          <div style={{ ...micro, marginBottom: 10 }}>How it worked</div>
-          <p style={{ ...small, color: MUTED, maxWidth: 680 }}>
-            It first summarised every cluster: the average expression of each gene and the share of cells expressing
-            it. It then gathered evidence three ways: the anatomy terms ZFIN&apos;s curated records give each
-            cluster&apos;s top markers between 24 and 72 hpf; how closely each cluster correlates with Daniocell&apos;s
-            labelled 36–60 hpf clusters, its strongest single signal; and a by-hand review of every cluster against
-            lineage and regional marker panels. To choose the term, it named the cell type where ZFA places that cell
-            type inside the likely structure, and the structure otherwise, since a structure still earns half credit.
-            Every answer cites the ZFIN records, Daniocell match and marker list behind it.
+        <section style={{ marginTop: 44 }}>
+          <div style={{ ...micro, marginBottom: 14 }}>How it worked</div>
+          <p style={{ ...small, color: MUTED, maxWidth: 660, marginBottom: 18 }}>
+            It treated each of the 112 clusters like a mystery sample: collect clues about what the cells are, then
+            pick the one ontology term that best fits them.
+          </p>
+          <ol style={{ margin: 0, paddingLeft: 0, listStyle: "none", maxWidth: 660, display: "grid", gap: 16 }}>
+            {[
+              ["Profile every cluster",
+               "For each cluster it worked out which genes are switched on, and in how many of its cells."],
+              ["Look the genes up",
+               "It checked ZFIN, the zebrafish database, for where each cluster's top genes are known to be active in the embryo at around this age."],
+              ["Compare with another atlas",
+               "It matched each cluster against Daniocell, a separate atlas whose clusters are already named by experts. This was its most useful clue."],
+              ["Review every cluster by hand",
+               "It read through all 112, checking the genes against known markers for each tissue and body region."],
+              ["Pick the term, with the scoring in mind",
+               "Where it was confident it named the cell type. Where it was unsure it named the tissue or organ instead, because that still earns half credit if the key wanted the cell type."],
+            ].map(([t, d], i) => (
+              <li key={t} style={{ display: "flex", gap: 14 }}>
+                <span style={{ fontFamily: MONO, fontSize: 12, color: FAINT, paddingTop: 2, flex: "0 0 16px" }}>{i + 1}</span>
+                <div>
+                  <div style={{ fontSize: 14.5, fontWeight: 600, color: INK }}>{t}</div>
+                  <div style={{ fontSize: 14, lineHeight: 1.6, color: MUTED, marginTop: 2 }}>{d}</div>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <p style={{ ...small, color: MUTED, maxWidth: 660, marginTop: 18 }}>
+            Every answer lists the ZFIN records, the Daniocell match and the genes it relied on, so each call can be checked.
           </p>
         </section>
 
