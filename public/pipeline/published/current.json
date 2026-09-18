@@ -1,13 +1,13 @@
 {
   "format": 4,
-  "version": "7543c2ae2e582d1a8cc9",
-  "publishedAt": "2026-09-18T04:19:45.861Z",
-  "savedAt": 1789511284895,
+  "version": "227537c0c048d479811d",
+  "publishedAt": "2026-09-18T06:22:32.368Z",
+  "savedAt": 1789712502656,
   "bounds": {
-    "x": -4211.1171875,
-    "y": -240.6165313720703,
-    "width": 6086.1494140625,
-    "height": 4976.263107299805
+    "x": -3188.099365234375,
+    "y": -241.87200927734375,
+    "width": 4755.779296875,
+    "height": 3733.220245361328
   },
   "nodes": [
     "AQ",
@@ -62,5 +62,5 @@
     "FDc",
     "FQc"
   ],
-  "engine": "/pipeline/published/7543c2ae2e582d1a8cc9/engine.html"
+  "engine": "/pipeline/published/227537c0c048d479811d/engine.html"
 }
