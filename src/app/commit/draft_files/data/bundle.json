@@ -109,15 +109,6 @@
    "location": null
   },
   {
-   "name": "zfin_expression_baseline.predictions.csv",
-   "audience": "internal",
-   "what": "Our no-model lookup baseline's answers (top markers to ZFIN 48 hpf expression).",
-   "bytes": 7340,
-   "sha256": "1a240e8ea0ff848be744b6fd2277bfdc9e3375a56c22581ba2f182b191051502",
-   "href": "/commit/draft_files/files/zfin_expression_baseline.predictions.csv",
-   "location": null
-  },
-  {
    "name": "gold_zfa.v0.csv",
    "audience": "after",
    "what": "The answer key: 112 rows, primary ZFA id, accepted alternatives, both axes, status. Not on this page.",

@@ -2,8 +2,8 @@
 """Publish the Commit challenge DRAFT delivery to /commit/draft_files (Basic-Auth gated).
 
 Reads only answer-free material from the benchmark row — delivery_v0/ (what Commit receives before
-the run), test_results/ (counts-only test output and key summary) and the ZFIN lookup baseline's
-predictions. It never reads _HELDOUT/: a path guard refuses it, and the answer key is not
+the run) and test_results/ (counts-only test output and key summary). It never reads _HELDOUT/:
+a path guard refuses it, and the answer key is not
 published here in any form.
 
   public/commit/draft_files/files/*          downloadable copies (gated by src/middleware.ts)
@@ -34,7 +34,6 @@ FILES = [
     ("delivery_v0/submission_format.v0.md", "before", "What a submission looks like: rubric.json plus one JSON line per cluster."),
     ("delivery_v0/validate_submission.py", "before", "Standard-library validator for a submission."),
     ("delivery_v0/MANIFEST.json", "before", "sha256 of every delivered file."),
-    ("baselines/zfin_expression_baseline.predictions.csv", "internal", "Our no-model lookup baseline's answers (top markers to ZFIN 48 hpf expression)."),
 ]
 EXTERNAL = [
     ("_HELDOUT/commit_delivery_v0/gold_zfa.v0.csv", "after",
