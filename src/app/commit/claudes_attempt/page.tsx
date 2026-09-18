@@ -62,7 +62,7 @@ export default function ClaudesAttemptPage() {
           Claude&apos;s attempt
         </h1>
         <p style={{ fontSize: 15.5, lineHeight: 1.6, color: "var(--cm-lede)", margin: "12px 0 0" }}>
-          A fresh Claude agent with no knowledge of how the key was built, working alone for {S.contestant.hours} hours.
+          A fresh Claude agent with no knowledge of how the key was built, given only what Commit would get.
         </p>
 
         {/* ── what it had ─────────────────────────────────────────── */}
