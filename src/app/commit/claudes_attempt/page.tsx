@@ -15,23 +15,30 @@ export const metadata = {
   description: "A fresh Claude agent attempted the Commit Challenge blind: 0.549 graded, 40 of 112 exact.",
 };
 
-// What the agent had, grouped so the box reads at a glance: name in mono, one short spec under it.
-const GROUPS: { title: string; items: [string, string][] }[] = [
-  { title: "Data · the delivery", items: [
-    ["zscape_gold_48hpf.v0.h5ad", "209,639 cells × 32,031 genes, 48 hpf; 112 unnamed clusters"],
-    ["gold_features.v1.csv", "top, bottom and family 50 markers per cluster"],
-    ["zfa_menu.v1", "3,107 allowed ZFA answers"],
+// What the agent had, grouped so the box reads at a glance: name in mono, one short spec, and a tag
+// saying where it came from. The delivery files were checked byte-identical to /commit/draft_files.
+type Item = { name: string; spec: string; tag?: "draft" | "pinned" | "extra" };
+const GROUPS: { title: string; items: Item[] }[] = [
+  { title: "Data · the draft delivery", items: [
+    { name: "zscape_gold_48hpf.v0.h5ad", spec: "209,639 cells × 32,031 genes, 48 hpf; 112 unnamed clusters", tag: "draft" },
+    { name: "gold_features.v1.csv", spec: "top, bottom and family 50 markers per cluster", tag: "draft" },
+    { name: "zfa_menu.v1", spec: "3,107 allowed ZFA answers", tag: "draft" },
   ] },
   { title: "References", items: [
-    ["ZFA", "release 2026-06-02"],
-    ["ZFIN wild-type expression", "2026-06-21 dump, 24–72 hpf records"],
-    ["Daniocell", "Sur et al. 2023, 36–60 hpf cells"],
+    { name: "ZFA", spec: "release 2026-06-02", tag: "pinned" },
+    { name: "ZFIN wild-type expression", spec: "2026-06-21 dump, 24–72 hpf records", tag: "pinned" },
+    { name: "Daniocell", spec: "Sur et al. 2023, 36–60 hpf cells; fetched it itself", tag: "extra" },
   ] },
   { title: "Reasoning", items: [
-    ["Claude Opus 5", "its own marker knowledge"],
-    ["6.3 hours, alone", "32 CPU cores, no GPU"],
+    { name: "Claude Opus 5", spec: "its own marker knowledge" },
+    { name: "6.3 hours, alone", spec: "32 CPU cores, no GPU" },
   ] },
 ];
+const TAG = {
+  draft: { label: "same file as /draft_files", color: SC_FULL },
+  pinned: { label: "pinned in sources.v0.json", color: SC_FULL },
+  extra: { label: "not in the delivery", color: SC_HALF },
+};
 const OFF = ["the answer key", "ZSCAPE's labels, paper or GEO data", "anything else on our server",
              "other model calls (no API credit)", "its score or a second try"];
 
@@ -62,7 +69,9 @@ export default function ClaudesAttemptPage() {
           Claude&apos;s attempt
         </h1>
         <p style={{ fontSize: 15.5, lineHeight: 1.6, color: "var(--cm-lede)", margin: "12px 0 0" }}>
-          A fresh Claude agent with no knowledge of how the key was built, given only what Commit would get.
+          A fresh Claude agent with no knowledge of how the key was built. It worked from byte-identical copies of the{" "}
+          <Link href="/commit/draft_files" style={{ color: ACCENT }}>/draft_files</Link> delivery and the pinned
+          references, plus one public atlas it fetched itself, which Commit has not been given.
         </p>
 
         {/* ── what it had ─────────────────────────────────────────── */}
@@ -71,10 +80,17 @@ export default function ClaudesAttemptPage() {
             <div key={g.title} style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 12, padding: "14px 16px",
                                         borderTop: `3px solid ${SC_FULL}` }}>
               <div style={{ ...micro, color: SC_FULL, marginBottom: 10 }}>{g.title}</div>
-              {g.items.map(([k, v]) => (
-                <div key={k} style={{ marginBottom: 10 }}>
-                  <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: FILE, overflowWrap: "anywhere" }}>{k}</div>
-                  <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.45, marginTop: 2 }}>{v}</div>
+              {g.items.map((it) => (
+                <div key={it.name} style={{ marginBottom: 11 }}>
+                  <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: FILE, overflowWrap: "anywhere" }}>{it.name}</div>
+                  <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.45, marginTop: 2 }}>{it.spec}</div>
+                  {it.tag && (
+                    <span style={{ display: "inline-block", marginTop: 4, fontFamily: MONO, fontSize: 9.5, fontWeight: 700,
+                                   letterSpacing: 0.4, textTransform: "uppercase", color: TAG[it.tag].color,
+                                   border: `1px solid ${TAG[it.tag].color}`, borderRadius: 4, padding: "1px 5px" }}>
+                      {TAG[it.tag].label}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
