@@ -1,0 +1,79 @@
+{
+ "contestant": {
+  "model": "Claude Opus 5 (fresh agent, no prior context)",
+  "hours": 6.3,
+  "tool_calls": 99,
+  "sources": [
+   "delivery files",
+   "ZFIN wild-type expression",
+   "ZFA",
+   "Daniocell (Sur et al. 2023)"
+  ],
+  "self_predicted_graded": 0.45
+ },
+ "all": {
+  "n": 112,
+  "full": 48,
+  "half": 27,
+  "zero": 37,
+  "graded": 0.5491,
+  "exact": 40,
+  "exact_rate": 0.3571
+ },
+ "clean": {
+  "n": 81,
+  "full": 29,
+  "half": 25,
+  "zero": 27,
+  "graded": 0.5123,
+  "exact": 27,
+  "exact_rate": 0.3333
+ },
+ "ambiguous": {
+  "n": 31,
+  "full": 19,
+  "half": 2,
+  "zero": 10,
+  "graded": 0.6452,
+  "exact": 13,
+  "exact_rate": 0.4194
+ },
+ "baselines": {
+  "zfin_lookup": {
+   "graded": 0.2098,
+   "full": 17,
+   "half": 13,
+   "exact": 16
+  },
+  "public_label_shortcut": {
+   "graded": 0.4777,
+   "full": 38,
+   "half": 31,
+   "exact": 38
+  }
+ },
+ "by_confidence_tier": {
+  "high": {
+   "n": 65,
+   "full": 35
+  },
+  "low": {
+   "n": 4,
+   "full": 1
+  },
+  "medium": {
+   "n": 43,
+   "full": 12
+  }
+ },
+ "structure_answers_on_cell_keyed": 40,
+ "cell_keyed": 81,
+ "hedge_halves": 18,
+ "graded_if_hedge_named_cell": 0.6295,
+ "misses_by_relation": {
+  "unrelated": 53,
+  "broader than key": 5,
+  "narrower than key": 4,
+  "sibling": 2
+ }
+}

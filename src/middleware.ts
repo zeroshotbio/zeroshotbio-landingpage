@@ -26,6 +26,7 @@ export const config = {
     // the Commit draft delivery and its downloads (public/commit/draft_files/files/); /commit itself stays public
     "/commit/draft_files",
     "/commit/draft_files/:path*",
+    "/commit/claudes_attempt",
   ],
 };
 

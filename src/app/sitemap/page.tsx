@@ -53,6 +53,7 @@ const SECTIONS: Section[] = [
       { href: "/meta_reasoner", label: "Meta-Reasoner replay & judgement", note: "access-gated" },
       { href: "/commit", label: "The Commit Challenge · ZSCAPE Commit Gold", note: "112 frozen clusters, one ZFA id each; docs at /commit/docs" },
       { href: "/commit/draft_files", label: "Commit Challenge · draft delivery + tests", note: "access-gated" },
+      { href: "/commit/claudes_attempt", label: "Commit Challenge · Claude's blind attempt", note: "access-gated" },
       { href: "/minifin_annotation_wizard", label: "MiniFin annotation wizard" },
       { href: "/cell_labelling_hierarchy", label: "Cell-labelling hierarchy audit", note: "per-category drill-downs" },
       { href: "/cell_type_tinder", label: "Cell Type Tinder" },
