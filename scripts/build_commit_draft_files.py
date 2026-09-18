@@ -18,7 +18,7 @@ ROW = "/data/scratch/zlabel/datasets/zscape_commit_gold"
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 FILES_OUT = os.path.join(ROOT, "public", "commit", "draft_files", "files")
 DATA_OUT = os.path.join(ROOT, "src", "app", "commit", "draft_files", "data")
-MAX_PUBLISH_BYTES = 5 << 20  # the 460 MB h5ad is listed, not copied
+MAX_PUBLISH_BYTES = 5 << 20  # bigger files (the 461 MB h5ad) are linked from S3, not copied
 
 # (path under ROW, audience, one line) — audience: "before" = sent before the run, "internal" = ours
 FILES = [
@@ -62,9 +62,11 @@ def main():
         published = size <= MAX_PUBLISH_BYTES
         if published:
             shutil.copyfile(src, os.path.join(FILES_OUT, name))
+        # too big for the repo: served from s3://zsb-deliverables/commit/challenge-v0/ through the
+        # signed-link route src/app/commit/draft_files/download/[file]/route.ts
         files.append({"name": name, "audience": audience, "what": what, "bytes": size, "sha256": sha(src),
-                      "href": f"/commit/draft_files/files/{name}" if published else None,
-                      "location": None if published else os.path.join(ROW, rel)})
+                      "href": f"/commit/draft_files/files/{name}" if published else f"/commit/draft_files/download/{name}",
+                      "location": None if published else f"s3://zsb-deliverables/commit/challenge-v0/{name}"})
     for rel, audience, what in EXTERNAL:  # listed by name only; never opened
         files.append({"name": os.path.basename(rel), "audience": audience, "what": what, "bytes": None,
                       "sha256": None, "href": None, "location": os.path.join(ROW, rel)})

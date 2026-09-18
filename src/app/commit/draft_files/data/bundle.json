@@ -15,8 +15,8 @@
    "what": "The matrix. Fixed copy: excluded-cluster names removed, var['marker_name'] added, opens on anndata 0.10+.",
    "bytes": 483738172,
    "sha256": "5e6739508d4bdec7684435f34a4b645899941d3d3f8bbc195d62d9eb607fd58e",
-   "href": null,
-   "location": "/data/scratch/zlabel/datasets/zscape_commit_gold/delivery_v0/zscape_gold_48hpf.v0.h5ad"
+   "href": "/commit/draft_files/download/zscape_gold_48hpf.v0.h5ad",
+   "location": "s3://zsb-deliverables/commit/challenge-v0/zscape_gold_48hpf.v0.h5ad"
   },
   {
    "name": "gold_features.v1.csv",

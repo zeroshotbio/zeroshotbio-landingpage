@@ -99,7 +99,7 @@ export default function DraftFilesPage() {
                       <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: FILE }}>{name}</span>
                     )}
                     <span style={{ fontFamily: MONO, fontSize: 10.5, color: FAINT }}>
-                      {size(f?.bytes ?? null)}{f && !f.href ? " · on the server" : ""}
+                      {size(f?.bytes ?? null)}{f?.location ? " · from S3" : ""}
                     </span>
                   </div>
                   <div style={{ fontSize: 14, color: INK, marginTop: 4, lineHeight: 1.5 }}>{what}</div>
