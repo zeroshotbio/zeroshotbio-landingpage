@@ -39,8 +39,8 @@ const LACKED: [string, string][] = [
   ["ZSCAPE's published annotations", "no GEO GSE202639 cell metadata, no Saunders et al. 2023 paper or supplements, no ZSCAPE web app"],
   ["Anything else on our server", "none of our other atlases, labeller code or earlier ZSCAPE work"],
   ["Second opinions from other model calls", "its Anthropic API calls failed because our API account had no credit"],
-  ["A GPU", "32 CPU cores and about 90 GB of RAM"],
-  ["Its score", "no feedback and no second attempt"],
+  ["A GPU", "it ran on 32 CPU cores and about 90 GB of RAM"],
+  ["Any feedback", "it never saw its score and got no second attempt"],
 ];
 
 type Split = { full: number; half: number; zero: number; graded: number; exact: number };
