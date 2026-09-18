@@ -2259,8 +2259,11 @@ feature("edit positions", function(){
   const box=el("polygon",{class:"group-marquee",display:"none","pointer-events":"none"});
   if(btnGroup) world.appendChild(box);
   function markChosen(){
-    NODES.forEach(n=>{ const g=nodeEls[n.id];
-      if(g) g.classList.toggle("chosen", CHOSEN.has(n.id)); });
+    NODES.forEach(n=>{
+      [nodeEls[n.id],labelEls[n.id]].forEach(g=>{
+        if(g) g.classList.toggle("chosen",CHOSEN.has(n.id));
+      });
+    });
   }
   function clearChosen(){ CHOSEN.clear(); markChosen(); sayChosen(); }
   function toggleChosen(id){
@@ -2270,7 +2273,7 @@ feature("edit positions", function(){
   function sayChosen(){
     if(!hint || !multi) return;
     if(boxing){
-      hint.textContent="Drag a box along the grid to select node centres · Shift adds to the selection · Esc cancels";
+      hint.textContent="Drag a box over objects to select them · Shift adds to the selection · Esc cancels";
       return;
     }
     hint.textContent = CHOSEN.size
@@ -2297,11 +2300,25 @@ feature("edit positions", function(){
     else if(multi) clearChosen();
   };
 
-  /* The marquee is a rectangle in the SAME ground plane as the grid. Invert
-     the camera first, then P; a screen-aligned rectangle selects across rows
-     and cannot follow the silhouettes' diagonal edges. Node footprint centres
-     decide membership, so tall roofs and floating labels do not grab neighbours.
-     Selection itself never changes positions or marks the shared record dirty. */
+  /* The marquee follows the grid, but membership follows the visible shapes.
+     A roof can be far above its ground-plane centre; testing that centre made
+     a box drawn over the artwork select nothing. Use the same projected
+     silhouettes as the editor's drag handles, including their current size
+     and position. Selection itself never changes positions or marks dirty. */
+  function overlaps(a,b){
+    // Separating axes of both convex polygons: handles containment and edge
+    // crossings without treating empty corners of an SVG bounding box as ink.
+    for(const polygon of [a,b]){
+      for(let i=0;i<polygon.length;i++){
+        const p=polygon[i], q=polygon[(i+1)%polygon.length];
+        const nx=p[1]-q[1], ny=q[0]-p[0];
+        if(nx===0 && ny===0) continue;
+        const aa=a.map(v=>v[0]*nx+v[1]*ny), bb=b.map(v=>v[0]*nx+v[1]*ny);
+        if(Math.max(...aa)<Math.min(...bb)-1e-7 || Math.max(...bb)<Math.min(...aa)-1e-7) return false;
+      }
+    }
+    return true;
+  }
   function armBox(on){
     boxing=on;
     svg.classList.toggle("group-select",on);
@@ -2329,12 +2346,13 @@ feature("edit positions", function(){
     if(m.travel<=4) return;
     const x0=Math.min(m.x,x), x1=Math.max(m.x,x),
           y0=Math.min(m.y,y), y1=Math.max(m.y,y);
-    box.setAttribute("points",pts([P(x0,y0,0),P(x1,y0,0),P(x1,y1,0),P(x0,y1,0)]));
+    const corners=[P(x0,y0,0),P(x1,y0,0),P(x1,y1,0),P(x0,y1,0)];
+    box.setAttribute("points",pts(corners));
     box.removeAttribute("display");
     CHOSEN.clear();
     if(m.add) m.before.forEach(id=>CHOSEN.add(id));
     NODES.forEach(n=>{
-      if(!n.gone && n.x>=x0 && n.x<=x1 && n.y>=y0 && n.y<=y1) CHOSEN.add(n.id);
+      if(!n.gone && overlaps(corners,nodeSil(n))) CHOSEN.add(n.id);
     });
     markChosen();
     if(hint) hint.textContent=`${CHOSEN.size} selected — release, then drag a selected node to move the group`;
@@ -2432,6 +2450,9 @@ feature("edit positions", function(){
   let grab=null;
   function begin(ev,n,mode){
     if(!editing) return;
+    // Names often sit over the artwork. Once a node belongs to a group, its
+    // name is another grip for that group, not an independent label edit.
+    if(multi && mode==="label" && CHOSEN.has(n.id)) mode="node";
     ev.stopPropagation(); ev.preventDefault();
     const el0=ev.currentTarget;
     if(el0.setPointerCapture) el0.setPointerCapture(ev.pointerId);

@@ -48,12 +48,12 @@ await p.locator('#btnMulti').click(); await p.waitForTimeout(400);
 
 /* gather three */
 for(const id of IDS){ const q=await at2(id); await p.mouse.click(q.x,q.y); await p.waitForTimeout(180); }
-let n=await p.evaluate(()=>document.querySelectorAll('#svg g.chosen').length);
+let n=await p.evaluate(()=>NODES.filter(n=>nodeEls[n.id].classList.contains('chosen')).length);
 if(n!==3) fail(`clicked three objects, ${n} are marked as chosen`);
 
 /* a second click removes one, and a third puts it back */
 let q=await at2('c3'); await p.mouse.click(q.x,q.y); await p.waitForTimeout(200);
-n=await p.evaluate(()=>document.querySelectorAll('#svg g.chosen').length);
+n=await p.evaluate(()=>NODES.filter(n=>nodeEls[n.id].classList.contains('chosen')).length);
 if(n!==2) fail(`clicking a chosen object again left ${n} chosen, want 2`);
 await p.mouse.click(q.x,q.y); await p.waitForTimeout(200);
 
@@ -77,7 +77,7 @@ if(Math.abs(other[0]-other0[0])>0.001) fail('an object outside the set moved wit
 
 /* Escape empties the set */
 await p.keyboard.press('Escape'); await p.waitForTimeout(300);
-n=await p.evaluate(()=>document.querySelectorAll('#svg g.chosen').length);
+n=await p.evaluate(()=>NODES.filter(n=>nodeEls[n.id].classList.contains('chosen')).length);
 if(n!==0) fail(`Escape left ${n} chosen`);
 
 /* all three moves are saved, one offset each */

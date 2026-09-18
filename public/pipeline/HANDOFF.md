@@ -442,12 +442,12 @@ own `dx`/`dy` like any other drag.
 ### Group select
 
 In `/pipeline_edit`, **Edit positions → Group select** arms a one-shot drag
-box. Its four sides follow the isometric ground grid. Nodes whose footprint
-centres fall inside it join the selection; deleted nodes, row pads and floating
+box. Its four sides follow the isometric ground grid. Nodes whose visible
+drag silhouettes overlap it join the selection; deleted nodes, row pads and floating
 annotations do not. The selected nodes' normal labels and plinths follow them
 when moved, through the existing Select many path.
 
-Release the box, then drag any selected node to move the whole group. Click
+Release the box, then drag any selected node or its name to move the whole group. Click
 nodes to adjust membership, or use Group select again for another box. Hold
 Shift when starting another box to add to the current selection. Escape while
 drawing, pointer cancellation or losing window focus restores the previous
@@ -463,6 +463,13 @@ local UI state and does not mark the layout dirty or save anything.
 `check-group-select.mjs <editor URL>` checks actual mouse/touch gestures, grid
 alignment, transformed/reverse selection, cancellation, membership, exact group
 spacing and saved offsets with all shared-state requests stubbed.
+
+`check-group-visible.mjs <editor URL> [saved-record.json]` exercises the saved
+layout's tall roofs and dragging a selected group by artwork or a name. Ground
+centres are not a substitute for the visible silhouette: a box over the top
+of FQ previously selected nothing even though the box was visibly inside it.
+The overlap test uses both polygons' separating axes, not their axis-aligned
+bounding boxes, and includes current positions after a group has moved.
 
 ## The grid is the paper, and the ruler is gone
 
