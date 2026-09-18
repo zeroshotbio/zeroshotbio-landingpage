@@ -1,0 +1,9 @@
+/* Keep the original editor artwork and palette; expose only its map surface. */
+html,body,.app{width:100%;height:100%;height:100dvh;overflow:hidden}
+.app>.body{flex:1;min-height:0;width:100%;height:100%}
+.app>.body>.stage{width:100%;height:100%;flex:1;min-width:0}
+.app>:not(.body),.body>:not(.stage),.stage>:not(svg):not(#dotcanvas){display:none!important}
+#svg{cursor:grab}
+#svg.drag{cursor:grabbing}
+#svg [role=button]{cursor:inherit!important}
+#svg:focus{outline:none}

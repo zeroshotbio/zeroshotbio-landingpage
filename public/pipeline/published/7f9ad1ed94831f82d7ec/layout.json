@@ -1,0 +1,498 @@
+{
+  "format": 4,
+  "state": {
+    "offsets": {
+      "A1": {
+        "ldx": 0.1,
+        "ldy": -0.1
+      },
+      "A2": {
+        "ldy": -0.15
+      },
+      "CS": {
+        "dx": -0.2,
+        "dy": 0.2,
+        "ldx": 1.45,
+        "ldy": -1
+      },
+      "LIBR": {
+        "dx": -0.9,
+        "dy": 0.25,
+        "ldx": 1.35,
+        "ldy": -0.2
+      },
+      "ECHO": {
+        "dx": -0.3,
+        "dy": -0.1,
+        "ldx": 1,
+        "ldy": -0.65
+      },
+      "A5": {
+        "dx": -0.2
+      },
+      "A6": {
+        "dx": -0.1
+      },
+      "A7": {
+        "dx": 0.2
+      },
+      "FX": {
+        "dx": -0.5,
+        "ldx": 0.05,
+        "ldy": -0.55
+      },
+      "B0": {
+        "dx": -0.6,
+        "dy": -0.05
+      },
+      "c1": {
+        "dx": -6.15,
+        "dy": -21.25,
+        "ldx": 3.2,
+        "ldy": 5.6
+      },
+      "c3": {
+        "dx": -5.55,
+        "dy": -21.3,
+        "ldx": 3.15,
+        "ldy": 5.8
+      },
+      "c4": {
+        "dx": -4.95,
+        "dy": -21.3,
+        "ldx": 3.15,
+        "ldy": 6.1
+      },
+      "c5": {
+        "dx": -3.55,
+        "dy": -21.25,
+        "ldx": 3.25,
+        "ldy": 5.6
+      },
+      "RIVER": {
+        "dx": -5.1,
+        "dy": -42.15
+      },
+      "Q": {
+        "del": true
+      },
+      "FD": {
+        "dx": 0.11,
+        "dy": -21.25
+      },
+      "s1": {
+        "dx": -1.25,
+        "dy": 4.75
+      },
+      "s2": {
+        "dx": -0.7,
+        "dy": 4.8
+      },
+      "H5": {
+        "dx": 6.15,
+        "dy": -21.15,
+        "ldx": -1.25,
+        "ldy": 4.45
+      },
+      "H5b": {
+        "dx": -1.6,
+        "dy": 13.5
+      },
+      "p1": {
+        "dx": 0.5,
+        "dy": 5.25
+      },
+      "p2": {
+        "dx": 1.25,
+        "dy": 4.8
+      },
+      "p3": {
+        "dx": 1.2,
+        "dy": 4.05,
+        "ldx": 1.25,
+        "ldy": 5.65
+      },
+      "p4": {
+        "dx": 1.5,
+        "dy": 4.45
+      },
+      "KAS": {
+        "dx": 6.05,
+        "dy": -20.85
+      },
+      "ST": {
+        "dx": 0.7,
+        "dy": 5.15
+      },
+      "m1": {
+        "dx": 0.9,
+        "dy": 5.25
+      },
+      "JU": {
+        "dx": -1.35,
+        "dy": 3.45
+      },
+      "m3": {
+        "dx": 1.45,
+        "dy": 4.8
+      },
+      "LB": {
+        "dx": 6.95,
+        "dy": -20.4
+      },
+      "PR": {
+        "dx": 1.4,
+        "dy": 4.1
+      },
+      "c2": {
+        "del": true
+      },
+      "hx": {
+        "del": true
+      },
+      "FXc": {
+        "dx": -1.6,
+        "dy": -0.65,
+        "ldx": -2.7,
+        "ldy": 3.05
+      },
+      "THW": {
+        "dx": -37.4,
+        "dy": -4.2,
+        "ldx": -2.35,
+        "ldy": 2.01,
+        "dw": -0.8,
+        "dd": -0.58,
+        "dh": -0.21
+      },
+      "R1p": {
+        "dx": -40.1,
+        "dy": -4.2,
+        "ldx": -0.51,
+        "ldy": -1.77,
+        "dw": 0.21,
+        "dd": 0.55,
+        "dh": -0.24
+      },
+      "B1": {
+        "dx": -39.76,
+        "dy": -4.2,
+        "ldx": -0.43,
+        "ldy": -2.02,
+        "dw": 0.12,
+        "dd": 0.02,
+        "dh": -0.16
+      },
+      "R2p": {
+        "dx": -39.74,
+        "dy": -4.2,
+        "ldx": -0.72,
+        "ldy": -1.43,
+        "dw": 0.09,
+        "dd": 0.26,
+        "dh": -0.21
+      },
+      "B2": {
+        "dx": -38.27,
+        "dy": -4.2,
+        "ldx": -0.31,
+        "ldy": -1.44,
+        "dw": -0.76,
+        "dd": -0.24,
+        "dh": -0.16
+      },
+      "R3p": {
+        "dx": -36.98,
+        "dy": -4.2,
+        "ldx": -0.54,
+        "ldy": -2.52,
+        "dw": -0.46,
+        "dd": -0.37,
+        "dh": -0.13
+      },
+      "SB": {
+        "dx": -35.14,
+        "dy": -4.2,
+        "ldx": 0.31,
+        "ldy": -1.42,
+        "dw": -0.47,
+        "dd": -0.47,
+        "dh": -0.3
+      },
+      "CAP": {
+        "dx": -35.43,
+        "dy": -4.2,
+        "ldx": 0.38,
+        "ldy": -1.28,
+        "dw": -0.14,
+        "dd": -0.06,
+        "dh": -0.2
+      },
+      "AMP": {
+        "dx": -34.81,
+        "dy": -4.2,
+        "ldx": -0.41,
+        "ldy": -1.22,
+        "dw": -0.16,
+        "dd": -0.38,
+        "dh": -0.18
+      },
+      "SZD": {
+        "dx": -34.96,
+        "dy": -4.2,
+        "ldx": -0.17,
+        "ldy": -0.78,
+        "dw": 1.01,
+        "dd": 1.81,
+        "dh": -0.23
+      },
+      "FRG": {
+        "dx": -34.05,
+        "dy": -4.2,
+        "ldx": -0.3,
+        "ldy": -1.28,
+        "dw": -0.33,
+        "dd": -0.33,
+        "dh": -0.38
+      },
+      "R4p": {
+        "dx": -33.81,
+        "dy": -4.2,
+        "ldx": -0.22,
+        "ldy": -1.22,
+        "dw": -0.33,
+        "dd": -0.33,
+        "dh": -0.19
+      },
+      "LIB": {
+        "dx": -34.44,
+        "dy": -4.2,
+        "ldx": -1,
+        "ldy": 3.06,
+        "dw": 1.03,
+        "dd": 1.83,
+        "dh": -0.2
+      },
+      "RCY": {
+        "dx": -34.17,
+        "dy": -4.2,
+        "dw": -0.31,
+        "dd": 0.07,
+        "dh": -0.3
+      },
+      "FQ": {
+        "dx": -48.87,
+        "dy": -23.7,
+        "ldx": 1.05,
+        "ldy": 5.05,
+        "dw": -0.65,
+        "dd": 7.9
+      },
+      "E2": {
+        "dx": -51.08,
+        "dy": -24.15,
+        "ldx": 2.2,
+        "ldy": 0.25
+      },
+      "E4": {
+        "dx": -40.21,
+        "dy": -21.04,
+        "ldx": -3.45,
+        "ldy": 0.85,
+        "dw": 6.75,
+        "dd": 6.1
+      },
+      "E5": {
+        "dx": -33.21,
+        "dy": -20.93,
+        "ldx": -3.9,
+        "ldy": 0.85,
+        "dw": 6.45,
+        "dd": 6.1
+      },
+      "E3": {
+        "dx": -46.99,
+        "dy": -21.67,
+        "ldx": -6,
+        "ldy": 9.55,
+        "dw": 0.4,
+        "dd": 1.45
+      },
+      "G1": {
+        "dx": -46.29,
+        "dy": -24.69,
+        "ldx": -2.2,
+        "ldy": -1.7,
+        "dw": -1.75,
+        "dd": -2.9
+      },
+      "G2": {
+        "dx": -51.51,
+        "dy": -20.76,
+        "ldx": -2.15,
+        "ldy": -1.75,
+        "dw": -1.45,
+        "dd": -2.95
+      },
+      "G2b": {
+        "dx": -37.38,
+        "dy": -23.32,
+        "ldx": 3.2,
+        "ldy": -4.3,
+        "dw": -0.55,
+        "dd": -1.15
+      },
+      "W1": {
+        "dx": -55.97,
+        "dy": -27.1,
+        "ldx": 7.55,
+        "ldy": 5
+      },
+      "DD": {
+        "dx": -28.64,
+        "dy": -20.74,
+        "ldx": -2.65,
+        "ldy": 3.25,
+        "dw": -3.1,
+        "dd": 2.1
+      },
+      "UD": {
+        "dx": -30.32,
+        "dy": -20.37,
+        "ldx": 1.8,
+        "ldy": 1.5,
+        "dw": -3.05,
+        "dd": -5.75
+      },
+      "G3": {
+        "del": true
+      },
+      "CB": {
+        "dx": -25.8,
+        "dy": -20.78,
+        "ldx": 0.6,
+        "ldy": 0.1,
+        "dw": 1.4,
+        "dd": 1.35
+      },
+      "G4": {
+        "dx": -43.76,
+        "dy": -17.95,
+        "ldx": 2.7,
+        "ldy": -2.65,
+        "dw": -1.25,
+        "dd": -0.9
+      },
+      "FQc": {
+        "dx": -12.24,
+        "dy": -2.24,
+        "dw": -2.5,
+        "dd": -10.3,
+        "dh": -5.95
+      },
+      "band:1": {
+        "dx": -8.05,
+        "dy": -4.9,
+        "sw": -13.85,
+        "sh": -2.8
+      },
+      "band:2": {
+        "dx": -21.15,
+        "dy": -13.15,
+        "sw": -0.45,
+        "sh": -5.75
+      },
+      "UDc": {
+        "dx": -6.9,
+        "dy": -24.2
+      },
+      "FDc": {
+        "dx": 5.9,
+        "dy": -20.85
+      },
+      "band:3": {
+        "dx": -6.45,
+        "dy": -24,
+        "sw": 5.95,
+        "sh": 5.05
+      },
+      "band:4": {
+        "dx": 4.95,
+        "dy": -25.4,
+        "sw": 3.6,
+        "sh": 4.45
+      }
+    },
+    "text": {
+      "nodes": {
+        "LIBR": {
+          "name": "Drug Library",
+          "sub": "ApexBio FDA Approved Drug Library – 1496 compounds",
+          "does": "A screening library of 1496 FDA approved compounds (ApexBio FDA Approved Drug Library), held at the SPARC BioCentre and shared across everyone who books time there. The compounds of interest are pulled; the rest of the wall is the part of the experiment that was never run. In total, SPARC BioCentre has a total of 147,025 compounds in their collections."
+        },
+        "ECHO": {
+          "name": "Echo 650 Dispenser",
+          "sub": "SPARC BioCentre · acoustic liquid dispenser, from the cherry-picking layout",
+          "does": "Compounds are fired into an empty multi well plate without anything touching it. The destination plate is held inverted above the source and droplets are launched upward into it, hundreds a second, held in place by surface tension until the plate is righted. Tipless and non-contact, so there is no carryover between wells and no tip waste. Because every well is addressed individually from a layout file, the cherry-picking sheet is not a pipetting plan — it is the treatment axis of the finished dataset, written down before a single fish exists."
+        },
+        "AQ": {
+          "stat": "Adult Zebrafish (Danio rerio)",
+          "does": "Every cell in every dataset downstream was derived from the progeny of zebrafish in these tanks."
+        },
+        "A1": {
+          "name": "Mating Pair",
+          "does": "A male and a female zebrafish go into a breeding tank the night before with a divider between them. Spawning is triggered by pulling the divider in the morning."
+        },
+        "A2": {
+          "name": "The Clutch",
+          "does": "Fertilized eggs are collected within the first hour. Everything downstream is one narrow developmental cohort. On average, a single zebrafish mating pair yields between 100 and 200 eggs per spawning clutch"
+        },
+        "A3": {
+          "name": "Cull Unfertilised Eggs",
+          "does": "Dead and unfertilised eggs are removed under a microscope. The first cull on the whole map happens here, by hand, with a pipette."
+        },
+        "A4": {
+          "name": "Array into the Drug Plate",
+          "sub": "Multi well plate · 6 embryos in each well, at 24 hours post fertilization",
+          "does": "The experiment itself. Embryos are checked for stage and distributed six to a well that already contain a compound. The fish arrive into the dose — there is no separate dosing step afterwards, and 24 hours post fertilization is the moment of arrival rather than the moment of addition."
+        },
+        "A6": {
+          "name": "Enzymatic Dissociation",
+          "sub": "enzymatic digestion — whole cells",
+          "does": "Embryos are euthanised in the well and the tissue is digested enzymatically into a suspension, then strained. There is no pooling event, each well remains as its individual sample. Intact cells propagates through the entire rest of the map."
+        },
+        "A7": {
+          "name": "Fix the Suspension",
+          "sub": "the moment the cells stop",
+          "does": "The last instant anything on this map is alive. Fixative goes into the suspension and cell processes stop dead, so whatever each cell happened to be expressing when the drop landed is what the atlas will report it was expressing forever after. In combinatorial chemistries it does a second job at the same time: it turns every cell into its own sealed reaction vessel, which is the whole reason split-pool barcoding can work with no microfluidics at all."
+        },
+        "CS": {
+          "does": "Our scientists decide what the experiment is about. Compounds are chosen out of a drug library. Everything in the finished atlas can possibly say about drug effect is bounded here, before any of it exists.",
+          "sub": "Picked from drug libraries"
+        },
+        "A5": {
+          "name": "Incubate to 48 hours post fertilization",
+          "does": "Twenty-four hours in which the drug either does something or does not. This window is the entire causal content of the dataset. Drawn here as one well of a compound: six embryos swimming in dosed medium, compound drifting around them on its own. Compounds enter the embryo by passive diffusion through the skin."
+        },
+        "FX": {
+          "does": "Fixed material, plated and stored away. Nothing in this freezer is alive and nothing in it changes, which is precisely what makes it useful: samples collected weeks apart can wait here and then be barcoded together in a single run, so the day a sample was collected stops being a batch effect. Everything upstream of this point is a living thing changing while you watch it; everything downstream is a measurement of something that has already stopped.",
+          "sub": "Stored at -80 celsius"
+        }
+      }
+    },
+    "at": 1789712765545
+  },
+  "sourceHashes": {
+    "pipeline/index.html": "2a816a148e6add6a949effa62d413f6febb75474f866dc987ecb4b5aa9b922e1",
+    "pipeline/pipeline-iso.js": "dd2f8f89fe0681141e77c1e0f4807201fa07eb16c75662c24498caf52e2a1da7",
+    "pipeline/pipeline-shapes.js": "1f5bdc8b3c39dba3e8212f638f2f8f6e6eeb57da0b58899ff9a5a492337653b4",
+    "culls/culls-pop.js": "025862b0b6c16e28275979fd667d7d3c818a00ba840e7a11717e2a1034b0ff65",
+    "culls/culls-draw.js": "e4061716b07393aeef3bfe0fc62bf2a3266c39c9880d2144bf498ba52bfb756a",
+    "pipeline/pipeline-fqshapes.js": "91e19c250ce2ef062694c83a8f9b2b86e53998fb5fbc908ddd581ab31cf30bad",
+    "pipeline/pipeline-data.js": "26f04203bb0d69e28647f6cacf5e2260a6076165315a1f01b09e6c9eb2b0a3e6",
+    "pipeline/pipeline-view.js": "419794446d6bab7de9c8064fcfb527919960108db7a9dc663dfd99e66df242e8",
+    "pipeline/presentation-engine.js": "ed489dba82c21cf82d233663d4bc2537ac475ff09e73b7284b41ef2f3451a5fc",
+    "pipeline/surface.css": "79f6726f52937f2c89c25b1d08df8dd6e19f8de93835d2d39df9250a8b8e962e"
+  },
+  "publisherHash": "4aa953a0b82ed94fc78757fdcd05b8d1db8397020a901af013b4f11fd3c44105"
+}
