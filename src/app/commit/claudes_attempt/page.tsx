@@ -7,7 +7,7 @@
 // come from the agent's audited SOURCES_LOG.md and its tool-call record.
 import React from "react";
 import Link from "next/link";
-import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, CARD, SERIES, SC_FULL, SC_HALF, SC_ZERO } from "../theme";
+import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, CARD, FILE, SERIES, SC_FULL, SC_HALF, SC_ZERO } from "../theme";
 import S from "./data/summary.json";
 
 export const metadata = {
@@ -15,33 +15,25 @@ export const metadata = {
   description: "A fresh Claude agent attempted the Commit Challenge blind: 0.549 graded, 40 of 112 exact.",
 };
 
-const HAD: [string, string][] = [
-  ["zscape_gold_48hpf.v0.h5ad (461 MB)",
-    "209,639 cells × 32,031 genes from ZSCAPE's 48 hpf wild-type control embryos: raw counts plus log1p counts-per-10k, "
-    + "and the 112 given clusters as bare ids C001–C112, with no names"],
-  ["gold_features.v1.csv",
-    "per cluster, the top 50 up-regulated, bottom 50 down-regulated and 'family' 50 marker genes, with Ensembl ids, "
-    + "plus cell count, UMIs, genes detected and % mitochondrial"],
-  ["zfa_menu.v1 (3,107 terms, hash dec9f728)", "the only allowed answers, each with its parents, synonyms and stage window"],
-  ["scoring_rules.v0.md, submission_format.v0.md, validate_submission.py", "how answers are scored, formatted and checked"],
-  ["ZFA ontology, release 2026-06-02", "zfa.obo, for the term hierarchy and ZFS developmental stages"],
-  ["ZFIN wild-type expression, downloaded 2026-06-21",
-    "curated gene → anatomy → stage records; it used those between prim-5 and protruding-mouth (24–72 hpf) "
-    + "and cites them by publication id in each answer"],
-  ["Daniocell (Sur et al. 2023)",
-    "a separate zebrafish atlas it downloaded from daniocell.nichd.nih.gov; it compared our clusters with Daniocell's "
-    + "36–60 hpf cells"],
-  ["Claude Opus 5's training knowledge", "of zebrafish marker genes and anatomy"],
+// What the agent had, grouped so the box reads at a glance: name in mono, one short spec under it.
+const GROUPS: { title: string; items: [string, string][] }[] = [
+  { title: "Data · the delivery", items: [
+    ["zscape_gold_48hpf.v0.h5ad", "209,639 cells × 32,031 genes, 48 hpf; 112 unnamed clusters"],
+    ["gold_features.v1.csv", "top, bottom and family 50 markers per cluster"],
+    ["zfa_menu.v1", "3,107 allowed ZFA answers"],
+  ] },
+  { title: "References", items: [
+    ["ZFA", "release 2026-06-02"],
+    ["ZFIN wild-type expression", "2026-06-21 dump, 24–72 hpf records"],
+    ["Daniocell", "Sur et al. 2023, 36–60 hpf cells"],
+  ] },
+  { title: "Reasoning", items: [
+    ["Claude Opus 5", "its own marker knowledge"],
+    ["6.3 hours, alone", "32 CPU cores, no GPU"],
+  ] },
 ];
-const UNUSED = "Also given but not used: ZFIN's GO annotations (zfin.gaf, 2026-05-21) and the GO ontology, release 2026-05-19.";
-const LACKED: [string, string][] = [
-  ["The answer key", "and the source cell-type names behind it; its file reads were audited afterwards"],
-  ["ZSCAPE's published annotations", "no GEO GSE202639 cell metadata, no Saunders et al. 2023 paper or supplements, no ZSCAPE web app"],
-  ["Anything else on our server", "none of our other atlases, labeller code or earlier ZSCAPE work"],
-  ["Second opinions from other model calls", "its Anthropic API calls failed because our API account had no credit"],
-  ["A GPU", "it ran on 32 CPU cores and about 90 GB of RAM"],
-  ["Any feedback", "it never saw its score and got no second attempt"],
-];
+const OFF = ["the answer key", "ZSCAPE's labels, paper or GEO data", "anything else on our server",
+             "other model calls (no API credit)", "its score or a second try"];
 
 type Split = { full: number; half: number; zero: number; graded: number; exact: number };
 const zeros = (b: { full: number; half: number }) => 112 - b.full - b.half;
@@ -74,20 +66,28 @@ export default function ClaudesAttemptPage() {
         </p>
 
         {/* ── what it had ─────────────────────────────────────────── */}
-        <div style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 12, padding: "18px 20px", marginTop: 24 }}>
-          <div style={{ ...micro, color: SC_FULL, marginBottom: 10 }}>What it used</div>
-          {HAD.map(([k, v]) => (
-            <p key={k} style={{ ...small, fontSize: 13.5, marginBottom: 8 }}>
-              <span style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 700 }}>{k}</span>: {v}
-            </p>
-          ))}
-          <p style={{ ...small, fontSize: 12.5, color: FAINT, marginTop: 4 }}>{UNUSED}</p>
-          <div style={{ borderTop: `1px solid ${RULE}`, margin: "16px 0 14px" }} />
-          <div style={{ ...micro, color: SC_ZERO, marginBottom: 10 }}>What it did not have</div>
-          {LACKED.map(([k, v]) => (
-            <p key={k} style={{ ...small, fontSize: 13.5, marginBottom: 8 }}><strong>{k}</strong>: {v}</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12, marginTop: 24 }}>
+          {GROUPS.map((g) => (
+            <div key={g.title} style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 12, padding: "14px 16px",
+                                        borderTop: `3px solid ${SC_FULL}` }}>
+              <div style={{ ...micro, color: SC_FULL, marginBottom: 10 }}>{g.title}</div>
+              {g.items.map(([k, v]) => (
+                <div key={k} style={{ marginBottom: 10 }}>
+                  <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: FILE, overflowWrap: "anywhere" }}>{k}</div>
+                  <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.45, marginTop: 2 }}>{v}</div>
+                </div>
+              ))}
+            </div>
           ))}
         </div>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 14 }}>
+          <span style={{ ...micro, color: SC_ZERO, marginRight: 4 }}>Off limits</span>
+          {OFF.map((o) => (
+            <span key={o} style={{ fontSize: 12.5, color: SC_ZERO, border: `1px solid ${SC_ZERO}`, borderRadius: 999,
+                                   padding: "3px 10px", whiteSpace: "nowrap" }}>✕ {o}</span>
+          ))}
+        </div>
+        <p style={{ fontSize: 12, color: FAINT, margin: "8px 0 0" }}>Every file it read was audited afterwards.</p>
 
         {/* ── score ───────────────────────────────────────────────── */}
         <div style={{ display: "flex", gap: 36, flexWrap: "wrap", marginTop: 36 }}>
