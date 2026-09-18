@@ -16,17 +16,31 @@ export const metadata = {
 };
 
 const HAD: [string, string][] = [
-  ["The delivery", "the matrix, the three marker lists, the 3,107-term menu, the rules and the validator: the same files Commit gets"],
-  ["ZFA", "the pinned anatomy ontology, for term structure and stage windows"],
-  ["ZFIN wild-type expression", "the pinned gene-to-anatomy records, cited per answer"],
-  ["Daniocell", "a separate public atlas (Sur et al. 2023), which it downloaded itself as a reference"],
-  ["Its own knowledge", "of zebrafish markers and anatomy"],
+  ["zscape_gold_48hpf.v0.h5ad (461 MB)",
+    "209,639 cells × 32,031 genes from ZSCAPE's 48 hpf wild-type control embryos: raw counts plus log1p counts-per-10k, "
+    + "and the 112 given clusters as bare ids C001–C112, with no names"],
+  ["gold_features.v1.csv",
+    "per cluster, the top 50 up-regulated, bottom 50 down-regulated and 'family' 50 marker genes, with Ensembl ids, "
+    + "plus cell count, UMIs, genes detected and % mitochondrial"],
+  ["zfa_menu.v1 (3,107 terms, hash dec9f728)", "the only allowed answers, each with its parents, synonyms and stage window"],
+  ["scoring_rules.v0.md, submission_format.v0.md, validate_submission.py", "how answers are scored, formatted and checked"],
+  ["ZFA ontology, release 2026-06-02", "zfa.obo, for the term hierarchy and ZFS developmental stages"],
+  ["ZFIN wild-type expression, downloaded 2026-06-21",
+    "curated gene → anatomy → stage records; it used those between prim-5 and protruding-mouth (24–72 hpf) "
+    + "and cites them by publication id in each answer"],
+  ["Daniocell (Sur et al. 2023)",
+    "a separate zebrafish atlas it downloaded from daniocell.nichd.nih.gov; it compared our clusters with Daniocell's "
+    + "36–60 hpf cells"],
+  ["Claude Opus 5's training knowledge", "of zebrafish marker genes and anatomy"],
 ];
-const LACKED = [
-  "the answer key, or anything on our server beyond its workspace (audited)",
-  "ZSCAPE's own labels, paper or GEO metadata",
-  "model second opinions: its API calls failed because our API account had no credit",
-  "a GPU (32 CPU cores only), and any feedback or second try",
+const UNUSED = "Also given but not used: ZFIN's GO annotations (zfin.gaf, 2026-05-21) and the GO ontology, release 2026-05-19.";
+const LACKED: [string, string][] = [
+  ["The answer key", "and the source cell-type names behind it; its file reads were audited afterwards"],
+  ["ZSCAPE's published annotations", "no GEO GSE202639 cell metadata, no Saunders et al. 2023 paper or supplements, no ZSCAPE web app"],
+  ["Anything else on our server", "none of our other atlases, labeller code or earlier ZSCAPE work"],
+  ["Second opinions from other model calls", "its Anthropic API calls failed because our API account had no credit"],
+  ["A GPU", "32 CPU cores and about 90 GB of RAM"],
+  ["Its score", "no feedback and no second attempt"],
 ];
 
 type Split = { full: number; half: number; zero: number; graded: number; exact: number };
@@ -60,20 +74,19 @@ export default function ClaudesAttemptPage() {
         </p>
 
         {/* ── what it had ─────────────────────────────────────────── */}
-        <div style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 12, padding: "18px 20px", marginTop: 24,
-                      display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 22 }}>
-          <div>
-            <div style={{ ...micro, color: SC_FULL, marginBottom: 8 }}>What it used</div>
-            {HAD.map(([k, v]) => (
-              <p key={k} style={{ ...small, fontSize: 13.5, marginBottom: 7 }}><strong>{k}</strong>: {v}</p>
-            ))}
-          </div>
-          <div>
-            <div style={{ ...micro, color: SC_ZERO, marginBottom: 8 }}>What it did not have</div>
-            {LACKED.map((v) => (
-              <p key={v} style={{ ...small, fontSize: 13.5, marginBottom: 7 }}>{v.charAt(0).toUpperCase() + v.slice(1)}</p>
-            ))}
-          </div>
+        <div style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 12, padding: "18px 20px", marginTop: 24 }}>
+          <div style={{ ...micro, color: SC_FULL, marginBottom: 10 }}>What it used</div>
+          {HAD.map(([k, v]) => (
+            <p key={k} style={{ ...small, fontSize: 13.5, marginBottom: 8 }}>
+              <span style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 700 }}>{k}</span>: {v}
+            </p>
+          ))}
+          <p style={{ ...small, fontSize: 12.5, color: FAINT, marginTop: 4 }}>{UNUSED}</p>
+          <div style={{ borderTop: `1px solid ${RULE}`, margin: "16px 0 14px" }} />
+          <div style={{ ...micro, color: SC_ZERO, marginBottom: 10 }}>What it did not have</div>
+          {LACKED.map(([k, v]) => (
+            <p key={k} style={{ ...small, fontSize: 13.5, marginBottom: 8 }}><strong>{k}</strong>: {v}</p>
+          ))}
         </div>
 
         {/* ── score ───────────────────────────────────────────────── */}
