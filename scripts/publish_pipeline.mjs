@@ -20,7 +20,7 @@ const state = rawState.state || rawState;
 if (state.error || typeof state.at !== 'number' || !state.at || !state.offsets || !state.text) throw new Error('No valid saved layout. Refusing to publish a fallback.');
 const files = ['pipeline/index.html', 'pipeline/pipeline-iso.js', 'pipeline/pipeline-shapes.js',
   'culls/culls-pop.js', 'culls/culls-draw.js', 'pipeline/pipeline-fqshapes.js',
-  'pipeline/pipeline-data.js', 'pipeline/pipeline-view.js', 'pipeline/presentation-engine.js'];
+  'pipeline/pipeline-data.js', 'pipeline/pipeline-view.js', 'pipeline/presentation-engine.js', 'pipeline/surface.css'];
 const sourceHashes = Object.fromEntries(await Promise.all(files.map(async f =>
   [f, createHash('sha256').update(await readFile(resolve(root, 'public', f))).digest('hex')])));
 const server = createServer(async (req, res) => {
@@ -41,7 +41,7 @@ try {
   const errors=[]; page.on('pageerror', e=>errors.push(e.message));
   await page.route('**/api/**', route => route.fulfill({json: route.request().url().includes('_edits') ? state : {prompts:[]}}));
   await page.addInitScript(doc => {
-    window.MAP_CONFIG={presentation:true,state:doc};
+    window.MAP_CONFIG={presentation:true,minZoom:.01,maxZoom:Infinity,state:doc};
     let seed=246813579; Math.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   }, state);
   await page.goto(`http://127.0.0.1:${server.address().port}/pipeline/index.html`, {waitUntil:'networkidle'});
@@ -49,18 +49,15 @@ try {
   await page.addScriptTag({path:resolve(root,'public/pipeline/presentation-engine.js')});
   const result=await page.evaluate(()=>pipelinePresentation.describe());
   const publisherHash=createHash('sha256').update(await readFile(fileURLToPath(import.meta.url))).digest('hex');
-  const provenance={format:3,state,sourceHashes,publisherHash};
+  const provenance={format:4,state,sourceHashes,publisherHash};
   const version=createHash('sha256').update(JSON.stringify(provenance)).update(JSON.stringify(result)).digest('hex').slice(0,20);
   const dir=resolve(root,'public/pipeline/published',version),base=`/pipeline/published/${version}`;
   await mkdir(dir,{recursive:true});
   await writeFile(resolve(dir,'layout.json'),JSON.stringify(provenance,null,2)+'\n');
   const original=await readFile(resolve(root,'public/pipeline/index.html'),'utf8');
-  const css=original.match(/<style>([\s\S]*?)<\/style>/)[1];
-  const palette=css.slice(0,css.indexOf('  *{box-sizing'));
-  const readerCSS=css.slice(css.indexOf('  .read{padding:14'),css.indexOf('  .strip{'));
-  await writeFile(resolve(dir,'appearance.css'),palette+'\n'+readerCSS);
-  let engine=original;
-  const bootstrap=`<script>window.MAP_CONFIG={presentation:true,state:${JSON.stringify(state).replaceAll('<','\\u003c')}};(()=>{let s=246813579;Math.random=()=>{s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296;};})();<`+'/script>';
+  await writeFile(resolve(dir,'surface.css'),await readFile(resolve(root,'public/pipeline/surface.css')));
+  let engine=original.replace('</head>',`<link rel="stylesheet" href="${base}/surface.css"></head>`);
+  const bootstrap=`<script>window.MAP_CONFIG={presentation:true,minZoom:.01,maxZoom:Infinity,state:${JSON.stringify(state).replaceAll('<','\\u003c')}};(()=>{let s=246813579;Math.random=()=>{s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296;};})();<`+'/script>';
   engine=engine.replace(/<script src=/,bootstrap+'\n<script src=');
   engine=engine.replace(/<script src="([^"?]+)(?:\?[^" ]*)?"><\/script>/g,(_,url)=>{
     const filename=url.split('/').pop();return `<script src="${base}/${filename}"></script>`;
@@ -71,10 +68,10 @@ try {
   for(const file of files.filter(f=>f.endsWith('.js')))
     await writeFile(resolve(dir,file.split('/').pop()),await readFile(resolve(root,'public',file)));
   await writeFile(resolve(dir,'engine.html'),engine);
-  const manifest={format:3,version,publishedAt:new Date().toISOString(),savedAt:state.at,
-    ...result,engine:`${base}/engine.html`,appearance:`${base}/appearance.css`};
+  const manifest={format:4,version,publishedAt:new Date().toISOString(),savedAt:state.at,
+    ...result,engine:`${base}/engine.html`};
   const pointer=resolve(root,'public/pipeline/published/current.json');
   await writeFile(pointer+'.tmp',JSON.stringify(manifest,null,2)+'\n');await rename(pointer+'.tmp',pointer);
-  console.log(`Published snapshot ${version}, saved ${new Date(state.at).toISOString()}, ${result.sections.length} sections, ${result.bounds.width} × ${result.bounds.height}.`);
+  console.log(`Published snapshot ${version}, saved ${new Date(state.at).toISOString()}, ${result.nodes.length} nodes, ${result.bounds.width} × ${result.bounds.height}.`);
   console.log('Review /pipeline locally, then commit the published directory and push to deploy.');
 } finally { await browser?.close(); await new Promise(r=>server.close(r)); }

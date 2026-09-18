@@ -4,34 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Aquarium to Atlas</title>
-<meta name="description" content="Follow the zebrafish single-cell pipeline, one section at a time.">
+<meta name="description" content="Explore the zebrafish single-cell pipeline, from aquarium to labelled atlas.">
 <link rel="stylesheet" href="/pipeline/viewer.css">
 <script src="/pipeline/viewer.js" defer></script>
 </head>
 <body>
-<header>
-  <div class="brand">Aquarium to Atlas <span id="section-title">Choose a section</span></div>
-  <nav aria-label="Map controls">
-    <button id="overview" hidden>All sections</button>
-    <button id="fit" hidden>Fit section</button>
-    <button id="motion" hidden>Pause motion</button>
-    <button id="theme" disabled>Light</button>
-  </nav>
-</header>
-<div class="workspace">
-  <main id="stage" tabindex="0" aria-label="Pipeline map. Choose a section to explore it.">
-    <svg id="map" aria-label="Zebrafish single-cell pipeline"></svg>
-    <canvas id="dots" aria-hidden="true"></canvas>
-    <div id="section-buttons" aria-label="Pipeline sections"></div>
-    <button id="next" hidden></button>
-    <div id="status" role="status" aria-live="polite">Loading the map…</div>
-    <div id="hint" class="hint">Choose a section to follow its production line</div>
-  </main>
-  <aside id="reader" hidden aria-label="Node explanation">
-    <button id="close-reader" aria-label="Close explanation">×</button>
-    <div id="read" class="read" aria-live="polite"></div>
-  </aside>
-</div>
-<noscript>This map needs JavaScript to explore its sections.</noscript>
+<main id="map" aria-label="Pipeline map"></main>
+<div id="status" role="status">Loading the map…</div>
+<noscript>This map needs JavaScript to pan, zoom and animate.</noscript>
 </body>
 </html>

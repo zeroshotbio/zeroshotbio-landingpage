@@ -1,102 +1,68 @@
-# Aquarium to Atlas: guided viewer and editor
+# Aquarium to Atlas: public map and editor
 
-`/pipeline` is a guided presentation of the original editor's vector scene. It
-opens with all five existing rows visible and completely still. The overview
-ignores pan, wheel, pinch and zoom keys. Click a row or its section button to hide
-the other rows and zoom into that section over 650 ms. The rows retain their saved
-names: Biological samples, Molecular biology, Reads to a matrix, The cull, and
-Opinionated metadata.
+`/pipeline` presents the original editor map across the full browser window.
+All five rows are visible from the outset and the camera is immediately free to
+pan and zoom. There are no toolbars, buttons, sidebars, reader panels, hints or
+section transitions. All drawing detail remains native SVG.
 
-Only after the camera arrives does motion start. A four-second startup wave moves
-from upstream to downstream, with each station smoothly accelerating over 1.8
-seconds. Directed track depth orders the wave, keeping parallel inputs ahead of
-their shared downstream steps. Both delta time and absolute time passed to drawing
-callbacks use each animation's virtual clock, so sine-based motion slows down too.
-Moving track dots follow the same ramp. Inactive sections receive no callbacks.
+Drag to pan; scroll or pinch to zoom. Home or 0 fits the whole map, arrow keys pan,
+plus/minus zoom, and M toggles motion. The public surface has no upper zoom cap.
+Animations use the editor's original scheduler: they run at reading zoom (0.60
+and above), skip off-screen objects, and share a seven-millisecond frame budget.
+The OS reduced-motion preference is respected. There is no guided startup wave
+or automatic opening camera shot.
 
-The button at the production line's end moves to the next section and restarts
-the ramp there. The last returns to the overview. **All sections**, Escape, Home
-or 0 also return to the overview (Escape closes an open reader first). Inside a
-section, pan and wheel/pinch/keyboard zoom work with the original SVG geometry;
-there is no upper zoom cap or rasterized artwork. **Fit section** restores the
-section framing. Clicking a node opens its original explanation on the right.
-The reader overlays the right side on phones and is closable.
+The public page loads a versioned copy of the actual editor into a full-window,
+same-origin frame. `surface.css` hides everything except its SVG and dot canvas.
+`presentation-engine.js` starts the original camera/animation loop and provides
+keyboard navigation. Presentation mode disables authoring, node previews and API
+polling. The original palette, labels, geometry and canvas-dot alignment are
+preserved; no artwork is flattened into images.
 
-**Pause motion** freezes clocks; resuming continues from the same point. Reduced
-motion skips camera glides and starts animation paused, with an explicit Play
-control. Returning to the overview stops continuous animation work. Hidden browser
-tabs also stop scheduling frames, without catching up on return. The last row's
-buildings have no original animation callbacks; its track dots provide motion.
-
-## Original artwork and editor
-
-The hidden same-origin engine frame initializes the versioned editor code in
-presentation mode. The viewer adopts its actual SVG world and definitions,
-retaining callback references, original shapes, labels, tracks, colors and full
-vector detail. The adapter associates node, label, plinth, track and band elements
-with their sections. It uses lane membership and attached structures' parent nodes
-before falling back to authored row coordinates. Saved nudges cannot accidentally
-move an object into a different section.
-
-Presentation mode suppresses the editor's own animation loop, hover behavior,
-authoring features and API polling. The viewer controls section visibility,
-camera, clocks, selection and canvas dots. Original reader functions provide the
-HTML, including saved wording, modelled values, clone descriptions and copy blocks.
-A seven-millisecond round-robin callback budget prevents one long section from
-monopolizing every frame. This remains live vector animation: physical-device
-performance needs testing, and no fixed frame rate is promised.
-
-`/pipeline_edit` and `/pipeline/index.html` keep the original authoring system,
-including position, resize, annotation, text, visual-request and save tools. They
-retain `pipeline.edits` and the shared saved record. The presentation does not
-read browser drafts or contact editing/prompt APIs.
+`/pipeline_edit` and `/pipeline/index.html` keep the full editor and its tools,
+including position, size, annotations, text, visual requests and saving. Their
+existing zoom defaults remain unchanged. The public map uses the saved published
+layout and does not consume browser drafts or write to editing/prompt APIs.
 
 ## Publishing
 
-1. Save in `/pipeline_edit` and wait for the confirmed read-back message.
-2. Run `npm run pipeline:publish` from the repository. It reads the shared saved
-   record and the local checkout's source, then writes a new version under
-   `public/pipeline/published/<version>/`. It never writes the shared record,
-   commits or pushes. Invalid/unavailable saved records abort publication.
-3. Review locally and run `npm run pipeline:check` against a static server:
-   `python3 -m http.server 8765 --bind 127.0.0.1 --directory public`.
+1. Save changes in `/pipeline_edit` and wait for its confirmed read-back message.
+2. Run `npm run pipeline:publish`. It reads the shared saved record and local
+   source, then writes a new version to `public/pipeline/published/<version>/`.
+   It never writes the shared record, commits or pushes. An invalid/unavailable
+   record aborts publication.
+3. Review locally with `python3 -m http.server 8765 --bind 127.0.0.1 --directory
+   public` and run `npm run pipeline:check`.
 4. Commit the new directory and `published/current.json`, then push to `main`.
-   Vercel deploys them together. Editor saves alone do not publish the show page.
+   Editor saves alone do not publish the public map.
 
-On a fresh machine install locked dependencies and `npx playwright install
-chromium`. Vercel serves the committed assets without running a browser at build.
-Format 3 includes versioned source scripts/engine HTML, original palette and reader
-CSS, section metadata and a `layout.json` with the exact saved record and source/
-publisher hashes. `current.json` advances only after all files are written. A
-seeded random generator keeps initialization reproducible. No image flattening is
-used in this version.
+Install locked dependencies and `npx playwright install chromium` on a fresh
+machine. Vercel serves committed assets without running a browser at build time.
+Format 4 includes the versioned editor HTML/scripts, surface CSS, node/bounds
+metadata and `layout.json` with the exact saved record and source/publisher hashes.
+The manifest advances only after all assets have been written. Keep previously
+committed versions for clients already loading them. Rollbacks must restore a
+viewer compatible with its manifest format.
 
-To reproduce a publication from the matching source revision:
+Reproduce a publication from its matching source revision with:
 
 ```sh
 npm run pipeline:publish -- --state=public/pipeline/published/<version>/layout.json
 ```
 
 `--state` also accepts a raw saved API response. `--source=https://…/api/pipeline_edits`
-selects another endpoint. Retain committed older versions for clients already
-loading them. Rollbacks must restore a viewer compatible with the manifest format.
+selects another saved-record endpoint.
 
-## Claims and verification
+## Verification and claims
 
-The schematic, wording, modelled cull figures and original animations are retained.
-The startup wave is a presentation effect, not a claim about biological durations,
-process throughput or measured completion. Source timing within each drawing is
-unchanged once it reaches full speed.
+`npm run pipeline:check` covers routing, source/saved-state provenance, original
+full-window SVG, absence of visible peripheral UI, immediate pan/wheel/pinch,
+continuous first zoom, animation at reading zoom, deep vector zoom, keyboard
+navigation, canvas resize, draft/API isolation, reduced motion and load errors in
+desktop, phone and tablet Chromium contexts. Add
+`-- https://www.zeroshot.bio --routes` to check the live presentation.
 
-`npm run pipeline:check` verifies route precedence, provenance, an idle locked
-overview, reachable section selectors, camera-before-animation sequencing, actual
-ramped virtual clocks, inactive geometry remaining still, deep vector zoom, the
-original right reader, every next-section transition, returning/cancelling,
-light/dark colors, API/draft isolation, reduced motion and load failures in desktop,
-phone and tablet Chromium contexts. Add `-- https://www.zeroshot.bio --routes` to
-check the deployed presentation.
-
-Editor checks accept the editor URL and stub writes:
+Editor checks stub API writes:
 
 ```sh
 node public/pipeline/check-save.mjs http://127.0.0.1:8765/pipeline/index.html
@@ -104,6 +70,9 @@ node public/pipeline/check-edit.mjs http://127.0.0.1:8765/pipeline/index.html
 node public/pipeline/check-dots.mjs http://127.0.0.1:8765/pipeline/index.html
 ```
 
-Do not test layout mutation against the real shared record. See `HANDOFF.md` for
-other authoring checks. The entire website remains a preview area; this route split
-does not change the editor/API access model.
+The schematic, original wording and modelled cull figures retain their original
+meaning. Animation is not evidence of a measured run or biological timing. This
+is live SVG; browser checks do not promise a physical-device frame rate. Do not
+test layout mutation against the real shared record. `HANDOFF.md` describes other
+authoring checks. The website remains a preview area with the existing editor/API
+access model.
