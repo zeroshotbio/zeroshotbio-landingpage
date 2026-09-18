@@ -1280,6 +1280,7 @@ function drawAttritionStaircase(g,n){
       "font-weight":"600","letter-spacing":FS*0.09,"fill-opacity":".82"}));
     const pc=100*cnt/ledger.start;
     t.textContent=(pc>=10?pc.toFixed(0):pc.toFixed(2))+"%";
+    if(i===0) t.setAttribute("data-edit-anchor","start");
   });
 
   /* NO ticker, on purpose. */

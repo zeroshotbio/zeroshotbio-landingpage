@@ -2019,11 +2019,30 @@ feature("edit positions", function(){
   };
   const shift=(dx,dy)=>`translate(${((dx-dy)*S*C30).toFixed(2)},${((dx+dy)*S*0.5).toFixed(2)})`;
 
+  function editSil(n,local=false){
+    const g=nodeEls[n.id], anchor=g.querySelector("[data-edit-anchor]");
+    if(!anchor) return nodeSil(n);
+    // The attrition band is drawn from x0/yBase, not its nominal node centre.
+    // Put its grip around the visible 100% label, with enough padding to grab.
+    // Node-local coordinates draw the handle; world coordinates select it.
+    const b=anchor.getBBox(), pad=12;
+    const m=(local?g:world).getCTM().inverse().multiply(anchor.getCTM());
+    return [[b.x-pad,b.y-pad],[b.x+b.width+pad,b.y-pad],
+      [b.x+b.width+pad,b.y+b.height+pad],[b.x-pad,b.y+b.height+pad]]
+      .map(([x,y])=>{const p=new DOMPoint(x,y).matrixTransform(m);return [p.x,p.y];});
+  }
+  function addEditHandle(n){
+    const grip=el("polygon",{points:pts(editSil(n,true)),class:"ehandle"});
+    if(nodeEls[n.id].querySelector("[data-edit-anchor]")){
+      grip.setAttribute("data-node-drag",n.id);
+    }
+    nodeEls[n.id].appendChild(grip);
+  }
+
   /* a dashed footprint on every node and a box round every name, so the whole
      map reads as pick-up-able the moment the mode is on */
   NODES.forEach(n=>{
-    const o=el("polygon",{points:pts(nodeSil(n)),class:"ehandle"});
-    nodeEls[n.id].appendChild(o);
+    addEditHandle(n);
     const L=labelEls[n.id];
     if(!L) return;
     let bb; try{ bb=L.getBBox(); }catch(err){ bb=null; }
@@ -2094,7 +2113,7 @@ feature("edit positions", function(){
     groundLoose(g,n);
     n._ticks=TICKERS.slice(before);
     tagTicks(n);
-    if(editing) g.appendChild(el("polygon",{points:pts(nodeSil(n)),class:"ehandle"}));
+    if(editing) addEditHandle(n);
     const pl=plinthEls[n.id];
     if(pl){
       const pad=n.anchor?0.55:0.4, hw=n.w/2+pad, hd=n.d/2+pad;
@@ -2353,7 +2372,7 @@ feature("edit positions", function(){
     CHOSEN.clear();
     if(m.add) m.before.forEach(id=>CHOSEN.add(id));
     NODES.forEach(n=>{
-      if(!n.gone && overlaps(corners,nodeSil(n))) CHOSEN.add(n.id);
+      if(!n.gone && overlaps(corners,editSil(n))) CHOSEN.add(n.id);
     });
     markChosen();
     if(hint) hint.textContent=`${CHOSEN.size} selected — release, then drag a selected node to move the group`;
@@ -2449,13 +2468,12 @@ feature("edit positions", function(){
   };
 
   let grab=null;
-  function begin(ev,n,mode){
+  function begin(ev,n,mode,el0=ev.currentTarget){
     if(!editing) return;
     // Names often sit over the artwork. Once a node belongs to a group, its
     // name is another grip for that group, not an independent label edit.
     if(multi && mode==="label" && CHOSEN.has(n.id)) mode="node";
     ev.stopPropagation(); ev.preventDefault();
-    const el0=ev.currentTarget;
     if(el0.setPointerCapture) el0.setPointerCapture(ev.pointerId);
     grab={n,mode,px:ev.clientX,py:ev.clientY,moved:0,
           ox:n.x,oy:n.y,olx:n._lx,oly:n._ly,el:el0,
@@ -2623,6 +2641,15 @@ feature("edit positions", function(){
         "Save all changes when done";
   }
 
+  // Touch target adjustment may send a press over the small scenery grip to
+  // a nearby name. Honor the actual point under the finger and capture on the
+  // grip so the existing node move/up handlers receive the rest of the drag.
+  svg.addEventListener("pointerdown",ev=>{
+    if(!editing || ev.pointerType!=="touch") return;
+    const hit=document.elementFromPoint(ev.clientX,ev.clientY);
+    const n=hit && byId[hit.getAttribute("data-node-drag")];
+    if(n) begin(ev,n,"node",hit);
+  },true);
   NODES.forEach(n=>{
     nodeEls[n.id].addEventListener("pointerdown",ev=>begin(ev,n,"node"));
     nodeEls[n.id].addEventListener("pointermove",move);

@@ -471,6 +471,21 @@ of FQ previously selected nothing even though the box was visibly inside it.
 The overlap test uses both polygons' separating axes, not their axis-aligned
 bounding boxes, and includes current positions after a group has moved.
 
+### Attrition diagram grip
+
+The attrition staircase (RIVER, with the −96.7% stream) has its position-edit
+grip around **100%**. The drawing uses `x0`/`yBase` rather than its nominal node
+centre, so the ordinary box at `n.x`/`n.y` was nowhere near the visible band.
+The renderer marks its first percentage with `data-edit-anchor`; the editor
+projects that text's padded bounds into the node group for the grip and into
+world coordinates for group selection. It follows the artwork when dragged,
+is rebuilt on redraw, and is hidden outside Edit positions. The scenery itself
+stays pointer-inert so the long band cannot intercept neighbouring objects.
+
+`check-attrition-handle.mjs <editor URL> [saved-record.json]` checks picking the
+100% text with mouse/touch, moving the diagram, grip alignment after movement,
+group selection and the saved drag offset, with all API writes stubbed.
+
 ## The grid is the paper, and the ruler is gone
 
 `GRID` has to be bigger than everything drawn on it. The map has outgrown it
