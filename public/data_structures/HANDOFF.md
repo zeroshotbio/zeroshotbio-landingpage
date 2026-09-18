@@ -440,6 +440,16 @@ a reason to open. The pins are now a `pins` command in two repos — ask the
 machine — but the prose has no such check, and `check-fit.mjs` cannot read.
 
 
+## zsb-silver's reader takes zsb-bronze's shape — 2026-09-18, later
+
+Clicking zsb-silver now shows its six processes in the same layout zsb-bronze uses: a group
+heading, dataset chips, then one box per step. The groups are **Open source · zsb-open-source**
+(`intake fetch / convert / publish`, ChemFish and ZSCAPE, `--k-proposed`) and **Silver → Gold ·
+the transform** (`fetch / process / publish`, MiniFin, MegaFin and ChemFish, `--k-shared`). The
+node carries `showProcesses:true` and its own `processes`, and `processBlock()` in `ds-view.js`
+takes a `groups` argument, falling back to `OVERVIEW.processes` (bronze's). The generated panel,
+brief and kv stay on the node as the record and are no longer rendered, the same as zsb-bronze.
+
 ## The state of the data — 2026-09-18. Open source feeds silver, and a fifth conduit pair.
 
 ```

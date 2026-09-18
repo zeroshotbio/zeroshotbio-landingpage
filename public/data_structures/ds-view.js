@@ -518,7 +518,7 @@ function inspect(n) {
      the same OVERVIEW.processes the reader's default body uses, so the two
      cannot drift. */
   if (n.showProcesses) {
-    H.push(processBlock({ heading: false }));
+    H.push(processBlock({ heading: false, groups: n.processes }));
     readEl.innerHTML = H.join("");
     readEl.scrollTop = 0;
     return;
@@ -565,8 +565,10 @@ function inspect(n) {
 /* The six bronze processes, colour-keyed, as part of the reader's default body.
    Same palette as the trees, and the same split the floor draws: what runs on a
    Parse delivery, and what runs on something someone else published. */
-function processBlock({ heading = true } = {}) {
-  const gs = (typeof OVERVIEW !== "undefined" && OVERVIEW.processes) || [];
+/* A station may carry its own `processes` in the same shape (zsb-silver does); without one it
+   falls back to the overview's, which are zsb-bronze's. */
+function processBlock({ heading = true, groups } = {}) {
+  const gs = groups || (typeof OVERVIEW !== "undefined" && OVERVIEW.processes) || [];
   if (!gs.length) return "";
   const g = gs.map(grp =>
     `<div class="pgh" style="--c:${grp.ink}">${esc(grp.group)}</div>` +
