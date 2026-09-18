@@ -484,7 +484,15 @@ stays pointer-inert so the long band cannot intercept neighbouring objects.
 
 `check-attrition-handle.mjs <editor URL> [saved-record.json]` checks picking the
 100% text with mouse/touch, moving the diagram, grip alignment after movement,
-group selection and the saved drag offset, with all API writes stubbed.
+group selection and the saved drag offset, with all API writes stubbed. It also
+reloads and compares the actual drawn label position, not just the node model.
+
+The band applies saved `dx`/`dy` directly to `x0`/`x1`/`yBase` and ledger step
+coordinates on load. Subtracting `_px`/`_py` after those baselines had already
+absorbed the offsets always produced zero, so saving a band move previously
+did not survive reload or publication. RIVER's `positionOrigin` records the
+offsets in the last published layout before that fix (-5.1, -42.15); subtracting
+that origin preserves the old drawing and applies subsequent drags exactly.
 
 ## The grid is the paper, and the ruler is gone
 

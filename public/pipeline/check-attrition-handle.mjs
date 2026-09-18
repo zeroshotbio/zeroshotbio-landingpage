@@ -4,19 +4,20 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {chromium} from 'playwright';
-const current=JSON.parse(fs.readFileSync(new URL('./published/current.json',import.meta.url)));
-const fixture=JSON.parse(fs.readFileSync(process.argv[3]||new URL(`./published/${current.version}/layout.json`,import.meta.url)));
+// Pin the starting layout where 100% is unobstructed by neighbouring nodes.
+const fixture=JSON.parse(fs.readFileSync(process.argv[3]||new URL('./published/598573f68d24b394588d/layout.json',import.meta.url)));
 const state=fixture.state||fixture;
 const browser=await chromium.launch({args:['--no-sandbox']});
 try{
  for(const touch of [false,true]){
   const page=await browser.newPage({viewport:{width:1440,height:1000},hasTouch:touch});
-  const errors=[];page.on('pageerror',e=>errors.push(e.message));let saved=null;
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));let saved=null,record=state;
   await page.route('**/api/pipeline_edits',r=>{
    if(r.request().method()==='POST'){
-    saved=JSON.parse(r.request().postData());return r.fulfill({json:{ok:true,at:state.at+1000}});
+    saved=JSON.parse(r.request().postData());record={...state,...saved,at:state.at+1000};
+    return r.fulfill({json:{ok:true,at:record.at}});
    }
-   return r.fulfill({json:state});
+   return r.fulfill({json:record});
   });
   await page.route('**/api/pipeline_prompts*',r=>r.fulfill({json:{}}));
   await page.goto(process.argv[2]||'http://127.0.0.1:8765/pipeline/index.html',{waitUntil:'networkidle'});
@@ -55,13 +56,22 @@ try{
   await page.mouse.move(end.x-12,end.y-12);await page.mouse.down();
   await page.mouse.move(end.x+12,end.y+12,{steps:5});await page.mouse.up();
   assert.equal(await page.evaluate(()=>nodeEls.RIVER.classList.contains('chosen')),true,'group selection finds the new grip');
+  const drawing=()=>page.evaluate(()=>{
+   const e=nodeEls.RIVER.querySelector('[data-edit-anchor]'),b=e.getBBox();
+   const p=new DOMPoint(b.x+b.width/2,b.y+b.height/2).matrixTransform(world.getCTM().inverse().multiply(e.getCTM()));
+   return [p.x,p.y];
+  });
+  const placed=await drawing();
   await page.locator('#btnSave').click();await page.waitForTimeout(1000);
   for(const [i,key] of ['dx','dy'].entries()){
    const expected=Math.round(((state.offsets.RIVER?.[key]||0)+after.RIVER[i]-before.RIVER[i])*100)/100;
    assert.equal(saved?.offsets?.RIVER?.[key],expected,'the drag saves the expected offset');
   }
+  await page.reload({waitUntil:'networkidle'});await page.waitForTimeout(3500);
+  const restored=await drawing();
+  assert.ok(Math.hypot(restored[0]-placed[0],restored[1]-placed[1])<.6,'the drawing stays where it was placed after save and reload');
   assert.deepEqual(errors,[]);
-  console.log(`${touch?'Touch':'Mouse'}: 100% grip is visible only while editing, moves the diagram, follows it, group-selects and saves`);
+  console.log(`${touch?'Touch':'Mouse'}: 100% grip moves the diagram, follows it, group-selects, saves and restores the actual drawing`);
   await page.close();
  }
 }finally{await browser.close();}

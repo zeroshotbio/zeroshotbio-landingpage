@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aquarium to Atlas — editor</title>
+<style>
+  :root{
+    /* ---- dark (default) ---- */
+    --bg:#131816; --panel:#181f1c; --panel2:#1c2421;
+    --fg:#dfe6df; --fg2:#a3b0a6; --fg3:#7d8a81; --rule:#39443e;
+    --grid:#dfe6df; --grid-op:.055;
+    --edge:#cdd6cd; --stroke:#cdd6cd; --voxel:#dfe6df;
+    --signal:#74b0f0; --drop:#e0765c;
+
+    /* ---- THE THREE MARKS THE ROOFED CULLS USE ----
+       Aliases, not new colours. Each is a token this page already carries,
+       already meaning close to what it has to mean on a chart:
+
+         --keep    = --fg2     the population still under consideration. It is
+                               most of every cloud, so it takes the neutral the
+                               rest of the map is drawn in rather than a hue.
+         --cull    = --drop    this page already means "being dropped" with
+                               this, on its drop edges and its condition rule.
+         --accent  = --signal  this page already means "look here" with this,
+                               and a threshold is the thing to look at.
+
+       Every mark on a roof is one of three things — it stays, it goes, or it
+       is the line deciding which. DO NOT ADD A FOURTH: the moment one roof
+       gets its own hue the four culls stop being comparable at a glance. */
+    --keep:#a3b0a6; --cull:#e0765c; --accent:#74b0f0;
+    --keep:#a3b0a6; --cull:#e0765c; --accent:#74b0f0;
+    /* row 2's well colours, pool and four base colours — /molecular_pipe's own */
+    --ch1:#e07070; --ch2:#e0985c; --ch3:#d6bb5f;  --ch4:#b3cc63;
+    --ch5:#74c078; --ch6:#5cc0a4; --ch7:#5cbcc8;  --ch8:#74b0f0;
+    --ch9:#8a96ec; --ch10:#a888dc; --ch11:#d07fc8; --ch12:#e07aa0;
+    --pool:#e6c2f5;
+    --nt-c:#3d8bff; --nt-a:#2fd05a; --nt-t:#ff4a3d; --nt-g:#ffd21f;
+
+    --t-top:#333d37; --t-left:#252d29; --t-right:#1c231f;
+    --a-top:#6f7d73; --a-left:#4e5a52; --a-right:#3b453e;
+    --k-top:#5a675f; --k-left:#404b45; --k-right:#303934;
+    --m-top:#dbe2d9; --m-left:#aeb8ad; --m-right:#8f9b91;
+    --g-top:#33403a; --g-left:#242e29; --g-right:#1b2320;
+    --c-top:#7fa3c0; --c-left:#52708c; --c-right:#3d566c;
+
+    --sa-top:#dbe2d9; --sa-left:#aeb8ad; --sa-right:#8f9b91;
+    --sb-top:#b9c2b8; --sb-left:#909a90; --sb-right:#767f76;
+    --sc-top:#7fa9dd; --sc-left:#5480b4; --sc-right:#3f6693;
+
+    --strip-h:clamp(66px,15dvh,118px);   /* footer height, shared with the sheet */
+    --strip-mini:28px;                   /* what it collapses to while reading */
+    --txt-mono:#131816;  /* text over the pale monolith / strata */
+    --txt-box:#dfe6df;   /* text over everything else */
+
+    /* the aquarium — water, fish, gravel, planting */
+    --water:#4f8fd6; --fish:#f2f6f0; --gravel:#5b6a60; --plant:#6f9a72;
+    --ok:#5aa46b;        /* the check on a compound that got picked */
+  }
+  body.light{
+    --bg:#ccd4cb; --panel:#d5dcd3; --panel2:#c3ccc2;
+    --fg:#161e19; --fg2:#4c5a52; --fg3:#75827a; --rule:#98a498;
+    --grid:#161e19; --grid-op:.06;
+    --edge:#161e19; --stroke:#161e19; --voxel:#161e19;
+    --signal:#1e4c8a; --drop:#8a3324;
+    --keep:#4c5a52; --cull:#8a3324; --accent:#1e4c8a;
+    --ch1:#a83a3a; --ch2:#9c5f24; --ch3:#7a6a12;  --ch4:#54761c;
+    --ch5:#2b7a3f; --ch6:#12786c; --ch7:#16708a;  --ch8:#1e4c8a;
+    --ch9:#3a45a8; --ch10:#63389c; --ch11:#93318a; --ch12:#a6335f;
+    --pool:#4a2168;
+    --nt-c:#1a5fd6; --nt-a:#12933a; --nt-t:#d42a1e; --nt-g:#f2c200;
+
+    --t-top:#d9e0d7; --t-left:#c4cec3; --t-right:#b5c0b5;
+    --a-top:#b3bfb2; --a-left:#8f9d8e; --a-right:#79887a;
+    --k-top:#9aa79a; --k-left:#75847a; --k-right:#5e6d64;
+    --m-top:#75837a; --m-left:#4a574f; --m-right:#37433b;
+    --g-top:#e4eae1; --g-left:#cfd8ce; --g-right:#c0cabf;
+    --c-top:#8fa3ae; --c-left:#63798a; --c-right:#4c6172;
+
+    --sa-top:#7d8b81; --sa-left:#4f5c54; --sa-right:#3b473f;
+    --sb-top:#6d7b72; --sb-left:#44514a; --sb-right:#323e37;
+    --sc-top:#3f5b7e; --sc-left:#2a4260; --sc-right:#1e3350;
+
+    --txt-mono:#d5dcd3; --txt-box:#161e19;
+
+    --water:#3a6ea8; --fish:#2a332c; --gravel:#8f9a8e; --plant:#6d8a6b;
+    --ok:#3f7d4d;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font-family:ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,Consolas,monospace;
+       font-size:12px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;
+         -webkit-user-select:none;user-select:none}
+  ::-webkit-scrollbar{width:7px;height:7px}
+  ::-webkit-scrollbar-thumb{background:var(--rule)}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  .app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+  header{display:flex;align-items:stretch;border-bottom:1px solid var(--fg);overflow-x:auto;flex:none}
+  /* the header is a toolbar now — the run's numbers used to sit along it and
+     were the first thing removed once the map itself carried them */
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 10px;flex:none}
+  .ctl{border:1px solid var(--fg);padding:4px 9px;font-size:9px;letter-spacing:.12em;
+       text-transform:uppercase;white-space:nowrap}
+  .ctl:hover,.ctl:focus-visible{background:var(--fg);color:var(--bg)}
+
+  .body{display:flex;flex:1;min-height:0}
+  aside{width:var(--aside-w,238px);flex:none;border-right:1px solid var(--fg);overflow-y:auto;
+        padding-bottom:24px;background:var(--bg);-webkit-user-select:none;user-select:none}
+  /* Either column can be dragged shut. What is left behind is the grip itself,
+     a full-height sliver carrying an arrow that points the way back — so it is
+     obvious the panel is still there rather than gone. */
+  .grip{flex:none;width:9px;position:relative;cursor:col-resize;background:var(--panel2);
+        border-right:1px solid var(--fg);-webkit-user-select:none;user-select:none}
+  .grip:hover,.grip:focus-visible{background:var(--signal)}
+  .grip span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+             width:3px;height:34px;border-radius:2px;background:var(--fg3)}
+  .grip:hover span{background:var(--bg)}
+  /* collapsed: the sliver widens a touch and the pill becomes a chevron */
+  .grip.shut{cursor:pointer;background:var(--bg);width:16px}
+  .grip.shut:hover{background:var(--signal)}
+  .grip.shut span{width:auto;height:auto;background:none;font-size:13px;line-height:1;color:var(--fg2)}
+  .grip.shut:hover span{color:var(--bg)}
+  .grip.shut::after{content:"";position:absolute;inset:0;
+                    background:repeating-linear-gradient(var(--rule) 0 1px,transparent 1px 5px);
+                    opacity:.35;pointer-events:none}
+  .grp{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);padding:14px 10px 5px}
+  .grp.mark{color:var(--fg)}
+  .row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px 10px;
+       border:1px solid var(--rule);border-left:none;border-right:none;margin-top:-1px}
+  .row .key{width:22px;height:17px;flex:none;border:1px solid var(--fg);display:grid;place-items:center;font-size:9px}
+  .row.anchor .key{background:var(--fg);color:var(--bg)}
+  .row .nm{flex:1;font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;line-height:1.35}
+  .row.anchor .nm{font-size:11.5px}
+  .row .n{font-size:9px;color:var(--fg3)}
+  .row:hover,.row:focus-visible{background:var(--panel2)}
+  .row.on{background:var(--fg);color:var(--bg)}
+  .row.on .key{border-color:var(--bg)}
+  .row.on.anchor .key{background:var(--bg);color:var(--fg)}
+  .row.on .n{color:var(--bg)}
+
+  .stage{flex:1;position:relative;min-width:0;overflow:hidden}
+  /* Panning is a drag across a canvas covered in <text>, and a drag across text
+     is a text selection as far as the browser is concerned — so the map picked
+     up a blue smear on every pan. Nothing on the map is meant to be selected
+     with the cursor; the prose in the reader still is, because that is a
+     different element and is left alone. */
+  svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab;
+      -webkit-user-select:none;user-select:none;
+      -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  svg.drag{cursor:grabbing}
+  /* walk the sequence: keyboard on a desktop, these on anything. Round, so
+     they read as buttons rather than as part of the drawing. */
+  .stepnav{position:absolute;top:10px;right:10px;display:flex;gap:8px;z-index:5}
+  .stepnav button{width:34px;height:34px;border-radius:50%;border:1px solid var(--fg);
+                  background:var(--bg);color:var(--fg);display:grid;place-items:center;
+                  font-size:18px;line-height:1;padding-bottom:2px;
+                  box-shadow:0 2px 8px rgba(0,0,0,.22)}
+  .stepnav button:hover,.stepnav button:focus-visible{background:var(--fg);color:var(--bg)}
+  .stepnav button:active{transform:scale(.92)}
+  .hint{position:absolute;left:0;right:0;bottom:0;padding:6px 12px;font-size:8.5px;
+        letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);pointer-events:none;
+        -webkit-user-select:none;user-select:none}
+
+  /* ---- edit positions ---- */
+  .edonly{display:none}
+  body.haschanges .edonly{display:block}
+  body.editing #btnEdit{background:var(--signal);color:var(--bg);border-color:var(--signal)}
+  body.editing .hint{color:var(--signal);text-transform:none;font-size:10px;letter-spacing:.04em}
+  /* the handles are inert until the mode is on: hit-testing stays exactly as
+     it was, so nothing about hover, click or the halo changes when it is off */
+  .ehandle{display:none;pointer-events:none;fill:var(--signal);fill-opacity:.05;
+           stroke:var(--signal);stroke-width:1.1;stroke-opacity:.5;stroke-dasharray:4 3}
+  .ehandle.lab{fill-opacity:.03;stroke-opacity:.35;stroke-dasharray:2 3}
+  .ehit{fill:transparent;pointer-events:none}
+  /* the resize handles on a picked object: four on the roof for width and
+     depth, one in the middle for height */
+  .sizer{cursor:nwse-resize}
+  .sizer.tall{cursor:ns-resize}
+  /* the footprint becomes the grab target in edit mode, so a shape that is
+     mostly outline or mostly transparent is still pickable */
+  svg.editing .ehandle{display:block;pointer-events:all;cursor:move}
+  svg.editing .ehit{pointer-events:all;cursor:move}
+  svg.editing{cursor:default}
+  svg.editing g[role=button]{cursor:move}
+  svg.editing g:hover>.ehandle{fill-opacity:.16;stroke-opacity:1;stroke-dasharray:none}
+
+  /* ---- edit text ---- */
+  body.texting #btnText{background:var(--signal);color:var(--bg);border-color:var(--signal)}
+  /* every editable string gets a dotted underline so the mode shows you its
+     own reach — on the map and in the reader alike */
+  svg.texting text{cursor:text}
+  svg.texting text:hover{fill:var(--signal)!important}
+  body.texting .read [data-tf]{cursor:text;outline:1px dashed var(--rule);outline-offset:3px}
+  body.texting .read [data-tf]:hover{outline-color:var(--signal);background:rgba(116,176,240,.07)}
+  /* a box round every string on the map, so the mode shows its own reach and
+     an 8.6px label is a target rather than a dare */
+  .thandle{display:none;pointer-events:none;fill:transparent;stroke:var(--signal);
+           stroke-width:1;stroke-opacity:.45;stroke-dasharray:3 3}
+  svg.texting .thandle{display:block;pointer-events:all;cursor:text}
+  svg.texting .thandle:hover{fill:var(--signal);fill-opacity:.14;stroke-opacity:1;stroke-dasharray:none}
+  .tefoot .go{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  .tefoot .go:hover{background:var(--signal);border-color:var(--signal);color:var(--bg)}
+  /* The text editor is a window, not a tooltip: the head drags it, the corner
+     grip resizes it, and the textarea takes whatever room is left. Width and
+     height are set inline by the view from a remembered box, so the flex
+     column below is what makes the middle stretch instead of the box growing. */
+  .tedit{display:none;position:fixed;z-index:60;width:min(430px,calc(100vw - 24px));
+         background:var(--panel);border:1px solid var(--signal);
+         box-shadow:0 12px 34px rgba(0,0,0,.42)}
+  .tedit.on{display:flex;flex-direction:column}
+  .tehead{display:flex;align-items:center;gap:8px;padding:5px 6px 5px 10px;
+          border-bottom:1px solid var(--rule);font-size:8.5px;letter-spacing:.14em;
+          text-transform:uppercase;color:var(--fg3);flex:0 0 auto;
+          cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}
+  .tehead:hover{color:var(--fg2)}
+  .tehead span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tehead button{width:22px;height:20px;font-size:16px;line-height:1;color:var(--fg2);
+                 cursor:pointer}
+  .tedit textarea{display:block;width:100%;flex:1 1 auto;min-height:0;max-height:none;
+                  resize:none;
+                  background:var(--bg);color:var(--fg);border:none;outline:none;
+                  padding:9px 10px;font:inherit;font-size:11.5px;line-height:1.55}
+  .tefoot{display:flex;align-items:center;gap:10px;padding:6px 22px 6px 8px;flex:0 0 auto;
+          border-top:1px solid var(--rule);position:relative}
+  #teHint{flex:1;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3)}
+  /* the corner grip: diagonal rules, the usual signal for "pull me" */
+  .tegrip{position:absolute;right:0;bottom:0;width:18px;height:18px;z-index:1;
+          cursor:nwse-resize;touch-action:none;opacity:.55;
+          background:repeating-linear-gradient(135deg,transparent 0 3px,var(--fg3) 3px 4px)}
+  .tegrip:hover{opacity:1;background:repeating-linear-gradient(135deg,transparent 0 3px,var(--signal) 3px 4px)}
+
+  /* ---- edit visual ---- */
+  .ask{display:none;position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.42);
+       align-items:center;justify-content:center;padding:18px}
+  .ask.on{display:flex}
+  .askbox{width:min(600px,100%);background:var(--panel);border:1px solid var(--signal);
+          box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .askbox textarea{display:block;width:100%;resize:vertical;min-height:150px;max-height:52dvh;
+                   background:var(--bg);color:var(--fg);border:none;outline:none;
+                   padding:12px 13px;font:inherit;font-size:12px;line-height:1.6}
+  .askfoot{display:flex;align-items:center;gap:12px;padding:8px 10px;border-top:1px solid var(--rule)}
+  #askHint{flex:1;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3)}
+  .askwait{display:none;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid var(--rule);
+           font-size:11px;color:var(--fg2)}
+  .askwait.on{display:flex}
+  .askwait #askState{flex:1}
+  .spin{width:13px;height:13px;flex:none;border:2px solid var(--rule);border-top-color:var(--signal);
+        border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+
+  /* ---- a request being worked on ----
+     Deliberately not a modal. The request takes minutes, and the whole point is
+     that you carry on reading the map while it happens — so this is a pill in
+     the corner with an indeterminate bar, and closing the dialogue that started
+     it does not stop it. It survives a reload, because the wait does. */
+  /* Requests STACK. A drawing takes minutes, so the sane thing to do is fire off
+     several and carry on — they queue on the instance and are drawn one at a
+     time, and each one gets its own row here with its place in the queue. */
+  /* WIDE ENOUGH FOR ITS OWN SENTENCE. At 430px "drawing now — about four
+     minutes, plus two to go live" ran out of room and the end was clipped, and
+     the one thing a progress row exists to say is how long. */
+  /* A DEFINITE WIDTH, NOT A MAXIMUM. An absolutely positioned box sizes itself
+     shrink-to-fit, which measured the sentence on ONE line and then handed the
+     row a box a little narrower than the parts inside it — so the sentence
+     never wrapped and the button was pushed out of the right-hand edge. Given a
+     real width the text wraps and everything fits, which is what a max-width
+     was supposed to be doing and never was. */
+  .works{position:absolute;left:14px;bottom:30px;z-index:40;display:flex;
+         flex-direction:column;gap:6px;width:min(660px,86%)}
+  .work{display:flex;align-items:center;gap:9px;
+        background:var(--panel);border:1px solid var(--signal);padding:7px 6px 7px 10px;
+        box-shadow:0 10px 26px rgba(0,0,0,.4);font-size:11px;line-height:1.45}
+  /* THE TEXT IS THE ONLY PART THAT MAY GROW OR WRAP, and it has to be named:
+     the number, the progress bar and the age are spans too, so a rule on
+     `.work > span` gives all four flex:1 and the row comes out as four equal
+     columns with the sentence squeezed into a quarter of it. A flex child also
+     will not shrink below its own content unless told it may, which is what
+     pushed the end of the sentence out of the box rather than wrapping it. */
+  .worktext{flex:1;min-width:0;overflow-wrap:anywhere}
+  /* and the fixed parts must not be squeezed to make room. A flex child shrinks
+     by default, so the button was compressed to a third of its own label and the
+     row reported itself as overflowing even though the sentence fitted. */
+  .work > .worknum,.work > .workbar,.work > .workage,.work > button{flex:none}
+  .work.queued{border-color:var(--rule)}
+  .work.ready{border-color:var(--fg)}
+  .worknum{flex:none;min-width:17px;height:17px;display:grid;place-items:center;
+           font-size:9px;letter-spacing:0;color:var(--bg);background:var(--signal)}
+  .work.queued .worknum{background:var(--fg3)}
+  .workbar{position:relative;flex:none;width:52px;height:3px;background:var(--rule);overflow:hidden}
+  .workbar span{position:absolute;top:0;bottom:0;left:0;width:40%;background:var(--signal);
+                animation:workslide 1.5s ease-in-out infinite}
+  .work.queued .workbar span{animation:none;width:100%;background:var(--rule)}
+  @keyframes workslide{0%{left:-40%}100%{left:100%}}
+  .worktext{flex:1;min-width:0;color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .worktext b{font-weight:400;color:var(--fg)}
+  .workage{flex:none;color:var(--fg3);font-size:9.5px;letter-spacing:.06em;white-space:nowrap}
+  .work button{flex:none;width:20px;height:18px;font-size:15px;line-height:1;color:var(--fg3);cursor:pointer}
+  .work button:hover{color:var(--fg)}
+  @media (prefers-reduced-motion:reduce){
+    .workbar span{animation:none;width:100%;opacity:.45}
+  }
+  @media (max-width:900px){ .works{left:8px;bottom:8px;font-size:10px;max-width:calc(100% - 16px)} }
+
+  /* ---- the four pads ----
+     A pad is the biggest object on the map, so its handle is its EDGE rather
+     than its area: a fill would mean pressing anywhere on a row picks up the
+     floor instead of whatever is standing on it. The stroke is fat and
+     invisible, so the outline picks up where it is drawn and nowhere else.
+     The grip on the far corner resizes. Both are inert until the mode is on. */
+  .padedge{fill:none;stroke:var(--signal);stroke-opacity:0;stroke-width:14}
+  svg.editing .padedge{pointer-events:stroke;cursor:move;stroke-opacity:.18;stroke-width:9}
+  svg.editing .padedge:hover{stroke-opacity:.5}
+  .padgrip{display:none;fill:var(--bg);stroke:var(--signal);stroke-width:1.6}
+  .padgriphit{fill:transparent;pointer-events:none}
+  svg.editing .padgrip{display:block}
+  svg.editing .padgriphit{pointer-events:all;cursor:nwse-resize}
+  svg.editing .picked.padedge{stroke-opacity:.8}
+
+  /* ---- deleting an object from the map ----
+     The ✕ is an HTML button in the stage, not an SVG one, for two reasons: it
+     must not shear with the projection, and it must not live inside the group
+     it is offering to delete — a control that vanishes with its own target
+     cannot be pressed a second time.
+
+     Deleting is the one action in this mode that does not undo itself by
+     dragging back, and the saved state is shared, so it asks first. The
+     confirm box is its own element rather than Edit visual's prompt: that one
+     collects a sentence, this one collects a yes. */
+  .delx{display:none;position:absolute;z-index:20;width:26px;height:26px;
+        border:1px solid var(--drop);border-radius:50%;background:var(--bg);
+        color:var(--drop);place-items:center;font-size:17px;line-height:1;
+        box-shadow:0 2px 10px rgba(0,0,0,.4);padding:0}
+  .delx:hover,.delx:focus-visible{background:var(--drop);color:var(--bg)}
+  .delask{display:none;position:absolute;inset:0;z-index:24;background:rgba(0,0,0,.45);
+          align-items:center;justify-content:center;padding:18px}
+  .delask.on{display:flex}
+  .delaskbox{width:min(420px,100%);background:var(--panel);border:1px solid var(--drop);
+             padding:16px 18px 14px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .delasktitle{font-size:16px;margin-bottom:6px}
+  .delaskbox p{color:var(--fg2);font-size:11.5px;margin:0 0 14px}
+  .delaskbar{display:flex;gap:8px}
+  .delaskbar .go{background:var(--drop);border-color:var(--drop);color:var(--bg)}
+  .delaskbar .go:hover{background:var(--drop);opacity:.85;color:var(--bg)}
+
+  /* ---- confirmation ---- */
+  .toast{position:absolute;left:50%;bottom:26px;transform:translate(-50%,14px);
+         z-index:30;pointer-events:none;opacity:0;transition:opacity .18s ease,transform .18s ease;
+         background:var(--fg);color:var(--bg);padding:9px 16px;font-size:11px;
+         letter-spacing:.04em;max-width:min(520px,86%);text-align:center;
+         box-shadow:0 10px 28px rgba(0,0,0,.4)}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+  /* AND IT STANDS CLEAR OF WHATEVER IS ALREADY DOWN THERE. The toast, the queue
+     rows and the new-version bar are three siblings all pinned to the bottom of
+     the same box, so by default they land on top of each other — "Queued.
+     Drawing takes…" appeared directly over the row that was about to report the
+     drawing. The toast is the transient one, so it is the one that moves, and
+     it moves by a MEASURED amount rather than a guessed one: the stack grows a
+     row per request and wraps to two or three lines, so no fixed offset clears
+     it. --toast-lift is set from the real height in toast(). */
+  .toast{bottom:calc(26px + var(--toast-lift,0px))}
+  .toast.warn{background:var(--drop);color:#fff}
+  /* A change shipped while this page was open. Not a toast — it does not go
+     away on a timer, because the page is now out of date until it is reloaded. */
+  .newver{display:none;position:absolute;left:50%;bottom:24px;transform:translateX(-50%);
+          z-index:40;align-items:center;gap:12px;max-width:min(560px,90%);
+          background:var(--panel);border:1px solid var(--signal);padding:9px 10px 9px 15px;
+          box-shadow:0 12px 32px rgba(0,0,0,.45);font-size:11px}
+  .newver.on{display:flex}
+  .newver span{flex:1}
+  .newver .ctl{border:1px solid var(--fg);padding:5px 11px;font-size:9px;letter-spacing:.12em;
+               text-transform:uppercase;white-space:nowrap}
+  .newver .go{background:var(--fg);color:var(--bg)}
+  .newver .go:hover{background:var(--signal);border-color:var(--signal)}
+  .savebar{display:flex;gap:8px;align-items:center;margin:14px 0 4px}
+  .savebar .ctl{border:1px solid var(--fg);padding:6px 12px;font-size:9.5px;letter-spacing:.12em;
+                text-transform:uppercase}
+  .savebar .go{background:var(--fg);color:var(--bg)}
+  .savebar .go:hover{background:var(--signal);border-color:var(--signal);color:var(--bg)}
+  .savedone{border-left:2px solid var(--ok);padding-left:9px;color:var(--fg2)}
+  svg.editing .picked>.ehandle{fill-opacity:.24;stroke-opacity:1;stroke-width:1.6;stroke-dasharray:none}
+  /* THE RESIZE GRIPS, AND THEY HAVE TO SIT AFTER THE HOVER RULE ABOVE.
+
+     A grip has to be FOUND before it can be used, which makes it a different
+     kind of mark from the footprint it inherits from. `.ehandle` is a hint — a
+     dashed outline at 5% fill saying "this whole thing can be picked up" — and
+     it is right for that job precisely because it stays out of the way. A
+     corner grip is the opposite: a small target somebody has to spot and aim
+     at, and at 5% it was invisible until the cursor happened to cross it.
+
+     The order is not cosmetic. `svg.editing g:hover>.ehandle` is (0,3,2) and
+     beats a plain `svg.editing .sizer` at (0,2,1) — so the grips came out at
+     the hover rule's 16% whatever they asked for, because a picked object is
+     usually under the pointer. Matching the specificity and coming later is
+     what makes these win. Measure the computed fill-opacity if you move them.
+
+     They exist only while an object is picked, so there is no cost to the
+     resting map: five loud squares appearing the moment you pick something is
+     the affordance, not noise. */
+  svg.editing g>.ehandle.sizer{pointer-events:all;fill-opacity:.85;
+       stroke:var(--bg);stroke-width:1.4;stroke-opacity:.9;stroke-dasharray:none}
+  svg.editing g>.ehandle.sizer:hover,svg.editing g>.ehandle.sizer.picked{
+       fill-opacity:1;stroke:var(--fg);stroke-opacity:1;stroke-dasharray:none}
+  /* A MEMBER OF A MULTI-SELECTION reads differently from a picked object,
+     because it means something different: picked is "this one, and the ✕
+     applies to it", chosen is "this one AND the others, and they move
+     together". Solid where picked is dashed, and the whole set carries it at
+     once so the group reads as a group. */
+  svg.editing .chosen>.ehandle{fill-opacity:.3;stroke-opacity:1;stroke-width:2;
+                               stroke-dasharray:none;stroke:var(--signal)}
+  body.multi #btnMulti{border-color:var(--signal);color:var(--signal)}
+  #btnGroup[aria-pressed="true"]{border-color:var(--signal);color:var(--signal)}
+  svg.group-select,svg.group-select *{cursor:crosshair!important}
+  .group-marquee{fill:var(--signal);fill-opacity:.1;stroke:var(--signal);
+    stroke-width:1.5;stroke-dasharray:6 4;vector-effect:non-scaling-stroke;pointer-events:none}
+
+  .reader{width:var(--reader-w,352px);flex:none;border-left:1px solid var(--fg);display:flex;
+          flex-direction:column;background:var(--panel);min-height:0}
+  /* the one place selection is wanted: the prose, and the blocks Save prints
+     for pasting back into the data file */
+  .read{padding:14px 16px 40px;overflow-y:auto;flex:1;-webkit-user-select:text;user-select:text}
+  .eyebrow{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3)}
+  .title{font-size:20px;margin:3px 0 2px;line-height:1.2}
+  .title.big{font-size:24px}
+  .sub{color:var(--fg2);font-size:11px;margin-bottom:16px}
+  .read h4{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);
+           font-weight:400;margin:18px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
+  .read p{margin:0 0 10px}
+  mark{background:var(--fg);color:var(--bg);padding:0 3px}
+  .kv{display:flex;gap:10px;padding:3px 0;border-bottom:1px dotted var(--rule);margin:0}
+  .kv dt{width:104px;flex:none;color:var(--fg3);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+  .kv dd{margin:0;flex:1;font-size:11px;word-break:break-word}
+  .cond{border-left:2px solid var(--drop);padding-left:9px}
+  .snip{background:var(--bg);border:1px solid var(--rule);padding:9px 10px;font-size:10.5px;
+        white-space:pre;overflow-x:auto;line-height:1.6}
+  /* the headline figure of a roofed cull's threshold */
+  .figure{font-size:17px;color:var(--accent);letter-spacing:.02em;margin:2px 0 8px}
+  .unver{display:inline-block;border:1px solid var(--drop);color:var(--drop);font-size:8.5px;
+         letter-spacing:.12em;text-transform:uppercase;padding:1px 5px;margin-bottom:8px}
+
+  /* ---- the copy button ----
+     A node can carry a verbatim payload — the source of its own shape, say —
+     for handing to somebody or something else. The payload lives in a
+     <script type="text/plain"> block at the foot of this file rather than in
+     a JS string, because the code it holds contains backticks and ${...} and
+     escaping several hundred lines of that into a template literal is a bug
+     waiting to happen. textContent gives it back byte for byte. */
+  .copybtn{display:flex;align-items:center;gap:8px;width:100%;margin:2px 0 14px;
+           border:1px solid var(--fg);background:none;color:var(--fg);
+           padding:7px 10px;font:inherit;font-size:9.5px;letter-spacing:.12em;
+           text-transform:uppercase;cursor:pointer;text-align:left;
+           -webkit-user-select:none;user-select:none}
+  .copybtn:hover,.copybtn:focus-visible{background:var(--fg);color:var(--bg)}
+  .copybtn .ic{flex:none;width:11px;height:11px;border:1.5px solid currentColor;
+               border-radius:1px;position:relative}
+  .copybtn .ic:after{content:"";position:absolute;left:2.5px;top:2.5px;
+                     width:11px;height:11px;border:1.5px solid currentColor;
+                     border-radius:1px;background:var(--bg)}
+  .copybtn:hover .ic:after{background:var(--fg)}
+  .copybtn.done{background:var(--ok,#5aa46b);border-color:var(--ok,#5aa46b);color:var(--bg)}
+  .copybtn .sz{margin-left:auto;letter-spacing:.06em;opacity:.65;text-transform:none}
+
+  /* the step strip — the mobile stand-in for the left index. Horizontal,
+     scrollable, one chip per step, group names as vertical dividers. */
+  .strip{display:none;flex:none;height:var(--strip-h);transition:height .22s ease;
+         overflow-x:auto;overflow-y:hidden;white-space:nowrap;background:var(--bg);
+         border-top:1px solid var(--fg);-webkit-overflow-scrolling:touch;
+         -webkit-user-select:none;user-select:none}
+  /* while the reader is up the strip collapses to a rule of keys — enough to
+     keep a sense of where you are in the sequence, and to jump, without
+     spending the height the text needs */
+  .strip.mini{height:var(--strip-mini)}
+  .strip.mini .sgrp{display:none}
+  .strip.mini .chip{min-width:0;max-width:none;padding:0 9px;justify-content:center;gap:0}
+  .strip.mini .chip .n{display:none}
+  .strip.mini .chip .k{font-size:9.5px;letter-spacing:.14em;color:var(--fg2)}
+  .strip.mini .chip.on .k{color:var(--bg)}
+  .sgrp{display:inline-block;vertical-align:top;height:100%;padding:0 3px;
+        font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3);
+        writing-mode:vertical-rl;text-orientation:mixed}
+  .chip{display:inline-flex;flex-direction:column;justify-content:center;gap:3px;
+        vertical-align:top;height:100%;min-width:88px;max-width:132px;
+        padding:6px 9px;border-right:1px solid var(--rule);text-align:left;
+        white-space:normal;-webkit-tap-highlight-color:transparent}
+  .chip .k{font-size:8px;letter-spacing:.12em;color:var(--fg3)}
+  .chip .n{font-size:9.5px;line-height:1.25;text-transform:uppercase;letter-spacing:.02em}
+  .chip.mark .n{font-weight:600}
+  .chip.on{background:var(--fg);color:var(--bg)}
+  .chip.on .k{color:var(--bg)}
+  .sheetclose{display:none}
+
+  .mobtoggle{display:none}
+  @media (max-width:900px){
+    /* no header at all: every pixel goes to the map */
+    header{display:none}
+    .body{flex-direction:column;position:relative}
+    /* the left index is replaced by the strip; the map gets the rest */
+    aside{display:none}
+    .grip{display:none}
+    .stage{flex:1;min-height:0;border-bottom:none}
+    .strip{display:block;height:var(--strip-h)}
+    .hint{display:none}
+    /* the reader does not cover the map: it grows the footer instead, sitting
+       directly on top of the strip and adding at most another fifth of the
+       screen, so the strip stays reachable while you read */
+    .reader{position:absolute;left:0;right:0;bottom:var(--strip-mini);top:auto;width:auto;z-index:6;
+            max-height:34dvh;border-left:none;border-top:1px solid var(--fg);
+            transform:translateY(calc(101% + var(--strip-mini)));transition:transform .22s ease;
+            box-shadow:0 -10px 26px rgba(0,0,0,.28)}
+    .reader.open{transform:none}
+    .sheetclose{display:grid;place-items:center;position:absolute;top:0;right:0;
+                z-index:3;width:46px;height:30px;font-size:22px;line-height:1;
+                border:none;border-left:1px solid var(--fg);
+                background:var(--fg);color:var(--bg)}
+    .read{padding:36px 14px 16px}      /* clear of the close button */
+    .mobtoggle{display:none}
+    .stepnav{top:8px;right:8px;gap:10px}
+    .stepnav button{width:44px;height:44px;font-size:23px}
+  }
+  @media (max-width:900px) and (orientation:landscape){
+    :root,body.light{--strip-h:clamp(52px,22dvh,84px)}
+    .reader{max-height:48dvh}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<link rel="stylesheet" href="/pipeline/published/8a2fc3381137b3d6fa11/surface.css"></head>
+<body>
+<div class="app">
+  <header>
+    <div class="controls">
+      <a class="ctl" href="/pipeline" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">Published map ↗</a>
+      <button class="ctl mobtoggle" id="btnStages">Stages</button>
+      <button class="ctl" id="btnTheme">Light</button>
+      <button class="ctl" id="btnEdit">Edit positions</button>
+      <button class="ctl edonly" id="btnMulti" aria-pressed="false">Select many</button>
+      <button class="ctl edonly" id="btnGroup" aria-pressed="false" title="Drag a box along the grid to select nodes. Hold Shift to add to your selection.">Group select</button>
+      <button class="ctl" id="btnText">Edit text</button>
+      <button class="ctl" id="btnVisual">Edit visual</button>
+      <button class="ctl edonly" id="btnSave">Save all changes</button>
+      <button class="ctl edonly" id="btnDiscard">Discard</button>
+      <span style="font-size:10px;color:var(--fg3)">Saves stay in the editor until published.</span>
+    </div>
+  </header>
+  <div class="body">
+    <aside id="aside"></aside>
+    <div class="grip" id="gripL" role="button" tabindex="0" aria-label="Collapse the index"><span></span></div>
+    <div class="stage">
+      <svg id="svg" aria-label="Isometric map of the zebrafish single-cell pipeline, aquarium to labelled atlas"></svg>
+      <div class="stepnav">
+        <button id="stPrev" aria-label="Previous step">‹</button>
+        <button id="stNext" aria-label="Next step">›</button>
+      </div>
+      <div class="hint">Arrow keys walk the sequence · Hover to preview · Click to keep · Esc to clear · Home to fit the map · Drag to pan · Scroll or pinch to zoom</div>
+      <!-- the text editor: one popover, anchored to whatever was clicked -->
+      <div class="tedit" id="tedit">
+        <div class="tehead" title="Drag to move · double-click to let it follow what you click again"><span id="teWhat"></span><button id="teX" aria-label="Cancel">×</button></div>
+        <textarea id="teIn" spellcheck="true" rows="1"></textarea>
+        <div class="tefoot"><span id="teHint">Enter to keep · Esc to cancel</span>
+             <button class="ctl go" id="teOk">Save as default</button>
+             <div class="tegrip" id="teGrip" role="button" tabindex="-1" aria-label="Resize the editor"></div></div>
+      </div>
+      <!-- Edit visual: describe a new drawing, send it to the instance, wait -->
+      <div class="ask" id="ask" role="dialog" aria-label="Describe a new visual">
+        <div class="askbox">
+          <div class="tehead"><span id="askWhat"></span><button id="askX" aria-label="Close">×</button></div>
+          <textarea id="askIn" spellcheck="true" rows="7"
+            placeholder="Describe the drawing you want.&#10;&#10;e.g. the aquarium should have a heater on the back wall with a little&#10;stream of bubbles rising off it, and one fish should hang near it"></textarea>
+          <div class="askfoot">
+            <span id="askHint">Sent to whoever is working on the map · the page reloads itself when it lands</span>
+            <button class="ctl go" id="askGo">Send</button>
+          </div>
+          <div class="askwait" id="askWait">
+            <span class="spin"></span><span id="askState">Waiting…</span>
+            <button class="ctl" id="askHide">Hide</button>
+          </div>
+        </div>
+      </div>
+      <button class="delx" id="delX" aria-label="Delete this object">&#215;</button>
+      <div class="delask" id="delAsk" role="dialog" aria-modal="true">
+        <div class="delaskbox">
+          <div class="delasktitle" id="delAskTitle"></div>
+          <p id="delAskBody"></p>
+          <div class="delaskbar">
+            <button class="ctl go" id="delAskGo">Delete</button>
+            <button class="ctl" id="delAskNo">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+      <!-- drawings being made, while you carry on with the map. One row each,
+           numbered by their place in the queue. -->
+      <div class="works" id="works" role="status" aria-live="polite"></div>
+      <!-- somebody else's change landed while this page was open -->
+      <div class="newver" id="newver" role="status" aria-live="polite">
+        <span id="newverWhat">The map has been updated.</span>
+        <button class="ctl go" id="newverGo">Refresh</button>
+        <button class="ctl" id="newverNo" aria-label="Dismiss">Later</button>
+      </div>
+    </div>
+    <div class="strip" id="strip"></div>
+    <div class="grip" id="gripR" role="button" tabindex="0" aria-label="Collapse the reader"><span></span></div>
+    <div class="reader" id="reader">
+      <button class="sheetclose" id="sheetClose" aria-label="Close">×</button>
+      <div class="read" id="read"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BEGIN copy-ECHO (generated by sync-copy-payload.mjs) -->
+<script type="text/plain" id="copy-ECHO">
+/* ============================================================
+   THE ECHO 650 DISPENSE — a worked isometric element
+   from zeroshot.bio/pipeline (node P3, row 1's chemistry lane)
+
+   Everything here is verbatim from pipeline-iso.js and pipeline-shapes.js.
+   Generated by sync-copy-payload.mjs — do not hand-edit.
+
+   WHAT IT DEPICTS
+   A Beckman Echo 650 acoustic dispenser. Compound is fired into an empty
+   48-well plate WITHOUT ANYTHING TOUCHING IT: the destination plate hangs
+   inverted above the source and 2.5 nL droplets are launched upward into it
+   by a transducer working one well at a time, hundreds of drops a second.
+
+   That physical fact is the whole reason the element is worth studying. A
+   drawing of a machine earns its keep only when it can say something a
+   photograph cannot — here, the one thing that makes acoustic dispensing
+   different from a pipette, shown as motion rather than as a caption.
+
+   NINE RULES IT DEMONSTRATES
+    1. Draw the one fact a photo could not show, and spend the geometry on it.
+    2. Context first: the chassis is why the plate reads as apparatus rather
+       than as a diagram of a plate. One extra box changed the whole register.
+    3. Motion carries the mechanism. The firing order is column-major and the
+       compounds sit in vertical bands, so the wave changes colour four times
+       crossing the plate — the treatment axis of the dataset being written,
+       live. If motion could be deleted without losing information, delete it.
+    4. Ease everything. `rise*(1-(1-f)*(1-f))` is four characters of maths and
+       the difference between a droplet and a moving dot.
+    5. OVERLAP THE HAND-OFF. LEAD makes the destination well start taking
+       colour BEFORE the droplet expires, and the droplet dissolves across the
+       same window, so arrival reads as one event rather than two. POP then
+       over-shoots the well radius 40% for 0.14s. This is the highest-leverage
+       idea in the element and it generalises to any depart/arrive animation.
+    6. Pool, never spawn. 26 ellipses created once and re-pointed by index
+       arithmetic; about a dozen visible at different heights, which is what
+       makes it read as a wave rather than a shuttle.
+    7. Everything that moves must be BORN somewhere real — see the long
+       comment inside the function, which records a real bug.
+    8. Colour is always a token, never a literal. The four compound colours
+       come from one shared table, so identity travels across the map.
+    9. Pay for detail only when it can be seen: the whole simulation stops
+       below 0.7 zoom, and the shape registers a TICKER rather than starting
+       its own loop.
+
+   TWO TRAPS
+   - P is a 2:1 DIMETRIC, not a true 30 degree isometric.
+   - A circle on a horizontal surface is an ELLIPSE. See ellipseAt(). Drawing
+     it as a circle is the commonest tell of a fake isometric.
+   ============================================================ */
+
+/* ============================================================
+   PART 1 — THE PROJECTION (pipeline-iso.js). This is the whole of it.
+   ============================================================ */
+
+const S=42, CZ=0.76, C30=Math.cos(Math.PI/6);
+const P=(x,y,z)=>[ (x-y)*S*C30, (x+y)*S*0.5 - (z||0)*S*CZ ];
+const pts=a=>a.map(p=>p.join(",")).join(" ");
+
+const NS="http://www.w3.org/2000/svg";
+const el=(t,at)=>{const e=document.createElementNS(NS,t);for(const k in at)e.setAttribute(k,at[k]);return e;};
+
+function faces(x,y,w,d,h){
+  const hw=w/2,hd=d/2;
+  const c=[[x-hw,y-hd],[x+hw,y-hd],[x+hw,y+hd],[x-hw,y+hd]];
+  return {
+    top:pts(c.map(p=>P(p[0],p[1],h))),
+    right:pts([P(c[1][0],c[1][1],h),P(c[2][0],c[2][1],h),P(c[2][0],c[2][1],0),P(c[1][0],c[1][1],0)]),
+    left:pts([P(c[3][0],c[3][1],h),P(c[2][0],c[2][1],h),P(c[2][0],c[2][1],0),P(c[3][0],c[3][1],0)])
+  };
+}
+
+function paint(g,x,y,w,d,h,s,hatch){
+  const f=faces(x,y,w,d,h);
+  ["left","right","top"].forEach(k=>g.appendChild(el("polygon",
+    {points:f[k],fill:s[k],"fill-opacity":s.fo||1,stroke:"var(--stroke)","stroke-width":s.sw||1,"stroke-opacity":s.so||1})));
+  if(hatch){
+    g.appendChild(el("polygon",{points:f.left,fill:"url(#hL)"}));
+    g.appendChild(el("polygon",{points:f.right,fill:"url(#hR)"}));
+    g.appendChild(el("polygon",{points:f.top,fill:"url(#hT)"}));
+  }
+  return f;
+}
+
+/* Anything that animates registers here. The single frame loop in the view
+   calls each ticker with (dt, now, zoom). NEVER start your own loop: tickers
+   inherit pause, step and prefers-reduced-motion for free, and six shapes
+   with six loops drift apart until the map stops being one machine. */
+const TICKERS = [];
+
+/* ============================================================
+   PART 2 — SHARED VOCABULARY (pipeline-shapes.js)
+   ============================================================ */
+
+const V=n=>`var(--${n})`;
+
+/* trimmed to the two skins this element uses */
+const SKIN = {
+  tile:  { top: V("t-top"), left: V("t-left"), right: V("t-right"), sw: 1,   so: .6 },
+  works: { top: V("k-top"), left: V("k-left"), right: V("k-right"), sw: 1.4, so: 1  },
+};
+
+/* A circle on a horizontal surface is an ELLIPSE, and these are its radii. */
+function ellipseAt(cx,cy,z,R){
+  const [x,y]=P(cx,cy,z);
+  return {x,y,rx:R*S*C30*Math.SQRT2, ry:R*S*0.5*Math.SQRT2};
+}
+
+const PLATE_BANDS = [
+  {fill:"var(--fg)",                   op:.16},   // 0.1% DMSO vehicle
+  {fill:"var(--drop)",                 op:.5 },   // sorafenib, anti-angiogenic
+  {fill:"var(--water, var(--signal))", op:.5 },   // orlistat
+  {fill:"var(--plant, var(--fg2))",    op:.55},   // dapagliflozin
+];
+const PLATE_COLS=8, PLATE_ROWS=6;
+
+function plateWells(n, th){
+  const hw=n.w/2, hd=n.d/2, sx=n.w/PLATE_COLS, sy=n.d/PLATE_ROWS;
+  const R=Math.min(sx,sy)*0.38, out=[];
+  for(let j=0;j<PLATE_ROWS;j++)for(let i=0;i<PLATE_COLS;i++)
+    out.push({i,j,band:PLATE_BANDS[Math.floor(i/2)],
+              e:ellipseAt(n.x-hw+(i+0.5)*sx, n.y-hd+(j+0.5)*sy, th, R)});
+  return out;
+}
+
+function plateSlab(g,n,th,skin,sw){
+  const f=faces(n.x,n.y,n.w,n.d,th);
+  ["left","right","top"].forEach(k=>g.appendChild(el("polygon",
+    {points:f[k],fill:skin[k],stroke:"var(--stroke)","stroke-width":sw})));
+  const inner=faces(n.x,n.y,n.w-0.1,n.d-0.1,th);
+  g.appendChild(el("polygon",{points:inner.top,fill:"var(--bg)","fill-opacity":".2",
+    stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".45"}));
+  const nk=[P(n.x-n.w/2,n.y-n.d/2,th),P(n.x-n.w/2+0.18,n.y-n.d/2,th),
+            P(n.x-n.w/2,n.y-n.d/2+0.18,th)];
+  g.appendChild(el("polygon",{points:pts(nk),fill:"var(--stroke)","fill-opacity":".55"}));
+}
+
+function drawWell(g,w,dosed){
+  g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx,ry:w.e.ry,
+    fill:"var(--bg)","fill-opacity":".6",stroke:"var(--stroke)",
+    "stroke-width":".6","stroke-opacity":".55"}));
+  if(dosed){
+    g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx*0.86,ry:w.e.ry*0.86,
+      fill:w.band.fill,"fill-opacity":w.band.op}));
+    g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx*0.86,ry:w.e.ry*0.86,
+      fill:"none",stroke:"var(--fg)","stroke-width":".5","stroke-opacity":".3"}));
+  }
+}
+
+const DRAW = {};
+
+/* ============================================================
+   PART 3 — THE ELEMENT
+   ============================================================ */
+
+/* ------------------------------------------------------------------
+   ECHO 650 DISPENSE
+   Acoustic dispensing, well by well, fast.
+
+   The destination plate hangs INVERTED above the source and droplets are
+   fired upward into it — no tip ever touches the liquid. The transducer
+   works one well at a time at a few hundred drops a second, so what you
+   see is a wave: the firing ring sweeps column by column, a dozen
+   droplets are in the air at once at different heights, and the plate
+   above fills with colour behind the wave as each well takes its dose.
+
+   Because the sweep runs column by column and the compounds are laid out
+   in vertical bands, the wave changes colour four times on its way
+   across. That is the treatment axis of the entire dataset being written,
+   in order, in about two seconds.
+   ------------------------------------------------------------------ */
+function drawEchoDispense(g,n){
+  const th=0.1, gap=1.55, CH=0.34;
+  const lift=CH*S*CZ;                       // the deck sits on the chassis
+  const src={x:n.x,y:n.y,w:n.w,d:n.d}, dst={x:n.x,y:n.y,w:n.w,d:n.d};
+
+  /* THE INSTRUMENT. The source is not a second plate sitting in mid-air: it is
+     a microplate recessed into the deck of a machine, with the transducer
+     under it. Draw the chassis first so the whole node reads as apparatus. */
+  paint(g,n.x,n.y,n.w*1.16,n.d*1.34,CH,SKIN.works);
+  const lipT=faces(n.x,n.y,n.w*1.04,n.d*1.16,CH);
+  g.appendChild(el("polygon",{points:lipT.top,fill:"var(--bg)","fill-opacity":".5",
+    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".6"}));
+  /* a panel on the near face, with a light that pulses as it fires */
+  const py=n.y+n.d*0.67, pf=(xv,zv)=>P(xv,py,zv);
+  const px0=n.x-n.w*0.42, px1=n.x-n.w*0.06;
+  g.appendChild(el("polygon",{
+    points:pts([pf(px0,CH*0.78),pf(px1,CH*0.78),pf(px1,CH*0.24),pf(px0,CH*0.24)]),
+    fill:"var(--bg)","fill-opacity":".6",stroke:"var(--stroke)",
+    "stroke-width":".7","stroke-opacity":".6"}));
+  const lamps=[0,1,2].map(i=>{
+    const c=pf(px0+0.07+i*0.1, CH*0.51);
+    const e2=el("circle",{cx:c[0],cy:c[1],r:"1.7",fill:"var(--fg)","fill-opacity":".3"});
+    g.appendChild(e2); return e2;
+  });
+
+  /* the source plate, recessed into the deck */
+  const deck=el("g",{transform:`translate(0,${-lift})`});
+  plateSlab(deck,src,th,SKIN.tile,1);
+  const swells=plateWells(src,th);
+  swells.forEach(w=>drawWell(deck,w,true));
+  g.appendChild(deck);
+
+  /* Anything the ticker will move still has to be BORN somewhere. An element
+     with no cx/cy sits at the SVG origin, which is nowhere near this machine —
+     invisible, because these start at zero opacity, but not absent: the
+     selection halo is a CSS filter and its region is the group's bounding box,
+     so a couple of dozen droplets parked at the origin stretched that box
+     across the map. Home is over the first source well, where the wave starts. */
+  const home=swells[0].e, homeY=(home.y-lift).toFixed(1);
+
+  /* where the transducer is aimed */
+  const ring=el("ellipse",{cx:home.x.toFixed(1),cy:homeY,rx:"1",ry:"1",
+    fill:"none",stroke:"var(--fg)","stroke-width":"1.3","stroke-opacity":"0"});
+  g.appendChild(ring);
+
+  /* droplets in flight */
+  const rise=(th+gap)*S*CZ, POOL=26;
+  const flying=[];
+  for(let i=0;i<POOL;i++){
+    const d=el("ellipse",{cx:home.x.toFixed(1),cy:homeY,rx:"1.9",ry:"2.5",
+      fill:"var(--fg)","fill-opacity":"0"});
+    g.appendChild(d); flying.push(d);
+  }
+
+  /* destination plate, inverted above, filling as the wave passes */
+  const above=el("g",{transform:`translate(0,${-(lift+(th+gap)*S*CZ)})`});
+  plateSlab(above,dst,th,SKIN.tile,1);
+  const dwells=plateWells(dst,th).map(w=>{
+    above.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx,ry:w.e.ry,
+      fill:"var(--bg)","fill-opacity":".5",stroke:"var(--stroke)",
+      "stroke-width":".5","stroke-opacity":".45"}));
+    const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx*0.86,ry:w.e.ry*0.86,
+      fill:w.band.fill,"fill-opacity":"0"});
+    above.appendChild(fill);
+    return {w,fill,rx:w.e.rx*0.86,ry:w.e.ry*0.86};
+  });
+  g.appendChild(above);
+
+  /* fire order: column by column, so the wave crosses the four bands */
+  const order=swells.map((w,i)=>i)
+    .sort((a,b)=> (swells[a].i-swells[b].i) || (swells[a].j-swells[b].j));
+  const slot=[]; order.forEach((wellIdx,pos)=>slot[wellIdx]=pos);
+
+  /* LEAD: the well starts taking its colour this long BEFORE the droplet
+     formally expires, and the droplet dissolves across the same window, so
+     arrival reads as a merge rather than a hand-off with a gap in it. */
+  const STEP=0.042, LIFE=0.72, LEAD=0.45, POP=0.14, PAUSE=1.1;
+  const TOTAL=order.length*STEP+LIFE+PAUSE;
+  let t=0;
+  const run=(dt)=>{
+    t=(t+dt)%TOTAL;
+    const head=Math.floor(t/STEP);
+
+    /* the wave */
+    flying.forEach((node,k)=>{
+      const idx=head-k;
+      if(idx<0||idx>=order.length){ node.setAttribute("fill-opacity","0"); return; }
+      const age=t-idx*STEP;
+      if(age<0||age>LIFE){ node.setAttribute("fill-opacity","0"); return; }
+      const w=swells[order[idx]], f=age/LIFE;
+      node.setAttribute("cx",w.e.x);
+      node.setAttribute("cy",(w.e.y-lift-rise*(1-(1-f)*(1-f))).toFixed(1));
+      node.setAttribute("fill",w.band.fill);
+      const fadeIn=f<0.06?f/0.06:1;
+      const merge=age>LIFE-LEAD ? Math.max(0,1-(age-(LIFE-LEAD))/LEAD) : 1;
+      node.setAttribute("fill-opacity",(fadeIn*merge).toFixed(2));
+    });
+
+    /* the plate above, filling behind it */
+    dwells.forEach((d,i)=>{
+      const pos=slot[i];
+      if(pos===undefined){ d.fill.setAttribute("fill-opacity","0"); return; }
+      const since=t-(pos*STEP+LIFE-LEAD);
+      if(since<0){ d.fill.setAttribute("fill-opacity","0"); return; }
+      const ramp=Math.min(1,since/LEAD);
+      const after=since-LEAD;
+      const pop=(after>=0&&after<POP) ? 1-after/POP : 0;
+      d.fill.setAttribute("rx",(d.rx*(1+0.4*pop)).toFixed(2));
+      d.fill.setAttribute("ry",(d.ry*(1+0.4*pop)).toFixed(2));
+      d.fill.setAttribute("fill-opacity",(d.w.band.op*ramp*(1+0.8*pop)).toFixed(2));
+    });
+
+    /* the transducer, under whichever well is firing */
+    if(head>=0&&head<order.length){
+      const w=swells[order[head]];
+      ring.setAttribute("cx",w.e.x); ring.setAttribute("cy",w.e.y-lift);
+      ring.setAttribute("rx",(w.e.rx*1.5).toFixed(1));
+      ring.setAttribute("ry",(w.e.ry*1.5).toFixed(1));
+      ring.setAttribute("stroke-opacity",".75");
+      lamps.forEach((L,i)=>L.setAttribute("fill-opacity",
+        ((head+i)%3===0 ? 0.9 : 0.25).toFixed(2)));
+    } else { ring.setAttribute("stroke-opacity","0");
+             lamps.forEach(L=>L.setAttribute("fill-opacity",".2")); }
+  };
+  run(0);
+  TICKERS.push((dt,now,z)=>{ if(z<0.7) return; run(dt); });
+}
+DRAW.echodispense = drawEchoDispense;
+
+/* ============================================================
+   PART 4 — THE NODE. This is ALL the shape receives.
+   ============================================================ */
+
+const ECHO_NODE = {
+  id: "ECHO", key: "P3", group: "The compounds", shape: "echodispense",
+  name: "Echo 650 dispense",
+  x: 8.5, y: 0, w: 1.5, d: 1.15, h: 0.9,
+  lab: { dx: -1.72, dy: 0.83 }, lane: "r1-chem",
+  sub: "SPARC BioCentre · acoustic, from the cherry-picking layout"
+};
+
+/* ============================================================
+   THE CONTRACT ANY NEW SHAPE MUST SATISFY
+   ============================================================ */
+
+/*  DRAW.myShape = (g, n) => { append SVG to g };
+
+    - reads only n.x n.y n.w n.d n.h plus its own custom fields
+    - knows nothing about neighbours, rows, or the map
+    - colours are ALWAYS var(--token), never a hex literal, or light mode breaks
+    - anything that moves pushes to TICKERS; never setInterval, never a
+      second requestAnimationFrame
+    - a node opts in with shape:"myShape"
+
+    Build a sandbox that renders ONE shape large and centred with the ticker
+    running, loading only the projection and the shapes file. It is also the
+    contract test: if a shape needs anything from the data file, the contract
+    is broken. */
+</script>
+<!-- END copy-ECHO -->
+
+<script>window.MAP_CONFIG={presentation:true,minZoom:.01,maxZoom:Infinity,state:{"offsets":{"A1":{"ldx":0.1,"ldy":-0.1},"A2":{"ldy":-0.15},"CS":{"dx":-0.2,"dy":0.2,"ldx":1.45,"ldy":-1},"LIBR":{"dx":-0.9,"dy":0.25,"ldx":1.35,"ldy":-0.2},"ECHO":{"dx":-0.3,"dy":-0.1,"ldx":1,"ldy":-0.65},"A5":{"dx":-0.2},"A6":{"dx":-0.1},"A7":{"dx":0.2},"FX":{"dx":-0.5,"ldx":0.05,"ldy":-0.55},"B0":{"dx":-0.6,"dy":-0.05},"c1":{"dx":-6.15,"dy":-21.25,"ldx":3.2,"ldy":5.6},"c3":{"dx":-5.55,"dy":-21.3,"ldx":3.15,"ldy":5.8},"c4":{"dx":-4.95,"dy":-21.3,"ldx":3.15,"ldy":6.1},"c5":{"dx":-3.55,"dy":-21.25,"ldx":3.25,"ldy":5.6},"RIVER":{"dx":-3.9,"dy":-81.15},"Q":{"del":true},"FD":{"dx":0.11,"dy":-21.25},"s1":{"dx":-1.25,"dy":4.75},"s2":{"dx":-0.7,"dy":4.8},"H5":{"dx":6.15,"dy":-21.15,"ldx":-1.25,"ldy":4.45},"H5b":{"dx":-1.6,"dy":13.5},"p1":{"dx":0.5,"dy":5.25},"p2":{"dx":1.25,"dy":4.8},"p3":{"dx":1.2,"dy":4.05,"ldx":1.25,"ldy":5.65},"p4":{"dx":1.5,"dy":4.45},"KAS":{"dx":6.05,"dy":-20.85},"ST":{"dx":0.7,"dy":5.15},"m1":{"dx":0.9,"dy":5.25},"JU":{"dx":-1.35,"dy":3.45},"m3":{"dx":1.45,"dy":4.8},"LB":{"dx":6.95,"dy":-20.4},"PR":{"dx":1.4,"dy":4.1},"c2":{"del":true},"hx":{"del":true},"FXc":{"dx":-1.6,"dy":-0.65,"ldx":-2.7,"ldy":3.05},"THW":{"dx":-37.4,"dy":-4.2,"ldx":-2.35,"ldy":2.01,"dw":-0.8,"dd":-0.58,"dh":-0.21},"R1p":{"dx":-40.1,"dy":-4.2,"ldx":-0.51,"ldy":-1.77,"dw":0.21,"dd":0.55,"dh":-0.24},"B1":{"dx":-39.76,"dy":-4.2,"ldx":-0.43,"ldy":-2.02,"dw":0.12,"dd":0.02,"dh":-0.16},"R2p":{"dx":-39.74,"dy":-4.2,"ldx":-0.72,"ldy":-1.43,"dw":0.09,"dd":0.26,"dh":-0.21},"B2":{"dx":-38.27,"dy":-4.2,"ldx":-0.31,"ldy":-1.44,"dw":-0.76,"dd":-0.24,"dh":-0.16},"R3p":{"dx":-36.98,"dy":-4.2,"ldx":-0.54,"ldy":-2.52,"dw":-0.46,"dd":-0.37,"dh":-0.13},"SB":{"dx":-35.14,"dy":-4.2,"ldx":0.31,"ldy":-1.42,"dw":-0.47,"dd":-0.47,"dh":-0.3},"CAP":{"dx":-35.43,"dy":-4.2,"ldx":0.38,"ldy":-1.28,"dw":-0.14,"dd":-0.06,"dh":-0.2},"AMP":{"dx":-34.81,"dy":-4.2,"ldx":-0.41,"ldy":-1.22,"dw":-0.16,"dd":-0.38,"dh":-0.18},"SZD":{"dx":-34.96,"dy":-4.2,"ldx":-0.17,"ldy":-0.78,"dw":1.01,"dd":1.81,"dh":-0.23},"FRG":{"dx":-34.05,"dy":-4.2,"ldx":-0.3,"ldy":-1.28,"dw":-0.33,"dd":-0.33,"dh":-0.38},"R4p":{"dx":-33.81,"dy":-4.2,"ldx":-0.22,"ldy":-1.22,"dw":-0.33,"dd":-0.33,"dh":-0.19},"LIB":{"dx":-34.44,"dy":-4.2,"ldx":-1,"ldy":3.06,"dw":1.03,"dd":1.83,"dh":-0.2},"RCY":{"dx":-34.17,"dy":-4.2,"dw":-0.31,"dd":0.07,"dh":-0.3},"FQ":{"dx":-48.87,"dy":-23.7,"ldx":1.05,"ldy":5.05,"dw":-0.65,"dd":7.9},"E2":{"dx":-51.08,"dy":-24.15,"ldx":2.2,"ldy":0.25},"E4":{"dx":-40.21,"dy":-21.04,"ldx":-3.45,"ldy":0.85,"dw":6.75,"dd":6.1},"E5":{"dx":-33.21,"dy":-20.93,"ldx":-3.9,"ldy":0.85,"dw":6.45,"dd":6.1},"E3":{"dx":-46.99,"dy":-21.67,"ldx":-6,"ldy":9.55,"dw":0.4,"dd":1.45},"G1":{"dx":-46.29,"dy":-24.69,"ldx":-2.2,"ldy":-1.7,"dw":-1.75,"dd":-2.9},"G2":{"dx":-51.51,"dy":-20.76,"ldx":-2.15,"ldy":-1.75,"dw":-1.45,"dd":-2.95},"G2b":{"dx":-37.38,"dy":-23.32,"ldx":3.2,"ldy":-4.3,"dw":-0.55,"dd":-1.15},"W1":{"dx":-55.97,"dy":-27.1,"ldx":7.55,"ldy":5},"DD":{"dx":-28.64,"dy":-20.74,"ldx":-2.65,"ldy":3.25,"dw":-3.1,"dd":2.1},"UD":{"dx":-30.32,"dy":-20.37,"ldx":1.8,"ldy":1.5,"dw":-3.05,"dd":-5.75},"G3":{"del":true},"CB":{"dx":-25.8,"dy":-20.78,"ldx":0.6,"ldy":0.1,"dw":1.4,"dd":1.35},"G4":{"dx":-43.76,"dy":-17.95,"ldx":2.7,"ldy":-2.65,"dw":-1.25,"dd":-0.9},"FQc":{"dx":-12.24,"dy":-2.24,"dw":-2.5,"dd":-10.3,"dh":-5.95},"band:1":{"dx":-8.05,"dy":-4.9,"sw":-13.85,"sh":-2.8},"band:2":{"dx":-21.15,"dy":-13.15,"sw":-0.45,"sh":-5.75},"UDc":{"dx":-6.9,"dy":-24.2},"FDc":{"dx":5.9,"dy":-20.85},"band:3":{"dx":-6.45,"dy":-24,"sw":5.95,"sh":5.05},"band:4":{"dx":4.95,"dy":-25.4,"sw":3.6,"sh":4.45}},"text":{"nodes":{"LIBR":{"name":"Drug Library","sub":"ApexBio FDA Approved Drug Library – 1496 compounds","does":"A screening library of 1496 FDA approved compounds (ApexBio FDA Approved Drug Library), held at the SPARC BioCentre and shared across everyone who books time there. The compounds of interest are pulled; the rest of the wall is the part of the experiment that was never run. In total, SPARC BioCentre has a total of 147,025 compounds in their collections."},"ECHO":{"name":"Echo 650 Dispenser","sub":"SPARC BioCentre · acoustic liquid dispenser, from the cherry-picking layout","does":"Compounds are fired into an empty multi well plate without anything touching it. The destination plate is held inverted above the source and droplets are launched upward into it, hundreds a second, held in place by surface tension until the plate is righted. Tipless and non-contact, so there is no carryover between wells and no tip waste. Because every well is addressed individually from a layout file, the cherry-picking sheet is not a pipetting plan — it is the treatment axis of the finished dataset, written down before a single fish exists."},"AQ":{"stat":"Adult Zebrafish (Danio rerio)","does":"Every cell in every dataset downstream was derived from the progeny of zebrafish in these tanks."},"A1":{"name":"Mating Pair","does":"A male and a female zebrafish go into a breeding tank the night before with a divider between them. Spawning is triggered by pulling the divider in the morning."},"A2":{"name":"The Clutch","does":"Fertilized eggs are collected within the first hour. Everything downstream is one narrow developmental cohort. On average, a single zebrafish mating pair yields between 100 and 200 eggs per spawning clutch"},"A3":{"name":"Cull Unfertilised Eggs","does":"Dead and unfertilised eggs are removed under a microscope. The first cull on the whole map happens here, by hand, with a pipette."},"A4":{"name":"Array into the Drug Plate","sub":"Multi well plate · 6 embryos in each well, at 24 hours post fertilization","does":"The experiment itself. Embryos are checked for stage and distributed six to a well that already contain a compound. The fish arrive into the dose — there is no separate dosing step afterwards, and 24 hours post fertilization is the moment of arrival rather than the moment of addition."},"A6":{"name":"Enzymatic Dissociation","sub":"enzymatic digestion — whole cells","does":"Embryos are euthanised in the well and the tissue is digested enzymatically into a suspension, then strained. There is no pooling event, each well remains as its individual sample. Intact cells propagates through the entire rest of the map."},"A7":{"name":"Fix the Suspension","sub":"the moment the cells stop","does":"The last instant anything on this map is alive. Fixative goes into the suspension and cell processes stop dead, so whatever each cell happened to be expressing when the drop landed is what the atlas will report it was expressing forever after. In combinatorial chemistries it does a second job at the same time: it turns every cell into its own sealed reaction vessel, which is the whole reason split-pool barcoding can work with no microfluidics at all."},"CS":{"does":"Our scientists decide what the experiment is about. Compounds are chosen out of a drug library. Everything in the finished atlas can possibly say about drug effect is bounded here, before any of it exists.","sub":"Picked from drug libraries"},"A5":{"name":"Incubate to 48 hours post fertilization","does":"Twenty-four hours in which the drug either does something or does not. This window is the entire causal content of the dataset. Drawn here as one well of a compound: six embryos swimming in dosed medium, compound drifting around them on its own. Compounds enter the embryo by passive diffusion through the skin."},"FX":{"does":"Fixed material, plated and stored away. Nothing in this freezer is alive and nothing in it changes, which is precisely what makes it useful: samples collected weeks apart can wait here and then be barcoded together in a single run, so the day a sample was collected stops being a batch effect. Everything upstream of this point is a living thing changing while you watch it; everything downstream is a measurement of something that has already stopped.","sub":"Stored at -80 celsius"}}},"at":1789714453090}};(()=>{let s=246813579;Math.random=()=>{s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296;};})();</script>
+<script src="/pipeline/published/8a2fc3381137b3d6fa11/pipeline-iso.js"></script>
+<script src="/pipeline/published/8a2fc3381137b3d6fa11/pipeline-shapes.js"></script>
+<!-- The four roofed culls between the unfiltered and the filtered matrix.
+     SHARED WITH /bioinformatics_pipe, which is where they were written: that
+     page is this row drawn deeper, and one implementation means the two
+     accounts of one pipeline cannot drift. They read P, el, pts, S, rng,
+     paint, TICKERS, DRAW and SKIN out of the two files above. -->
+<script src="/pipeline/published/8a2fc3381137b3d6fa11/culls-pop.js"></script>
+<script src="/pipeline/published/8a2fc3381137b3d6fa11/culls-draw.js"></script>
+<!-- Row 3's own vocabulary, ported from /FASTQ_pipe — the fourteen objects
+     between the reads and the unfiltered matrix, drawn here at this map's
+     scale and drawn there at reading scale. It must load AFTER the two files
+     above (it reads V, SKIN, topOf, DRAW, paint, faces, pts, rng, ellipseAt
+     from pipeline-shapes.js and roofFrame from culls-draw.js, and it takes
+     mulberry32 from culls-pop.js) and BEFORE pipeline-data.js, which is what
+     names the shapes. See the header of that file for what the port dropped
+     as duplicate and what it had to rename. -->
+<script src="/pipeline/published/8a2fc3381137b3d6fa11/pipeline-fqshapes.js"></script>
+<script src="/pipeline/published/8a2fc3381137b3d6fa11/pipeline-data.js"></script>
+<script src="/pipeline/published/8a2fc3381137b3d6fa11/pipeline-view.js"></script>
+<script src="/pipeline/published/8a2fc3381137b3d6fa11/presentation-engine.js"></script></body>
+</html>
